@@ -1,0 +1,18 @@
+// config file used for NUnit tests
+string.value.ok=hello world
+  string.value.spaces  =   hello world     
+string.value.empty=
+
+int.value.ok=123
+uint.value.ok=234
+
+this is an invalid line and should be ignored
+
+uint.value.bad=not a number
+int.value.bad=123not a number either
+
+bool.value.ok1=True
+bool.value.ok2= trUE
+bool.value.ok3=false
+bool.value.ok4=FALSE
+bool.value.bad=hasdflk h
