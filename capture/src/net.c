@@ -136,7 +136,9 @@
 	#include <winsock2.h>
 	#include <ws2tcpip.h>
 	#include <iphlpapi.h>
-
+	static void logErrMsg(char* msg, int rc);
+	static unsigned char NULL_ADDRESS[MAXLEN_PHYSADDR] = {0,0,0,0,0,0,0,0};
+	
 	struct BwData* getData(){
 		MIB_IFTABLE* pIfTable = (MIB_IFTABLE *) malloc(sizeof (MIB_IFTABLE));
 		unsigned long dwSize = sizeof (MIB_IFTABLE);

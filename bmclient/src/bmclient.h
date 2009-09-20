@@ -2,8 +2,6 @@
 #define CLIENT_NAME   "BitMeterOS Command Line Client"
 #define EXE_NAME      "bmclient"
 
-#define VERSION "0.1.2"
-
 #define OPT_HELP 'h'
 
 #define OPT_VERSION 'v'
@@ -114,5 +112,5 @@ void doQuery();
 void doSummary();
 void doHelp();
 void doVersion();
-void formatAmounts(int dl, int ul, char* dlTxt, char *ulTxt, int units);
+void formatAmounts(const unsigned long long dl, const unsigned long long ul, char* dlTxt, char *ulTxt, int units);
 struct ValuesBounds calcTsBounds();

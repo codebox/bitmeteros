@@ -1,5 +1,6 @@
 #include "common.h"
 #include <time.h>
+#include <stdlib.h>
 
 int getTime(){
 	return time(NULL);
@@ -15,16 +16,27 @@ int getTime(){
     }
 
     void getDbPath(char* path){
-        SHGetFolderPath(NULL, CSIDL_COMMON_APPDATA, NULL, 0, path);
-        PathAppend(path, TEXT(OUT_DIR));
-        PathAppend(path, TEXT(DB_NAME));
+        char* envValue;
+        if ((envValue = getenv(ENV_DB)) == NULL){
+            SHGetFolderPath(NULL, CSIDL_COMMON_APPDATA, NULL, 0, path);
+            PathAppend(path, TEXT(OUT_DIR));
+            PathAppend(path, TEXT(DB_NAME));
+        } else {
+            strcpy(path, envValue);
+        }
     }
 
-    static void getLogPath(char* path){
-        SHGetFolderPath(NULL, CSIDL_COMMON_APPDATA, NULL, 0, path);
-        PathAppend(path, TEXT(OUT_DIR));
-        PathAppend(path, TEXT(LOG_NAME));
+
+    void getLogPath(char* path){char* envValue;
+        if ((envValue = getenv(ENV_LOG)) == NULL){
+            SHGetFolderPath(NULL, CSIDL_COMMON_APPDATA, NULL, 0, path);
+            PathAppend(path, TEXT(OUT_DIR));
+            PathAppend(path, TEXT(LOG_NAME));
+        } else {
+            strcpy(path, envValue);
+        }
     }
+
 #endif
 
 #ifdef __linux__
@@ -37,11 +49,21 @@ int getTime(){
 
 
     void getDbPath(char* path){
-        strcpy(path, "/var/lib/bitmeter/" DB_NAME);
+        char* envValue;
+        if ((envValue = getenv(ENV_DB)) == NULL){
+            strcpy(path, "/var/lib/bitmeter/" DB_NAME);
+        } else {
+            strcpy(path, envValue);
+        }
     }
 
     void getLogPath(char* path){
-        strcpy(path, "/var/log/bitmeter/error.log");
+        char* envValue;
+        if ((envValue = getenv(ENV_LOG)) == NULL){
+            strcpy(path, "/var/log/bitmeter/error.log");
+        } else {
+            strcpy(path, envValue);
+        }
     }
 #endif
 
@@ -53,10 +75,20 @@ int getTime(){
     }
 
     void getDbPath(char* path){
-        strcpy(path, "/Library/Application Support/BitMeter/" DB_NAME);
+        char* envValue;
+        if ((envValue = getenv(ENV_DB)) == NULL){
+            strcpy(path, "/Library/Application Support/BitMeter/" DB_NAME);
+        } else {
+            strcpy(path, envValue);
+        }
     }
 
     void getLogPath(char* path){
-        strcpy(path, "/Library/Logs/bitmeter.log");
+        char* envValue;
+        if ((envValue = getenv(ENV_LOG)) == NULL){
+            strcpy(path, "/Library/Logs/bitmeter.log");
+        } else {
+            strcpy(path, envValue);
+        }
     }
 #endif

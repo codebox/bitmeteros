@@ -184,11 +184,11 @@ static int doQueryForInterval(char* rangeTxt, int tsFrom, int tsTo){
 	sqlite3_bind_int(stmtGetTotals, 1, tsFrom);
 	sqlite3_bind_int(stmtGetTotals, 2, tsTo);
 
-	int dlTotal, ulTotal;
+	unsigned long long dlTotal, ulTotal;
 	int rc = sqlite3_step(stmtGetTotals);
 	if (rc == SQLITE_ROW){
-		dlTotal = sqlite3_column_int(stmtGetTotals, 0);
-		ulTotal = sqlite3_column_int(stmtGetTotals, 1);
+		dlTotal = sqlite3_column_int64(stmtGetTotals, 0);
+		ulTotal = sqlite3_column_int64(stmtGetTotals, 1);
 	} else {
 		dlTotal = ulTotal = 0;
 	}

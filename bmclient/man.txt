@@ -1,0 +1,84 @@
+.TH bmclient 1 "31st August 2009"
+.SH NAME
+bmclient - Provides command-line access to the BitMeterOS database
+.SH SYNOPSIS
+bmclient -h|-v|-m<mode> <mode specific options>
+.SH DESCRIPTION
+Provides command-line access to the BitMeterOS database which contains network usage statistics.
+.SS Dump all data
+Dump all data using '-md' or '-m dump':
+.br
+    bmclient -m dump [-u <units>] [-f <format>]
+
+Values allowed for 'units' are:
+    b - all values displayed in bytes (default)
+    a - values displayed with abbreviated units
+    f - values displayed with full units
+
+Values allowed for 'format' are:
+    c - CSV format, suitable for import into a spreadsheet
+    f - fixed width format, easier to read
+
+.SS View a summary
+Display a database summary using '-ms' or '-m summary':
+    bmclient -m summary
+
+.SS Monitor current usage
+Monitor current usage using '-mm' or '-m monitor'. This produces a continuously updating display of the current network usage:
+    bmclient -m monitor [-t <display type>] [-d <direction>] [-w <max bar width>] [-x <max bar value>]
+
+Values allowed for 'display type' are:
+    n - numeric, both upload and download values are displayed numerically (default)
+    b - bar graph, either upload or download values are displayed as bars of varying width (see subsequent arguments)
+
+The 'direction' argument is ignored unless a display type of 'b' (bar graph) is selected. Permitted values are:
+    d - download, the length of the bars vary according to the current download speed (default)
+    u - upload, the length of the bars vary according to the current upload speed
+
+The 'max bar width' argument is ignored unless a display type of 'b' (bar graph) is selected.
+    A numeric value must be supplied with this option, to indicate the width (in characters) of the longest bar that will be displayed (default is 69 to allow each line, including the numeric output, to fit on an 80 character display)
+
+The 'max bar value' argument is ignored unless a display type of 'b' (bar graph) is selected.
+    A numeric value must be supplied with this option, to indicate the maximum upload/download value (in bytes) that can be displayed before the bar reaches the maximum width specified by the 'max bar width' argument (default value is 100000)
+
+.SS Query the database
+Query the database using '-mq' or '-m query':
+    bmclient -m query -r <range> [-g <grouping>] [-u <units>]
+
+The 'range' argument specifies the date/time range for which you want to see information. The range can consist of either 1 or 2 date components, if 2 date components are present then they must be separated by a hyphen. Each date component can be in 1 of 4 different formats, shown below:
+    yyyy        - a 4 digit year
+    yyyymm      - a year followed by a 2 digit month
+    yyyymmdd    - a year and month followed by a 2 digit day
+    yyyymmddhh  - a year, month and day, followed by a 2 digit hour
+
+Some examples:
+    Show all data recorded during the year 2009:
+        bmclient -m query -r2009
+    Show all data recorded between April 2008 and June 2008, inclusive
+        bmclient -m query -r200804-200806
+    Show all data recorded between 4AM and 5AM on 1st January 2002
+        bmclient -m query -r2002010104
+            OR
+        bmclient -m query -r2002010104-2002010105
+
+The 'grouping' argument specifies if/how the results of the query should be grouped when they are displayed:
+    t - do not group results, display overall total only (default)
+    h - group results by hour
+    d - group results by day
+    m - group results by month
+    y - group results by year
+
+The 'units' argument is explained above, in the 'dump' section.
+
+.SS Display version
+Display version information
+    bmclient -v
+
+.SS Display help
+Display this help
+    bmclient -h
+
+.SH AUTHOR 
+Email: rob@codebox.org.uk
+.br
+Web:   http://codebox.org.uk/bitmeterOs

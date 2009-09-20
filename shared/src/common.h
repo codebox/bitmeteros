@@ -1,10 +1,13 @@
 #include <sqlite3.h>
 #include <stddef.h>
 
+#define VERSION "0.1.4"
 #define DB_NAME      "bitmeter.db"
 #define LOG_NAME     "bitmeter.log"
 #define OUT_DIR      "BitMeterOS"
 #define IN_MEMORY_DB ":memory:"
+#define ENV_DB       "BITMETER_DB"
+#define ENV_LOG      "BITMETER_LOG"
 
 #define LOG_INFO 1
 #define LOG_WARN 2

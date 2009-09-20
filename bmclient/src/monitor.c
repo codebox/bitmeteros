@@ -35,7 +35,7 @@ void doMonitor(){
 			}
 			printf("\n");
 		} else {
-			printf("DL: %d UL: %d\n", values.dl, values.ul);
+			printf("DL: %llu UL: %llu\n", values.dl, values.ul);
 		}
 	    doSleep(1);
 	}

@@ -10,7 +10,7 @@ Dump all data using '-md' or '-m dump':
         b - all values displayed in bytes (default)
         a - values displayed with abbreviated units
         f - values displayed with full units
-        
+
     Values allowed for 'format' are:
     	c - CSV format, suitable for import into a spreadsheet
     	f - fixed width format, easier to read
@@ -18,8 +18,22 @@ Dump all data using '-md' or '-m dump':
 Display a database summary using '-ms' or '-m summary':
     bmclient -m summary
 
-Monitor current usage using '-mm' or '-m monitor':
-    bmclient -m monitor
+Monitor current usage using '-mm' or '-m monitor'. This produces a continuously updating display of the current network usage:
+    bmclient -m monitor [-t <display type>] [-d <direction>] [-w <max bar width>] [-x <max bar value>]
+
+    Values allowed for 'display type' are:
+        n - numeric, both upload and download values are displayed numerically (default)
+        b - bar graph, either upload or download values are displayed as bars of varying width (see subsequent arguments)
+
+    The 'direction' argument is ignored unless a display type of 'b' (bar graph) is selected. Permitted values are:
+        d - download, the length of the bars vary according to the current download speed (default)
+        u - upload, the length of the bars vary according to the current upload speed
+
+    The 'max bar width' argument is ignored unless a display type of 'b' (bar graph) is selected.
+        A numeric value must be supplied with this option, to indicate the width (in characters) of the longest bar that will be displayed (default is 69 to allow each line, including the numeric output, to fit on an 80 character display)
+
+    The 'max bar value' argument is ignored unless a display type of 'b' (bar graph) is selected.
+        A numeric value must be supplied with this option, to indicate the maximum upload/download value (in bytes) that can be displayed before the bar reaches the maximum width specified by the 'max bar width' argument (default value is 100000)
 
 Query the database using '-mq' or '-m query':
     bmclient -m query -r <range> [-g <grouping>] [-u <units>]
@@ -29,7 +43,7 @@ Query the database using '-mq' or '-m query':
         yyyymm      - a year followed by a 2 digit month
         yyyymmdd    - a year and month followed by a 2 digit day
         yyyymmddhh  - a year, month and day, followed by a 2 digit hour
-        
+
     Some examples:
         Show all data recorded during the year 2009:
             bmclient -m query -r2009
