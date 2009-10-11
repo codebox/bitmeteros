@@ -18,7 +18,6 @@ void setLogLevel(int level){
 	logLevel = level;
 }
 
-int getTime();
 void logMsg(int level, char* msg, ...){
 	if (level >= logLevel){
 		FILE* logFile;

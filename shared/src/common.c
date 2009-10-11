@@ -39,7 +39,7 @@
 #define PB_LONG  "petabytes"
 #define EB_LONG  "exabytes"
 
-void formatAmount(const unsigned long long amount, const int binary, const int abbrev, char* txt){
+void formatAmount(const BW_INT amount, const int binary, const int abbrev, char* txt){
 	const unsigned long kbMin = (binary ? BINARY_KB_MIN : SI_KB_MIN);
 	const unsigned long mbMin = (binary ? BINARY_MB_MIN : SI_MB_MIN);
 	const unsigned long long gbMin = (binary ? BINARY_GB_MIN : SI_GB_MIN);
@@ -83,8 +83,8 @@ void formatAmount(const unsigned long long amount, const int binary, const int a
 
 }
 
-void toTime(char* timeText, int ts){
-	struct tm* cal = localtime((time_t*)&ts);
+void toTime(char* timeText, time_t ts){
+	struct tm* cal = localtime(&ts);
 
 	int h = cal->tm_hour;
 	int m = cal->tm_min;
@@ -93,8 +93,8 @@ void toTime(char* timeText, int ts){
 	sprintf(timeText, "%02d:%02d:%02d", h, m, s);
 }
 
-void toDate(char* dateText, int ts){
-	struct tm* cal = localtime((time_t*)&ts);
+void toDate(char* dateText, time_t ts){
+	struct tm* cal = localtime(&ts);
 
 	int y = 1900 + cal->tm_year;
 	int m = 1 + cal->tm_mon;

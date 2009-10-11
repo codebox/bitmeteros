@@ -6,8 +6,7 @@
 #include "capture.h"
 #include "CuTest.h"
 
-static void doTestFormatAmount(CuTest *, unsigned long long , char* , char* , char *, char* );
-static int makeTs(const char* dateTxt);
+static void doTestFormatAmount(CuTest *, BW_INT , char* , char* , char *, char* );
 
 void testFormatAmounts(CuTest *tc){
     doTestFormatAmount(tc, 0, "0.00 B ", "0.00 bytes", "0.00 B ", "0.00 bytes");
@@ -44,7 +43,7 @@ void testFormatAmounts(CuTest *tc){
     doTestFormatAmount(tc, 1152921504606846976,    "1.00 EB",     "1.00 exabytes",    "1.15 EB",      "1.15 exabytes");
 }
 
-static void doTestFormatAmount(CuTest *tc, unsigned long long amount, char* binaryShort, char* binaryLong, char *decimalShort, char* decimalLong){
+static void doTestFormatAmount(CuTest *tc, BW_INT amount, char* binaryShort, char* binaryLong, char *decimalShort, char* decimalLong){
     char txt[24];
 
     formatAmount(amount, 1, 1, txt);
@@ -89,12 +88,6 @@ void doTestToDate(CuTest *tc, int ts, char* expected){
     char actual[20];
     toDate(actual, ts);
     CuAssertStrEquals(tc, expected, actual);
-}
-
-static int makeTs(const char* dateTxt){
-    struct tm t;
-    strptime(dateTxt, "%Y-%m-%d %H:%M:%S", &t);
-    return mktime(&t);
 }
 
 CuSuite* commonGetSuite() {

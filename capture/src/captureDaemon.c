@@ -18,8 +18,12 @@ int main(int argc, char **argv){
 	signal(SIGTERM, sigHandler);	// Trap termination requests from the system
 
  // Loop until one of the signal handlers is triggered
+    int status;
 	while(!stopNow){
-    	processCapture();
+    	status = processCapture();
+    	if (status == FAIL){
+            stopNow = TRUE;
+    	}
 	}
 
 	shutdownCapture();

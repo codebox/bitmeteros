@@ -14,11 +14,11 @@
 	  - flag for 1000/1024 (SI/binary) bytes per kilobyte
 */
 
-extern struct Prefs prefs;
+struct Prefs prefs = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL};
 
 int main(int argc, char **argv){
-	int argsOk = parseArgs(argc, argv);
-	
+	int argsOk = parseArgs(argc, argv, &prefs);
+
 	if (!argsOk){
 		if (prefs.errorMsg != NULL){
 			printf("Error: %s\n", prefs.errorMsg);
@@ -26,13 +26,13 @@ int main(int argc, char **argv){
 			printf("BitMeter did not understand. ");
 		}
 		printf("Use the '-h' option to display help.\n");
-		
+
 	} else if (prefs.help){
 		doHelp();
-		
+
 	} else if (prefs.version){
 		doVersion();
-		
+
 	} else {
 		openDb();
 
@@ -40,13 +40,13 @@ int main(int argc, char **argv){
 			case PREF_MODE_DUMP:
 				doDump();
 				break;
-			case PREF_MODE_SUMMARY: 
+			case PREF_MODE_SUMMARY:
 				doSummary();
 				break;
-			case PREF_MODE_MONITOR: 
+			case PREF_MODE_MONITOR:
 				doMonitor();
 				break;
-			case PREF_MODE_QUERY:   
+			case PREF_MODE_QUERY:
 				doQuery();
 				break;
 			default:
@@ -57,5 +57,10 @@ int main(int argc, char **argv){
 
 		closeDb();
 	}
+
+	if (prefs.errorMsg != NULL){
+		free(prefs.errorMsg);
+	}
+
 	return 0;
 }

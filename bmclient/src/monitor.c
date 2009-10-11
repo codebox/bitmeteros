@@ -2,58 +2,83 @@
 #include <stdlib.h>
 #include <time.h>
 #include <signal.h>
-#include <sqlite3.h>
 #include "common.h"
 #include "bmclient.h"
+#include "client.h"
 
 static void sigIntHandler();
-static void getValues(struct BwValues*, int);
 static int stopNow=0;
-static sqlite3_stmt *stmtGetValues;
 extern struct Prefs prefs;
+static void printBar(struct Data*);
+static void printText(struct Data*);
+
+static void setDefaultPrefs(){
+	if (prefs.monitorType == PREF_NOT_SET){
+		prefs.monitorType = PREF_MONITOR_TYPE_NUMS;
+	}
+	if (prefs.direction == PREF_NOT_SET){
+		prefs.direction = PREF_DIRECTION_DL;
+	}
+	if (prefs.barChars == PREF_NOT_SET){
+		prefs.barChars = DEFAULT_BAR_CHARS;
+	}
+	if (prefs.maxAmount == PREF_NOT_SET){
+		prefs.maxAmount = DEFAULT_MAX_AMOUNT;
+	}
+}
 
 void doMonitor(){
-	prepareSql(&stmtGetValues, "select sum(dl), sum(ul) from data where ts=?");
+	setDefaultPrefs();
 	signal(SIGINT, sigIntHandler);
 
 	printf("Monitoring... (Ctrl-C to abort)\n");
-	struct BwValues values;
+	struct Data* values;
 	int doBars = (prefs.monitorType == PREF_MONITOR_TYPE_BAR);
-	unsigned long amt;
-	char amtTxt[20];
+
 	while(!stopNow){
-		getValues(&values, getTime()-1);
-		if (doBars){
-			amt = ((prefs.direction == PREF_DIRECTION_DL) ? values.dl : values.ul);
-			formatAmount(amt, 1, 1, amtTxt);
-			int i;
-			int charCount = prefs.barChars * ((float)amt / prefs.maxAmount);
-			charCount = (charCount > prefs.barChars) ? prefs.barChars : charCount;
-			printf("%10s|", amtTxt);
-			for(i=1; i<= charCount; i++){
-				printf("#");
-			}
-			printf("\n");
-		} else {
-			printf("DL: %llu UL: %llu\n", values.dl, values.ul);
+		values = getMonitorValues(getTime()-1);
+		if (values == NULL){
+		 // We print out zeroes if there is nothing from the db
+            values = allocData();
 		}
+
+		if (doBars){
+			printBar(values);
+		} else {
+			printText(values);
+		}
+
+		freeData(values);
 	    doSleep(1);
 	}
 	printf("monitoring aborted.\n");
 }
 
-static void getValues(struct BwValues* values, int ts){
-	sqlite3_bind_int(stmtGetValues, 1, ts);
+static void printBar(struct Data* values){
+ /* We must draw a bar to represent either the upload/download speed, as well as
+ 	displaying a numeric value. */
 
-	int rc = sqlite3_step(stmtGetValues);
-	if (rc == SQLITE_ROW){
-		values->dl = sqlite3_column_int64(stmtGetValues, 0);
-		values->ul = sqlite3_column_int64(stmtGetValues, 1);
-	} else {
-		//TODO warn
-		values->dl = values->ul = 0;
+ // This is where we put the numeric part
+	char amtTxt[20];
+	BW_INT amt = ((prefs.direction == PREF_DIRECTION_DL) ? values->dl : values->ul);
+	formatAmount(amt, 1, 1, amtTxt);
+
+ // Work out how many characters this bar will occupy
+	int charCount = prefs.barChars * ((float)amt / prefs.maxAmount);
+	charCount = (charCount > prefs.barChars) ? prefs.barChars : charCount;
+
+ // Display the numeric value
+	printf("%10s|", amtTxt);
+
+ // Draw the bar
+	int i;
+	for(i=1; i<= charCount; i++){
+		printf("#");
 	}
-	sqlite3_reset(stmtGetValues);
+	printf("\n");
+}
+static void printText(struct Data* values){
+	printf("DL: %llu UL: %llu\n", values->dl, values->ul);
 }
 
 static void sigIntHandler(){

@@ -29,10 +29,10 @@ static int keepPerMinLimit;
 static int compressInterval;
 
 static int getConfigInt(const char* key);
-static void insertBwData(int ts, int dr, struct BwData* data);
-static void compressDbStage(int secKeepInterval, int oldDr, int newDr, int (*fnRoundUp)(int) );
+static int insertData(int ts, int dr, struct Data* data);
+static int compressDbStage(int secKeepInterval, int oldDr, int newDr, int (*fnRoundUp)(int) );
 
-void setupDb(){
+int setupDb(){
  // Initialise things, this must be called first
 	prepareSql(&stmtInsertData,           "insert into data (ts,dr,ad,dl,ul) values (?,?,?,?,?)");
 	prepareSql(&stmtSelectConfig,         "select value from config where key=?");
@@ -49,19 +49,34 @@ void setupDb(){
 	compressInterval = getConfigInt("cap.compress_interval");
 }
 
-void updateDb(int ts, int dr, struct BwData* diffList){
+int updateDb(int ts, int dr, struct Data* diffList){
+    int status = SUCCESS;
 	while (diffList != NULL) {
-		insertBwData(ts, dr, diffList);
+		status = insertData(ts, dr, diffList);
+		if (status == FAIL){
+            break;
+		}
 		diffList = diffList->next;
 	}
+	return status;
 }
 
-void compressDb(){
+int compressDb(){
+    int status;
+
  // Compresses per-second values that are older than 1 minute into per-minute values
-	compressDbStage(keepPerSecLimit, POLL_INTERVAL, SECS_PER_MIN, (int(*)(int))getNextMinForTs);
+	status = compressDbStage(keepPerSecLimit, POLL_INTERVAL, SECS_PER_MIN, (int(*)(int))getNextMinForTs);
+    if (status == FAIL){
+        return FAIL;
+    }
 
  // Compresses per-minute values that are older than 1 day into per-hour values
-	compressDbStage(keepPerMinLimit, SECS_PER_MIN, SECS_PER_HOUR, (int(*)(int))getNextHourForTs);
+	status = compressDbStage(keepPerMinLimit, SECS_PER_MIN, SECS_PER_HOUR, (int(*)(int))getNextHourForTs);
+	if (status == FAIL){
+        return FAIL;
+    } else {
+        return SUCCESS;
+    }
 }
 
 int getNextCompressTime(){
@@ -70,31 +85,34 @@ int getNextCompressTime(){
 }
 
 
-static int doInsert(int ts, int dr, const void* addr, int addrLen, int dl, int ul){
+static int doInsert(int ts, int dr, char* addr, int dl, int ul){
  // Inserts a row with the specified values into the 'data' table
 	sqlite3_bind_int(stmtInsertData,  1, ts);
 	sqlite3_bind_int(stmtInsertData,  2, dr);
-	sqlite3_bind_blob(stmtInsertData, 3, addr, addrLen, SQLITE_TRANSIENT);
+	sqlite3_bind_text(stmtInsertData, 3, addr, strlen(addr), SQLITE_TRANSIENT);
 	sqlite3_bind_int(stmtInsertData,  4, dl);
   	sqlite3_bind_int(stmtInsertData,  5, ul);
 
-	int ok = 1;
+	int status;
   	int rc = sqlite3_step(stmtInsertData);
   	if (rc != SQLITE_DONE){
   		logMsg(LOG_ERR, "doInsert() failed to insert values %d,%d,%s,%d,%d into db rc=%d error=%s\n", ts, dr, addr, dl, ul, rc, getDbError());
-  		ok = 0;
+  		status = FAIL;
+  	} else {
+        status = SUCCESS;
   	}
   	sqlite3_reset(stmtInsertData);
 
-  	return ok;
+  	return status;
 }
 
-static void insertBwData(int ts, int dr, struct BwData* data){
- // Inserts the data for a single BwData into the 'data' table
-	doInsert(ts, dr, data->addr, data->addrLen, data->dl, data->ul);
+static int insertData(int ts, int dr, struct Data* data){
+ // Inserts the data for a single Data struct into the 'data' table
+	return doInsert(ts, dr, data->ad, data->dl, data->ul);
 }
 
-static void doDelete(int ts, int dr){
+static int doDelete(int ts, int dr){
+    int status;
  /* Removes all rows with the specified 'dr' value, and with a 'ts' value less than or equal to the given one. This
     gets called during a compressDb operation, to remove the old rows that have been amalgamated into a single row. */
 	sqlite3_bind_int(stmtDeleteCompressed, 1, ts);
@@ -102,11 +120,16 @@ static void doDelete(int ts, int dr){
 	int rc = sqlite3_step(stmtDeleteCompressed);
 	if (rc != SQLITE_DONE){
 		logMsg(LOG_ERR, "Failed to delete compressed rows for ts=%d dr=%d rc=%d error=%s\n", ts, dr, rc, getDbError());
+		status = FAIL;
+	} else {
+        status = SUCCESS;
 	}
 	sqlite3_reset(stmtDeleteCompressed);
+
+	return status;
 }
 
-static void doCompress(int ts, int oldDr, int newDr){
+static int doCompress(int ts, int oldDr, int newDr){
  // For each adapter, compresses rows older than 'ts' and with a 'dr' of oldDr, into a single row with 'dr' of newDr.
 	logMsg(LOG_INFO, "doCompress for %d\n", ts);
 	sqlite3_bind_int(stmtSelectForCompression, 1, ts);
@@ -114,24 +137,34 @@ static void doCompress(int ts, int oldDr, int newDr){
 
 	int rc, dlTotal, ulTotal, addrSize;
 	const void *addr;
+    int status = SUCCESS;
+    int insertedOk, deletedOk;
 
 	while((rc=sqlite3_step(stmtSelectForCompression)) == SQLITE_ROW){
      // We get 1 row back for each network adapter
-		addr     = sqlite3_column_blob(stmtSelectForCompression,  0);
-		addrSize = sqlite3_column_bytes(stmtSelectForCompression, 0);
+		addr     = sqlite3_column_text(stmtSelectForCompression, 0);
 		dlTotal  = sqlite3_column_int(stmtSelectForCompression,  1);
 		ulTotal  = sqlite3_column_int(stmtSelectForCompression,  2);
 
 		logMsg(LOG_INFO, "row dl=%d ul=%d\n", dlTotal, ulTotal);
 
-		int insertedOk = doInsert(ts, newDr, addr, addrSize, dlTotal, ulTotal);
+		insertedOk = doInsert(ts, newDr, addr, dlTotal, ulTotal);
 		if (insertedOk){
          // Only remove the old rows if we succeeded in inserting the new one
-			doDelete(ts, oldDr);
+			deletedOk = doDelete(ts, oldDr);
+			if (!deletedOk){
+                status = FAIL;
+                break;
+			}
+		} else {
+            status = FAIL;
+            break;
 		}
 	}
 
   	sqlite3_reset(stmtSelectForCompression);
+
+  	return status;
 }
 
 static int getMinTs(int dr){
@@ -151,7 +184,7 @@ static int getMinTs(int dr){
 	return minTs;
 }
 
-static void compressDbStage(int secKeepInterval, int oldDr, int newDr, int (*fnRoundUp)(int) ){
+static int compressDbStage(int secKeepInterval, int oldDr, int newDr, int (*fnRoundUp)(int) ){
  // Performs a single stage of compression process, amalgamating old rows with a given 'dr' value into newer rows with a larger 'dr'
 
  // Calculate the largest 'ts' value that we will compress
@@ -163,17 +196,31 @@ static void compressDbStage(int secKeepInterval, int oldDr, int newDr, int (*fnR
  // Round the smallest 'ts' value up to the nearest sensible interval (minute/hour)
 	int minTsRoundedUp = (*fnRoundUp)(minTs);
 
+    int status = SUCCESS;
+    int compressOk;
+
  // Make sure the compression operation is atomic (this includes the deletion of old rows)
 	beginTrans();
     while((minTs != 0) && (minTsRoundedUp <= keepBoundary)){
      // We have rows that need to be compressed, ie that have the correct 'dr' value and are older than the boundary we established earlier
-        doCompress(minTsRoundedUp, oldDr, newDr);
+        compressOk = doCompress(minTsRoundedUp, oldDr, newDr);
+        if (!compressOk){
+            status = FAIL;
+            break;
+        }
 
      // Check what the oldest 'ts' value is now, after the previous compression
         minTs = getMinTs(oldDr);
         minTsRoundedUp = (*fnRoundUp)(minTs);
     }
-    commitTrans();
+
+    if (status == SUCCESS){
+        commitTrans();
+    } else {
+        rollbackTrans();
+    }
+
+    return status;
 }
 
 static int getConfigInt(const char* key){

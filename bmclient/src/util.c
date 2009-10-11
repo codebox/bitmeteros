@@ -1,9 +1,11 @@
 #include <stdio.h>
 #include "bmclient.h"
+#include "client.h"
 #include "common.h"
+
 extern struct Prefs prefs;
 
-void formatAmounts(const unsigned long long dl, const unsigned long long ul, char* dlTxt, char *ulTxt, int units){
+void formatAmounts(const BW_INT dl, const BW_INT ul, char* dlTxt, char *ulTxt, int units){
 	switch (units) {
 		case PREF_UNITS_BYTES:
 			sprintf(dlTxt, "%llu", dl);
@@ -20,24 +22,4 @@ void formatAmounts(const unsigned long long dl, const unsigned long long ul, cha
 			//TODO error
 			break;
 	}
-}
-
-struct ValuesBounds calcTsBounds(){
-	sqlite3_stmt *stmtTsBounds;
-	prepareSql(&stmtTsBounds, "select min(ts), max(ts) from data");
-
-	int minTs, maxTs;
-	int rc = sqlite3_step(stmtTsBounds);
-	if (rc == SQLITE_ROW){
-		minTs = sqlite3_column_int(stmtTsBounds, 0);
-		maxTs = sqlite3_column_int(stmtTsBounds, 1);
-	} else {
-		maxTs = minTs = 0;
-	}
-	sqlite3_reset(stmtTsBounds);
-
-	struct ValuesBounds values;
-	values.min = minTs;
-	values.max = maxTs;
-	return values;
 }

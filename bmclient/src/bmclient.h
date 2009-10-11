@@ -1,6 +1,10 @@
+#include "common.h"
+
 #define APP_NAME      "BitMeterOS"
 #define CLIENT_NAME   "BitMeterOS Command Line Client"
 #define EXE_NAME      "bmclient"
+
+#define PREF_NOT_SET    0
 
 #define OPT_HELP 'h'
 
@@ -79,6 +83,20 @@
 #define PREF_MONITOR_TYPE_NUMS 1
 #define PREF_MONITOR_TYPE_BAR  2
 
+#define DEFAULT_BAR_CHARS  69
+#define DEFAULT_MAX_AMOUNT 100000
+
+#define ERR_OPT_NO_ARGS          "No arguments supplied."
+#define ERR_OPT_BAD_MONITOR_TYPE "Unrecognised monitor type argument"
+#define ERR_OPT_BAD_DIRECTION    "Unrecognised direction argument"
+#define ERR_OPT_BAD_WIDTH        "Invalid -w argument, must be a number > 0"
+#define ERR_OPT_BAD_MAX          "Invalid -x argument, must be a number > 0"
+#define ERR_OPT_BAD_RANGE        "Invalid range argument, check the Help for acceptable range formats"
+#define ERR_OPT_BAD_GROUP        "Unrecognised group type"
+#define ERR_OPT_BAD_UNIT         "Unrecognised unit type"
+#define ERR_OPT_BAD_DUMP_FORMAT  "Unrecognised dump format"
+#define ERR_OPT_BAD_MODE         "Unrecognised mode"
+
 struct Prefs{
 	unsigned int mode;
 	unsigned int dumpFormat;
@@ -95,22 +113,11 @@ struct Prefs{
     char* errorMsg;
 };
 
-struct BwValues{
-	unsigned long long dl;
-	unsigned long long ul;
-};
-
-struct ValuesBounds{
-	unsigned long long min;
-	unsigned long long max;
-};
-
-int parseArgs(int argc, char **argv);
+int parseArgs(int argc, char **argv, struct Prefs*);
 void doDump();
 void doMonitor();
 void doQuery();
 void doSummary();
 void doHelp();
 void doVersion();
-void formatAmounts(const unsigned long long dl, const unsigned long long ul, char* dlTxt, char *ulTxt, int units);
-struct ValuesBounds calcTsBounds();
+void formatAmounts(const BW_INT dl, const BW_INT ul, char* dlTxt, char *ulTxt, int units);

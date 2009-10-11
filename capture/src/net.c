@@ -13,8 +13,8 @@
 	#include <string.h>
 	#include <net/route.h>
 
-	struct BwData* extractDataFromIf(struct if_msghdr2 *);
-	struct BwData* getData(){
+	struct Data* extractDataFromIf(struct if_msghdr2 *);
+	struct Data* getData(){
 		int mib[6] = {CTL_NET, PF_ROUTE, 0, 0, NET_RT_IFLIST2, 0};
 		size_t len;
 		int rc = sysctl(mib, 6, NULL, &len, NULL, 0);
@@ -31,8 +31,8 @@
 		}
 		int offset=0;
 
-		struct BwData* firstData = NULL;
-		struct BwData* lastData = NULL;
+		struct Data* firstData = NULL;
+		struct Data* thisData = NULL;
 
 		struct if_msghdr* hdr;
 
@@ -41,15 +41,9 @@
 
 			if((hdr->ifm_type == RTM_IFINFO2) && (hdr->ifm_data.ifi_type != IFT_LOOP)){
 				struct if_msghdr2 *hdr2 = (struct if_msghdr2 *)hdr;
+				struct Data* thisData = extractDataFromIf(hdr2);
 
-				struct BwData* thisData = extractDataFromIf(hdr2);
-
-				if (firstData==NULL){
-					lastData = firstData = thisData;
-				} else {
-					lastData->next = thisData;
-					lastData = thisData;
-				}
+				appendData(&firstData, thisData);
 			}
 
 			offset += hdr->ifm_msglen;
@@ -59,18 +53,15 @@
 		return firstData;
 	}
 
-	struct BwData* extractDataFromIf(struct if_msghdr2 *ifHdr){
-		struct BwData* data = malloc(sizeof(struct BwData));
-		data->dl   = ifHdr->ifm_data.ifi_ibytes;
-	    data->ul   = ifHdr->ifm_data.ifi_obytes;
-	    data->next = NULL;
+	struct Data* extractDataFromIf(struct if_msghdr2 *ifHdr){
+		struct Data* data = allocData();
+		data->dl = ifHdr->ifm_data.ifi_ibytes;
+	    data->ul = ifHdr->ifm_data.ifi_obytes;
 
 		char ifName[IF_NAMESIZE];
 		if_indextoname(ifHdr->ifm_index, ifName);
 
-		int nameLen = strlen(ifName);
-		data->addrLen = nameLen;
-	    memcpy(&(data->addr), ifName, nameLen);
+	    setAddress(data, ifName);
 
 	    return data;
 	}
@@ -78,10 +69,10 @@
 
 #ifdef __linux__
 	#include <string.h>
-	struct BwData* parseProcNetDevLine(char*, char*);
-    #define PROC_NET_DEV "proc/net/dev"
+	struct Data* parseProcNetDevLine(char*, char*);
+    #define PROC_NET_DEV "/proc/net/dev"
 
-	struct BwData* getData(){
+	struct Data* getData(){
 		FILE* fProcNetDev = fopen(PROC_NET_DEV, "r");		//TODO just open once?
 
 		if (fProcNetDev == NULL){
@@ -93,21 +84,17 @@
 		char line[MAX_LINE_SIZE];
 		char* colonPos;
 
-		struct BwData* firstData = NULL;
-		struct BwData* lastData = NULL;
+		struct Data* firstData = NULL;
+		struct Data* thisData  = NULL;
 
 		while (fgets(line, MAX_LINE_SIZE, fProcNetDev) != NULL) {
 			if ((colonPos = strchr(line, ':')) != NULL ){
 				char* ifName = calloc(32, 1);
 				strncpy(ifName, line, colonPos-line);
 
-				struct BwData* thisData = parseProcNetDevLine(ifName, colonPos+1);
-				if (firstData==NULL){
-					lastData = firstData = thisData;
-				} else {
-					lastData->next = thisData;
-					lastData = thisData;
-				}
+				thisData = parseProcNetDevLine(ifName, colonPos+1);
+
+				appendData(&firstData, thisData);
 			}
 		}
 		fclose(fProcNetDev);
@@ -115,17 +102,15 @@
 		return firstData;
 	}
 
-	struct BwData* parseProcNetDevLine(char* ifName, char* line){
+	struct Data* parseProcNetDevLine(char* ifName, char* line){
 		unsigned long dummy, dl, ul;
 		sscanf(line, "%lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu",
 			&dl, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &ul, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy);
 
-		struct BwData* data = malloc(sizeof(struct BwData));
-		data->dl      = dl;
-	    data->ul      = ul;
-	    data->addrLen = strlen(ifName);
-	    data->next    = NULL;
-	    memcpy(&(data->addr), ifName, strlen(ifName));
+		struct Data* data = allocData();
+		data->dl = dl;
+	    data->ul = ul;
+	    setAddress(data, ifName);
 
 	    return data;
 	}
@@ -133,13 +118,14 @@
 #endif
 
 #ifdef _WIN32
+	#define MAX_ADDR_BYTES 8
 	#include <winsock2.h>
 	#include <ws2tcpip.h>
 	#include <iphlpapi.h>
 	static void logErrMsg(char* msg, int rc);
-	static unsigned char NULL_ADDRESS[MAXLEN_PHYSADDR] = {0,0,0,0,0,0,0,0};
-	
-	struct BwData* getData(){
+	static char* makeHexString(byte*);
+
+	struct Data* getData(){
 		MIB_IFTABLE* pIfTable = (MIB_IFTABLE *) malloc(sizeof (MIB_IFTABLE));
 		unsigned long dwSize = sizeof (MIB_IFTABLE);
 
@@ -148,12 +134,9 @@
 	        pIfTable = (MIB_IFTABLE *) malloc(dwSize);
 	    }
 
-		unsigned long ul=0;
-		unsigned long dl=0;
 		int numEntries;
-		struct BwData* firstData = NULL;
-		struct BwData* lastData  = NULL;
-		struct BwData* thisData  = NULL;
+		struct Data* firstData = NULL;
+		struct Data* thisData  = NULL;
 
 		int rc = GetIfTable(pIfTable, &dwSize, FALSE);
 		if (rc == NO_ERROR){
@@ -163,28 +146,18 @@
 
 			int i;
 			for (i = 0; i < numEntries; i++) {
-				thisData   = malloc(sizeof(struct BwData));
-
 			    pIfRow = (MIB_IFROW *) & pIfTable->table[i];
 			    if (pIfRow->dwType != IF_TYPE_SOFTWARE_LOOPBACK){
-				    thisData->dl      = pIfRow->dwInOctets;
-				    thisData->ul      = pIfRow->dwOutOctets;
-				    thisData->addrLen = pIfRow->dwPhysAddrLen;
-				    memcpy(&(thisData->addr), &(pIfRow->bPhysAddr), pIfRow->dwPhysAddrLen);
-				} else {
-					thisData->dl      = 0;
-					thisData->ul      = 0;
-					thisData->addrLen = MAXLEN_PHYSADDR;
-					memcpy(&(thisData->addr), NULL_ADDRESS, MAXLEN_PHYSADDR);
-				}
-				thisData->next = NULL;
+   					thisData = allocData();
+				    thisData->dl = pIfRow->dwInOctets;
+				    thisData->ul = pIfRow->dwOutOctets;
 
-				if (firstData==NULL){
-					firstData = thisData;
-				} else {
-					lastData->next = thisData;
+				    char hexString[MAX_ADDR_BYTES * 2 + 1];
+				    makeHexString(hexString, pIfRow->dwPhysAddrLen){
+				    setAddress(thisData, hexString);
+
+					appendData(&firstData, thisData);
 				}
-				lastData = thisData;
 			}
 
 		} else {
@@ -197,6 +170,17 @@
 		}
 
 		return firstData;
+	}
+
+	char HEX[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+	static char* makeHexString(char* hexString, byte* data){ //TODO test
+		byte* thisByte;
+		for(int i = 0; i < MAX_ADDR_BYTES; i++){
+			thisByte = data[i];
+			hexString[j*2]     = HEX[(thisByte >> 4) & 0xF];
+			hexString[j*2 + 1] = HEX[thisByte & 0x0F];
+		}
+		hexString[MAX_ADDR_BYTES * 2] = 0;
 	}
 
 	static void logErrMsg(char* msg, int rc) {

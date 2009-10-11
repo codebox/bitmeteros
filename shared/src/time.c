@@ -5,9 +5,9 @@
 
 /* Performs date-based calculations */
 
-int getCurrentYearForTs(int ts){
+int getCurrentYearForTs(time_t ts){
  // Returns a timestamp value representing the start of the year in which 'ts' occurs
-	struct tm *t = localtime((time_t *) &ts);
+	struct tm *t = localtime(&ts);
 	t->tm_sec  = 0;
 	t->tm_min  = 0;
 	t->tm_hour = 0;
@@ -16,9 +16,9 @@ int getCurrentYearForTs(int ts){
 	return mktime(t);
 }
 
-int getCurrentMonthForTs(int ts){
+int getCurrentMonthForTs(time_t ts){
  // Returns a timestamp value representing the start of the month in which 'ts' occurs
-	struct tm *t = localtime((time_t *) &ts);
+	struct tm *t = localtime(&ts);
 	t->tm_sec  = 0;
 	t->tm_min  = 0;
 	t->tm_hour = 0;
@@ -26,18 +26,18 @@ int getCurrentMonthForTs(int ts){
 	return mktime(t);
 }
 
-int getCurrentDayForTs(int ts){
+int getCurrentDayForTs(time_t ts){
  // Returns a timestamp value representing the start of the day in which 'ts' occurs
-	struct tm *t = localtime((time_t *) &ts);
+	struct tm *t = localtime(&ts);
 	t->tm_sec  = 0;
 	t->tm_min  = 0;
 	t->tm_hour = 0;
 	return mktime(t);
 }
 
-int getNextYearForTs(int ts){
+int getNextYearForTs(time_t ts){
  // Returns a timestamp value representing the start of the year following the one in which 'ts' occurs
-	struct tm *t = localtime((time_t *) &ts);
+	struct tm *t = localtime(&ts);
 
 	t->tm_sec  = 0;
 	t->tm_min  = 0;
@@ -49,9 +49,9 @@ int getNextYearForTs(int ts){
 	return mktime(t);
 }
 
-int getNextMonthForTs(int ts){
+int getNextMonthForTs(time_t ts){
  // Returns a timestamp value representing the start of the month following the one in which 'ts' occurs
-	struct tm *t = localtime((time_t *) &ts);
+	struct tm *t = localtime(&ts);
 
 	t->tm_sec  = 0;
 	t->tm_min  = 0;
@@ -62,9 +62,9 @@ int getNextMonthForTs(int ts){
 	return mktime(t);
 }
 
-int getNextDayForTs(int ts){
+int getNextDayForTs(time_t ts){
  // Returns a timestamp value representing the start of the day following the one in which 'ts' occurs
-	struct tm *t = localtime((time_t *) &ts);
+	struct tm *t = localtime(&ts);
 
 	t->tm_sec  = 0;
 	t->tm_min  = 0;
@@ -74,10 +74,10 @@ int getNextDayForTs(int ts){
 	return mktime(t);
 }
 
-int getNextHourForTs(int ts){
+int getNextHourForTs(time_t ts){
  // Returns a timestamp value representing the start of the hour following the one in which 'ts' occurs
 	ts += SECS_PER_HOUR;
-	struct tm *t = localtime((time_t *) &ts);
+	struct tm *t = localtime(&ts);
 
 	if (t->tm_sec == 0 && t->tm_min == 0){
 	 // We were exactly on the hour, so return the ts that was passed in
@@ -89,10 +89,10 @@ int getNextHourForTs(int ts){
 	}
 }
 
-int getNextMinForTs(int ts){
+int getNextMinForTs(time_t ts){
  // Returns a timestamp value representing the start of the minute following the one in which 'ts' occurs
 	ts += SECS_PER_MIN;
-	struct tm *t = localtime((time_t *) &ts);
+	struct tm *t = localtime(&ts);
 
 	if (t->tm_sec == 0 ){
 	 // We were exactly on the minute, so return the ts that was passed in
@@ -103,13 +103,13 @@ int getNextMinForTs(int ts){
 	}
 }
 
-int getYearFromTs(int ts){
+int getYearFromTs(time_t ts){
  // Returns the year in which 'ts' occurs
-	struct tm *t = localtime((time_t *) &ts);
+	struct tm *t = localtime(&ts);
 	return 1900 + (t->tm_year);
 }
 
-int addToDate(int ts, char unit, int num){
+time_t addToDate(time_t ts, char unit, int num){
  // Returns a timestamp value obtained by adding the specified number of hours/days/months/years to the 'ts' argument
 	if (unit == 'h'){
 		return ts + (3600 * num);

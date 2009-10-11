@@ -6,8 +6,6 @@
 #include "capture.h"
 #include "CuTest.h"
 
-static int makeTs(const char* dateTxt);
-
 void testGetCurrentYearForTs(CuTest *tc){
     CuAssertIntEquals(tc, makeTs("1970-01-01 00:00:00"), getCurrentYearForTs(makeTs("1970-05-26 10:01:00")));
     CuAssertIntEquals(tc, makeTs("2009-01-01 00:00:00"), getCurrentYearForTs(makeTs("2009-01-01 00:00:00")));
@@ -76,12 +74,6 @@ void testAddToDate(CuTest *tc){
     CuAssertIntEquals(tc, makeTs("1970-05-28 10:01:00"), addToDate(makeTs("1970-05-26 10:01:00"), 'd', 2));
     CuAssertIntEquals(tc, makeTs("1970-08-26 10:01:00"), addToDate(makeTs("1970-05-26 10:01:00"), 'm', 3));
     CuAssertIntEquals(tc, makeTs("1974-05-26 10:01:00"), addToDate(makeTs("1970-05-26 10:01:00"), 'y', 4));
-}
-
-static int makeTs(const char* dateTxt){
-    struct tm t;
-    strptime(dateTxt, "%Y-%m-%d %H:%M:%S", &t);
-    return mktime(&t);
 }
 
 CuSuite* timeGetSuite() {

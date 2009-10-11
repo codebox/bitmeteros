@@ -2,7 +2,7 @@
 #include <time.h>
 #include <stdlib.h>
 
-int getTime(){
+time_t getTime(){
 	return time(NULL);
 }
 

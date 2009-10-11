@@ -4,11 +4,12 @@
 #include <stdarg.h>
 #include "capture.h"
 #include "CuTest.h"
+#include "test.h"
 
 void setup();
 static int callback(void *notUsed, int argc, char **argv, char **azColName);
 static int cbStoreRows(void *notUsed, int argc, char **argv, char **azColName);
-static int callBackCount, rowCount, now;
+static int callBackCount, rowCount;
 static int getRowCount();
 
 struct RowData {
@@ -21,20 +22,6 @@ struct RowData {
 };
 static struct RowData* storedData;
 
-void getDbPath(char* path){
-    strcpy(path, IN_MEMORY_DB);
-}
-
-void doSleep(int interval){
-
-}
-void getLogPath(char* path){
-    strcpy(path, "");
-}
-int getTime(){
-    return now;
-}
-
 void testUpdateDbNull(CuTest *tc) {
     int rowsBefore = getRowCount();
     updateDb(1,1,NULL);
@@ -44,9 +31,9 @@ void testUpdateDbNull(CuTest *tc) {
 
 void testUpdateDbMultiple(CuTest *tc) {
     int rowsBefore = getRowCount();
-    struct BwData data3 = { 3, 3, 5, "eth0", NULL};
-    struct BwData data2 = { 2, 2, 5, "eth1", &data3};
-    struct BwData data1 = { 1, 1, 5, "eth2", &data2};
+    struct Data data3 = { 3, 3, 5, 1, "eth0", NULL};
+    struct Data data2 = { 2, 2, 5, 1, "eth1", &data3};
+    struct Data data1 = { 1, 1, 5, 1, "eth2", &data2};
 
     updateDb(1,1,&data1);
     int rowsAfter = getRowCount();
@@ -54,18 +41,20 @@ void testUpdateDbMultiple(CuTest *tc) {
 }
 
 void testGetNextCompressTime(CuTest *tc){
-    now = 1234;
-    CuAssertIntEquals(tc, 1234 + 3600, getNextCompressTime());
+    int now = 1234;
+    setTime(now);
+    CuAssertIntEquals(tc, now + 3600, getNextCompressTime());
 }
 
 void testCompressSec1Adapter(CuTest *tc){
-    now = 7200;
-    executeSql("delete from data", NULL);
-    executeSql("insert into data values (3601, 1, 'eth0',  1,  1)", NULL);
-    executeSql("insert into data values (3600, 1, 'eth0',  2,  2)", NULL);
-    executeSql("insert into data values (3599, 1, 'eth0',  4,  4)", NULL);
-    executeSql("insert into data values (3598, 1, 'eth0',  8,  8)", NULL);
-    executeSql("insert into data values (3597, 1, 'eth0', 16, 16)", NULL);
+    int now = 7200;
+    setTime(now);
+    emptyDb();
+    addDbRow(3601, 1, "eth0",  1,  1);
+    addDbRow(3600, 1, "eth0",  2,  2);
+    addDbRow(3599, 1, "eth0",  4,  4);
+    addDbRow(3598, 1, "eth0",  8,  8);
+    addDbRow(3597, 1, "eth0", 16, 16);
     compressDb();
 
     struct RowData row1 = {3601, 1,   1,  1, "eth0", NULL};
@@ -75,17 +64,18 @@ void testCompressSec1Adapter(CuTest *tc){
 }
 
 void testCompressSecMultiAdapters(CuTest *tc){
-    now = 7200;
-    executeSql("delete from data", NULL);
-    executeSql("insert into data values (3601, 1, 'eth0',  1,  1)", NULL);
-    executeSql("insert into data values (3601, 1, 'eth1',  2,  2)", NULL);
-    executeSql("insert into data values (3601, 1, 'eth2',  4,  4)", NULL);
-    executeSql("insert into data values (3600, 1, 'eth0',  8,  8)", NULL);
-    executeSql("insert into data values (3600, 1, 'eth1', 16, 16)", NULL);
-    executeSql("insert into data values (3600, 1, 'eth2', 32, 32)", NULL);
-    executeSql("insert into data values (3599, 1, 'eth0', 64, 64)", NULL);
-    executeSql("insert into data values (3598, 1, 'eth1',128,128)", NULL);
-    executeSql("insert into data values (3597, 1, 'eth2',256,256)", NULL);
+    int now = 7200;
+    setTime(now);
+    emptyDb();
+    addDbRow(3601, 1, "eth0",  1,  1);
+    addDbRow(3601, 1, "eth1",  2,  2);
+    addDbRow(3601, 1, "eth2",  4,  4);
+    addDbRow(3600, 1, "eth0",  8,  8);
+    addDbRow(3600, 1, "eth1", 16, 16);
+    addDbRow(3600, 1, "eth2", 32, 32);
+    addDbRow(3599, 1, "eth0", 64, 64);
+    addDbRow(3598, 1, "eth1",128,128);
+    addDbRow(3597, 1, "eth2",256,256);
     compressDb();
 
     struct RowData row1 = {3601, 1,    1,   1, "eth0", NULL};
@@ -99,23 +89,24 @@ void testCompressSecMultiAdapters(CuTest *tc){
 }
 
 void testCompressSecMultiIterations(CuTest *tc){
-    now = 7200;
-    executeSql("delete from data", NULL);
-    executeSql("insert into data values (3601, 1, 'eth0',    1,    1)", NULL);
-    executeSql("insert into data values (3601, 1, 'eth1',    2,    2)", NULL);
-    executeSql("insert into data values (3601, 1, 'eth2',    4,    4)", NULL);
-    executeSql("insert into data values (3600, 1, 'eth0',    8,    8)", NULL);
-    executeSql("insert into data values (3600, 1, 'eth1',   16,   16)", NULL);
-    executeSql("insert into data values (3600, 1, 'eth2',   32,   32)", NULL);
-    executeSql("insert into data values (3599, 1, 'eth0',   64,   64)", NULL);
-    executeSql("insert into data values (3598, 1, 'eth1',  128,  128)", NULL);
-    executeSql("insert into data values (3597, 1, 'eth2',  256,  256)", NULL);
-    executeSql("insert into data values (3540, 1, 'eth0',  512,  512)", NULL);
-    executeSql("insert into data values (3540, 1, 'eth1', 1024, 1024)", NULL);
-    executeSql("insert into data values (3540, 1, 'eth2', 2048, 2048)", NULL);
-    executeSql("insert into data values (3539, 1, 'eth0', 4096, 4096)", NULL);
-    executeSql("insert into data values (3538, 1, 'eth1', 8192, 8192)", NULL);
-    executeSql("insert into data values (3537, 1, 'eth2',16384,16384)", NULL);
+    int now = 7200;
+    setTime(now);
+    emptyDb();
+    addDbRow(3601, 1, "eth0",    1,    1);
+    addDbRow(3601, 1, "eth1",    2,    2);
+    addDbRow(3601, 1, "eth2",    4,    4);
+    addDbRow(3600, 1, "eth0",    8,    8);
+    addDbRow(3600, 1, "eth1",   16,   16);
+    addDbRow(3600, 1, "eth2",   32,   32);
+    addDbRow(3599, 1, "eth0",   64,   64);
+    addDbRow(3598, 1, "eth1",  128,  128);
+    addDbRow(3597, 1, "eth2",  256,  256);
+    addDbRow(3540, 1, "eth0",  512,  512);
+    addDbRow(3540, 1, "eth1", 1024, 1024);
+    addDbRow(3540, 1, "eth2", 2048, 2048);
+    addDbRow(3539, 1, "eth0", 4096, 4096);
+    addDbRow(3538, 1, "eth1", 8192, 8192);
+    addDbRow(3537, 1, "eth2",16384,16384);
     compressDb();
 
     struct RowData row1 = {3601, 1,     1,    1, "eth0", NULL};
@@ -132,13 +123,14 @@ void testCompressSecMultiIterations(CuTest *tc){
 }
 
 void testCompressMin1Adapter(CuTest *tc){
-    now = 86400 + 3600;
-    executeSql("delete from data", NULL);
-    executeSql("insert into data values (3601, 60, 'eth0',  1,  1)", NULL);
-    executeSql("insert into data values (3600, 60, 'eth0',  2,  2)", NULL);
-    executeSql("insert into data values (3599, 60, 'eth0',  4,  4)", NULL);
-    executeSql("insert into data values (3598, 60, 'eth0',  8,  8)", NULL);
-    executeSql("insert into data values (3597, 60, 'eth0', 16, 16)", NULL);
+    int now = 86400 + 3600;
+    setTime(now);
+    emptyDb();
+    addDbRow(3601, 60, "eth0",  1,  1);
+    addDbRow(3600, 60, "eth0",  2,  2);
+    addDbRow(3599, 60, "eth0",  4,  4);
+    addDbRow(3598, 60, "eth0",  8,  8);
+    addDbRow(3597, 60, "eth0", 16, 16);
     compressDb();
 
     struct RowData row1 = {3601,   60,   1,  1, "eth0", NULL};
@@ -148,17 +140,18 @@ void testCompressMin1Adapter(CuTest *tc){
 }
 
 void testCompressMinMultiAdapters(CuTest *tc){
-    now = 86400 + 3600;
-    executeSql("delete from data", NULL);
-    executeSql("insert into data values (3601, 60, 'eth0',  1,  1)", NULL);
-    executeSql("insert into data values (3601, 60, 'eth1',  2,  2)", NULL);
-    executeSql("insert into data values (3601, 60, 'eth2',  4,  4)", NULL);
-    executeSql("insert into data values (3600, 60, 'eth0',  8,  8)", NULL);
-    executeSql("insert into data values (3600, 60, 'eth1', 16, 16)", NULL);
-    executeSql("insert into data values (3600, 60, 'eth2', 32, 32)", NULL);
-    executeSql("insert into data values (3599, 60, 'eth0', 64, 64)", NULL);
-    executeSql("insert into data values (3598, 60, 'eth1',128,128)", NULL);
-    executeSql("insert into data values (3597, 60, 'eth2',256,256)", NULL);
+    int now = 86400 + 3600;
+    setTime(now);
+    emptyDb();
+    addDbRow(3601, 60, "eth0",  1,  1);
+    addDbRow(3601, 60, "eth1",  2,  2);
+    addDbRow(3601, 60, "eth2",  4,  4);
+    addDbRow(3600, 60, "eth0",  8,  8);
+    addDbRow(3600, 60, "eth1", 16, 16);
+    addDbRow(3600, 60, "eth2", 32, 32);
+    addDbRow(3599, 60, "eth0", 64, 64);
+    addDbRow(3598, 60, "eth1",128,128);
+    addDbRow(3597, 60, "eth2",256,256);
     compressDb();
 
     struct RowData row1 = {3601,   60,   1,   1, "eth0", NULL};
@@ -198,13 +191,7 @@ void checkTableContents(CuTest *tc, int rowCount, ...){
 }
 
 void setup(){
-    openDb();
-    executeSql("create table config (key, value)", NULL);
-    executeSql("insert into config (key,value) values ('cap.compress_interval',  3600)", NULL);
-    executeSql("insert into config (key,value) values ('cap.keep_sec_limit',     3600)", NULL);
-    executeSql("insert into config (key,value) values ('cap.keep_min_limit',     86400)", NULL);
-    executeSql("insert into config (key,value) values ('cap.busy_wait_interval', 60000)", NULL);
-    executeSql("create table data (ts,dr,ad,dl,ul)", NULL);
+    setUpDbForTest();
     setupDb();
 }
 
