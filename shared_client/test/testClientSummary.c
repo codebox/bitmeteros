@@ -1,16 +1,49 @@
+/*
+ * BitMeterOS v0.1.5
+ * http://codebox.org.uk/bitmeterOS
+ *
+ * Copyright (c) 2009 Rob Dawson
+ *
+ * Licensed under the GNU General Public License
+ * http://www.gnu.org/licenses/gpl.txt
+ *
+ * This file is part of BitMeterOS.
+ *
+ * BitMeterOS is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * BitMeterOS is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Build Date: Sun, 25 Oct 2009 17:18:38 +0000
+ */
+
 #include "test.h"
 #include "common.h"
 #include "client.h"
 #include "CuTest.h"
 
+/*
+Contains unit tests for the clientSummary module.
+*/
+
 static void checkSummary(CuTest *, struct Summary, time_t, time_t, BW_INT, BW_INT, BW_INT, BW_INT, BW_INT, BW_INT, BW_INT, BW_INT);
 
 void testSummaryEmptyDb(CuTest *tc) {
+ // Check that we behave correctly when the data table is empty	
     emptyDb();
     checkSummary(tc, getSummaryValues(), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 }
 
 void testSummaryOneEntry(CuTest *tc) {
+ // Check that we behave correctly when the data table contains only 1 row
     time_t now = makeTs("2009-01-01 10:00:00");
     setTime(now);
     emptyDb();
@@ -19,6 +52,7 @@ void testSummaryOneEntry(CuTest *tc) {
 }
 
 void testSummaryTwoEntriesSameTime(CuTest *tc) {
+ // Check that we behave correctly when the data table contains 2 entries with the same timestamp
     time_t now = makeTs("2009-01-01 10:00:00");
     setTime(now);
     emptyDb();
@@ -28,6 +62,7 @@ void testSummaryTwoEntriesSameTime(CuTest *tc) {
 }
 
 void testSummaryTwoEntriesDifferentTimes(CuTest *tc) {
+ // Check that we behave correctly when the data table contains 2 entries with different timestamps
     time_t now = makeTs("2009-01-01 10:00:00");
     setTime(now);
     emptyDb();
@@ -37,6 +72,7 @@ void testSummaryTwoEntriesDifferentTimes(CuTest *tc) {
 }
 
 void testSummaryEntriesSpanningDayBoundary(CuTest *tc) {
+ // Check that results are correct when our data spans a day boundary
     time_t now = makeTs("2009-01-02 00:00:01");
     setTime(now);
     emptyDb();
@@ -47,6 +83,7 @@ void testSummaryEntriesSpanningDayBoundary(CuTest *tc) {
 }
 
 void testSummaryEntriesSpanningMonthBoundary(CuTest *tc) {
+ // Check that results are correct when our data spans a month boundary	
     time_t now = makeTs("2009-02-01 00:00:01");
     setTime(now);
     emptyDb();
@@ -57,6 +94,7 @@ void testSummaryEntriesSpanningMonthBoundary(CuTest *tc) {
 }
 
 void testSummaryEntriesSpanningYearBoundary(CuTest *tc) {
+ // Check that results are correct when our data spans a year boundary	
     time_t now = makeTs("2009-01-01 00:00:01");
     setTime(now);
     emptyDb();
@@ -67,6 +105,7 @@ void testSummaryEntriesSpanningYearBoundary(CuTest *tc) {
 }
 
 void testSummaryMultipleEntries(CuTest *tc) {
+ // Check that results are correct when we have multiple entries spread over a large date range
     time_t now = makeTs("2009-03-02 10:00:00");
     setTime(now);
     emptyDb();
@@ -96,6 +135,7 @@ void testSummaryMultipleEntries(CuTest *tc) {
 
 static void checkSummary(CuTest *tc, struct Summary summary, time_t tsMin, time_t tsMax,
         BW_INT todayDl, BW_INT todayUl, BW_INT monthDl, BW_INT monthUl, BW_INT yearDl, BW_INT yearUl, BW_INT totalDl, BW_INT totalUl){
+ // Helper function used to verify the contents of a Summary struct        	
     CuAssertIntEquals(tc, tsMin,   summary.tsMin);
     CuAssertIntEquals(tc, tsMax,   summary.tsMax);
     CuAssertIntEquals(tc, todayDl, summary.today->dl);

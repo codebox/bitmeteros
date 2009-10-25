@@ -1,3 +1,30 @@
+/*
+ * BitMeterOS v0.1.5
+ * http://codebox.org.uk/bitmeterOS
+ *
+ * Copyright (c) 2009 Rob Dawson
+ *
+ * Licensed under the GNU General Public License
+ * http://www.gnu.org/licenses/gpl.txt
+ *
+ * This file is part of BitMeterOS.
+ *
+ * BitMeterOS is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * BitMeterOS is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Build Date: Sun, 25 Oct 2009 17:18:38 +0000
+ */
+
 #include "test.h"
 #include "common.h"
 #include <string.h>
@@ -6,9 +33,16 @@
 #include "capture.h"
 #include "CuTest.h"
 
+/*
+Contains unit tests for the 'common' module.
+*/
+
 static void doTestFormatAmount(CuTest *, BW_INT , char* , char* , char *, char* );
+static void doTestToTime(CuTest *tc, int ts, char* expected);
+static void doTestToDate(CuTest *tc, int ts, char* expected);
 
 void testFormatAmounts(CuTest *tc){
+ // Check that various amounts are formatted correctly, using all combinations of binary/decimal and full/abbreviated units
     doTestFormatAmount(tc, 0, "0.00 B ", "0.00 bytes", "0.00 B ", "0.00 bytes");
     doTestFormatAmount(tc, 1, "1.00 B ", "1.00 bytes", "1.00 B ", "1.00 bytes");
 
@@ -44,6 +78,7 @@ void testFormatAmounts(CuTest *tc){
 }
 
 static void doTestFormatAmount(CuTest *tc, BW_INT amount, char* binaryShort, char* binaryLong, char *decimalShort, char* decimalLong){
+ // Helper function for checking value formatting using all combinations of binary/decimal and full/abbreviated units
     char txt[24];
 
     formatAmount(amount, 1, 1, txt);
@@ -57,10 +92,10 @@ static void doTestFormatAmount(CuTest *tc, BW_INT amount, char* binaryShort, cha
 
     formatAmount(amount, 0, 0, txt);
     CuAssertStrEquals(tc, decimalLong, txt);
-
 }
 
 void testToTime(CuTest *tc){
+ // Check that the 'toTime' function correctly extracts the time component from various timestamps
     doTestToTime(tc, 0,  "00:00:00");
     doTestToTime(tc, 1,  "00:00:01");
     doTestToTime(tc, 60, "00:01:00");
@@ -72,19 +107,24 @@ void testToTime(CuTest *tc){
     doTestToTime(tc, makeTs("2000-01-01 12:12:12"), "12:12:12");
     doTestToTime(tc, makeTs("2000-01-01 23:59:59"), "23:59:59");
 }
-void doTestToTime(CuTest *tc, int ts, char* expected){
+static void doTestToTime(CuTest *tc, int ts, char* expected){
+ // Helper function to check that the 'toTime' function correctly extracts the time component of a timestamp
     char actual[20];
     toTime(actual, ts);
     CuAssertStrEquals(tc, expected, actual);
 }
+
 void testToDate(CuTest *tc){
+ // Check that the 'toDate' function correctly extracts the date component from various timestamps
     doTestToDate(tc, 0,  "1970-01-01");
 
     doTestToDate(tc, makeTs("2000-01-01 00:00:00"), "2000-01-01");
     doTestToDate(tc, makeTs("2008-12-31 00:00:00"), "2008-12-31");
     doTestToDate(tc, makeTs("2008-02-29 00:00:00"), "2008-02-29");
 }
-void doTestToDate(CuTest *tc, int ts, char* expected){
+
+static void doTestToDate(CuTest *tc, int ts, char* expected){
+ // Helper function to check that the 'toDate' function correctly extracts the date component of a timestamp
     char actual[20];
     toDate(actual, ts);
     CuAssertStrEquals(tc, expected, actual);

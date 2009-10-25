@@ -1,11 +1,43 @@
+/*
+ * BitMeterOS v0.1.5
+ * http://codebox.org.uk/bitmeterOS
+ *
+ * Copyright (c) 2009 Rob Dawson
+ *
+ * Licensed under the GNU General Public License
+ * http://www.gnu.org/licenses/gpl.txt
+ *
+ * This file is part of BitMeterOS.
+ *
+ * BitMeterOS is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * BitMeterOS is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Build Date: Sun, 25 Oct 2009 17:18:38 +0000
+ */
+
 #include "test.h"
 #include "common.h"
 #include "client.h"
 #include "CuTest.h"
 
+/*
+Contains unit tests for the clientQuery module.
+*/
+
 static void checkQueryResults(CuTest *tc, struct Data* data, int dl, int ul);
 
 void testQueryEmptyDb(CuTest *tc) {
+ // Check that we behave correctly when the data table is empty
     emptyDb();
 
     struct Data* data = getQueryValues(makeTs("2009-03-03 08:00:00"), makeTs("2009-03-03 11:00:00"), QUERY_GROUP_HOURS);
@@ -13,6 +45,7 @@ void testQueryEmptyDb(CuTest *tc) {
 }
 
 void testQueryNoDataInRange(CuTest *tc) {
+ // Check that we behave correctly when no data matches the criteria
     emptyDb();
 
     addDbRow(makeTs("2009-03-03 08:00:00"), 3600, "eth0", 1, 2); // covers 07:00-08:00 so out of range
@@ -23,6 +56,7 @@ void testQueryNoDataInRange(CuTest *tc) {
 }
 
 void testQueryDataInRangeHours(CuTest *tc) {
+ // Check that results are correct when we group by hour
     emptyDb();
 
     addDbRow(makeTs("2009-03-03 08:00:00"), 3600, "eth0", 1, 11); // covers 07:00-08:00 so out of range
@@ -42,6 +76,7 @@ void testQueryDataInRangeHours(CuTest *tc) {
 }
 
 void testQueryDataInRangeDays(CuTest *tc) {
+ //  // Check that results are correct when we group by day
     emptyDb();
 
     addDbRow(makeTs("2009-03-03 00:00:00"), 3600, "eth0", 1, 11); // out of range
@@ -68,6 +103,7 @@ void testQueryDataInRangeDays(CuTest *tc) {
 }
 
 void testQueryDataInRangeMonths(CuTest *tc) {
+ // Check that results are correct when we group by month
     emptyDb();
 
     addDbRow(makeTs("2009-03-01 00:00:00"), 3600, "eth0", 1, 101); // out of range
@@ -94,6 +130,7 @@ void testQueryDataInRangeMonths(CuTest *tc) {
 }
 
 void testQueryDataInRangeYears(CuTest *tc) {
+ // Check that results are correct when we group by year
     emptyDb();
 
     addDbRow(makeTs("2007-01-01 00:00:00"), 3600, "eth0", 1, 101); // out of range
@@ -119,7 +156,51 @@ void testQueryDataInRangeYears(CuTest *tc) {
     CuAssertTrue(tc, data == NULL);
 }
 
+void testQueryDataNarrowValueRangeSingleResult(CuTest *tc) {
+ // Check that results are correct when the range of values in the db is narrower than the range requested
+    emptyDb();
+
+    addDbRow(makeTs("2008-02-01 01:00:00"), 3600, "eth0", 1, 101);
+    addDbRow(makeTs("2008-03-31 23:00:00"), 3600, "eth0", 2, 102);
+    addDbRow(makeTs("2008-04-01 00:00:00"), 3600, "eth0", 3, 103);
+
+    struct Data* data = getQueryValues(makeTs("2008-01-01 00:00:00"), makeTs("2009-01-01 00:00:00"), QUERY_GROUP_YEARS);
+
+    checkData(tc, data, makeTs("2008-04-01 00:00:00"), 5180401, NULL, 6, 306);
+    data = data->next;
+
+    CuAssertTrue(tc, data == NULL);
+}
+
+void testQueryDataNarrowValueRangeMultiResults(CuTest *tc) {
+ // Check that results are correct when the range of values in the db is narrower than the range requested
+    emptyDb();
+
+    addDbRow(makeTs("2007-05-01 01:00:00"), 3600, "eth0", 1, 101);
+
+    addDbRow(makeTs("2008-02-01 01:00:00"), 3600, "eth0", 2, 102);
+    addDbRow(makeTs("2008-03-31 23:00:00"), 3600, "eth0", 3, 103);
+    addDbRow(makeTs("2008-04-01 00:00:00"), 3600, "eth0", 4, 104);
+
+    addDbRow(makeTs("2009-05-01 01:00:00"), 3600, "eth0", 5, 105);
+
+    struct Data* data = getQueryValues(makeTs("2006-01-01 00:00:00"), makeTs("2011-01-01 00:00:00"), QUERY_GROUP_YEARS);
+
+    checkData(tc, data, makeTs("2008-01-01 00:00:00"), 21164401, NULL, 1, 101);
+
+    data = data->next;
+    checkData(tc, data, makeTs("2009-01-01 00:00:00"), 31622400, NULL, 9, 309);
+
+    data = data->next;
+    checkData(tc, data, makeTs("2009-05-01 01:00:00"), 10371600, NULL, 5, 105);
+
+    data = data->next;
+
+    CuAssertTrue(tc, data == NULL);
+}
+
 void testQueryLargeQueryRange(CuTest *tc) {
+ // Check that results are correct when we dont group, and just produce a total
     emptyDb();
 
     addDbRow(makeTs("2009-03-03 08:00:00"), 3600, "eth0", 1, 11);
@@ -144,5 +225,7 @@ CuSuite* clientQueryGetSuite() {
     SUITE_ADD_TEST(suite, testQueryDataInRangeMonths);
     SUITE_ADD_TEST(suite, testQueryDataInRangeYears);
     SUITE_ADD_TEST(suite, testQueryLargeQueryRange);
+    SUITE_ADD_TEST(suite, testQueryDataNarrowValueRangeSingleResult);
+    SUITE_ADD_TEST(suite, testQueryDataNarrowValueRangeMultiResults);
     return suite;
 }

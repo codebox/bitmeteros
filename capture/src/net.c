@@ -1,9 +1,38 @@
+/*
+ * BitMeterOS v0.1.5
+ * http://codebox.org.uk/bitmeterOS
+ *
+ * Copyright (c) 2009 Rob Dawson
+ *
+ * Licensed under the GNU General Public License
+ * http://www.gnu.org/licenses/gpl.txt
+ *
+ * This file is part of BitMeterOS.
+ *
+ * BitMeterOS is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * BitMeterOS is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Build Date: Sun, 25 Oct 2009 17:18:38 +0000
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include "capture.h"
 #include "common.h"
 
-/* Contains platform-specific code for obtaining the network stats that we need */
+/*
+Contains platform-specific code for obtaining the network stats that we need.
+*/
 
 #ifdef __APPLE__
 	#include <sys/socket.h>
@@ -14,36 +43,42 @@
 	#include <net/route.h>
 
 	struct Data* extractDataFromIf(struct if_msghdr2 *);
+
 	struct Data* getData(){
 		int mib[6] = {CTL_NET, PF_ROUTE, 0, 0, NET_RT_IFLIST2, 0};
 		size_t len;
 		int rc = sysctl(mib, 6, NULL, &len, NULL, 0);
-		if (rc<0){
+		if (rc < 0){
 		    logMsg(LOG_ERR, "sysctl returned %d\n", rc);
 			return NULL;
 		}
+
 		char *buf = malloc(len);
 		rc = sysctl(mib, 6, buf, &len, NULL, 0);
-		if (rc<0){
+		if (rc < 0){
 			free(buf);
 			logMsg(LOG_ERR, "sysctl returned %d\n", rc);
 			return NULL;
 		}
-		int offset=0;
 
+		int offset=0;
+		int isLoopback;
 		struct Data* firstData = NULL;
 		struct Data* thisData = NULL;
-
 		struct if_msghdr* hdr;
 
 		while (offset < len){
 			hdr = (struct if_msghdr *) (buf + offset);
 
-			if((hdr->ifm_type == RTM_IFINFO2) && (hdr->ifm_data.ifi_type != IFT_LOOP)){
-				struct if_msghdr2 *hdr2 = (struct if_msghdr2 *)hdr;
-				struct Data* thisData = extractDataFromIf(hdr2);
+			if ((hdr->ifm_type == RTM_IFINFO2)) {
+				isLoopback = (hdr->ifm_data.ifi_type == IFT_LOOP);
+			 // Ignore loopback traffic
+				if (!isLoopback){
+					struct if_msghdr2 *hdr2 = (struct if_msghdr2 *)hdr;
+					struct Data* thisData = extractDataFromIf(hdr2);
 
-				appendData(&firstData, thisData);
+					appendData(&firstData, thisData);
+				}
 			}
 
 			offset += hdr->ifm_msglen;
@@ -54,6 +89,7 @@
 	}
 
 	struct Data* extractDataFromIf(struct if_msghdr2 *ifHdr){
+	 // Allocate a new Data struct, and populate the dl, ul, and ad parts of it
 		struct Data* data = allocData();
 		data->dl = ifHdr->ifm_data.ifi_ibytes;
 	    data->ul = ifHdr->ifm_data.ifi_obytes;
@@ -91,8 +127,10 @@
 			if ((colonPos = strchr(line, ':')) != NULL ){
 				char* ifName = calloc(32, 1);
 				strncpy(ifName, line, colonPos-line);
+				//TODO ignore loopback
+				thisData = parseProcNetDevLine(ifName, colonPos + 1);
 
-				thisData = parseProcNetDevLine(ifName, colonPos+1);
+				free(ifName);
 
 				appendData(&firstData, thisData);
 			}
@@ -103,9 +141,11 @@
 	}
 
 	struct Data* parseProcNetDevLine(char* ifName, char* line){
+	 // Allocate a new Data struct, and populate the dl, ul, and ad parts of it
 		unsigned long dummy, dl, ul;
 		sscanf(line, "%lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu",
-			&dl, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &ul, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy);
+				&dl, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy,
+				&ul, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy);
 
 		struct Data* data = allocData();
 		data->dl = dl;
@@ -123,7 +163,7 @@
 	#include <ws2tcpip.h>
 	#include <iphlpapi.h>
 	static void logErrMsg(char* msg, int rc);
-	static char* makeHexString(byte*);
+	//static char* makeHexString(byte*);
 
 	struct Data* getData(){
 		MIB_IFTABLE* pIfTable = (MIB_IFTABLE *) malloc(sizeof (MIB_IFTABLE));
@@ -147,14 +187,19 @@
 			int i;
 			for (i = 0; i < numEntries; i++) {
 			    pIfRow = (MIB_IFROW *) & pIfTable->table[i];
+			 // Ignore loopback traffic
 			    if (pIfRow->dwType != IF_TYPE_SOFTWARE_LOOPBACK){
    					thisData = allocData();
 				    thisData->dl = pIfRow->dwInOctets;
 				    thisData->ul = pIfRow->dwOutOctets;
 
-				    char hexString[MAX_ADDR_BYTES * 2 + 1];
-				    makeHexString(hexString, pIfRow->dwPhysAddrLen){
-				    setAddress(thisData, hexString);
+				    //char hexString[MAX_ADDR_BYTES * 2 + 1];
+				    //makeHexString(hexString, pIfRow->dwPhysAddrLen){
+				    //setAddress(thisData, hexString);
+				    char addr[pIfRow->dwPhysAddrLen + 1];
+                    memcpy(addr, &(pIfRow->bPhysAddr), pIfRow->dwPhysAddrLen);
+                    addr[pIfRow->dwPhysAddrLen] = 0;
+                    setAddress(thisData, addr);
 
 					appendData(&firstData, thisData);
 				}
@@ -170,17 +215,6 @@
 		}
 
 		return firstData;
-	}
-
-	char HEX[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
-	static char* makeHexString(char* hexString, byte* data){ //TODO test
-		byte* thisByte;
-		for(int i = 0; i < MAX_ADDR_BYTES; i++){
-			thisByte = data[i];
-			hexString[j*2]     = HEX[(thisByte >> 4) & 0xF];
-			hexString[j*2 + 1] = HEX[thisByte & 0x0F];
-		}
-		hexString[MAX_ADDR_BYTES * 2] = 0;
 	}
 
 	static void logErrMsg(char* msg, int rc) {

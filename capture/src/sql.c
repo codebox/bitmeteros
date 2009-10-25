@@ -1,17 +1,47 @@
+/*
+ * BitMeterOS v0.1.5
+ * http://codebox.org.uk/bitmeterOS
+ *
+ * Copyright (c) 2009 Rob Dawson
+ *
+ * Licensed under the GNU General Public License
+ * http://www.gnu.org/licenses/gpl.txt
+ *
+ * This file is part of BitMeterOS.
+ *
+ * BitMeterOS is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * BitMeterOS is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Build Date: Sun, 25 Oct 2009 17:18:38 +0000
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "capture.h"
 #include <sqlite3.h>
 #include "common.h"
 
-/*  Contains code that interacts with the database on behalf of the BitMeter Data Capture application. At a high level there
-    are two database operations that are performed:
-      - Inserting new rows into the 'data' table (see updateDb)
-      - Compressing the 'data' table by amalgamating multiple older rows with small 'dr' values into a single row with a
-        larger 'dr' value (see compressDb). This compression is performed at regular intervals, and also when the application
-        starts up. */
+/*
+Contains code that interacts with the database on behalf of the BitMeter Data Capture application. At a high level there
+are two database operations that are performed:
+  - Inserting new rows into the 'data' table (see updateDb)
+  - Compressing the 'data' table by amalgamating multiple older rows with small 'dr' values into a single row with a
+    larger 'dr' value (see compressDb). This compression is performed at regular intervals, and also when the application
+    starts up.
+*/
 
-static sqlite3_stmt *stmtInsertData, *stmtSelectConfig, *stmtSelectForCompression, *stmtSelectMinTsForDr, *stmtDeleteCompressed;
+static sqlite3_stmt *stmtInsertData, *stmtSelectForCompression, *stmtSelectMinTsForDr, *stmtDeleteCompressed;
 
 /* Populated from the 'config' table value with key 'cap.keep_sec_limit', this represents the age (in seconds) beyond which
    data table rows with a 'dr' value of 1 will be compressed. By default this is set to 3600, meaning that the application
@@ -28,17 +58,15 @@ static int keepPerMinLimit;
    application is restarted, since a compression is performed when the app is initialised - this does no harm. */
 static int compressInterval;
 
-static int getConfigInt(const char* key);
-static int insertData(int ts, int dr, struct Data* data);
+static int insertDataPartial(int ts, int dr, struct Data* data);
 static int compressDbStage(int secKeepInterval, int oldDr, int newDr, int (*fnRoundUp)(int) );
 
-int setupDb(){
+void setupDb(){
  // Initialise things, this must be called first
-	prepareSql(&stmtInsertData,           "insert into data (ts,dr,ad,dl,ul) values (?,?,?,?,?)");
-	prepareSql(&stmtSelectConfig,         "select value from config where key=?");
-	prepareSql(&stmtSelectMinTsForDr,     "select min(ts) from data where dr=?");
-	prepareSql(&stmtSelectForCompression, "select ad, sum(dl), sum(ul) from (select * from data where ts<=? and dr=?) group by ad;");
-	prepareSql(&stmtDeleteCompressed,     "delete from data where ts<=? and dr=?");
+	prepareSql(&stmtInsertData,           "INSERT INTO data (ts,dr,ad,dl,ul) VALUES (?,?,?,?,?)");
+	prepareSql(&stmtSelectMinTsForDr,     "SELECT MIN(ts) FROM data WHERE dr=?");
+	prepareSql(&stmtSelectForCompression, "SELECT ad, SUM(dl), SUM(ul) FROM (SELECT * FROM data WHERE ts<=? AND dr=?) GROUP BY ad;");
+	prepareSql(&stmtDeleteCompressed,     "DELETE FROM data WHERE ts<=? AND dr=?");
 
  // Read various values out of the 'config' table
 	int busyWaitInterval = getConfigInt("cap.busy_wait_interval");
@@ -51,8 +79,10 @@ int setupDb(){
 
 int updateDb(int ts, int dr, struct Data* diffList){
     int status = SUCCESS;
+
+ // Insert all the Data structs into the d/b, stopping if there are any failures
 	while (diffList != NULL) {
-		status = insertData(ts, dr, diffList);
+		status = insertDataPartial(ts, dr, diffList);
 		if (status == FAIL){
             break;
 		}
@@ -85,7 +115,7 @@ int getNextCompressTime(){
 }
 
 
-static int doInsert(int ts, int dr, char* addr, int dl, int ul){
+static int doInsert(int ts, int dr, const char* addr, int dl, int ul){
  // Inserts a row with the specified values into the 'data' table
 	sqlite3_bind_int(stmtInsertData,  1, ts);
 	sqlite3_bind_int(stmtInsertData,  2, dr);
@@ -106,9 +136,14 @@ static int doInsert(int ts, int dr, char* addr, int dl, int ul){
   	return status;
 }
 
-static int insertData(int ts, int dr, struct Data* data){
+static int insertDataPartial(int ts, int dr, struct Data* data){
  // Inserts the data for a single Data struct into the 'data' table
 	return doInsert(ts, dr, data->ad, data->dl, data->ul);
+}
+
+int insertData(struct Data* data){
+ // Inserts the data for a single Data struct into the 'data' table
+	return doInsert(data->ts, data->dr, data->ad, data->dl, data->ul);
 }
 
 static int doDelete(int ts, int dr){
@@ -117,6 +152,7 @@ static int doDelete(int ts, int dr){
     gets called during a compressDb operation, to remove the old rows that have been amalgamated into a single row. */
 	sqlite3_bind_int(stmtDeleteCompressed, 1, ts);
 	sqlite3_bind_int(stmtDeleteCompressed, 2, dr);
+
 	int rc = sqlite3_step(stmtDeleteCompressed);
 	if (rc != SQLITE_DONE){
 		logMsg(LOG_ERR, "Failed to delete compressed rows for ts=%d dr=%d rc=%d error=%s\n", ts, dr, rc, getDbError());
@@ -124,6 +160,7 @@ static int doDelete(int ts, int dr){
 	} else {
         status = SUCCESS;
 	}
+
 	sqlite3_reset(stmtDeleteCompressed);
 
 	return status;
@@ -132,10 +169,11 @@ static int doDelete(int ts, int dr){
 static int doCompress(int ts, int oldDr, int newDr){
  // For each adapter, compresses rows older than 'ts' and with a 'dr' of oldDr, into a single row with 'dr' of newDr.
 	logMsg(LOG_INFO, "doCompress for %d\n", ts);
+
 	sqlite3_bind_int(stmtSelectForCompression, 1, ts);
 	sqlite3_bind_int(stmtSelectForCompression, 2, oldDr);
 
-	int rc, dlTotal, ulTotal, addrSize;
+	int rc, dlTotal, ulTotal;
 	const void *addr;
     int status = SUCCESS;
     int insertedOk, deletedOk;
@@ -179,6 +217,7 @@ static int getMinTs(int dr){
      // We found no rows with the specified 'dr' value
 		minTs = 0;
 	}
+
 	sqlite3_reset(stmtSelectMinTsForDr);
 
 	return minTs;
@@ -221,21 +260,4 @@ static int compressDbStage(int secKeepInterval, int oldDr, int newDr, int (*fnRo
     }
 
     return status;
-}
-
-static int getConfigInt(const char* key){
- // Return the specified value from the 'config' table
-	sqlite3_bind_text(stmtSelectConfig, 1, key, -1, SQLITE_TRANSIENT);
-	int rc = sqlite3_step(stmtSelectConfig);
-
-	int value;
-	if (rc == SQLITE_ROW){
-		value = sqlite3_column_int(stmtSelectConfig, 0);
-	} else {
-		logMsg(LOG_ERR, "Unable to retrieve config value for '%s' rc=%d error=%s\n", key, rc, getDbError());
-		value = -1;
-	}
-
-  	sqlite3_reset(stmtSelectConfig);
-  	return value;
 }

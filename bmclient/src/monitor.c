@@ -1,3 +1,30 @@
+/*
+ * BitMeterOS v0.1.5
+ * http://codebox.org.uk/bitmeterOS
+ *
+ * Copyright (c) 2009 Rob Dawson
+ *
+ * Licensed under the GNU General Public License
+ * http://www.gnu.org/licenses/gpl.txt
+ *
+ * This file is part of BitMeterOS.
+ *
+ * BitMeterOS is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * BitMeterOS is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Build Date: Sun, 25 Oct 2009 17:18:38 +0000
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -6,13 +33,18 @@
 #include "bmclient.h"
 #include "client.h"
 
+/*
+Contains the code that handles monitor requests made via the bmclient utility.
+*/
+
 static void sigIntHandler();
-static int stopNow=0;
+static int stopNow = FALSE;
 extern struct Prefs prefs;
-static void printBar(struct Data*);
-static void printText(struct Data*);
+static void printBar(BW_INT dl, BW_INT ul);
+static void printText(BW_INT dl, BW_INT ul);
 
 static void setDefaultPrefs(){
+ // Use these defaults if nothing else is specified by the user
 	if (prefs.monitorType == PREF_NOT_SET){
 		prefs.monitorType = PREF_MONITOR_TYPE_NUMS;
 	}
@@ -29,23 +61,39 @@ static void setDefaultPrefs(){
 
 void doMonitor(){
 	setDefaultPrefs();
+
+ // We are going to loop forever unless we get an interrupt
 	signal(SIGINT, sigIntHandler);
 
 	printf("Monitoring... (Ctrl-C to abort)\n");
 	struct Data* values;
 	int doBars = (prefs.monitorType == PREF_MONITOR_TYPE_BAR);
+	BW_INT dl, ul;
 
 	while(!stopNow){
-		values = getMonitorValues(getTime()-1);
+		dl = ul = 0;
+
+	 // Get the values for 1 second ago (values for the current second may not be in the d/b yet)
+		values = getMonitorValues(getTime() - 1);
+
 		if (values == NULL){
 		 // We print out zeroes if there is nothing from the db
             values = allocData();
 		}
 
+	 // We expect to get only 1 value, but may get more under certain conditions (eg heavily loaded system where query is delayed by blocking)
+		while(values != NULL){
+			dl += values->dl;
+			ul += values->ul;
+			values = values->next;
+		}
+
 		if (doBars){
-			printBar(values);
+		 // We need to 'draw' a bar to represent the data
+			printBar(dl, ul);
 		} else {
-			printText(values);
+		 // We just need to display the figures
+			printText(dl, ul);
 		}
 
 		freeData(values);
@@ -54,13 +102,13 @@ void doMonitor(){
 	printf("monitoring aborted.\n");
 }
 
-static void printBar(struct Data* values){
+static void printBar(BW_INT dl, BW_INT ul){
  /* We must draw a bar to represent either the upload/download speed, as well as
  	displaying a numeric value. */
 
  // This is where we put the numeric part
 	char amtTxt[20];
-	BW_INT amt = ((prefs.direction == PREF_DIRECTION_DL) ? values->dl : values->ul);
+	BW_INT amt = ((prefs.direction == PREF_DIRECTION_DL) ? dl : ul);
 	formatAmount(amt, 1, 1, amtTxt);
 
  // Work out how many characters this bar will occupy
@@ -77,10 +125,11 @@ static void printBar(struct Data* values){
 	}
 	printf("\n");
 }
-static void printText(struct Data* values){
-	printf("DL: %llu UL: %llu\n", values->dl, values->ul);
+
+static void printText(BW_INT dl, BW_INT ul){
+	printf("DL: %llu UL: %llu\n", dl, ul);
 }
 
 static void sigIntHandler(){
-	stopNow = 1;
+	stopNow = TRUE;
 }

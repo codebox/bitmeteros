@@ -1,12 +1,41 @@
+/*
+ * BitMeterOS v0.1.5
+ * http://codebox.org.uk/bitmeterOS
+ *
+ * Copyright (c) 2009 Rob Dawson
+ *
+ * Licensed under the GNU General Public License
+ * http://www.gnu.org/licenses/gpl.txt
+ *
+ * This file is part of BitMeterOS.
+ *
+ * BitMeterOS is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * BitMeterOS is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Build Date: Sun, 25 Oct 2009 17:18:38 +0000
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "capture.h"
 #include "common.h"
 #include <string.h>
 
-/*  Contains the high-level processing code that is invoked by the main processing loop of the application. The code
-    in here co-ordinates the various data capture and storage invocations, as well as performing the required initialisation,
-    and termination steps. */
+/*
+Contains the high-level code that is invoked by the main processing loop of the application. The code
+in here co-ordinates the various data capture and storage invocations, as well as performing the required
+initialisation, and termination steps.
+*/
 
 /* Holds the data captured during the previous invocation of processCapture, need to hold on to this so we can compare
    current values with previous ones and thereby calculate the differences. */
@@ -18,6 +47,7 @@ static int tsCompress;
 void setupCapture(){
  // Called once when the application starts - setup up the various db related things...
     openDb();
+    prepareDb();
 	setupDb();
 	compressDb();
 
@@ -29,7 +59,6 @@ int processCapture(){
     int status;
 
  // Called continuously by the main processing loop of the application
-	doSleep(1);
 	int ts = getTime();
 
  // Get the current values for each network adapter
@@ -41,7 +70,7 @@ int processCapture(){
  // Write the changes in values to the database
 	status = updateDb(ts, POLL_INTERVAL, diffList);
 
-	logBw(diffList);
+	logData(diffList);
 	freeData(diffList);
 	freeData(prevData);
 
@@ -117,7 +146,7 @@ struct Data* extractDiffs(struct Data* oldList, struct Data* newList){
 	return diffData;
 }
 
-void logBw(struct Data* data){
+void logData(struct Data* data){
 	while(data != NULL){
 		logMsg(LOG_INFO, "%d DL=%lu UL=%lu $s\n", getTime(), data->dl, data->ul, data->ad);
 		data = data->next;

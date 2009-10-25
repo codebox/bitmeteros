@@ -1,9 +1,41 @@
+/*
+ * BitMeterOS v0.1.5
+ * http://codebox.org.uk/bitmeterOS
+ *
+ * Copyright (c) 2009 Rob Dawson
+ *
+ * Licensed under the GNU General Public License
+ * http://www.gnu.org/licenses/gpl.txt
+ *
+ * This file is part of BitMeterOS.
+ *
+ * BitMeterOS is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * BitMeterOS is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Build Date: Sun, 25 Oct 2009 17:18:38 +0000
+ */
+
 #include "test.h"
 #include "common.h"
 #include "client.h"
 #include "CuTest.h"
 
+/*
+Contains unit tests for the clientMonitor module.
+*/
+
 void testMonitorEmptyDb(CuTest *tc) {
+ // Check that we behave correctly when the data table is empty
     time_t now = makeTs("2009-01-01 10:00:00");
     setTime(now);
     emptyDb();
@@ -12,6 +44,7 @@ void testMonitorEmptyDb(CuTest *tc) {
 }
 
 void testMonitorNoDataAfterTs(CuTest *tc) {
+ // Check that we behave correctly when the data table contains rows but none meet our criterion
     time_t now = makeTs("2009-01-01 10:00:00");
     setTime(now);
     emptyDb();
@@ -21,6 +54,8 @@ void testMonitorNoDataAfterTs(CuTest *tc) {
 }
 
 void testMonitorDataOnTs(CuTest *tc) {
+ /* Check that we behave correctly when the data table contains rows that meet our 
+    criterion, and they all have the same timestamp */
     time_t now = makeTs("2009-01-01 10:00:00");
     setTime(now);
     emptyDb();
@@ -29,11 +64,13 @@ void testMonitorDataOnTs(CuTest *tc) {
     addDbRow(now - 1, 1, "eth2", 1, 10);
 
     struct Data* data = getMonitorValues(now - 1);
-    checkData(tc, data, now-1, 0, NULL, 3, 30);
+    checkData(tc, data, now-1, 0, NULL, 3, 30); // We group data by ts, so expect just 1 result
     CuAssertTrue(tc, data->next == NULL);
 }
 
 void testMonitorDataOnAndAfterTs(CuTest *tc) {
+ /* Check that we behave correctly when the data table contains rows that meet our 
+    criterion, and have differing timestamps */
     time_t now = makeTs("2009-01-01 10:00:00");
     setTime(now);
     emptyDb();
@@ -55,6 +92,8 @@ void testMonitorDataOnAndAfterTs(CuTest *tc) {
 }
 
 void testMonitorDataOnAndLongAfterTs(CuTest *tc) {
+ /* Check that we behave correctly when the data table contains rows that meet our 
+    criterion, and have differing non-consecutive timestamps */
     time_t now  = makeTs("2009-01-01 10:00:00");
     time_t then = makeTs("2008-10-10 11:00:00");
 

@@ -1,15 +1,42 @@
+/*
+ * BitMeterOS v0.1.5
+ * http://codebox.org.uk/bitmeterOS
+ *
+ * Copyright (c) 2009 Rob Dawson
+ *
+ * Licensed under the GNU General Public License
+ * http://www.gnu.org/licenses/gpl.txt
+ *
+ * This file is part of BitMeterOS.
+ *
+ * BitMeterOS is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * BitMeterOS is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Build Date: Sun, 25 Oct 2009 17:18:38 +0000
+ */
+
 #include "common.h"
+#include "client.h"
 
-#define APP_NAME      "BitMeterOS"
 #define CLIENT_NAME   "BitMeterOS Command Line Client"
-#define EXE_NAME      "bmclient"
 
+// This is all for processing the command-line options...
 #define PREF_NOT_SET    0
-
+// ----
 #define OPT_HELP 'h'
-
+// ----
 #define OPT_VERSION 'v'
-
+// ----
 #define OPT_MODE 'm'
 
 #define PREF_MODE_DUMP    1
@@ -25,8 +52,7 @@
 #define ARG_MODE_MONITOR_LONG  "monitor"
 #define ARG_MODE_QUERY_SHORT   "q"
 #define ARG_MODE_QUERY_LONG    "query"
-
-
+// ----
 #define OPT_DUMP_FORMAT 'f'
 
 #define PREF_DUMP_FORMAT_CSV         1
@@ -36,20 +62,19 @@
 #define ARG_DUMP_FORMAT_CSV_LONG          "csv"
 #define ARG_DUMP_FORMAT_FIXED_WIDTH_SHORT "f"
 #define ARG_DUMP_FORMAT_FIXED_WIDTH_LONG  "fixed"
-
-
+// ----
 #define OPT_UNITS 'u'
 
-#define PREF_UNITS_BYTES  1
-#define PREF_UNITS_ABBREV 2
-#define PREF_UNITS_FULL   3
+#define PREF_UNITS_BYTES  UNITS_BYTES
+#define PREF_UNITS_ABBREV UNITS_ABBREV
+#define PREF_UNITS_FULL   UNITS_FULL
 
 #define ARG_UNITS_BYTES  "b"
 #define ARG_UNITS_ABBREV "a"
 #define ARG_UNITS_FULL   "f"
-
+// ----
 #define OPT_RANGE 'r'
-
+// ----
 #define OPT_GROUP 'g'
 
 #define PREF_GROUP_HOURS  1
@@ -63,7 +88,7 @@
 #define ARG_GROUP_MONTHS "m"
 #define ARG_GROUP_YEARS  "y"
 #define ARG_GROUP_TOTAL  "t"
-
+// ----
 #define OPT_DIRECTION 'd'
 
 #define PREF_DIRECTION_DL 1
@@ -71,10 +96,11 @@
 
 #define ARG_DIRECTION_DL "d"
 #define ARG_DIRECTION_UL "u"
-
+// ----
 #define OPT_BAR_CHARS  'w'
+// ----
 #define OPT_MAX_AMOUNT 'x'
-
+// ----
 #define OPT_MONITOR_TYPE 't'
 
 #define ARG_MONITOR_TYPE_NUMS "n"
@@ -82,10 +108,10 @@
 
 #define PREF_MONITOR_TYPE_NUMS 1
 #define PREF_MONITOR_TYPE_BAR  2
-
+// ----
 #define DEFAULT_BAR_CHARS  69
 #define DEFAULT_MAX_AMOUNT 100000
-
+// ----
 #define ERR_OPT_NO_ARGS          "No arguments supplied."
 #define ERR_OPT_BAD_MONITOR_TYPE "Unrecognised monitor type argument"
 #define ERR_OPT_BAD_DIRECTION    "Unrecognised direction argument"
@@ -96,7 +122,7 @@
 #define ERR_OPT_BAD_UNIT         "Unrecognised unit type"
 #define ERR_OPT_BAD_DUMP_FORMAT  "Unrecognised dump format"
 #define ERR_OPT_BAD_MODE         "Unrecognised mode"
-
+// ----
 struct Prefs{
 	unsigned int mode;
 	unsigned int dumpFormat;
@@ -112,7 +138,7 @@ struct Prefs{
 	unsigned int monitorType;
     char* errorMsg;
 };
-
+// ----
 int parseArgs(int argc, char **argv, struct Prefs*);
 void doDump();
 void doMonitor();

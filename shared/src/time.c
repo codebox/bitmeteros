@@ -1,11 +1,39 @@
+/*
+ * BitMeterOS v0.1.5
+ * http://codebox.org.uk/bitmeterOS
+ *
+ * Copyright (c) 2009 Rob Dawson
+ *
+ * Licensed under the GNU General Public License
+ * http://www.gnu.org/licenses/gpl.txt
+ *
+ * This file is part of BitMeterOS.
+ *
+ * BitMeterOS is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * BitMeterOS is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Build Date: Sun, 25 Oct 2009 17:18:38 +0000
+ */
+
 #include <stdlib.h>
 #include <time.h>
 #include "common.h"
-//#include "CUTest.h"
 
-/* Performs date-based calculations */
+/*
+Contains code for performing date-based calculations.
+*/
 
-int getCurrentYearForTs(time_t ts){
+time_t getCurrentYearForTs(time_t ts){
  // Returns a timestamp value representing the start of the year in which 'ts' occurs
 	struct tm *t = localtime(&ts);
 	t->tm_sec  = 0;
@@ -16,7 +44,7 @@ int getCurrentYearForTs(time_t ts){
 	return mktime(t);
 }
 
-int getCurrentMonthForTs(time_t ts){
+time_t getCurrentMonthForTs(time_t ts){
  // Returns a timestamp value representing the start of the month in which 'ts' occurs
 	struct tm *t = localtime(&ts);
 	t->tm_sec  = 0;
@@ -26,7 +54,7 @@ int getCurrentMonthForTs(time_t ts){
 	return mktime(t);
 }
 
-int getCurrentDayForTs(time_t ts){
+time_t getCurrentDayForTs(time_t ts){
  // Returns a timestamp value representing the start of the day in which 'ts' occurs
 	struct tm *t = localtime(&ts);
 	t->tm_sec  = 0;
@@ -35,7 +63,7 @@ int getCurrentDayForTs(time_t ts){
 	return mktime(t);
 }
 
-int getNextYearForTs(time_t ts){
+time_t getNextYearForTs(time_t ts){
  // Returns a timestamp value representing the start of the year following the one in which 'ts' occurs
 	struct tm *t = localtime(&ts);
 
@@ -49,7 +77,7 @@ int getNextYearForTs(time_t ts){
 	return mktime(t);
 }
 
-int getNextMonthForTs(time_t ts){
+time_t getNextMonthForTs(time_t ts){
  // Returns a timestamp value representing the start of the month following the one in which 'ts' occurs
 	struct tm *t = localtime(&ts);
 
@@ -62,7 +90,7 @@ int getNextMonthForTs(time_t ts){
 	return mktime(t);
 }
 
-int getNextDayForTs(time_t ts){
+time_t getNextDayForTs(time_t ts){
  // Returns a timestamp value representing the start of the day following the one in which 'ts' occurs
 	struct tm *t = localtime(&ts);
 
@@ -74,7 +102,7 @@ int getNextDayForTs(time_t ts){
 	return mktime(t);
 }
 
-int getNextHourForTs(time_t ts){
+time_t getNextHourForTs(time_t ts){
  // Returns a timestamp value representing the start of the hour following the one in which 'ts' occurs
 	ts += SECS_PER_HOUR;
 	struct tm *t = localtime(&ts);
@@ -89,7 +117,7 @@ int getNextHourForTs(time_t ts){
 	}
 }
 
-int getNextMinForTs(time_t ts){
+time_t getNextMinForTs(time_t ts){
  // Returns a timestamp value representing the start of the minute following the one in which 'ts' occurs
 	ts += SECS_PER_MIN;
 	struct tm *t = localtime(&ts);
@@ -103,7 +131,7 @@ int getNextMinForTs(time_t ts){
 	}
 }
 
-int getYearFromTs(time_t ts){
+time_t getYearFromTs(time_t ts){
  // Returns the year in which 'ts' occurs
 	struct tm *t = localtime(&ts);
 	return 1900 + (t->tm_year);

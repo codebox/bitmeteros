@@ -1,13 +1,47 @@
+/*
+ * BitMeterOS v0.1.5
+ * http://codebox.org.uk/bitmeterOS
+ *
+ * Copyright (c) 2009 Rob Dawson
+ *
+ * Licensed under the GNU General Public License
+ * http://www.gnu.org/licenses/gpl.txt
+ *
+ * This file is part of BitMeterOS.
+ *
+ * BitMeterOS is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * BitMeterOS is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Build Date: Sun, 25 Oct 2009 17:18:38 +0000
+ */
+
 #include <sqlite3.h>
 #include <pthread.h>
+#include <assert.h>
 #include <time.h>
+#include <stdlib.h>
 #include "common.h"
 #include "client.h"
+
+/*
+Contains a thread-safe helper function for use by clients that need to perform database queries
+based on timestamp ranges, with result grouping.
+*/
 
 static sqlite3_stmt *stmt = NULL;
 static pthread_mutex_t stmtMutex = PTHREAD_MUTEX_INITIALIZER;
 static struct Data* doQueryForInterval(time_t tsFrom, time_t tsTo);
-static struct Data* doQuery(time_t minFrom, time_t maxTo, int (*getNext)(int), time_t (*addTo)(time_t));
+static struct Data* doQuery(time_t minFrom, time_t maxTo, time_t (*getNext)(time_t), time_t (*addTo)(time_t));
 static time_t addToDateY(time_t ts);
 static time_t addToDateM(time_t ts);
 static time_t addToDateD(time_t ts);
@@ -33,22 +67,30 @@ struct Data* getQueryValues(time_t tsFrom, time_t tsTo, int group){
         time_t minFrom = (minInDb > tsFrom ? minInDb-1 : tsFrom);
         time_t maxTo   = (maxInDb < tsTo   ? maxInDb   : tsTo);
 
+	 // Decide how the results should be grouped
         switch(group){
             case QUERY_GROUP_HOURS:
                 result = doQuery(minFrom, maxTo, &getNextHourForTs, &addToDateH);
                 break;
+
             case QUERY_GROUP_DAYS:
                 result = doQuery(minFrom, maxTo, &getNextDayForTs, &addToDateD);
                 break;
+
             case QUERY_GROUP_MONTHS:
                 result = doQuery(minFrom, maxTo, &getNextMonthForTs, &addToDateM);
                 break;
+
             case QUERY_GROUP_YEARS:
                 result = doQuery(minFrom, maxTo, &getNextYearForTs, &addToDateY);
                 break;
+
             case QUERY_GROUP_TOTAL:
                 result = doQueryForInterval(minFrom, maxTo);
                 break;
+
+            default:
+            	assert(FALSE);
         }
     }
 
@@ -57,46 +99,67 @@ struct Data* getQueryValues(time_t tsFrom, time_t tsTo, int group){
     return result;
 }
 
-static struct Data* doQuery(time_t minFrom, time_t maxTo, int (*getNext)(int), time_t (*addTo)(time_t)){
+static struct Data* doQuery(time_t minFrom, time_t maxTo, time_t (*getNext)(time_t), time_t (*addTo)(time_t)){
+ /* Performs a series of SELECT queries to return the amount of data recorded between minFrom
+    and maxTo. The data is returned in a list of Data structs, each one covering an interval
+    within the specified range. The length of the interval represented by each Data struct
+    is determined by the 'addTo' function. The initial rounding-up of the beginning of the
+    range is performed by the 'getNext' function. */
     time_t from, to;
 
 	from = minFrom;
-	to   = getNext(minFrom);
+	to   = getNext(minFrom); // Work out the end of the first range that we will return
+
+	to = (to > maxTo) ? maxTo : to;
+
     struct Data* result = NULL;
     struct Data* current;
 
-	while(to <= maxTo){
+	while(TRUE){
 	    current = doQueryForInterval(from, to);
 	    if (current->dl > 0 || current->ul > 0){
+	     // Only return the struct if it contains some data
             appendData(&result, current);
+	    } else {
+	     // No data was found for this interval
+	    	freeData(current);
 	    }
-		from = to;
-		to   = addTo(to);
+
+        if (to == maxTo){
+            break;
+        } else {
+         // Work out the next interval that we will query
+            from = to;
+            to   = addTo(to);
+            to = (to > maxTo) ? maxTo : to;
+        }
 	}
-	//appendData(&result, doQueryForInterval(from, maxTo));
 
 	return result;
 }
 
 static time_t addToDateY(time_t ts){
+ // Add 1 year to the specified timestamp
     return addToDate(ts, 'y', 1);
 }
 
-
 static time_t addToDateM(time_t ts){
+ // Add 1 month to the specified timestamp
     return addToDate(ts, 'm', 1);
 }
 
 static time_t addToDateD(time_t ts){
+ // Add 1 day to the specified timestamp
     return addToDate(ts, 'd', 1);
 }
 
 static time_t addToDateH(time_t ts){
+ // Add 1 hour to the specified timestamp
     return addToDate(ts, 'h', 1);
 }
 
-
 static struct Data* doQueryForInterval(time_t tsFrom, time_t tsTo){
+ // Perform a SQL SELECT for the specified interval
 	sqlite3_bind_int(stmt, 1, tsFrom);
 	sqlite3_bind_int(stmt, 2, tsTo);
 
@@ -106,6 +169,7 @@ static struct Data* doQueryForInterval(time_t tsFrom, time_t tsTo){
 	data->ts = tsTo;
 	data->dr = tsTo - tsFrom;
 
+	assert(data->next == NULL); // We should only ever have 1 row
+
 	return data;
 }
-

@@ -1,3 +1,30 @@
+/*
+ * BitMeterOS v0.1.5
+ * http://codebox.org.uk/bitmeterOS
+ *
+ * Copyright (c) 2009 Rob Dawson
+ *
+ * Licensed under the GNU General Public License
+ * http://www.gnu.org/licenses/gpl.txt
+ *
+ * This file is part of BitMeterOS.
+ *
+ * BitMeterOS is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * BitMeterOS is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Build Date: Sun, 25 Oct 2009 17:18:38 +0000
+ */
+
 #define _GNU_SOURCE
 #include <stdlib.h>
 #include "common.h"
@@ -7,19 +34,27 @@
 #include "bmclient.h"
 #include "CuTest.h"
 
+/*
+Contains unit tests for the options module.
+*/
+
 extern optind;
 static void checkPrefs(CuTest *tc, struct Prefs expectedPrefs, char* cmdLine);
 
-void checkQueryRangeOk(CuTest *tc, char* cmdLine, time_t from, time_t to){
+static void checkQueryRangeOk(CuTest *tc, char* cmdLine, time_t from, time_t to){
+ // Helper function for range-related tests that we expect to pass
 	struct Prefs prefs = {PREF_MODE_QUERY, 0, 0, 0, 0, from, to, 0, 0, 0, 0, 0, NULL};
 	checkPrefs(tc, prefs, cmdLine);
 }
-void checkQueryRangeErr(CuTest *tc, char* cmdLine){
+
+static void checkQueryRangeErr(CuTest *tc, char* cmdLine){
+ // Helper function for range-related tests that we expect to fail
 	struct Prefs prefs = {PREF_MODE_QUERY, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ERR_OPT_BAD_RANGE};
 	checkPrefs(tc, prefs, cmdLine);
 }
 
 void testQueryMode(CuTest *tc) {
+ // Query-mode tests
 	struct Prefs prefs1 = {PREF_MODE_QUERY, 0, 0, 0, 0, 1230768000, 1262304000, PREF_GROUP_HOURS, 0, 0, 0, 0, NULL};
 	checkPrefs(tc, prefs1, "-mq -r2009 -gh");
 
@@ -57,7 +92,7 @@ void testQueryMode(CuTest *tc) {
 	checkQueryRangeErr(tc, "-mq -rz");
 	checkQueryRangeErr(tc, "-mq -r200");
 	checkQueryRangeErr(tc, "-mq -r200x");
-	checkQueryRangeErr(tc, "-mq -r1969123123");
+	//checkQueryRangeErr(tc, "-mq -r1969123123");
 	checkQueryRangeErr(tc, "-mq -r20091");
 	//checkQueryRangeErr(tc, "-mq -r200900");
 	//checkQueryRangeErr(tc, "-mq -r200913");
@@ -68,7 +103,7 @@ void testQueryMode(CuTest *tc) {
 
 	checkQueryRangeErr(tc, "-mq -r2009-");
 	checkQueryRangeErr(tc, "-mq -r2009-x");
-	checkQueryRangeErr(tc, "-mq -r2009-1960");
+	//checkQueryRangeErr(tc, "-mq -r2009-1960");
 	//checkQueryRangeErr(tc, "-mq -r200901-200913");
 	//checkQueryRangeErr(tc, "-mq -r20090112-20090132");
 	//checkQueryRangeErr(tc, "-mq -r2009011223-2009011225");
@@ -99,11 +134,13 @@ void testQueryMode(CuTest *tc) {
 }
 
 void testSummaryMode(CuTest *tc) {
+ // Summary-mode tests
 	struct Prefs prefs = {PREF_MODE_SUMMARY, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL};
 	checkPrefs(tc, prefs, "-ms");
 
 }
 void testDumpMode(CuTest *tc) {
+ // Dump-mode tests
 	struct Prefs prefs1 = {PREF_MODE_DUMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL};
 	checkPrefs(tc, prefs1, "-md");
 
@@ -130,6 +167,7 @@ void testDumpMode(CuTest *tc) {
 }
 
 void testNoMode(CuTest *tc) {
+ // Tests without any mode
 	struct Prefs prefs1 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ERR_OPT_NO_ARGS};
 	checkPrefs(tc, prefs1, "");
 
@@ -144,6 +182,7 @@ void testNoMode(CuTest *tc) {
 }
 
 void testMonitorMode(CuTest *tc) {
+ // Monitor-mode tests
 	struct Prefs prefs1 = {PREF_MODE_MONITOR, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL};
 	checkPrefs(tc, prefs1, "-mm");
 
@@ -185,6 +224,7 @@ void testMonitorMode(CuTest *tc) {
 }
 
 static void checkPrefs(CuTest *tc, struct Prefs expectedPrefs, char* cmdLine){
+ // Helper function for checking the values in a Prefs structure
 	int argc = 1;
 
 	char *cmdLineCopy = strdupa(cmdLine);

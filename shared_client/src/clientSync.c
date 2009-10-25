@@ -25,41 +25,30 @@
  * Build Date: Sun, 25 Oct 2009 17:18:38 +0000
  */
 
-#include <signal.h>
-#include "capture.h"
+#include <sqlite3.h>
+#include <pthread.h>
 #include "common.h"
 
-/* 
-Contains the entry point for the data capture application, when run as an unmanaged executable.
+/*
+TODO
 */
 
-static int stopNow = FALSE;
-static void sigHandler();
+static sqlite3_stmt *stmt = NULL;
+static pthread_mutex_t stmtMutex = PTHREAD_MUTEX_INITIALIZER;
 
-int main(int argc, char **argv){
- // Initialise logging and database
-	setLogLevel(LOG_ERR);
-	setLogToFile(TRUE);
-	setupCapture();
+struct Data* getSyncValues(int ts){
+ // A list of Data structs will be returned, once for each db entry with a timestamp >= ts
+    pthread_mutex_lock(&stmtMutex);
 
- // We stop when either of these happen
-	signal(SIGINT,  sigHandler);	// Trap Ctrl-C
-	signal(SIGTERM, sigHandler);	// Trap termination requests from the system
+    if (stmt == NULL){
+        prepareSql(&stmt, "SELECT ts AS ts, dl AS dl, ul AS ul, dr AS dr, ad AS ad FROM data WHERE ts > ? AND hs IS NULL ORDER BY ts DESC");
+    }
 
- // Loop until one of the signal handlers is triggered
-    int status;
-	while(!stopNow){
-		doSleep(1);
-    	status = processCapture();
-    	if (status == FAIL){
-            stopNow = TRUE;
-    	}
-	}
+	sqlite3_bind_int(stmt, 1, ts);
+	struct Data* result = runSelect(stmt);
+	sqlite3_reset(stmt);
 
-	shutdownCapture();
-	return 0;
-}
+    pthread_mutex_unlock(&stmtMutex);
 
-static void sigHandler(){
-	stopNow = TRUE;
+	return result;
 }

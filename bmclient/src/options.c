@@ -1,8 +1,37 @@
+/*
+ * BitMeterOS v0.1.5
+ * http://codebox.org.uk/bitmeterOS
+ *
+ * Copyright (c) 2009 Rob Dawson
+ *
+ * Licensed under the GNU General Public License
+ * http://www.gnu.org/licenses/gpl.txt
+ *
+ * This file is part of BitMeterOS.
+ *
+ * BitMeterOS is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * BitMeterOS is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Build Date: Sun, 25 Oct 2009 17:18:38 +0000
+ */
+
+#define _GNU_SOURCE
 #include <unistd.h>
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include "bmclient.h"
 
 static int setMode(struct Prefs*, char* mode);
@@ -20,181 +49,242 @@ static time_t makeTsFromRange(char* rangePart);
 static time_t adjustForEndOfRange(time_t, int );
 static void setErrMsg(struct Prefs *, char*);
 
+#define INVALID_TS -1
+
+/*
+Parse the bmclient command-line, and populate a Prefs structure to indicate what the user asked for.
+*/
+
 int parseArgs(int argc, char **argv, struct Prefs *prefs){
-	int opt;
 	char OPT_LIST[28];
 	sprintf(OPT_LIST, "%c:%c:%c:%c%c%c:%c:%c:%c:%c:%c:",
-OPT_MODE, OPT_DUMP_FORMAT, OPT_UNITS, OPT_HELP, OPT_VERSION, OPT_RANGE, OPT_GROUP, OPT_DIRECTION, OPT_BAR_CHARS, OPT_MAX_AMOUNT, OPT_MONITOR_TYPE);
+			OPT_MODE, OPT_DUMP_FORMAT, OPT_UNITS, OPT_HELP, OPT_VERSION,
+			OPT_RANGE, OPT_GROUP, OPT_DIRECTION, OPT_BAR_CHARS, OPT_MAX_AMOUNT,
+			OPT_MONITOR_TYPE);
 
-	int optOk = 0;
+	int status = FAIL;
 
 	if (argc <= 1){
+	 // The command line was empty
 		setErrMsg(prefs, ERR_OPT_NO_ARGS);
 	} else {
+		int opt;
 		while ((opt = getopt(argc, argv, OPT_LIST)) != -1){
 			switch (opt){
 				case OPT_HELP:
-					optOk = setHelp(prefs);
+					status = setHelp(prefs);
 					break;
 				case OPT_VERSION:
-					optOk = setVersion(prefs);
+					status = setVersion(prefs);
 					break;
 				case OPT_MODE:
-					optOk = setMode(prefs, optarg);
+					status = setMode(prefs, optarg);
 					break;
 				case OPT_DUMP_FORMAT:
-					optOk = setDumpFormat(prefs, optarg);
+					status = setDumpFormat(prefs, optarg);
 					break;
 				case OPT_UNITS:
-					optOk = setUnits(prefs, optarg);
+					status = setUnits(prefs, optarg);
 					break;
 				case OPT_RANGE:
-					optOk = setRange(prefs, optarg);
+					status = setRange(prefs, optarg);
 					break;
 				case OPT_GROUP:
-					optOk = setGroup(prefs, optarg);
+					status = setGroup(prefs, optarg);
 					break;
 				case OPT_DIRECTION:
-					optOk = setDirection(prefs, optarg);
+					status = setDirection(prefs, optarg);
 					break;
 				case OPT_BAR_CHARS:
-					optOk = setBarChars(prefs, optarg);
+					status = setBarChars(prefs, optarg);
 					break;
 				case OPT_MAX_AMOUNT:
-					optOk = setMaxAmount(prefs, optarg);
+					status = setMaxAmount(prefs, optarg);
 					break;
 				case OPT_MONITOR_TYPE:
-					optOk = setMonitorType(prefs, optarg);
+					status = setMonitorType(prefs, optarg);
 					break;
 				default:
-					optOk=0;
+					status = FAIL;
 					break;
 			}
-			if (!optOk){
+		 // Check the 'status' value after each option, and stop if we see anything invalid
+			if (status == FAIL){
 				break;
 			}
 		}
 	}
-	return optOk;
+	return status;
 }
 
 static void setErrMsg(struct Prefs *prefs, char* msg){
+ // Set the Prefs error message, overwriting any previous message politely
 	if (prefs->errorMsg != NULL){
 		free(prefs->errorMsg);
 	}
 	if (msg != NULL){
-		prefs->errorMsg = malloc(strlen(msg) + 1);
-		strcpy(prefs->errorMsg, msg);
+		prefs->errorMsg = strdup(msg);
 	}
 }
 
 static int setMonitorType(struct Prefs *prefs, char* monitorType){
-	int ok=1;
+ // The user has specified how they want the monitoring data to be displayed
+
+	int status = FAIL;
+
 	if (strcmp(monitorType, ARG_MONITOR_TYPE_NUMS) == 0) {
 		prefs->monitorType = PREF_MONITOR_TYPE_NUMS;
+		status = SUCCESS;
+
 	} else if (strcmp(monitorType, ARG_MONITOR_TYPE_BAR) == 0) {
 		prefs->monitorType = PREF_MONITOR_TYPE_BAR;
+		status = SUCCESS;
+
 	} else {
 		setErrMsg(prefs, ERR_OPT_BAD_MONITOR_TYPE);
-		ok=0;
 	}
-	return ok;
+
+	return status;
 }
 
 static int setDirection(struct Prefs *prefs, char* dirTxt){
-	int ok=1;
+ // The user has specified the traffic direction (upload/download) they they want to monitor
+
+	int status = FAIL;
+
 	if (strcmp(dirTxt, ARG_DIRECTION_DL) == 0) {
 		prefs->direction = PREF_DIRECTION_DL;
+		status = SUCCESS;
+
 	} else if (strcmp(dirTxt, ARG_DIRECTION_UL) == 0) {
 		prefs->direction = PREF_DIRECTION_UL;
+		status = SUCCESS;
+
 	} else {
 		setErrMsg(prefs, ERR_OPT_BAD_DIRECTION);
-		ok=0;
 	}
-	return ok;
+
+	return status;
 }
 
 static int setBarChars(struct Prefs *prefs, char* barCharsTxt){
+ // The user has specified the maximum number of characters to use when drawing a bar in monitor mode.
+
 	int barChars = atoi(barCharsTxt);
+
 	if (barChars > 0){
 		prefs->barChars = barChars;
-		return 1;
+		return SUCCESS;
+
 	} else {
 		setErrMsg(prefs, ERR_OPT_BAD_WIDTH);
-		return 0;
+		return FAIL;
 	}
 }
 
 static int setMaxAmount(struct Prefs *prefs, char* maxAmountTxt){
+ /* The user has specified the number of bytes that must be transferred for the bar to be drawn
+    at maximum length when monitoring - effectively the scale of the graph. */
+
 	int maxAmount = atoi(maxAmountTxt);
+
 	if (maxAmount > 0){
 		prefs->maxAmount = maxAmount;
-		return 1;
+		return SUCCESS;
+
 	} else {
 		setErrMsg(prefs, ERR_OPT_BAD_MAX);
-		return 0;
+		return FAIL;
 	}
 }
 
 static int setGroup(struct Prefs *prefs, char* groupTxt){
-	int ok=1;
+ // The user has specified how they want the results of a query to be grouped
+
+	int status = FAIL;
+
 	if (strcmp(groupTxt, ARG_GROUP_HOURS) == 0) {
 		prefs->group = PREF_GROUP_HOURS;
+		status = SUCCESS;
+
 	} else if (strcmp(groupTxt, ARG_GROUP_DAYS) == 0) {
 		prefs->group = PREF_GROUP_DAYS;
+		status = SUCCESS;
+
 	} else if (strcmp(groupTxt, ARG_GROUP_MONTHS) == 0) {
 		prefs->group = PREF_GROUP_MONTHS;
+		status = SUCCESS;
+
 	} else if (strcmp(groupTxt, ARG_GROUP_YEARS) == 0) {
 		prefs->group = PREF_GROUP_YEARS;
+		status = SUCCESS;
+
 	} else if (strcmp(groupTxt, ARG_GROUP_TOTAL) == 0) {
 		prefs->group = PREF_GROUP_TOTAL;
+		status = SUCCESS;
+
 	} else {
 		setErrMsg(prefs, ERR_OPT_BAD_GROUP);
-		ok=0;
 	}
-	return ok;
+
+	return status;
 }
 
 static int setRange(struct Prefs *prefs, char* rangeTxt){
+ // The user has specified a date/time range for a database query
+
 	int rangeLen = strlen(rangeTxt);
 
 	if (rangeLen > 21){ // yyyymmddhh-yyyymmddhh
+	 // Range was too long to be valid
 		setErrMsg(prefs, ERR_OPT_BAD_RANGE);
-		return 0;
+		return FAIL;
 
 	} else {
 		char* hyphen    = strchr(rangeTxt, '-');
-		char* rangeFrom = (char*) calloc(11, sizeof(char));
-		char* rangeTo   = (char*) calloc(11, sizeof(char));
-		if (hyphen==0){
+		char rangeFrom[11];
+		char rangeTo[11];
+
+		if (hyphen == 0){
+		 // There was no hyphen in the range, so it should be 10 chars or less in length
 			if (rangeLen > 10){
 				setErrMsg(prefs, ERR_OPT_BAD_RANGE);
-				return 0;
+				return FAIL;
 
 			} else {
-				strncpy(rangeFrom, rangeTxt, 10);
-				strncpy(rangeTo, rangeTxt, 10);
+			 /* A range without a hyphen means that the range should cover the entire period
+			    specified, eg -r2009 is equivalent to -r2009-2009, ie a range overing the whole
+			    of the year 2009 */
+				strncpy(rangeFrom, rangeTxt, 11);
+				strncpy(rangeTo,   rangeTxt, 11);
 			}
 
 		} else {
+		 // There was a hyphen, so split the range into its 'from' and 'to' components
 			int hyphenPos = hyphen - rangeTxt;
 			strncpy(rangeFrom, rangeTxt, hyphenPos);
 			strncpy(rangeTo, rangeTxt+hyphenPos+1, 10);
 		}
 
+	 // Turn the text into timestamps
 		int tsFrom = makeTsFromRange(rangeFrom);
-		if (tsFrom < 0){
+		if (tsFrom == INVALID_TS){
 			setErrMsg(prefs, ERR_OPT_BAD_RANGE);
-			return 0;
+			return FAIL;
 		}
 
 		int tsTo = makeTsFromRange(rangeTo);
-		if (tsTo < 0){
+		if (tsTo == INVALID_TS){
 			setErrMsg(prefs, ERR_OPT_BAD_RANGE);
-			return 0;
+			return FAIL;
 		}
 
-		if (tsFrom>tsTo){
+	 /* We allow the user to mix up the order of the 'from' and 'to' parts of the range,
+	    this is where we work out which is which. The timestamp that represents the end
+	    of the range needs to be adjusted so that it really marks the end of the
+	    interval (eg the range -r2009-2009 needs to cover everything from start of
+	    01/01/2009 to end of 31/12/2009) */
+		if (tsFrom > tsTo){
 			prefs->rangeFrom = tsTo;
 			prefs->rangeTo   = adjustForEndOfRange(tsFrom, strlen(rangeFrom));
 		} else {
@@ -202,40 +292,53 @@ static int setRange(struct Prefs *prefs, char* rangeTxt){
 			prefs->rangeTo   = adjustForEndOfRange(tsTo, strlen(rangeTo));
 		}
 	}
-	return 1;
+	return SUCCESS;
 }
 
 static time_t makeTsFromRange(char* rangePart){
-	char* yTxt = "0";
-	char* mTxt = "1";
-	char* dTxt = "1";
-	char* hTxt = "0";
+ // Convert one part of the range argument (ie the 'from' or 'to' part) into a timestamp
+
+	char yTxt[5];
+	strcpy(yTxt, "0");
+
+	char mTxt[3];
+	strcpy(mTxt, "1");
+
+	char dTxt[3];
+	strcpy(dTxt, "1");
+
+	char hTxt[3];
+	strcpy(hTxt, "0");
+
+ /* There are 4 possible formats that the rangePart value might have:
+ 		yyyymmddhh - Year, Month, Day, Hour
+ 		yyyymmdd   - Year, Month, Day
+ 		yyyymm     - Year, Month
+ 		yyyy       - Year
+ 	check the length of the string and if it matches a value format,
+ 	try to convert it*/
 
 	int rangeLen = strlen(rangePart);
+
 	switch(rangeLen){
 		case 10:	// yyyymmddhh
-			hTxt = (char*) calloc(3, sizeof(char));
 			strncpy(hTxt, rangePart+8, 2);
-		 // fall-through
+		 	/* FALLTHRU */
 
 		case 8:		// yyyymmdd
-			dTxt = (char*) calloc(3, sizeof(char));
 			strncpy(dTxt, rangePart+6, 2);
-		 // fall-through
+		 	/* FALLTHRU */
 
 		case 6:		// yyyymm
-			mTxt = (char*) calloc(3, sizeof(char));
 			strncpy(mTxt, rangePart+4, 2);
-		 // fall-through
+		 	/* FALLTHRU */
 
 		case 4:		// yyyy
-			yTxt = (char*) calloc(5, sizeof(char));
 			strncpy(yTxt, rangePart, 4);
 			break;
 
 		default:
-			return -1;
-			break;
+			return INVALID_TS;
 	}
 
 	struct tm cal = {0,0,0,0,0,0,0,0,-1};
@@ -246,8 +349,14 @@ static time_t makeTsFromRange(char* rangePart){
 
 	return mktime(&cal);
 }
+
 static time_t adjustForEndOfRange(time_t time, int rangeLen){
+ /* The timestamp that was calculated from the end of the range that the user requested
+    needs to be adjusted so that it marks the end of the specified time period rather than
+    the beginning. */
+
     struct tm* cal = gmtime(&time);
+
 	switch(rangeLen){
 		case 10:	// yyyymmddhh
 			cal->tm_hour++;
@@ -266,7 +375,7 @@ static time_t adjustForEndOfRange(time_t time, int rangeLen){
 			break;
 
 		default:
-			//TODO bad len
+			assert(FALSE); // Should have caught invalid range formats already
 			break;
 	}
 
@@ -274,56 +383,88 @@ static time_t adjustForEndOfRange(time_t time, int rangeLen){
 }
 
 static int setHelp(struct Prefs *prefs){
+ // The user has requested the help text.
 	prefs->help = 1;
-	return 1;
+	return SUCCESS;
 }
 
 static int setVersion(struct Prefs *prefs){
+// The user has requested the app version.
 	prefs->version = 1;
-	return 1;
+	return SUCCESS;
 }
 
 static int setUnits(struct Prefs *prefs, char* units){
-	int ok=1;
+ // The user has specified the units to use when displaying the results
+
+	int status = FAIL;
+
 	if (strcmp(units, ARG_UNITS_BYTES) == 0) {
+	 // Show amounts in bytes
 		prefs->units = PREF_UNITS_BYTES;
+		status = SUCCESS;
+
 	} else if (strcmp(units, ARG_UNITS_ABBREV) == 0) {
+	 // Show amounts with abbreviated unit names
 		prefs->units = PREF_UNITS_ABBREV;
+		status = SUCCESS;
+
 	} else if (strcmp(units, ARG_UNITS_FULL) == 0) {
+	 // Show amounts with full unit names
 		prefs->units = PREF_UNITS_FULL;
+		status = SUCCESS;
+
 	} else {
 		setErrMsg(prefs, ERR_OPT_BAD_UNIT);
-		ok=0;
 	}
-	return ok;
+
+	return status;
 }
 
 static int setDumpFormat(struct Prefs *prefs, char* dumpFormat){
-	int ok = 1;
+ // The user has specified the format to be used when dumping the database contents
+
+	int status = FAIL;
+
 	if (strcmp(dumpFormat, ARG_DUMP_FORMAT_CSV_SHORT) == 0 || strcmp(dumpFormat, ARG_DUMP_FORMAT_CSV_LONG) == 0){
 		prefs->dumpFormat = PREF_DUMP_FORMAT_CSV;
+		status = SUCCESS;
+
 	} else if (strcmp(dumpFormat, ARG_DUMP_FORMAT_FIXED_WIDTH_SHORT) == 0 || strcmp(dumpFormat, ARG_DUMP_FORMAT_FIXED_WIDTH_LONG) == 0){
 		prefs->dumpFormat = PREF_DUMP_FORMAT_FIXED_WIDTH;
+		status = SUCCESS;
+
 	} else {
 		setErrMsg(prefs, ERR_OPT_BAD_DUMP_FORMAT);
-		ok = 0;
 	}
-	return ok;
+
+	return status;
 }
 
 static int setMode(struct Prefs *prefs, char* mode){
-	int ok=1;
+ // The user has specified the mode in which they wish to use the application
+
+	int status = FAIL;
+
 	if (strcmp(mode, ARG_MODE_DUMP_SHORT) == 0 || strcmp(mode, ARG_MODE_DUMP_LONG) == 0){
 		prefs->mode = PREF_MODE_DUMP;
+		status = SUCCESS;
+
 	} else if (strcmp(mode, ARG_MODE_SUMMARY_SHORT) == 0 || strcmp(mode, ARG_MODE_SUMMARY_LONG) == 0){
 		prefs->mode = PREF_MODE_SUMMARY;
+		status = SUCCESS;
+
 	} else if (strcmp(mode, ARG_MODE_MONITOR_SHORT) == 0 || strcmp(mode, ARG_MODE_MONITOR_LONG) == 0){
 		prefs->mode = PREF_MODE_MONITOR;
+		status = SUCCESS;
+
 	} else if (strcmp(mode, ARG_MODE_QUERY_SHORT) == 0 || strcmp(mode, ARG_MODE_QUERY_LONG) == 0){
 		prefs->mode = PREF_MODE_QUERY;
+		status = SUCCESS;
+
 	} else {
 		setErrMsg(prefs, ERR_OPT_BAD_MODE);
-		ok=0;
 	}
-	return ok;
+
+	return status;
 }
