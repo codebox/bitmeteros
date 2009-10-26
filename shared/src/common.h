@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Sun, 25 Oct 2009 17:18:38 +0000
+ * Build Date: Mon, 26 Oct 2009 15:16:39 +0000
  */
 
 #ifndef COMMON_H
@@ -47,6 +47,10 @@
 #define SECS_PER_MIN    60
 #define SECS_PER_HOUR   60 * 60
 #define MAX_PATH_LEN    256
+// ----
+#if defined(__APPLE__) || defined(_WIN32)
+#define strdupa(s) strcpy(alloca(strlen(s)+1), s)
+#endif
 // ----
 // These are very important, used everywhere
 #define TRUE  1
@@ -97,7 +101,7 @@ void logMsg(int level, char* msg, ...);
 void formatAmount(const BW_INT amount, const int binary, const int abbrev, char* txt);
 void toTime(char* timeText, time_t ts);
 void toDate(char* dateText, time_t ts);
-void makeHexString(char* hexString, char* data);
+void makeHexString(char* hexString, char* data, int dataLen);
 // ----
 time_t getTime();
 time_t getCurrentYearForTs(time_t ts);

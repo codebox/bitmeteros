@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Sun, 25 Oct 2009 17:18:38 +0000
+ * Build Date: Mon, 26 Oct 2009 15:16:39 +0000
  */
 
 #include <stdio.h>
@@ -149,17 +149,17 @@ void toDate(char* dateText, time_t ts){
 	sprintf(dateText, "%04d-%02d-%02d", y, m, d);
 }
 
-/*
-static char HEX[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
-void makeHexString(char* hexString, char* data){ //TODO test
+
+static char HEX[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
+void makeHexString(char* hexString, char* data, int dataLen){
  // Convert the MAC address bytes that we get back from the API into a hex string
 	char thisByte;
 	int i;
-	for(i = 0; i < MAX_ADDR_BYTES; i++){
+	for(i = 0; i < dataLen; i++){
 		thisByte = data[i];
 		hexString[i*2]     = HEX[(thisByte >> 4) & 0xF];
 		hexString[i*2 + 1] = HEX[thisByte & 0x0F];
 	}
-	hexString[MAX_ADDR_BYTES * 2] = 0;
+	hexString[dataLen * 2] = 0;
 }
-*/
+

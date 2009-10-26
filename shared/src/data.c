@@ -22,9 +22,10 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Sun, 25 Oct 2009 17:18:38 +0000
+ * Build Date: Mon, 26 Oct 2009 15:16:39 +0000
  */
 
+#define _GNU_SOURCE
 #include "common.h"
 #include <stdlib.h>
 #include <string.h>
@@ -32,6 +33,8 @@
 /*
 Contains functions for creating and updating Data struts.
 */
+
+static char *trim(char *str);
 
 struct Data* allocData(){
  // Create a Data struct on the heap
@@ -62,9 +65,15 @@ struct Data makeData(){
 }
 
 void setAddress(struct Data* data, const char* addr){
- // Copy the specified address string onto the heap, and associate the Data struct with it
-	data->ad = malloc(strlen(addr)+1);
-	strcpy(data->ad, addr);
+    if (addr == NULL){
+        data->ad = NULL;
+    } else {
+     // Copy the specified address string onto the heap, and associate the Data struct with it
+        char* addrTrimmed = trim(strdupa(addr));
+
+        data->ad = malloc(strlen(addrTrimmed)+1);
+        strcpy(data->ad, addrTrimmed);
+    }
 }
 
 void freeData(struct Data* data){
@@ -93,4 +102,24 @@ void appendData(struct Data** earlierData, struct Data* newData){
         }
         curr->next = newData;
     }
+}
+
+static char *trim(char *str){
+    char *end;
+
+ // Trim leading space
+    while(isspace(*str)){
+        str++;
+    }
+
+ // Trim trailing space
+    end = str + strlen(str) - 1;
+    while(end > str && isspace(*end)){
+        end--;
+    }
+
+ // Write new null terminator
+    *(end+1) = 0;
+
+    return str;
 }

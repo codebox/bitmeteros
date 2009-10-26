@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Sun, 25 Oct 2009 17:18:38 +0000
+ * Build Date: Mon, 26 Oct 2009 15:16:39 +0000
  */
 
 #include "test.h"
@@ -123,6 +123,26 @@ void testToDate(CuTest *tc){
     doTestToDate(tc, makeTs("2008-02-29 00:00:00"), "2008-02-29");
 }
 
+void testMakeHexString(CuTest *tc){
+    char bytes1[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+    char hex1[36];
+
+    makeHexString(hex1, bytes1, 17);
+    CuAssertStrEquals(tc, "000102030405060708090A0B0C0D0E0F10", hex1);
+
+    char bytes2[] = {};
+    char hex2[2];
+
+    makeHexString(hex2, bytes2, 0);
+    CuAssertStrEquals(tc, "", hex2);
+
+    char bytes3[] = {0, 12, 241, 86, 152, 173};
+    char hex3[13];
+
+    makeHexString(hex3, bytes3, 6);
+    CuAssertStrEquals(tc, "000CF15698AD", hex3);
+}
+
 static void doTestToDate(CuTest *tc, int ts, char* expected){
  // Helper function to check that the 'toDate' function correctly extracts the date component of a timestamp
     char actual[20];
@@ -136,5 +156,6 @@ CuSuite* commonGetSuite() {
     SUITE_ADD_TEST(suite, testFormatAmounts);
     SUITE_ADD_TEST(suite, testToTime);
     SUITE_ADD_TEST(suite, testToDate);
+    SUITE_ADD_TEST(suite, testMakeHexString);
     return suite;
 }

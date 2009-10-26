@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Sun, 25 Oct 2009 17:18:38 +0000
+ * Build Date: Mon, 26 Oct 2009 15:16:39 +0000
  */
 
 #include <stdio.h>
@@ -54,9 +54,9 @@ static void setDefaultPrefs(){
 
 void doDump(){
 	setDefaultPrefs();
-	
- /* If we are displaying the ul/dl values in bytes, and we are using a fixed width output 
- 	format, then we need to calculate the larges ul/dl values so we know how wide to make 
+
+ /* If we are displaying the ul/dl values in bytes, and we are using a fixed width output
+ 	format, then we need to calculate the larges ul/dl values so we know how wide to make
  	each column */
 	int computeMaxValues = (prefs.units == PREF_UNITS_BYTES) && (prefs.dumpFormat == PREF_DUMP_FORMAT_FIXED_WIDTH);
 
@@ -66,7 +66,7 @@ void doDump(){
 		maxValues = calcMaxValues();
 	}
 
- // Invoke printRow once for each db row 
+ // Invoke printRow once for each db row
 	getDumpValues(&printRow);
 
 	if (computeMaxValues){
@@ -77,7 +77,7 @@ void doDump(){
 }
 
 static void printRow(struct Data* row){
- /* We want to print out the date of the beginning of each interval in the dump, so 
+ /* We want to print out the date of the beginning of each interval in the dump, so
  	compute this by subtracting the duration (dr) from the timestamp (ts). */
 	char date[11];
 	toDate(date, row->ts - row->dr);
@@ -85,7 +85,7 @@ static void printRow(struct Data* row){
  // This is the time marking the start of the interval
 	char timeFrom[9];
 	toTime(timeFrom, row->ts - row->dr);
-	
+
  // This is the time marking the end of the interval
 	char timeTo[9];
 	toTime(timeTo, row->ts);
@@ -106,7 +106,7 @@ static void printRow(struct Data* row){
 			case PREF_UNITS_BYTES:
 			 // We should have retrieved the max ul/dl values earlier
 				assert(maxValues != NULL);
-				
+
 			 // From the max values we know how wide to make the columns
 				dlWidth = 1 + (int) log10(maxValues->dl);
 				ulWidth = 1 + (int) log10(maxValues->ul);
@@ -125,7 +125,7 @@ static void printRow(struct Data* row){
 				break;
 
 			default:
-				//TODO
+				assert(FALSE); // Should have caught invalid units before now
 				break;
 		}
 		printf("%s %s %s %4d %*s %*s\n", date, timeFrom, timeTo, row->dr, dlWidth, dlTxt, ulWidth, ulTxt);

@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Sun, 25 Oct 2009 17:18:38 +0000
+ * Build Date: Mon, 26 Oct 2009 15:16:39 +0000
  */
 
 #include <stdio.h>
@@ -66,6 +66,8 @@ int main(int argc, char **argv){
 	 // We will need to go to the database if we end up here
 		openDb();
 		prepareDb();
+
+        setDbBusyWait(1000); //TODO give the client its own config value
 
 		switch(prefs.mode){
 			case PREF_MODE_DUMP:

@@ -22,9 +22,9 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Sun, 25 Oct 2009 17:18:38 +0000
+ * Build Date: Mon, 26 Oct 2009 15:16:39 +0000
  */
-
+ 
 #include <stdlib.h>
 #include <stdio.h>
 #include "capture.h"
@@ -105,11 +105,12 @@ Contains platform-specific code for obtaining the network stats that we need.
 
 #ifdef __linux__
 	#include <string.h>
-	struct Data* parseProcNetDevLine(char*, char*);
+	static struct Data* parseProcNetDevLine(char*, char*);
+	static int isLoopback(struct Data* data);
     #define PROC_NET_DEV "/proc/net/dev"
 
 	struct Data* getData(){
-		FILE* fProcNetDev = fopen(PROC_NET_DEV, "r");		//TODO just open once?
+		FILE* fProcNetDev = fopen(PROC_NET_DEV, "r");
 
 		if (fProcNetDev == NULL){
 			logMsg(LOG_ERR, "Unable to open " PROC_NET_DEV);
@@ -127,17 +128,22 @@ Contains platform-specific code for obtaining the network stats that we need.
 			if ((colonPos = strchr(line, ':')) != NULL ){
 				char* ifName = calloc(32, 1);
 				strncpy(ifName, line, colonPos-line);
-				//TODO ignore loopback
 				thisData = parseProcNetDevLine(ifName, colonPos + 1);
-
 				free(ifName);
 
-				appendData(&firstData, thisData);
+                if (isLoopback(thisData) == FALSE){
+                    appendData(&firstData, thisData);
+                }
 			}
 		}
 		fclose(fProcNetDev);
 
 		return firstData;
+	}
+
+	static int isLoopback(struct Data* data){
+	 // TODO do this properly
+        return (strcmp(data->ad, "lo") == 0 ? TRUE : FALSE);
 	}
 
 	struct Data* parseProcNetDevLine(char* ifName, char* line){
@@ -158,12 +164,10 @@ Contains platform-specific code for obtaining the network stats that we need.
 #endif
 
 #ifdef _WIN32
-	#define MAX_ADDR_BYTES 8
 	#include <winsock2.h>
 	#include <ws2tcpip.h>
 	#include <iphlpapi.h>
 	static void logErrMsg(char* msg, int rc);
-	//static char* makeHexString(byte*);
 
 	struct Data* getData(){
 		MIB_IFTABLE* pIfTable = (MIB_IFTABLE *) malloc(sizeof (MIB_IFTABLE));
@@ -193,8 +197,8 @@ Contains platform-specific code for obtaining the network stats that we need.
 				    thisData->dl = pIfRow->dwInOctets;
 				    thisData->ul = pIfRow->dwOutOctets;
 
-				    //char hexString[MAX_ADDR_BYTES * 2 + 1];
-				    //makeHexString(hexString, pIfRow->dwPhysAddrLen){
+				    //char hexString[MAXLEN_PHYSADDR * 2 + 1];
+				    //makeHexString(hexString, pIfRow->dwPhysAddrLen, MAXLEN_PHYSADDR);
 				    //setAddress(thisData, hexString);
 				    char addr[pIfRow->dwPhysAddrLen + 1];
                     memcpy(addr, &(pIfRow->bPhysAddr), pIfRow->dwPhysAddrLen);
