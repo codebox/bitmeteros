@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.1.5
+ * BitMeterOS v0.2.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Sun, 25 Oct 2009 17:18:38 +0000
+ * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
  */
 
 #include <stdio.h>
@@ -48,6 +48,7 @@ void setupCapture(){
  // Called once when the application starts - setup up the various db related things...
     openDb();
     prepareDb();
+    dbVersionCheck();
 	setupDb();
 	compressDb();
 
@@ -134,7 +135,7 @@ struct Data* extractDiffs(struct Data* oldList, struct Data* newList){
                         appendData(&diffData, newDiff);
                     }
 			    } else {
-                    logMsg(LOG_WARN, "Values wrapped around for adapter %s\n", oldData->ad);
+                    logMsg(LOG_WARN, "Values wrapped around for adapter %s", oldData->ad);
 			    }
 			    break; // We found the match so no point looking at any remaining items in newList
 			}
@@ -148,7 +149,7 @@ struct Data* extractDiffs(struct Data* oldList, struct Data* newList){
 
 void logData(struct Data* data){
 	while(data != NULL){
-		logMsg(LOG_INFO, "%d DL=%lu UL=%lu $s\n", getTime(), data->dl, data->ul, data->ad);
+		logMsg(LOG_INFO, "%d DL=%lu UL=%lu $s", getTime(), data->dl, data->ul, data->ad);
 		data = data->next;
 	}
 }

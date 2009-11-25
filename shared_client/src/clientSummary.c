@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.1.5
+ * BitMeterOS v0.2.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,45 +22,52 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Sun, 25 Oct 2009 17:18:38 +0000
+ * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
  */
 
 #include <sqlite3.h>
-#include <pthread.h>
 #include <stdlib.h>
 #include "common.h"
 #include "client.h"
 
 /*
-Contains a thread-safe helper function for use by clients that need to produce database summaries.
+Contains a helper function for use by clients that need to produce database summaries.
 */
 
-static sqlite3_stmt *stmt = NULL;
-static pthread_mutex_t stmtMutex = PTHREAD_MUTEX_INITIALIZER;
+#define CLIENT_SUMMARY_SQL "SELECT SUM(dl) AS dl, SUM(ul) AS ul FROM data WHERE ts>=?"
+
+#ifndef MULTI_THREADED_CLIENT
+	static sqlite3_stmt *stmt = NULL;
+#endif
+
 struct Summary getSummaryValues();
-static struct Data* calcTotalsSince(int ts);
+static struct Data* calcTotalsSince(sqlite3_stmt *stmt, int ts);
 
 struct Summary getSummaryValues(){
  // Populate a Summary struct
-    pthread_mutex_lock(&stmtMutex);
-
-    if (stmt == NULL){
-        prepareSql(&stmt, "SELECT SUM(dl) AS dl, SUM(ul) AS ul FROM data WHERE ts>=?");
-    }
+ 
+ 	#ifdef MULTI_THREADED_CLIENT
+    	sqlite3_stmt *stmt = NULL;
+    	prepareSql(&stmt, CLIENT_SUMMARY_SQL);
+    #else
+    	if (stmt == NULL){
+    		prepareSql(&stmt, CLIENT_SUMMARY_SQL);
+    	}
+    #endif	
 
 	struct Summary summary;
 	int now = getTime();
 
 	int tsForStartOfToday = getCurrentDayForTs(now);
-	summary.today = calcTotalsSince(tsForStartOfToday);
+	summary.today = calcTotalsSince(stmt, tsForStartOfToday);
 
 	int tsForStartOfMonth = getCurrentMonthForTs(now);
-	summary.month = calcTotalsSince(tsForStartOfMonth);
+	summary.month = calcTotalsSince(stmt, tsForStartOfMonth);
 
 	int tsForStartOfYear = getCurrentYearForTs(now);
-	summary.year = calcTotalsSince(tsForStartOfYear);
+	summary.year = calcTotalsSince(stmt, tsForStartOfYear);
 
-	summary.total = calcTotalsSince(0);
+	summary.total = calcTotalsSince(stmt, 0);
 
 	struct ValueBounds* tsBounds = calcTsBounds();
 	if (tsBounds != NULL){
@@ -73,12 +80,16 @@ struct Summary getSummaryValues(){
         summary.tsMax = 0;
 	}
 
-    pthread_mutex_unlock(&stmtMutex);
-
+	#ifdef MULTI_THREADED_CLIENT
+    	sqlite3_finalize(stmt);
+    #else
+    	sqlite3_reset(stmt);
+    #endif	
+    
 	return summary;
 }
 
-static struct Data* calcTotalsSince(int ts){
+static struct Data* calcTotalsSince(sqlite3_stmt *stmt, int ts){
 	sqlite3_bind_int(stmt, 1, ts);
 	struct Data* data = runSelect(stmt);
 	sqlite3_reset(stmt);

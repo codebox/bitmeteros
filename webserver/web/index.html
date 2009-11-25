@@ -1,0 +1,305 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+	<head>
+		<title>BitMeter OS</title>
+		<link type="text/css" href="css/jquery.css" rel="stylesheet" />
+		<link type="text/css" href="css/bitmeter.css" rel="stylesheet" />
+		<link type="text/css" href="css/flexigrid.css" rel="stylesheet" />
+		<!--[if lte IE 7]>
+		<link type="text/css" href="css/ie.css" rel="stylesheet" />
+		<![endif]-->
+		<script type="text/javascript" src="js/jquery.js"></script>
+		<script type="text/javascript" src="js/jquery-ui.js"></script>
+		<script type="text/javascript" src="js/jquery.cookie.js"></script>
+		<!--[if IE]>
+		<script language="javascript" type="text/javascript" src="js/excanvas.min.js"></script>
+		<![endif]-->
+		<script type="text/javascript" src="js/jquery.flot.min.js"></script>
+		<script type="text/javascript" src="js/flexigrid.js"></script>		
+		<script type="text/javascript" src="js/bitmeterModel.js"></script>
+		<script type="text/javascript" src="js/bitmeterMonitor.js"></script>
+		<script type="text/javascript" src="js/bitmeterQuery.js"></script>		
+		<script type="text/javascript" src="js/bitmeterHistory.js"></script>
+		<script type="text/javascript" src="js/bitmeterSummary.js"></script>
+		<script type="text/javascript" src="js/bitmeter.js"></script>
+		<script type="text/javascript" src="config"></script>
+	</head>
+	<body>
+		<h1>BitMeter OS</h1>
+		<noscript>You must enable JavaScript in your browser to use the BitMeter OS Web Interface.</noscript>
+		<div id="tabs">
+		    <ul>
+		        <li><a href="#monitor"><span>Monitor</span></a></li>
+		        <li><a href="#history"><span>History</span></a></li>
+		        <li><a href="#summary"><span>Summary</span></a></li>
+		        <li><a href="#query"><span>Query</span></a></li>
+			<li><a href="#about"><span>About</span></a></li>
+		    </ul>
+		    <div id="monitor">
+		        <h2>Monitor</h2><div class="helpLink" id="monitorHelpLink"><a title="Help" class="ui-icon ui-icon-newwin"></a></div>
+		        <div class="panelContainer">
+		        	<div id="monitorDisplay" style="width:600px;height:300px;float: left;"></div>
+		        	<div id="monitorReadout">
+		        		<table>
+		        			<tr>
+		        				<td rowspan="2" class="monitorLabel">Current</td>
+		        				<td id="monitorDlCurrent"></td>
+		        			</tr>
+		        			<tr>
+		        				<td id="monitorUlCurrent"></td>
+		        			</tr>
+							<tr><td colspan="2" class="monitorSeparator"><hr></td></tr>
+							<tr>
+		        				<td rowspan="2" class="monitorLabel">Peak</td>
+		        				<td id="monitorDlPeak"></td>
+		        			</tr>
+		        			<tr>
+		        				<td id="monitorUlPeak"></td>
+		        			</tr>
+							<tr><td colspan="2" class="monitorSeparator"></td></tr>
+							<tr>
+		        				<td rowspan="2" class="monitorLabel">Average</td>
+		        				<td id="monitorDlAverage"></td>
+		        			</tr>
+		        			<tr>
+		        				<td id="monitorUlAverage"></td>
+		        			</tr>
+							<tr><td colspan="2" class="monitorSeparator"><hr></td></tr>		        			
+		        			<tr>
+		        				<td rowspan="2" class="monitorLabel">Scale</td>
+		        				<td class="scaleUpLink" id="monitorScaleUp"><a>Up</a></td>
+		        			</tr>
+		        			<tr>
+		        				<td class="scaleDownLink" id="monitorScaleDown"><a>Down</a></td>
+		        			</tr>
+							<tr><td colspan="2" class="monitorSeparator"><hr></td></tr>		        			
+		        			<tr class="monitorShowSeries">
+		        				<td class="monitorLabel">
+		        					Show Download
+		        				</td>
+		        				<td class="monitorShowSeries">
+		        					<input id="monitorShowDl" type="checkbox" />
+		        				</td>
+		        			</tr>
+		        			<tr class="monitorShowSeries">
+		        				<td class="monitorLabel">
+		        					Show Upload
+		        				</td>
+		        				<td class="monitorShowSeries">
+		        					<input id="monitorShowUl" type="checkbox" />
+		        				</td>
+		        			</tr>
+		        		</table>
+		        	</div>
+		        </div>
+		        <div class="spacer"></div>
+		        <div class="dialog" title="Help">
+		        	<p>
+		        		The <strong>Monitor</strong> page shows real-time connection usage, updating its display once each second by default.
+		        	</p>
+		        	<p>
+		        		Upload and download rates can be shown simultaneously, or in isolation - use the <em>Show Upload</em> and <em>Show Download</em> checkboxes
+		        		to change what is displayed.
+		        	</p>
+		        	<p>
+		        		To adjust the vertical scale, use the <em>Up</em> and <em>Down</em> arrows on the right of the page.
+		        	</p>
+		        </div>
+		    </div>
+			<div id="history">
+		        <h2>History</h2><div class="helpLink" id="historyHelpLink"><a title="Help" class="ui-icon ui-icon-newwin"></a></div>
+		        <div class="panelContainer">
+		        	<h3>Minutes</h3>
+		        	<div class="historyContainer">
+		        		<div class="graphDiv" id="historyDisplayMinutes" style="width:600px;height:100px"></div>
+		        		<div class="historyScale">
+		        			<div id="historyMinutesScaleUp" class="scaleUpLink">Up</div>
+		        			<div id="historyMinutesScaleDown" class="scaleDownLink">Down</div>
+		        		</div>
+		        	</div>
+		        	<h3>Hours</h3>
+		        	<div class="historyContainer">
+			        	<div class="graphDiv" id="historyDisplayHours" style="width:600px;height:100px"></div>
+		        		<div class="historyScale">
+		        			<div id="historyHoursScaleUp" class="scaleUpLink">Up</div>
+		        			<div id="historyHoursScaleDown" class="scaleDownLink">Down</div>
+		        		</div>
+			        </div>
+		        	<h3>Days</h3>
+		        	<div class="historyContainer">
+			        	<div class="graphDiv" id="historyDisplayDays" style="width:600px;height:100px"></div>
+		        		<div class="historyScale">
+		        			<div id="historyDaysScaleUp" class="scaleUpLink">Up</div>
+		        			<div id="historyDaysScaleDown" class="scaleDownLink">Down</div>
+		        		</div>
+			        </div>
+			        <div class="spacer"></div>
+		        </div>
+		        <div class="dialog" title="Help">
+		        	<p>
+		        		The <strong>History</strong> page illustrates how your connection usage has changed over time, using 3 different graphs.
+		        		The vertical scale of each graph represents the amount of data transferred, and the horizontal scale represents time, with new
+		        		data appearing at the left of the graph and older data towards the right.
+		        	</p>
+		        	<p>
+		        		The differently coloured parts of each bar show the upload and download amounts for that interval. 
+		        	</p>
+		        	<p>
+		        		The horizontal scales show approximate dates and times, for more exact data hover your mouse over a bar and a small box will 
+		        		appear, containing the required information.
+		        	</p>
+		        	<p>
+		        		The vertical scales of each graph can be varied independently using the <em>Up</em> and <em>Down</em> arrows on the right.
+		        	</p>
+		        	<p>
+		        		In the uppermost graph, entitled <em>Minutes</em>, each vertical bar represents 1 minute of time.
+		        	</p>
+		        	<p>
+		        		In the center graph, entitled <em>Hours</em>, each vertical bar represents 1 hour.
+		        	</p>
+		        	<p>
+		        		In the lower graph, entitled <em>Days</em>, each vertical bar represents 1 day.
+		        	</p>		        			        	
+		        </div>
+		    </div>
+		    <div id="summary">
+		        <h2>Summary</h2><div class="helpLink" id="summaryHelpLink"><a title="Help" class="ui-icon ui-icon-newwin"></a></div>
+		        <div class="panelContainer">
+			        <table>
+					<tr>
+						<th>&nbsp;</th><th>Download</th><th>Upload</th>
+					</tr>
+			        	<tr>
+			        		<td class="name">Today</td><td id="summaryTodayDl" class="value"></td><td id="summaryTodayUl" class="value"></td>
+			        	</tr>
+			        	<tr>
+			        		<td class="name">This Month</td><td id="summaryMonthDl" class="value"></td><td id="summaryMonthUl" class="value"></td>
+			        	</tr>
+			        	<tr>
+			        		<td class="name">This Year</td><td id="summaryYearDl" class="value"></td><td id="summaryYearUl" class="value"></td>
+			        	</tr>                                          
+			        	<tr>
+			        		<td class="name">Total</td><td id="summaryTotalDl" class="value"></td><td id="summaryTotalUl" class="value"></td>
+			        	</tr>                                          
+			        </table>
+				</div>
+		    	<div class="dialog" title="Help">
+		    		<p>
+		        		The <strong>Summary</strong> page displays a basic summary of your connection usage, showing how much data has been uploaded
+		        		and downloaded today, this month, this year, and in total.
+		        	</p>	
+		    	</div>
+		    </div>
+		    <div id="query">
+		        <h2>Query</h2><div class="helpLink" id="queryHelpLink"><a title="Help" class="ui-icon ui-icon-newwin"></a></div>
+		        <div class="panelContainer">
+			        <table id="queryFields">
+			        	<tr>
+			        		<td class="name">From Date<br/><span class="dateFormat"></span></td><td class="value"><input name="from" type="text" id="fromDate" /></td>
+			        	</tr>
+			        	<tr>
+			        		<td class="name">To Date<br/><span class="dateFormat"></span></td><td class="value"><input name="to" type="text" id="toDate" /></td>
+			        	</tr>
+			        	<tr>
+			        		<td class="name">Display</td>
+			        		<td class="value">
+			        			<select name="group" id="queryDisplay">
+			        				<option value="5">Total</option>
+			        				<option value="4">Group by Year</option>
+			        				<option value="3">Group by Month</option>
+			        				<option value="2">Group by Day</option>
+			        				<option value="1">Group by Hour</option>
+			        			</select>
+			        		</td>
+			        	</tr>
+			        	<tr><td><button id="queryButton">Go</button></td><td>
+			        		<div id="queryErrBox" class="ui-state-error ui-corner-all">
+			        			<p>
+			        				<span class="ui-icon ui-icon-alert"> </span>
+									<strong>Error:</strong> 
+									<ul id="errMsgList">
+									</ul>
+								</p>
+			        		</div>
+			        	</td></tr>
+			        </table>
+			        
+			        <table id="queryResults" cellpadding="0" cellspacing="0">
+						<thead>
+							<tr>
+								<th id="dateCol"></th>
+								<th id="dlCol"></th>	
+								<th id="ulCol"></th>
+							</tr>
+						</thead>
+						<tbody>
+						</tbody>
+					</table> 
+
+			    </div>
+		    	<div class="dialog" title="Help">
+		    		<p>
+		        		The <strong>Query</strong> page allows you to view how your connection has been used during a date range that you specify.
+		        	</p>
+		        	<p>
+		        		Enter the first and last dates of the range into the <em>From Date</em> and <em>To Date</em> boxes, 
+		        		using the calendars which are displayed by clicking the calendar icons.
+		        	</p>
+		        	<p>
+		        		Specify how you would like the results of your query grouped, by selecting one of the options from the <em>Display</em> list.
+		        	</p>
+		        	<p>
+		        		Clicking the <em>Go</em> button will display the results of your query in the grid on the right of the page. If a large number
+		        		of results are returned then they may be split into pages, you can navigate through the pages of results by using the blue left 
+		        		and right arrows underneath the grid. You can sort the results by date, or by upload or download amounts, by clicking the column 
+		        		headings in the grid. Clicking a column heading a second time will reverse the order of the sort.
+					</p>		        	
+		    	</div>
+		    	<div class="spacer"></div>
+		    </div>
+		    <div id="about">
+			<h2>About BitMeterOS</h2><br>
+		        <div class="panelContainer">
+				<p>
+				This is the web interface for <a href="http://codebox.org.uk/bitmeterOs">BitMeterOS</a> v<span id="version"></span>
+				</p>
+				<p>
+				Copyright &copy; 2009 Rob Dawson
+				</p>
+				<p>
+				Licensed under the <a href="http://www.gnu.org/licenses/gpl.txt">GNU General Public License</a>
+				</p>
+
+				<p>
+				BitMeterOS is free software: you can redistribute it and/or modify
+				it under the terms of the GNU General Public License as published by
+				the Free Software Foundation, either version 3 of the License, or
+				(at your option) any later version.
+				</p>
+
+				<p>
+				BitMeterOS is distributed in the hope that it will be useful,
+				but WITHOUT ANY WARRANTY; without even the implied warranty of
+				MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+				GNU General Public License for more details.
+				</p>
+				
+				<p>
+					<br/>
+				If you wish to thank the author for this software, and encourage future development, you can send a donation by clicking the button below.
+				</p>
+				
+				<p>
+					<form id="donateForm" action="https://www.paypal.com/cgi-bin/webscr" method="post">
+					<input type="hidden" name="cmd" value="_s-xclick">
+					<input type="hidden" name="hosted_button_id" value="9675111">
+					<input type="image" src="https://www.paypal.com/en_GB/i/btn/btn_donate_SM.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online.">
+					<img alt="" border="0" src="https://www.paypal.com/en_GB/i/scr/pixel.gif" width="1" height="1">
+					</form>
+				</p>
+			</div>
+		    </div>
+		</div>
+		<div id="floater"></div>
+	</body>
+</html>

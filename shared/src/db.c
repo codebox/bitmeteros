@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.1.5
+ * BitMeterOS v0.2.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Sun, 25 Oct 2009 17:18:38 +0000
+ * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
  */
 
 #include <unistd.h>
@@ -33,6 +33,8 @@
 #include <string.h>
 #include "common.h"
 
+#define BUSY_WAIT_INTERVAL 10000
+
 /*
 Contains common database-handling routines.
 */
@@ -41,14 +43,13 @@ static sqlite3* db;
 static sqlite3_stmt *stmtSelectConfig;
 static int dbOpen = FALSE;
 static int inTransaction = FALSE;
-static int dbVersion = 0;
 
 void prepareSql(sqlite3_stmt **stmt, const char *sql){
  // Initialise a prepared statement, using the specified SQL string - exit if there is a problem
 	assert(dbOpen);
 	int rc = sqlite3_prepare_v2(db, sql, -1, stmt, NULL);
 	if (rc != SQLITE_OK){
-		logMsg(LOG_ERR, "Unable to prepare SQL '%s' rc=%d error=%s\n", sql, rc, sqlite3_errmsg(db));
+		logMsg(LOG_ERR, "Unable to prepare SQL '%s' rc=%d error=%s", sql, rc, sqlite3_errmsg(db));
 		exit(1);
 	}
 }
@@ -64,7 +65,7 @@ sqlite3* openDb(){
  // If we are using a real db file (not an in-memory d/b) then check that it exists
     int inMemDb = strcmp(IN_MEMORY_DB, dbPath);
 	if ((inMemDb != 0) && (access(dbPath , F_OK) == -1 )) {
-		logMsg(LOG_ERR, "The database file %s does not exist\n", dbPath);
+		logMsg(LOG_ERR, "The database file %s does not exist", dbPath);
 		exit(1);
 	}
 
@@ -80,13 +81,31 @@ sqlite3* openDb(){
 	#endif
 
 	if (rc != SQLITE_OK){
-		logMsg(LOG_ERR, "Unable to open database %s rc=%d error=%s\n", dbPath, rc, sqlite3_errmsg(db));
+		logMsg(LOG_ERR, "Unable to open database %s rc=%d error=%s", dbPath, rc, sqlite3_errmsg(db));
 		exit(1);
 	}
 
 	dbOpen = TRUE;
+	sqlite3_busy_timeout(db, BUSY_WAIT_INTERVAL);
 
 	return db;
+}
+
+void dbVersionCheck(){
+ // For some apps we don't want to proceed if the d/b version is not what we expect
+    assert(dbOpen);
+
+    int dbVersion = getDbVersion();
+    if (dbVersion != DB_VERSION){
+        closeDb();
+
+        char dbPath[MAX_PATH_LEN];
+        getDbPath(dbPath);
+		logMsg(LOG_ERR, "Bad database version detected. This application requires a database at version %d but the file %s has version %d",
+            DB_VERSION, dbPath, dbVersion);
+
+		exit(1);
+    }
 }
 
 void prepareDb(){
@@ -94,13 +113,15 @@ void prepareDb(){
 	prepareSql(&stmtSelectConfig, "SELECT value FROM config WHERE key=?");
 }
 
-void executeSql(const char* sql, int (*callback)(void*, int, char**, char**) ){
+int executeSql(const char* sql, int (*callback)(void*, int, char**, char**) ){
     char* errMsg;
     int rc = sqlite3_exec(db, sql, callback, NULL, &errMsg);
-	if (rc != SQLITE_OK){
-		printf("Unable to execute sql '%s'. rc=%d msg=%s\n", sql, rc, errMsg);
+	if (rc == SQLITE_OK){
+	    return SUCCESS;
+	} else {
+		printf("Unable to execute sql '%s'. rc=%d msg=%s", sql, rc, errMsg);
 		sqlite3_free(errMsg);
-		return;
+		return FAIL;
 	}
 }
 
@@ -155,7 +176,7 @@ void runSelectAndCallback(sqlite3_stmt *stmt, void (*callback)(struct Data*)){
 	sqlite3_reset(stmt);
 
 	if (rc != SQLITE_DONE){
-		logMsg(LOG_ERR, "runSelectAndCallback caused sqlite3_step to return %d.\n", rc);
+		logMsg(LOG_ERR, "runSelectAndCallback caused sqlite3_step to return %d.", rc);
 	}
 
 }
@@ -177,7 +198,7 @@ struct Data* runSelect(sqlite3_stmt *stmt){
 	sqlite3_reset(stmt);
 
 	if (rc != SQLITE_DONE){
-		logMsg(LOG_ERR, "runSelect caused sqlite3_step to return %d.\n", rc);
+		logMsg(LOG_ERR, "runSelect caused sqlite3_step to return %d.", rc);
 	}
 
 	return result;
@@ -191,7 +212,7 @@ void beginTrans(){
     char *errMsg;
     int rc = sqlite3_exec(db, "begin", NULL, NULL, &errMsg);
 	if (rc != SQLITE_OK){
-		logMsg(LOG_ERR, "Unable to begin new transaction. rc=%d msg=%s\n", rc, errMsg);
+		logMsg(LOG_ERR, "Unable to begin new transaction. rc=%d msg=%s", rc, errMsg);
 		sqlite3_free(errMsg);
 	}
 	inTransaction = TRUE;
@@ -205,7 +226,7 @@ void commitTrans(){
     char *errMsg;
     int rc = sqlite3_exec(db, "commit", NULL, NULL, &errMsg);
     if (rc != SQLITE_OK){
-        logMsg(LOG_ERR, "Unable to commit transaction. rc=%d msg=%s\n", rc, errMsg);
+        logMsg(LOG_ERR, "Unable to commit transaction. rc=%d msg=%s", rc, errMsg);
         sqlite3_free(errMsg);
     }
 
@@ -220,7 +241,7 @@ void rollbackTrans(){
     char *errMsg;
     int rc = sqlite3_exec(db, "rollback", NULL, NULL, &errMsg);
     if (rc != SQLITE_OK){
-        logMsg(LOG_ERR, "Unable to rollback transaction. rc=%d msg=%s\n", rc, errMsg);
+        logMsg(LOG_ERR, "Unable to rollback transaction. rc=%d msg=%s", rc, errMsg);
         sqlite3_free(errMsg);
     }
 
@@ -228,6 +249,8 @@ void rollbackTrans(){
 }
 
 int getConfigInt(const char* key){
+   	assert(dbOpen);
+
  // Return the specified value from the 'config' table
 	sqlite3_bind_text(stmtSelectConfig, 1, key, -1, SQLITE_TRANSIENT);
 
@@ -237,7 +260,7 @@ int getConfigInt(const char* key){
 	if (rc == SQLITE_ROW){
 		value = sqlite3_column_int(stmtSelectConfig, 0);
 	} else {
-		logMsg(LOG_ERR, "Unable to retrieve config value for '%s' rc=%d error=%s\n", key, rc, getDbError());
+		logMsg(LOG_ERR, "Unable to retrieve config value for '%s' rc=%d error=%s", key, rc, getDbError());
 		value = -1;
 	}
 
@@ -246,14 +269,45 @@ int getConfigInt(const char* key){
   	return value;
 }
 
-int getDbVersion(){
-	if (dbVersion == 0){
-		dbVersion = getConfigInt("db.version");
-		if (dbVersion <= 0){
-		 // This is an early version of the d/b that doesn't have a 'db.version' config item - call this version 1
-			dbVersion = 1;
-		}
+char* getConfigText(const char* key){
+   	assert(dbOpen);
+
+ // Return the specified value from the 'config' table
+	sqlite3_bind_text(stmtSelectConfig, 1, key, -1, SQLITE_TRANSIENT);
+
+	int rc = sqlite3_step(stmtSelectConfig);
+
+	char* value;
+	if (rc == SQLITE_ROW){
+		value = strdup(sqlite3_column_text(stmtSelectConfig, 0));
+	} else {
+		logMsg(LOG_ERR, "Unable to retrieve config value for '%s' rc=%d error=%s", key, rc, getDbError());
+		value = NULL;
 	}
+
+  	sqlite3_reset(stmtSelectConfig);
+
+  	return value;
+}
+
+int setConfigIntValue(char* key, int value){
+    char* currentValue = getConfigText(key);
+    char sql[100];
+    if (currentValue == NULL){
+        sprintf(sql, "INSERT INTO config (key, value) VALUES ('%s', %d)", key, value);
+    } else {
+        sprintf(sql, "UPDATE config SET key='%s', value=%d WHERE key='%s'", key, value, key);
+    }
+    return executeSql(sql, NULL);
+}
+
+int getDbVersion(){
+    int dbVersion = getConfigInt(CONFIG_DB_VERSION);
+    if (dbVersion <= 0){
+     // This is an early version of the d/b that doesn't have a 'db.version' config item - call this version 1
+        dbVersion = 1;
+    }
+
 	return dbVersion;
 }
 
@@ -262,21 +316,10 @@ const char* getDbError(){
     return sqlite3_errmsg(db);
 }
 
-void setDbBusyWait(int msInterval){
- // Set how long we wait for the db to un-busy itself, in milli-seconds
-    sqlite3_busy_timeout(db, msInterval);
-}
-
 void closeDb(){
  // Close the database
 	assert(dbOpen);
 
-	#ifdef __linux__
-		//TODO
-	#endif
-	#ifdef __APPLE__
-		//TODO
-	#endif
 	#ifdef _WIN32
         sqlite3_stmt *pStmt;
 		while((pStmt = sqlite3_next_stmt(db, 0))!=0 ){

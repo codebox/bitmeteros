@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.1.5
+ * BitMeterOS v0.2.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Sun, 25 Oct 2009 17:18:38 +0000
+ * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
  */
 
 #include <stdio.h>
@@ -69,9 +69,6 @@ void setupDb(){
 	prepareSql(&stmtDeleteCompressed,     "DELETE FROM data WHERE ts<=? AND dr=?");
 
  // Read various values out of the 'config' table
-	int busyWaitInterval = getConfigInt("cap.busy_wait_interval");
-	setDbBusyWait(busyWaitInterval);
-
 	keepPerSecLimit  = getConfigInt("cap.keep_sec_limit");
 	keepPerMinLimit  = getConfigInt("cap.keep_min_limit");
 	compressInterval = getConfigInt("cap.compress_interval");
@@ -126,7 +123,7 @@ static int doInsert(int ts, int dr, const char* addr, int dl, int ul){
 	int status;
   	int rc = sqlite3_step(stmtInsertData);
   	if (rc != SQLITE_DONE){
-  		logMsg(LOG_ERR, "doInsert() failed to insert values %d,%d,%s,%d,%d into db rc=%d error=%s\n", ts, dr, addr, dl, ul, rc, getDbError());
+  		logMsg(LOG_ERR, "doInsert() failed to insert values %d,%d,%s,%d,%d into db rc=%d error=%s", ts, dr, addr, dl, ul, rc, getDbError());
   		status = FAIL;
   	} else {
         status = SUCCESS;
@@ -155,7 +152,7 @@ static int doDelete(int ts, int dr){
 
 	int rc = sqlite3_step(stmtDeleteCompressed);
 	if (rc != SQLITE_DONE){
-		logMsg(LOG_ERR, "Failed to delete compressed rows for ts=%d dr=%d rc=%d error=%s\n", ts, dr, rc, getDbError());
+		logMsg(LOG_ERR, "Failed to delete compressed rows for ts=%d dr=%d rc=%d error=%s", ts, dr, rc, getDbError());
 		status = FAIL;
 	} else {
         status = SUCCESS;
@@ -168,7 +165,7 @@ static int doDelete(int ts, int dr){
 
 static int doCompress(int ts, int oldDr, int newDr){
  // For each adapter, compresses rows older than 'ts' and with a 'dr' of oldDr, into a single row with 'dr' of newDr.
-	logMsg(LOG_INFO, "doCompress for %d\n", ts);
+	logMsg(LOG_INFO, "doCompress for %d", ts);
 
 	sqlite3_bind_int(stmtSelectForCompression, 1, ts);
 	sqlite3_bind_int(stmtSelectForCompression, 2, oldDr);
@@ -184,7 +181,7 @@ static int doCompress(int ts, int oldDr, int newDr){
 		dlTotal  = sqlite3_column_int(stmtSelectForCompression,  1);
 		ulTotal  = sqlite3_column_int(stmtSelectForCompression,  2);
 
-		logMsg(LOG_INFO, "row dl=%d ul=%d\n", dlTotal, ulTotal);
+		logMsg(LOG_INFO, "row dl=%d ul=%d", dlTotal, ulTotal);
 
 		insertedOk = doInsert(ts, newDr, addr, dlTotal, ulTotal);
 		if (insertedOk){

@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.1.5
+ * BitMeterOS v0.2.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,33 +22,42 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Sun, 25 Oct 2009 17:18:38 +0000
+ * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
  */
 
 #include <sqlite3.h>
-#include <pthread.h>
 #include "common.h"
 
 /*
-Contains a thread-safe helper function for use by clients that need to monitor the database.
+Contains a helper function for use by clients that need to monitor the database.
 */
 
-static sqlite3_stmt *stmt = NULL;
-static pthread_mutex_t stmtMutex = PTHREAD_MUTEX_INITIALIZER;
+#ifndef MULTI_THREADED_CLIENT
+	static sqlite3_stmt *stmt = NULL;
+#endif
+
+#define CLIENT_MONITOR_SQL "SELECT ts AS ts, dr AS dr, SUM(dl) AS dl, SUM(ul) AS ul FROM data GROUP BY ts HAVING ts >= ? ORDER BY ts DESC"
 
 struct Data* getMonitorValues(int ts){
  // A list of Data structs will be returned, once for each db entry with a timestamp >= ts
-    pthread_mutex_lock(&stmtMutex);
 
-    if (stmt == NULL){
-        prepareSql(&stmt, "SELECT ts AS ts, SUM(dl) AS dl, SUM(ul) AS ul FROM data GROUP BY ts HAVING ts >= ? ORDER BY ts DESC");
-    }
-
+	#ifdef MULTI_THREADED_CLIENT
+    	sqlite3_stmt *stmt = NULL;
+    	prepareSql(&stmt, CLIENT_MONITOR_SQL);
+    #else
+    	if (stmt == NULL){
+    		prepareSql(&stmt, CLIENT_MONITOR_SQL);
+    	}
+    #endif
+    
 	sqlite3_bind_int(stmt, 1, ts);
 	struct Data* result = runSelect(stmt);
-	sqlite3_reset(stmt);
-
-    pthread_mutex_unlock(&stmtMutex);
-
+	
+	#ifdef MULTI_THREADED_CLIENT
+    	sqlite3_finalize(stmt);
+    #else
+    	sqlite3_reset(stmt);
+    #endif	
+	
 	return result;
 }

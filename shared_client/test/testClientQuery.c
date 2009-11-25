@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.1.5
+ * BitMeterOS v0.2.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Sun, 25 Oct 2009 17:18:38 +0000
+ * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
  */
 
 #include "test.h"
@@ -33,8 +33,6 @@
 /*
 Contains unit tests for the clientQuery module.
 */
-
-static void checkQueryResults(CuTest *tc, struct Data* data, int dl, int ul);
 
 void testQueryEmptyDb(CuTest *tc) {
  // Check that we behave correctly when the data table is empty
@@ -192,7 +190,7 @@ void testQueryDataNarrowValueRangeMultiResults(CuTest *tc) {
     checkData(tc, data, makeTs("2009-01-01 00:00:00"), 31622400, NULL, 9, 309);
 
     data = data->next;
-    checkData(tc, data, makeTs("2009-05-01 01:00:00"), 10371600, NULL, 5, 105);
+    checkData(tc, data, makeTs("2010-01-01 00:00:00"), 31536000, NULL, 5, 105);
 
     data = data->next;
 

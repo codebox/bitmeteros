@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.1.5
+ * BitMeterOS v0.2.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Sun, 25 Oct 2009 17:18:38 +0000
+ * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
  */
 
 #define _GNU_SOURCE
@@ -170,7 +170,7 @@ static int setDirection(struct Prefs *prefs, char* dirTxt){
 static int setBarChars(struct Prefs *prefs, char* barCharsTxt){
  // The user has specified the maximum number of characters to use when drawing a bar in monitor mode.
 
-	int barChars = atoi(barCharsTxt);
+	int barChars = strToInt(barCharsTxt, 0);
 
 	if (barChars > 0){
 		prefs->barChars = barChars;
@@ -186,7 +186,7 @@ static int setMaxAmount(struct Prefs *prefs, char* maxAmountTxt){
  /* The user has specified the number of bytes that must be transferred for the bar to be drawn
     at maximum length when monitoring - effectively the scale of the graph. */
 
-	int maxAmount = atoi(maxAmountTxt);
+	int maxAmount = strToInt(maxAmountTxt, 0);
 
 	if (maxAmount > 0){
 		prefs->maxAmount = maxAmount;
@@ -298,18 +298,6 @@ static int setRange(struct Prefs *prefs, char* rangeTxt){
 static time_t makeTsFromRange(char* rangePart){
  // Convert one part of the range argument (ie the 'from' or 'to' part) into a timestamp
 
-	char yTxt[5];
-	strcpy(yTxt, "0");
-
-	char mTxt[3];
-	strcpy(mTxt, "1");
-
-	char dTxt[3];
-	strcpy(dTxt, "1");
-
-	char hTxt[3];
-	strcpy(hTxt, "0");
-
  /* There are 4 possible formats that the rangePart value might have:
  		yyyymmddhh - Year, Month, Day, Hour
  		yyyymmdd   - Year, Month, Day
@@ -319,35 +307,41 @@ static time_t makeTsFromRange(char* rangePart){
  	try to convert it*/
 
 	int rangeLen = strlen(rangePart);
+    char fullDate[14];
+    strncpy(fullDate,"0000/00/00/00", 14);
 
 	switch(rangeLen){
-		case 10:	// yyyymmddhh
-			strncpy(hTxt, rangePart+8, 2);
+		case 10: // yyyymmddhh
+			strncpy(fullDate + 11, rangePart + 8, 2);
 		 	/* FALLTHRU */
 
-		case 8:		// yyyymmdd
-			strncpy(dTxt, rangePart+6, 2);
+		case 8:	// yyyymmdd
+			strncpy(fullDate + 8,  rangePart + 6, 2);
 		 	/* FALLTHRU */
 
-		case 6:		// yyyymm
-			strncpy(mTxt, rangePart+4, 2);
+		case 6: // yyyymm
+			strncpy(fullDate + 5,  rangePart + 4, 2);
 		 	/* FALLTHRU */
 
-		case 4:		// yyyy
-			strncpy(yTxt, rangePart, 4);
+		case 4:	// yyyy
+			strncpy(fullDate,      rangePart,     4);
 			break;
 
 		default:
 			return INVALID_TS;
 	}
 
-	struct tm cal = {0,0,0,0,0,0,0,0,-1};
-	cal.tm_hour = atoi(hTxt);
-	cal.tm_mday = atoi(dTxt);
-	cal.tm_mon  = atoi(mTxt) - 1;
-	cal.tm_year = atoi(yTxt) - 1900;
+	#ifdef _WIN32
+		struct tm cal = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+	#else
+		struct tm cal = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL};
+	#endif
+	cal.tm_isdst = -1; // Get the library to handle Daylight Savings Time
+	cal.tm_mday  = 1;  // Default to the first day of the month
+	
+    strptime(fullDate, "%Y/%m/%d/%H", &cal);
 
-	return mktime(&cal);
+	return mktime(&cal); // Need the GMT/UTC value
 }
 
 static time_t adjustForEndOfRange(time_t time, int rangeLen){
@@ -355,7 +349,8 @@ static time_t adjustForEndOfRange(time_t time, int rangeLen){
     needs to be adjusted so that it marks the end of the specified time period rather than
     the beginning. */
 
-    struct tm* cal = gmtime(&time);
+    struct tm* cal = localtime(&time);
+    cal->tm_isdst = -1;
 
 	switch(rangeLen){
 		case 10:	// yyyymmddhh

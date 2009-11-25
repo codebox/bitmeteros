@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.1.5
+ * BitMeterOS v0.2.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Sun, 25 Oct 2009 17:18:38 +0000
+ * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
  */
 
 #define _GNU_SOURCE
@@ -38,7 +38,7 @@
 Contains unit tests for the options module.
 */
 
-extern optind;
+extern int optind;
 static void checkPrefs(CuTest *tc, struct Prefs expectedPrefs, char* cmdLine);
 
 static void checkQueryRangeOk(CuTest *tc, char* cmdLine, time_t from, time_t to){
@@ -225,25 +225,10 @@ void testMonitorMode(CuTest *tc) {
 
 static void checkPrefs(CuTest *tc, struct Prefs expectedPrefs, char* cmdLine){
  // Helper function for checking the values in a Prefs structure
-	int argc = 1;
+	int argc;
+	char** argv;
 
-	char *cmdLineCopy = strdupa(cmdLine);
-	char* match = strtok(cmdLineCopy, " ");
-	while(match != NULL){
-        argc++;
-        match = strtok(NULL, " ");
-	}
-
-    char* argv[argc];
-    argv[0] = NULL;
-
-    int i=1;
-    cmdLineCopy = strdupa(cmdLine);
-    match = strtok(cmdLineCopy, " ");
-	do{
-        argv[i++] = match;
-        match = strtok(NULL, " ");
-	} while(match != NULL);
+    parseCommandLine(cmdLine, &argv, &argc);
 
 	struct Prefs actualPrefs = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL};
 	optind = 1; // need to reset this global between each call to getopt()

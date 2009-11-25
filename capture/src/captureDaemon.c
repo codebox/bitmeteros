@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.1.5
+ * BitMeterOS v0.2.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,14 +22,14 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Sun, 25 Oct 2009 17:18:38 +0000
+ * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
  */
 
 #include <signal.h>
 #include "capture.h"
 #include "common.h"
 
-/* 
+/*
 Contains the entry point for the data capture application, when run as an unmanaged executable.
 */
 
@@ -39,6 +39,7 @@ static void sigHandler();
 int main(int argc, char **argv){
  // Initialise logging and database
 	setLogLevel(LOG_ERR);
+	setAppName("CAPTURE");
 	setLogToFile(TRUE);
 	setupCapture();
 

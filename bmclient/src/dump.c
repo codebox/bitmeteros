@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.1.5
+ * BitMeterOS v0.2.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Mon, 26 Oct 2009 15:16:39 +0000
+ * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
  */
 
 #include <stdio.h>
@@ -97,7 +97,7 @@ static void printRow(struct Data* row){
 
 	if (prefs.dumpFormat == PREF_DUMP_FORMAT_CSV){
 	 // Output in CSV is easy, just print it
-		printf("%s,%s,%s,%d,%s,%s\n", date, timeFrom, timeTo, row->dr, dlTxt, ulTxt);
+		printf("%s,%s,%s,%d,%s,%s,%s\n", date, timeFrom, timeTo, row->dr, dlTxt, ulTxt, row->ad);
 
 	} else if (prefs.dumpFormat == PREF_DUMP_FORMAT_FIXED_WIDTH){
 	 // For fixed-width output we need to work out how wide to make the columns
@@ -128,7 +128,7 @@ static void printRow(struct Data* row){
 				assert(FALSE); // Should have caught invalid units before now
 				break;
 		}
-		printf("%s %s %s %4d %*s %*s\n", date, timeFrom, timeTo, row->dr, dlWidth, dlTxt, ulWidth, ulTxt);
+		printf("%s %s %s %4d %*s %*s %s\n", date, timeFrom, timeTo, row->dr, dlWidth, dlTxt, ulWidth, ulTxt, row->ad);
 
 	}
 	freeData(row);

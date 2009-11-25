@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.1.5
+ * BitMeterOS v0.2.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Sun, 25 Oct 2009 17:18:38 +0000
+ * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
  */
 
 #include "test.h"
@@ -34,7 +34,7 @@
 /*
 Contains unit tests for the process module.
 */
-//void checkData(CuTest *tc, struct Data* data, time_t ts, int dr, char* ad, int dl, int ul)
+
 void testExtractDiffsNull(CuTest *tc){
  // Check that the extractDiffs function handles NULLs correctly
     struct Data* diffs;

@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.1.5
+ * BitMeterOS v0.2.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,14 +22,13 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Sun, 25 Oct 2009 17:18:38 +0000
+ * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
  */
 
 #include <sqlite3.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include <pthread.h>
 #include "common.h"
 #include "client.h"
 
@@ -37,19 +36,26 @@
 Contains thread-safe utility functions used by other client modules.
 */
 
-static pthread_mutex_t stmtTsBoundsMutex  = PTHREAD_MUTEX_INITIALIZER;
-static pthread_mutex_t stmtMaxValuesMutex = PTHREAD_MUTEX_INITIALIZER;
-static sqlite3_stmt *stmtTsBounds  = NULL;
-static sqlite3_stmt *stmtMaxValues = NULL;
+#ifndef MULTI_THREADED_CLIENT
+    static sqlite3_stmt *stmtTsBounds  = NULL;
+    static sqlite3_stmt *stmtMaxValues = NULL;
+#endif
+
+#define TS_BOUNDS_SQL  "SELECT MIN(ts), MAX(ts) FROM data"
+#define MAX_VALUES_SQL "SELECT MAX(dl) AS dl, MAX(ul) AS ul FROM data"
 
 struct ValueBounds* calcTsBounds(){
  /* Calculate the smallest and largest timestamps in the data table. If the table is
     empty then we return NULL. */
 
-	pthread_mutex_lock(&stmtTsBoundsMutex);
-	if (stmtTsBounds == NULL){
-        prepareSql(&stmtTsBounds, "SELECT MIN(ts), MAX(ts) FROM data");
-	}
+	#ifdef MULTI_THREADED_CLIENT
+    	sqlite3_stmt *stmtTsBounds = NULL;
+    	prepareSql(&stmtTsBounds, TS_BOUNDS_SQL);
+    #else
+        if (stmtTsBounds == NULL){
+            prepareSql(&stmtTsBounds, TS_BOUNDS_SQL);
+        }
+    #endif
 
 	time_t minTs, maxTs;
 	struct ValueBounds* values = NULL;
@@ -66,23 +72,35 @@ struct ValueBounds* calcTsBounds(){
         }
 	}
 
-	sqlite3_reset(stmtTsBounds);
-    pthread_mutex_unlock(&stmtTsBoundsMutex);
+	#ifdef MULTI_THREADED_CLIENT
+    	sqlite3_finalize(stmtTsBounds);
+    #else
+    	sqlite3_reset(stmtTsBounds);
+    #endif
 
 	return values;
 }
 
 struct Data* calcMaxValues(){
  // Calculate the largest ul and dl values that exist in the data table
-	pthread_mutex_lock(&stmtMaxValuesMutex);
-	if (stmtMaxValues == NULL){
-        prepareSql(&stmtMaxValues, "SELECT MAX(dl) AS dl, MAX(ul) AS ul FROM data");
-	}
+    #ifdef MULTI_THREADED_CLIENT
+    	sqlite3_stmt *stmtMaxValues = NULL;
+    	prepareSql(&stmtMaxValues, MAX_VALUES_SQL);
+    #else
+    	if (stmtMaxValues == NULL){
+    		prepareSql(&stmtMaxValues, MAX_VALUES_SQL);
+    	}
+    #endif
 
-    struct Data* result = runSelect(stmtMaxValues);
-    pthread_mutex_unlock(&stmtMaxValuesMutex);
+	struct Data* result = runSelect(stmtMaxValues);
 
-	return result;
+	#ifdef MULTI_THREADED_CLIENT
+    	sqlite3_finalize(stmtMaxValues);
+    #else
+    	sqlite3_reset(stmtMaxValues);
+    #endif
+
+    return result;
 }
 
 void formatAmounts(const BW_INT dl, const BW_INT ul, char* dlTxt, char *ulTxt, int units){
@@ -94,8 +112,8 @@ void formatAmounts(const BW_INT dl, const BW_INT ul, char* dlTxt, char *ulTxt, i
 
 		case UNITS_ABBREV:
 		case UNITS_FULL:
-			formatAmount(dl, 0, (units == UNITS_ABBREV), dlTxt);
-			formatAmount(ul, 0, (units == UNITS_ABBREV), ulTxt);
+			formatAmount(dl, TRUE, (units == UNITS_ABBREV), dlTxt);
+			formatAmount(ul, TRUE, (units == UNITS_ABBREV), ulTxt);
 			break;
 
 		default:

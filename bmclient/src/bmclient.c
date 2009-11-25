@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.1.5
+ * BitMeterOS v0.2.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Mon, 26 Oct 2009 15:16:39 +0000
+ * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
  */
 
 #include <stdio.h>
@@ -42,6 +42,8 @@ struct Prefs prefs = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL};
 int main(int argc, char **argv){
  // Interpret the command-lin arguments and decide if they make sense
 	int status = parseArgs(argc, argv, &prefs);
+
+    printf(COPYRIGHT);
 
 	if (status == FAIL){
 	 // The command-line was duff...
@@ -66,8 +68,7 @@ int main(int argc, char **argv){
 	 // We will need to go to the database if we end up here
 		openDb();
 		prepareDb();
-
-        setDbBusyWait(1000); //TODO give the client its own config value
+        dbVersionCheck();
 
 		switch(prefs.mode){
 			case PREF_MODE_DUMP:

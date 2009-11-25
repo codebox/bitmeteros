@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.1.5
+ * BitMeterOS v0.2.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Sun, 25 Oct 2009 17:18:38 +0000
+ * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
  */
 
 #include <stdio.h>
@@ -79,6 +79,7 @@ void doQuery(){
 
 	 // Run the query here
         struct Data* data = getQueryValues(prefs.rangeFrom, prefs.rangeTo, prefs.group);
+        struct Data* initData = data;
 
 	 // How we display the results depends on how they are grouped...
 		switch(prefs.group){
@@ -106,6 +107,8 @@ void doQuery(){
 				assert(FALSE); // Should have caught invalid/missing group values already
 				break;
 		}
+
+		freeData(initData);
 	}
 }
 

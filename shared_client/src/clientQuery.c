@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.1.5
+ * BitMeterOS v0.2.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,11 +22,10 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Sun, 25 Oct 2009 17:18:38 +0000
+ * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
  */
 
 #include <sqlite3.h>
-#include <pthread.h>
 #include <assert.h>
 #include <time.h>
 #include <stdlib.h>
@@ -34,25 +33,32 @@
 #include "client.h"
 
 /*
-Contains a thread-safe helper function for use by clients that need to perform database queries
+Contains a helper function for use by clients that need to perform database queries
 based on timestamp ranges, with result grouping.
 */
 
-static sqlite3_stmt *stmt = NULL;
-static pthread_mutex_t stmtMutex = PTHREAD_MUTEX_INITIALIZER;
-static struct Data* doQueryForInterval(time_t tsFrom, time_t tsTo);
-static struct Data* doQuery(time_t minFrom, time_t maxTo, time_t (*getNext)(time_t), time_t (*addTo)(time_t));
+#define CLIENT_QUERY_SQL "SELECT SUM(dl) AS dl, SUM(ul) AS ul FROM data WHERE ts>? AND ts<=?"
+
+#ifndef MULTI_THREADED_CLIENT
+	static sqlite3_stmt *stmt = NULL;
+#endif
+
+static struct Data* doQueryForInterval(sqlite3_stmt* stmt, time_t tsFrom, time_t tsTo);
+static struct Data* doQuery(sqlite3_stmt *stmt, time_t minFrom, time_t maxTo, time_t (*getNext)(time_t), time_t (*addTo)(time_t));
 static time_t addToDateY(time_t ts);
 static time_t addToDateM(time_t ts);
 static time_t addToDateD(time_t ts);
 static time_t addToDateH(time_t ts);
 
 struct Data* getQueryValues(time_t tsFrom, time_t tsTo, int group){
-    pthread_mutex_lock(&stmtMutex);
-
-    if (stmt == NULL){
-         prepareSql(&stmt, "SELECT SUM(dl) AS dl, SUM(ul) AS ul FROM data WHERE ts>? AND ts<=?");
-    }
+	#ifdef MULTI_THREADED_CLIENT
+    	sqlite3_stmt *stmt = NULL;
+    	prepareSql(&stmt, CLIENT_QUERY_SQL);
+    #else
+    	if (stmt == NULL){
+    		prepareSql(&stmt, CLIENT_QUERY_SQL);
+    	}
+    #endif
 
     struct Data* result = NULL;
     struct ValueBounds* tsBounds = calcTsBounds();
@@ -70,23 +76,23 @@ struct Data* getQueryValues(time_t tsFrom, time_t tsTo, int group){
 	 // Decide how the results should be grouped
         switch(group){
             case QUERY_GROUP_HOURS:
-                result = doQuery(minFrom, maxTo, &getNextHourForTs, &addToDateH);
+                result = doQuery(stmt, minFrom, maxTo, &getNextHourForTs, &addToDateH);
                 break;
 
             case QUERY_GROUP_DAYS:
-                result = doQuery(minFrom, maxTo, &getNextDayForTs, &addToDateD);
+                result = doQuery(stmt, minFrom, maxTo, &getNextDayForTs, &addToDateD);
                 break;
 
             case QUERY_GROUP_MONTHS:
-                result = doQuery(minFrom, maxTo, &getNextMonthForTs, &addToDateM);
+                result = doQuery(stmt, minFrom, maxTo, &getNextMonthForTs, &addToDateM);
                 break;
 
             case QUERY_GROUP_YEARS:
-                result = doQuery(minFrom, maxTo, &getNextYearForTs, &addToDateY);
+                result = doQuery(stmt, minFrom, maxTo, &getNextYearForTs, &addToDateY);
                 break;
 
             case QUERY_GROUP_TOTAL:
-                result = doQueryForInterval(minFrom, maxTo);
+                result = doQueryForInterval(stmt, minFrom, maxTo);
                 break;
 
             default:
@@ -94,12 +100,16 @@ struct Data* getQueryValues(time_t tsFrom, time_t tsTo, int group){
         }
     }
 
-    pthread_mutex_unlock(&stmtMutex);
+	#ifdef MULTI_THREADED_CLIENT
+    	sqlite3_finalize(stmt);
+    #else
+    	sqlite3_reset(stmt);
+    #endif
 
     return result;
 }
 
-static struct Data* doQuery(time_t minFrom, time_t maxTo, time_t (*getNext)(time_t), time_t (*addTo)(time_t)){
+static struct Data* doQuery(sqlite3_stmt *stmt, time_t minFrom, time_t maxTo, time_t (*getNext)(time_t), time_t (*addTo)(time_t)){
  /* Performs a series of SELECT queries to return the amount of data recorded between minFrom
     and maxTo. The data is returned in a list of Data structs, each one covering an interval
     within the specified range. The length of the interval represented by each Data struct
@@ -116,7 +126,7 @@ static struct Data* doQuery(time_t minFrom, time_t maxTo, time_t (*getNext)(time
     struct Data* current;
 
 	while(TRUE){
-	    current = doQueryForInterval(from, to);
+	    current = doQueryForInterval(stmt, from, to);
 	    if (current->dl > 0 || current->ul > 0){
 	     // Only return the struct if it contains some data
             appendData(&result, current);
@@ -125,13 +135,13 @@ static struct Data* doQuery(time_t minFrom, time_t maxTo, time_t (*getNext)(time
 	    	freeData(current);
 	    }
 
-        if (to == maxTo){
+        if (to >= maxTo){
             break;
         } else {
          // Work out the next interval that we will query
             from = to;
             to   = addTo(to);
-            to = (to > maxTo) ? maxTo : to;
+            //to = (to > maxTo) ? maxTo : to;
         }
 	}
 
@@ -158,7 +168,7 @@ static time_t addToDateH(time_t ts){
     return addToDate(ts, 'h', 1);
 }
 
-static struct Data* doQueryForInterval(time_t tsFrom, time_t tsTo){
+static struct Data* doQueryForInterval(sqlite3_stmt *stmt, time_t tsFrom, time_t tsTo){
  // Perform a SQL SELECT for the specified interval
 	sqlite3_bind_int(stmt, 1, tsFrom);
 	sqlite3_bind_int(stmt, 2, tsTo);

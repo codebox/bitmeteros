@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.1.5
+ * BitMeterOS v0.2.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Mon, 26 Oct 2009 15:16:39 +0000
+ * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
  */
 
 #include <stdio.h>
@@ -31,6 +31,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <math.h>
+#include <errno.h>
 #include "common.h"
 
 
@@ -151,7 +152,7 @@ void toDate(char* dateText, time_t ts){
 
 
 static char HEX[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
-void makeHexString(char* hexString, char* data, int dataLen){
+void makeHexString(char* hexString, const char* data, int dataLen){
  // Convert the MAC address bytes that we get back from the API into a hex string
 	char thisByte;
 	int i;
@@ -163,3 +164,21 @@ void makeHexString(char* hexString, char* data, int dataLen){
 	hexString[dataLen * 2] = 0;
 }
 
+long strToLong(char* txt, long defaultValue){
+    if (txt == NULL){
+        return defaultValue;
+    } else {
+        char *end;
+        long value = strtol(txt, &end, 10);
+        errno = 0;
+        if (end == txt || *end != '\0' || errno == ERANGE){
+            return defaultValue;
+        } else {
+            return value;
+        }
+    }
+}
+
+int strToInt(char* txt, int defaultValue){
+    return (int) strToLong(txt, defaultValue);
+}

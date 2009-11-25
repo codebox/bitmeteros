@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.1.5
+ * BitMeterOS v0.2.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Sun, 25 Oct 2009 17:18:38 +0000
+ * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
  */
 
 #include <stdio.h>
@@ -67,6 +67,7 @@ void doMonitor(){
 
 	printf("Monitoring... (Ctrl-C to abort)\n");
 	struct Data* values;
+	struct Data* currentValue;
 	int doBars = (prefs.monitorType == PREF_MONITOR_TYPE_BAR);
 	BW_INT dl, ul;
 
@@ -80,12 +81,13 @@ void doMonitor(){
 		 // We print out zeroes if there is nothing from the db
             values = allocData();
 		}
+        currentValue = values;
 
 	 // We expect to get only 1 value, but may get more under certain conditions (eg heavily loaded system where query is delayed by blocking)
-		while(values != NULL){
-			dl += values->dl;
-			ul += values->ul;
-			values = values->next;
+		while(currentValue != NULL){
+			dl += currentValue->dl;
+			ul += currentValue->ul;
+			currentValue = currentValue->next;
 		}
 
 		if (doBars){
@@ -109,7 +111,7 @@ static void printBar(BW_INT dl, BW_INT ul){
  // This is where we put the numeric part
 	char amtTxt[20];
 	BW_INT amt = ((prefs.direction == PREF_DIRECTION_DL) ? dl : ul);
-	formatAmount(amt, 1, 1, amtTxt);
+	formatAmount(amt, TRUE, TRUE, amtTxt);
 
  // Work out how many characters this bar will occupy
 	int charCount = prefs.barChars * ((float)amt / prefs.maxAmount);
@@ -127,7 +129,9 @@ static void printBar(BW_INT dl, BW_INT ul){
 }
 
 static void printText(BW_INT dl, BW_INT ul){
-	printf("DL: %llu UL: %llu\n", dl, ul);
+ // For some reason Windows won't print the second value correctly if we do both in the same printf()
+	printf("DL: %llu ", dl); 
+	printf("UL: %llu\n", ul);
 }
 
 static void sigIntHandler(){

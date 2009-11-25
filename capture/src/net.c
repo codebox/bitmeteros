@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.1.5
+ * BitMeterOS v0.2.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,9 +22,9 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Mon, 26 Oct 2009 15:16:39 +0000
+ * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
  */
- 
+
 #include <stdlib.h>
 #include <stdio.h>
 #include "capture.h"
@@ -49,7 +49,7 @@ Contains platform-specific code for obtaining the network stats that we need.
 		size_t len;
 		int rc = sysctl(mib, 6, NULL, &len, NULL, 0);
 		if (rc < 0){
-		    logMsg(LOG_ERR, "sysctl returned %d\n", rc);
+		    logMsg(LOG_ERR, "sysctl returned %d", rc);
 			return NULL;
 		}
 
@@ -57,7 +57,7 @@ Contains platform-specific code for obtaining the network stats that we need.
 		rc = sysctl(mib, 6, buf, &len, NULL, 0);
 		if (rc < 0){
 			free(buf);
-			logMsg(LOG_ERR, "sysctl returned %d\n", rc);
+			logMsg(LOG_ERR, "sysctl returned %d", rc);
 			return NULL;
 		}
 
@@ -71,10 +71,11 @@ Contains platform-specific code for obtaining the network stats that we need.
 			hdr = (struct if_msghdr *) (buf + offset);
 
 			if ((hdr->ifm_type == RTM_IFINFO2)) {
-				isLoopback = (hdr->ifm_data.ifi_type == IFT_LOOP);
+				struct if_msghdr2 *hdr2 = (struct if_msghdr2 *)hdr;
+
+				isLoopback = (hdr2->ifm_data.ifi_type == IFT_LOOP);
 			 // Ignore loopback traffic
 				if (!isLoopback){
-					struct if_msghdr2 *hdr2 = (struct if_msghdr2 *)hdr;
 					struct Data* thisData = extractDataFromIf(hdr2);
 
 					appendData(&firstData, thisData);
@@ -133,6 +134,8 @@ Contains platform-specific code for obtaining the network stats that we need.
 
                 if (isLoopback(thisData) == FALSE){
                     appendData(&firstData, thisData);
+                } else {
+                    freeData(thisData);
                 }
 			}
 		}
@@ -197,20 +200,20 @@ Contains platform-specific code for obtaining the network stats that we need.
 				    thisData->dl = pIfRow->dwInOctets;
 				    thisData->ul = pIfRow->dwOutOctets;
 
-				    //char hexString[MAXLEN_PHYSADDR * 2 + 1];
-				    //makeHexString(hexString, pIfRow->dwPhysAddrLen, MAXLEN_PHYSADDR);
-				    //setAddress(thisData, hexString);
-				    char addr[pIfRow->dwPhysAddrLen + 1];
+				    char hexString[MAC_ADDR_LEN * 2 + 1];
+				    makeHexString(hexString, (char*) &(pIfRow->bPhysAddr), MAC_ADDR_LEN);
+				    setAddress(thisData, hexString);
+				    /*char addr[pIfRow->dwPhysAddrLen + 1];
                     memcpy(addr, &(pIfRow->bPhysAddr), pIfRow->dwPhysAddrLen);
                     addr[pIfRow->dwPhysAddrLen] = 0;
-                    setAddress(thisData, addr);
+                    setAddress(thisData, addr);*/
 
 					appendData(&firstData, thisData);
 				}
 			}
 
 		} else {
-			logErrMsg("GetIfTable Error", rc);
+			logWin32ErrMsg("GetIfTable Error", rc);
 		}
 
 		if (pIfTable != NULL) {
@@ -221,12 +224,4 @@ Contains platform-specific code for obtaining the network stats that we need.
 		return firstData;
 	}
 
-	static void logErrMsg(char* msg, int rc) {
-	    LPVOID lpMsgBuf;
-
-		FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-	            NULL, rc, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR) &lpMsgBuf, 0, NULL );
-		logMsg(LOG_ERR, "%s. Code=%d Msg=%s", msg, rc, lpMsgBuf);
-	    LocalFree(lpMsgBuf);
-	}
 #endif

@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.1.5
+ * BitMeterOS v0.2.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Sun, 25 Oct 2009 17:18:38 +0000
+ * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
  */
 
 #include <stdio.h>
@@ -30,26 +30,21 @@
 #include <time.h>
 #include <math.h>
 #include <assert.h>
-#include <pthread.h>
 #include "common.h"
 #include "client.h"
 
 /*
-Contains a thread-safe helper function for use by clients that need to performs database dumps
+Contains a helper function for use by clients that need to performs database dumps
 */
 
 static sqlite3_stmt *stmt = NULL;
-static pthread_mutex_t stmtMutex = PTHREAD_MUTEX_INITIALIZER;
 
 void getDumpValues(void (*callback)(struct Data*)){
  // The callback function gets invoked once for each row in the 'data' table
-    pthread_mutex_lock(&stmtMutex);
-
     if (stmt == NULL){
          prepareSql(&stmt, "SELECT ts AS ts, dr AS dr, dl AS dl, ul AS ul, ad AS ad FROM data ORDER BY ts DESC");
     }
 
     runSelectAndCallback(stmt, callback);
-    pthread_mutex_unlock(&stmtMutex);
 }
 

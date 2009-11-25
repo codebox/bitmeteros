@@ -1,0 +1,147 @@
+ body{
+ 	font-size:62.5%;
+	font-family: Helvetica, sans-serif;
+	color: #2E6E9E;
+ }
+ noscript{
+	font-size: 200%;
+	color: red;
+	border: 2px solid red;
+	padding: 5px;
+	background-color: #FFCCCC;	
+}
+#summary td.name{
+ 	text-align:  right;
+	font-weight: bold;
+ 	padding: 2px 5px 2px 10px;
+}
+#summary td.value{
+ 	text-align: right;
+ 	width: 6em;
+ 	padding: 2px 5px 2px 10px;
+}
+#summary th{
+ 	text-align: right;
+}
+span.dateFormat{
+	font-size: 75%;
+}
+input.hasDatepicker{
+	margin-right: 10px;	
+}
+#query button, #query input, #query select {
+	border: 1px solid #2E6E9E;
+	background-color: white;
+	padding: 3px;
+}
+#query button.ui-datepicker-trigger{
+	border: 0;
+	padding: 0;
+	background-position: 10 10;
+}
+#query button.ui-datepicker-trigger img{
+	position: relative;
+	top: 3px;
+}
+#query button, #query select {
+	cursor: pointer;	
+	color: #2E6E9E;
+}
+#queryErrBox p{
+	margin: 4px;
+}
+#queryFields, #queryResults{
+	float: left;
+}
+div.flexigrid{
+	left: 20px;
+}
+
+.ui-icon{
+	float: left;
+	margin-right: 5px;	
+}
+h1{
+	margin-left: 5px;
+}
+h2{
+	float: left;	
+}
+.helpLink{
+	float: left;	
+	cursor: pointer;
+	margin-top: 15px;
+}
+.panelContainer{
+	clear: left;	
+}
+#floater{
+	position: absolute;
+	display: none;
+	background-color: white;
+	padding: 4px;
+	border: 1px solid black;
+}
+div.spacer{
+	clear: both;
+}
+.tickLabel{
+	white-space: nowrap;
+}
+#monitorReadout, #monitorReadout table{
+	padding: 5px 0 0 10px;
+}
+#monitorDlCurrent, #monitorUlCurrent {
+	font-size: 200%;
+	width: 6em;	
+}
+#monitorDlPeak, #monitorUlPeak, #monitorDlAverage, #monitorUlAverage, .monitorScaleLinks {
+	font-size: 150%; 
+}
+#monitorDlCurrent, #monitorUlCurrent, #monitorDlPeak, #monitorUlPeak, #monitorDlAverage, #monitorUlAverage, td.monitorShowSeries {
+	text-align: right;
+}
+#monitorDlCurrent, #monitorDlPeak, #monitorDlAverage{
+	color: red;
+}
+#monitorUlCurrent, #monitorUlPeak, #monitorUlAverage{
+	color: green;
+}
+.monitorLabel{
+	font-size: 120%;
+	color: grey;
+}
+.monitorShowSeries input{
+	margin: 0;
+}
+.scaleUpLink a, .scaleDownLink a{
+	color: #2E6E9E;
+}
+.scaleUpLink, .scaleDownLink{
+	text-align: right;
+	padding-right: 15px;
+	background-repeat: no-repeat;		
+	background-position: center right;
+	cursor: pointer;
+}
+.scaleUpLink{
+	background-image: url(images/uup.png);
+}
+.scaleDownLink{
+	background-image: url(images/ddn.png);
+}
+#history .graphDiv{
+	float: left;
+}
+#history h3, .historyContainer{
+	clear: left;
+}
+.historyScale{
+	width: 40px;
+	float: left;
+	padding-top: 60px
+}
+#errMsgList{
+	padding-left: 20px;
+	margin: 5px;	
+}

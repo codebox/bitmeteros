@@ -1,0 +1,18 @@
+/* Internet Explorer only styles */
+h1{
+	font-size: 200%;	
+}
+h2{
+	font-size: 150%;	
+	margin-top: 12px;
+	margin-bottom: 12px;
+}
+h3{
+	font-size: 120%;	
+	margin-top: 10px;
+	margin-bottom: 5px;
+}
+p{
+	margin-top: 5px;	
+	margin-bottom: 8px;
+}

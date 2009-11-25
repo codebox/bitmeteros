@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.1.5
+ * BitMeterOS v0.2.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Sun, 25 Oct 2009 17:18:38 +0000
+ * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
  */
 
 #include <stdlib.h>
@@ -73,6 +73,7 @@ time_t getNextYearForTs(time_t ts){
 	t->tm_mday = 1;
 	t->tm_mon  = 0;
 	t->tm_year += 1;
+	t->tm_isdst = -1;
 
 	return mktime(t);
 }
@@ -86,6 +87,7 @@ time_t getNextMonthForTs(time_t ts){
 	t->tm_hour = 0;
 	t->tm_mday = 1;
 	t->tm_mon  += 1;
+	t->tm_isdst = -1;
 
 	return mktime(t);
 }
@@ -98,6 +100,7 @@ time_t getNextDayForTs(time_t ts){
 	t->tm_min  = 0;
 	t->tm_hour = 0;
 	t->tm_mday += 1;
+	t->tm_isdst = -1;
 
 	return mktime(t);
 }
@@ -113,6 +116,7 @@ time_t getNextHourForTs(time_t ts){
 	} else {
 		t->tm_sec = 0;
 		t->tm_min = 0;
+        t->tm_isdst = -1;
 		return mktime(t);
 	}
 }
@@ -120,7 +124,7 @@ time_t getNextHourForTs(time_t ts){
 time_t getNextMinForTs(time_t ts){
  // Returns a timestamp value representing the start of the minute following the one in which 'ts' occurs
 	ts += SECS_PER_MIN;
-	struct tm *t = localtime(&ts);
+	struct tm *t = gmtime(&ts);
 
 	if (t->tm_sec == 0 ){
 	 // We were exactly on the minute, so return the ts that was passed in
@@ -133,7 +137,7 @@ time_t getNextMinForTs(time_t ts){
 
 time_t getYearFromTs(time_t ts){
  // Returns the year in which 'ts' occurs
-	struct tm *t = localtime(&ts);
+	struct tm *t = gmtime(&ts);
 	return 1900 + (t->tm_year);
 }
 
@@ -143,7 +147,8 @@ time_t addToDate(time_t ts, char unit, int num){
 		return ts + (3600 * num);
 
 	} else {
-		struct tm *t = localtime((time_t *) &ts);
+		struct tm *t = localtime(&ts);
+		t->tm_isdst = -1;
 
 		switch(unit){
 			case 'd':

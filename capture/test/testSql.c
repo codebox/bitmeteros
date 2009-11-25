@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.1.5
+ * BitMeterOS v0.2.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Sun, 25 Oct 2009 17:18:38 +0000
+ * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
  */
 
 #include "test.h"
@@ -38,12 +38,11 @@ Contains unit tests for the sql module.
 */
 
 void setup();
-static int callback(void *notUsed, int argc, char **argv, char **azColName);
 static void cbAppendData(struct Data* data);
-static int callBackCount, rowCount;
 static int getRowCount();
-static sqlite3_stmt *selectAllStmt;
 static struct Data* storedData;
+static void checkTableContents(CuTest *tc, int rowCount, ...);
+extern sqlite3_stmt *selectAllStmt;
 
 void testUpdateDbNull(CuTest *tc) {
  // Check that nothing is added to the d/b if we pass in a NULL list
@@ -197,7 +196,7 @@ void testCompressMinMultiAdapters(CuTest *tc){
     checkTableContents(tc, 6, row1, row2, row3, row4, row5, row6);
 }
 
-void checkTableContents(CuTest *tc, int rowCount, ...){
+static void checkTableContents(CuTest *tc, int rowCount, ...){
  // Helper function for checking the contents of the database
     va_list ap;
     va_start(ap,rowCount);
@@ -223,12 +222,6 @@ void checkTableContents(CuTest *tc, int rowCount, ...){
     va_end(ap);
 
     CuAssertTrue(tc, pStored == NULL);
-}
-
-void setup(){
-    setUpDbForTest();
-    setupDb();
-    prepareSql(&selectAllStmt, "SELECT ts AS ts, dr AS dr, dl As dl, ul AS ul, ad AS ad FROM data ORDER BY ts DESC, ad ASC");
 }
 
 CuSuite* sqlGetSuite() {

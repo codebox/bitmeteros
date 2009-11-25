@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.1.5
+ * BitMeterOS v0.2.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,10 +22,11 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Sun, 25 Oct 2009 17:18:38 +0000
+ * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
  */
 
 #include <stdio.h>
+#include <string.h>
 #include <time.h>
 #include <stdlib.h>
 #include "common.h"
@@ -51,6 +52,12 @@ void setLogLevel(int level){
 	logLevel = level;
 }
 
+static char* appName = NULL;
+void setAppName(const char* thisAppName){
+ // Set app name as it will appear in the log entries
+	appName = strdup(thisAppName);
+}
+
 void logMsg(int level, char* msg, ...){
  // Log the specified message, if its level is high enough
 	if (level >= logLevel){
@@ -62,27 +69,34 @@ void logMsg(int level, char* msg, ...){
 			} else {
 				logFile = stderr;
 			}
-			
+
 		} else {
 			logFile = fopen(logPath, "a+");
 		}
 
-	 // Write out the timestamp first
-		const time_t time = (time_t) getTime();
-		struct tm* cal = localtime(&time);
-		int y  = 1900 + cal->tm_year;
-		int mo = 1 + cal->tm_mon;
-		int d  = cal->tm_mday;
-		int h  = cal->tm_hour;
-		int mi = cal->tm_min;
-		int s  = cal->tm_sec;
+        if (logPath != NULL){
+         // Write out the timestamp first
+            const time_t time = (time_t) getTime();
+            struct tm* cal = localtime(&time);
+            int y  = 1900 + cal->tm_year;
+            int mo = 1 + cal->tm_mon;
+            int d  = cal->tm_mday;
+            int h  = cal->tm_hour;
+            int mi = cal->tm_min;
+            int s  = cal->tm_sec;
 
-		fprintf(logFile, "%d-%02d-%02d %02d:%02d:%02d ", y, mo, d, h, mi, s);
+            fprintf(logFile, "%d-%02d-%02d %02d:%02d:%02d ", y, mo, d, h, mi, s);
+            if (appName != NULL){
+                fprintf(logFile, appName);
+                fprintf(logFile, " ");
+            }
+        }
 
 	 // Write out the message, substituting the optargs for any tokens in the text
 		va_list argp;
 		va_start(argp, msg);
 		vfprintf(logFile, msg, argp);
+		fprintf(logFile, EOL);
 		va_end(argp);
 
 		fflush(logFile);

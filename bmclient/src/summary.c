@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.1.5
+ * BitMeterOS v0.2.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Sun, 25 Oct 2009 17:18:38 +0000
+ * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
  */
 
 #include <stdio.h>
@@ -77,20 +77,20 @@ static void printSummary(struct Summary summary){
 
     if (!dbEmpty){
      // Todays totals
-        formatAmount(summary.today->dl,  0, PREF_UNITS_ABBREV, todayDl);
-        formatAmount(summary.today->ul,  0, PREF_UNITS_ABBREV, todayUl);
+        formatAmount(summary.today->dl,  TRUE, PREF_UNITS_ABBREV, todayDl);
+        formatAmount(summary.today->ul,  TRUE, PREF_UNITS_ABBREV, todayUl);
 
      // This months totals
-        formatAmount(summary.month->dl,  0, PREF_UNITS_ABBREV, monthDl);
-        formatAmount(summary.month->ul,  0, PREF_UNITS_ABBREV, monthUl);
+        formatAmount(summary.month->dl,  TRUE, PREF_UNITS_ABBREV, monthDl);
+        formatAmount(summary.month->ul,  TRUE, PREF_UNITS_ABBREV, monthUl);
 
      // This years totals
-        formatAmount(summary.year->dl,   0, PREF_UNITS_ABBREV, yearDl);
-        formatAmount(summary.year->ul,   0, PREF_UNITS_ABBREV, yearUl);
+        formatAmount(summary.year->dl,   TRUE, PREF_UNITS_ABBREV, yearDl);
+        formatAmount(summary.year->ul,   TRUE, PREF_UNITS_ABBREV, yearUl);
 
      // Grand totals
-        formatAmount(summary.total->dl, 0, PREF_UNITS_ABBREV, fullDl);
-        formatAmount(summary.total->ul, 0, PREF_UNITS_ABBREV, fullUl);
+        formatAmount(summary.total->dl, TRUE, PREF_UNITS_ABBREV, fullDl);
+        formatAmount(summary.total->ul, TRUE, PREF_UNITS_ABBREV, fullUl);
 
         toDate(minTsDate, summary.tsMin);
         toTime(minTsTime, summary.tsMin);
