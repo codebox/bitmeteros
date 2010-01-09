@@ -5,7 +5,7 @@
 		<link type="text/css" href="css/jquery.css" rel="stylesheet" />
 		<link type="text/css" href="css/bitmeter.css" rel="stylesheet" />
 		<link type="text/css" href="css/flexigrid.css" rel="stylesheet" />
-		<!--[if lte IE 7]>
+		<!--[if IE]>
 		<link type="text/css" href="css/ie.css" rel="stylesheet" />
 		<![endif]-->
 		<script type="text/javascript" src="js/jquery.js"></script>
@@ -180,13 +180,26 @@
 			        	</tr>                                          
 			        	<tr>
 			        		<td class="name">Total</td><td id="summaryTotalDl" class="value"></td><td id="summaryTotalUl" class="value"></td>
+			        	</tr>
+			        	<tr>
+			        		<td class="name">Since</td><td colspan="2" id="summarySince" class="value"></td>
 			        	</tr>                                          
+			        	<tr>
+			        		<td class="name">Hosts</td><td colspan="2" id="summaryHosts" class="value"></td>
+			        	</tr>                                          			        
 			        </table>
 				</div>
 		    	<div class="dialog" title="Help">
 		    		<p>
 		        		The <strong>Summary</strong> page displays a basic summary of your connection usage, showing how much data has been uploaded
-		        		and downloaded today, this month, this year, and in total.
+		        		and downloaded today, this month, this year, and in total. 
+		        	</p>
+		        	<p>
+		        		The date and time when BitMeter began recording your connection usage is shown next to the <strong>Since</strong> label.
+		        	</p>
+		        	<p>
+		        		If the database includes data imported from other hosts via the <strong>bmsync</strong> utility, then a list of these hosts will
+		        		be shown at the bottom of the summary.
 		        	</p>	
 		    	</div>
 		    </div>
@@ -300,6 +313,15 @@
 			</div>
 		    </div>
 		</div>
+		<div id="errorDialog">
+			<h2>Error</h2>
+			<p id="msg">
+			</p>
+			<p>
+				<button>OK</button>
+			</p>
+		</div>		
 		<div id="floater"></div>
+		<div id="modalBackground"></div>
 	</body>
 </html>

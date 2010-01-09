@@ -25,21 +25,29 @@
  * Build Date: Sat, 09 Jan 2010 16:37:16 +0000
  */
 
-#include "common.h"
-#include "bmdb.h"
-#include <stdio.h>
+#define OPT_HELP    'h'
+#define OPT_VERSION 'v'
+#define OPT_PORT    'p'
+#define OPT_ALIAS   'a'
 
-/*
-Displays some pieces of version information which might be useful.
-*/
-int doVersion(){
-	printf(
-		"App Version:    %s\n"
-		"DB Version:     %d\n"
-		"SQLite Version: %s\n",
-		VERSION,
-		getDbVersion(),
-		sqlite3_libversion());
+#define HTTP_EOL "\r\n"
+#define ERR_OPT_NO_ARGS "No arguments were supplied"
+#define ERR_NO_HOST "No host name/IP address was supplied"
+#define ERR_MULTIPLE_HOSTS_ONE_ALIAS "Multiple hosts were specified with a single alias, this probably isn't what you want to do"
+#define ERR_BAD_PORT "Bad port number"
 
-    return SUCCESS;
-}
+#define SYNC_NAME "bmsync"
+
+struct SyncPrefs{
+	int version;
+	int help;
+	char** hosts;
+	int hostCount;
+	int port;
+	char* alias;
+	char* errMsg;
+};
+
+int parseSyncArgs(int argc, char **argv, struct SyncPrefs *prefs);
+void doHelp();
+void doVersion();

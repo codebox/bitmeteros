@@ -33,18 +33,18 @@
 #include "bmws.h"
 
 /*
-Contains unit tests for the handleMonitor module.
+Contains unit tests for the handleSync module.
 */
 
-void testNoTsParam(CuTest *tc) {
+void testSyncNoTsParam(CuTest *tc) {
  // The 'ts' parameter is required, so we should get an HTTP error if its missing
-    struct Request req = {"GET", "/monitor", NULL, NULL};
+    struct Request req = {"GET", "/sync", NULL, NULL};
 
     time_t now = makeTs("2009-11-08 10:00:00");
     setTime(now);
 
     int tmpFd = makeTmpFile();
-    processMonitorRequest(tmpFd, &req);
+    processSyncRequest(tmpFd, &req);
 
     char* result = readTmpFile();
 
@@ -56,39 +56,44 @@ void testNoTsParam(CuTest *tc) {
     , result);
 }
 
-void testTsParamOk(CuTest *tc) {
-    struct NameValuePair param = {"ts", "120", NULL};
-    struct Request req = {"GET", "/monitor", &param, NULL};
+void testSyncTsParamOk(CuTest *tc) {
+    char ts[20];
+    sprintf(ts, "%d", (int)makeTs("2009-11-01 10:00:00"));
+    struct NameValuePair param = {"ts", ts, NULL};
+    struct Request req = {"GET", "/sync", &param, NULL};
 
     time_t now = makeTs("2009-11-08 10:00:00");
     setTime(now);
 
- // Expect to get 3 of these back only, the first lies in the future and the fifth is just outside the 120 second limit specified by 'ts'
     emptyDb();
-    addDbRow(makeTs("2009-11-08 10:00:01"), 1, NULL,  1,  1, NULL);
-    addDbRow(makeTs("2009-11-08 10:00:00"), 1, NULL,  2,  2, NULL);
-    addDbRow(makeTs("2009-11-08 09:59:00"), 1, NULL,  4,  4, NULL);
-    addDbRow(makeTs("2009-11-08 09:58:00"), 1, NULL,  8,  8, NULL);
-    addDbRow(makeTs("2009-11-08 09:57:59"), 1, NULL, 16, 16, NULL);
+    addDbRow(makeTs("2009-10-31 10:00:00"), 1, "eth0",  1,  1, NULL);
+    addDbRow(makeTs("2009-11-01 10:00:00"), 1, "eth1",  2,  2, NULL);
+    addDbRow(makeTs("2009-11-01 10:00:01"), 1, "eth2",  4,  4, "mac");
+    addDbRow(makeTs("2009-11-02 00:00:00"), 1, "eth1",  8,  8, NULL);
+    addDbRow(makeTs("2009-11-02 00:00:00"), 1, "eth2", 16, 16, NULL);
+    addDbRow(makeTs("2009-11-02 01:00:00"), 1, "eth1", 32, 32, NULL);
+    addDbRow(makeTs("2010-01-01 00:00:00"), 1, "eth0", 64, 64, "linux");
 
     int tmpFd = makeTmpFile();
-    processMonitorRequest(tmpFd, &req);
+    processSyncRequest(tmpFd, &req);
 
     char* result = readTmpFile();
 
     CuAssertStrEquals(tc,
         "HTTP/1.0 200 OK" HTTP_EOL
-        "Content-Type: application/json" HTTP_EOL
+        "Content-Type: application/vnd.codebox.bitmeter-sync" HTTP_EOL
         "Server: BitMeterOS " VERSION " Web Server" HTTP_EOL
         "Date: Sun, 08 Nov 2009 10:00:00 +0000" HTTP_EOL
         "Connection: Close" HTTP_EOL HTTP_EOL
-        "{serverTime : 1257674400, data : [{dl: 2,ul: 2,ts: 0,dr: 1},{dl: 4,ul: 4,ts: 60,dr: 1},{dl: 8,ul: 8,ts: 120,dr: 1}]}"
+        "1257120000,1,8,8,eth1" HTTP_EOL
+        "1257120000,1,16,16,eth2" HTTP_EOL
+        "1257123600,1,32,32,eth1" HTTP_EOL
     , result);
 }
 
-CuSuite* handleMonitorGetSuite() {
+CuSuite* handleSyncGetSuite() {
     CuSuite* suite = CuSuiteNew();
-    SUITE_ADD_TEST(suite, testNoTsParam);
-    SUITE_ADD_TEST(suite, testTsParamOk);
+    SUITE_ADD_TEST(suite, testSyncNoTsParam);
+    SUITE_ADD_TEST(suite, testSyncTsParamOk);
     return suite;
 }

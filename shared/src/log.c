@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.2.0
+ * BitMeterOS v0.3.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,9 +22,12 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
+ * Build Date: Sat, 09 Jan 2010 16:37:16 +0000
  */
 
+#ifdef _WIN32
+	#define __USE_MINGW_ANSI_STDIO 1
+#endif
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
@@ -105,4 +108,22 @@ void logMsg(int level, char* msg, ...){
 			fclose(logFile);
 		}
 	}
+}
+
+static int lastStatusMsgLen = 0;
+void statusMsg(const char* msg, ...){
+    int i;
+    for(i=0; i<lastStatusMsgLen; i++){
+        printf("\b \b");
+    }
+
+ // Write out the message, substituting the optargs for any tokens in the text
+    va_list argp;
+    va_start(argp, msg);
+    lastStatusMsgLen = vfprintf(stdout, msg, argp);
+    va_end(argp);
+    fflush(stdout);
+}
+void resetStatusMsg(){
+    lastStatusMsgLen = 0;
 }

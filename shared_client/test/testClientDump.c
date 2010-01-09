@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.2.0
+ * BitMeterOS v0.3.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
+ * Build Date: Sat, 09 Jan 2010 16:37:16 +0000
  */
 
 #include "common.h"
@@ -50,9 +50,9 @@ void testDumpOneEntry(CuTest *tc) {
     emptyDb();
     dumpResult = NULL;
 
-    addDbRow(1234, 1, "eth0", 1, 2);
+    addDbRow(1234, 1, "eth0", 1, 2, NULL);
     getDumpValues(&onDumpRow);
-    checkData(tc, dumpResult, 1234, 1, "eth0", 1, 2);
+    checkData(tc, dumpResult, 1234, 1, "eth0", 1, 2, NULL);
 
     dumpResult = dumpResult->next;
     CuAssertTrue(tc, dumpResult == NULL);
@@ -63,19 +63,19 @@ void testDumpMultipleEntries(CuTest *tc) {
     emptyDb();
     dumpResult = NULL;
 
-    addDbRow(1233, 1, "eth0", 1, 2);
-    addDbRow(1234, 2, "eth1", 2, 3);
-    addDbRow(1235, 3, "eth0", 3, 4);
+    addDbRow(1233, 1, "eth0", 1, 2, NULL);
+    addDbRow(1234, 2, "eth1", 2, 3, NULL);
+    addDbRow(1235, 3, "eth0", 3, 4, NULL);
 
     getDumpValues(&onDumpRow);
 
-    checkData(tc, dumpResult, 1235, 3, "eth0", 3, 4);
+    checkData(tc, dumpResult, 1235, 3, "eth0", 3, 4, NULL);
 
 	dumpResult = dumpResult->next;
-	checkData(tc, dumpResult, 1234, 2, "eth1", 2, 3);
+	checkData(tc, dumpResult, 1234, 2, "eth1", 2, 3, NULL);
 
 	dumpResult = dumpResult->next;
-	checkData(tc, dumpResult, 1233, 1, "eth0", 1, 2);
+	checkData(tc, dumpResult, 1233, 1, "eth0", 1, 2, NULL);
 
     dumpResult = dumpResult->next;
     CuAssertTrue(tc, dumpResult == NULL);

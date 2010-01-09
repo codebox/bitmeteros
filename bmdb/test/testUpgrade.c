@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.2.0
+ * BitMeterOS v0.3.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
+ * Build Date: Sat, 09 Jan 2010 16:37:16 +0000
  */
 
 #define _GNU_SOURCE
@@ -66,14 +66,40 @@ static void testUpgradeAboveMaxLevel(CuTest *tc){
 }
 
 static void testUpgradeFrom1To2(CuTest *tc){
+    executeSql("drop table data;", NULL);
+    executeSql("create table data (ts,dl,ul,dr,ad);", NULL);
     executeSql("delete from config;", NULL);
 
     int status = doUpgradeTest(2);
     CuAssertTrue(tc, status == SUCCESS);
+    CuAssertIntEquals(tc, 2,     getDbVersion());
     CuAssertIntEquals(tc, 1000,  getConfigInt(CONFIG_WEB_MONITOR_INTERVAL));
     CuAssertIntEquals(tc, 10000, getConfigInt(CONFIG_WEB_SUMMARY_INTERVAL));
     CuAssertIntEquals(tc, 10000, getConfigInt(CONFIG_WEB_HISTORY_INTERVAL));
     CuAssertIntEquals(tc, 0,     getConfigInt(CONFIG_WEB_ALLOW_REMOTE));
+
+    executeSql("drop table data;", NULL);
+    executeSql("create table data (ts,dl,ul,dr,ad,hs);", NULL);
+    populateConfigTable();
+}
+
+static void testUpgradeFrom2To3(CuTest *tc){
+    executeSql("drop table data;", NULL);
+    executeSql("create table data (ts,dl,ul,dr,ad);", NULL);
+    executeSql("delete from config;", NULL);
+
+    int status = executeSql("SELECT hs FROM data", NULL);
+    CuAssertTrue(tc, status == FAIL);
+
+    status = doUpgradeTest(3);
+    CuAssertTrue(tc, status == SUCCESS);
+    CuAssertIntEquals(tc, 3, getDbVersion());
+
+    status = executeSql("SELECT hs FROM data", NULL);
+    CuAssertTrue(tc, status == SUCCESS);
+
+    executeSql("drop table data;", NULL);
+    executeSql("create table data (ts,dl,ul,dr,ad,hs);", NULL);
     populateConfigTable();
 }
 
@@ -101,22 +127,22 @@ static void testConvertAddrValues(CuTest *tc){
     sqlite3_stmt* stmt;
     prepareSql(&stmt, "SELECT ts AS ts, ad AS ad, dl AS dl, ul AS ul, dr AS dr FROM data ORDER BY ts ASC");
     struct Data* data = runSelect(stmt);
-    checkData(tc, data, 1, 1, "000102030405", 1, 1);
+    checkData(tc, data, 1, 1, "000102030405", 1, 1, NULL);
 
     data = data->next;
-    checkData(tc, data, 2, 1, "000102030405", 3, 5);
+    checkData(tc, data, 2, 1, "000102030405", 3, 5, NULL);
 
     data = data->next;
-    checkData(tc, data, 3, 1, "000102030405", 4, 6);
+    checkData(tc, data, 3, 1, "000102030405", 4, 6, NULL);
 
     data = data->next;
-    checkData(tc, data, 4, 1, "0A0B0C0D0E0F", 1, 1);
+    checkData(tc, data, 4, 1, "0A0B0C0D0E0F", 1, 1, NULL);
 
     data = data->next;
-    checkData(tc, data, 5, 1, "0F0001020304", 1, 1);
+    checkData(tc, data, 5, 1, "0F0001020304", 1, 1, NULL);
 
     data = data->next;
-    checkData(tc, data, 6, 1, "0A0B0C0D0E0F", 1, 1);
+    checkData(tc, data, 6, 1, "0A0B0C0D0E0F", 1, 1, NULL);
 
     CuAssertTrue(tc, data->next == NULL);
 }
@@ -127,6 +153,7 @@ CuSuite* bmdbUpgradeGetSuite() {
     SUITE_ADD_TEST(suite, testUpgradeToEarlierLevel);
     SUITE_ADD_TEST(suite, testUpgradeAboveMaxLevel);
     SUITE_ADD_TEST(suite, testUpgradeFrom1To2);
+    SUITE_ADD_TEST(suite, testUpgradeFrom2To3);
     SUITE_ADD_TEST(suite, testConvertAddrValues);
     return suite;
 }

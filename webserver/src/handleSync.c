@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.2.0
+ * BitMeterOS v0.3.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
+ * Build Date: Sat, 09 Jan 2010 16:37:16 +0000
  */
 
 #include <stdio.h>
@@ -31,29 +31,25 @@
 #include "bmws.h"
 #include "common.h"
 
-#define SYNC_CONTENT_TYPE "application/vnd.codebox.bitmeter-sync"
-#define NO_TS 0
+#define NO_TS -1
 
 /*
 Handles '/sync' requests received by the web server.
 */
 
 extern struct HttpResponse HTTP_OK;
-
-static void writeSyncData(SOCKET fd, struct Data* data){
-	char row[64];
-	sprintf(row, "%d,%d,%llu,%llu,%s" HTTP_EOL, (int)data->ts, data->dr, data->dl, data->ul, data->ad);
-	writeText(fd, row);
-}
+extern struct HttpResponse HTTP_SERVER_ERROR;
 
 void processSyncRequest(SOCKET fd, struct Request* req){
-	int ts = getValueNumForName("ts", req->params, NO_TS);
+	time_t ts = (time_t) getValueNumForName("ts", req->params, NO_TS);
 	if (ts == NO_TS){
-            //TODO
-	} else {
-        int queryTs = getTime() - ts;
+     // We need a 'ts' parameter
+	    writeHeaders(fd, HTTP_SERVER_ERROR, NULL, 0);
 
-        struct Data* results = getSyncValues(queryTs);
+	} else {
+	    writeHeaders(fd, HTTP_OK, SYNC_CONTENT_TYPE, 0);
+
+        struct Data* results = getSyncValues(ts);
         struct Data* thisResult = results;
 
         while(thisResult != NULL){

@@ -4,9 +4,32 @@ var model = buildModel();
 // Manages the automatic screen refreshes
 var refreshTimer;
 
+var errorDialog;
+
 // Prevent AJAX GET requests from being cached on IE
 $.ajaxSetup({
-    cache: false
+    cache: false,
+    timeout: 30000,
+    error : function (xhrObj, errType) {
+    		var msg;
+    		if (errType === "error"){
+    			if (xhrObj.status === 0){
+	    			msg = "Unable to contact the server, is it still running?";
+    			} else {
+    				msg = "An HTTP error occurred: " + xhrObj.status + " " + xhrObj.statusText ;
+    			}
+    			
+    		} else if (errType === "timeout"){
+	    		msg = "The server is taking a long time to respond - this may be caused by a slow network (if you are monitoring remotely) or very high CPU load.";
+	    		
+	    	} else if (errType === "parsererror"){
+		    	msg = "Unable to parse the server response";
+		    	
+    		} else {
+			    msg = "An error occurred while attempting to communicate with the server: " + errType;
+    		}
+			showError(msg);
+		}
 });
 
 // Help dialogs use these config values
@@ -50,6 +73,16 @@ function zeroPad(val){
 	} else {
 		return '' + val;
 	}
+}
+
+function showError(msg){
+	var bg = $("#modalBackground");
+	bg.show();
+	
+	var box = $("#errorDialog");
+	box.fadeIn("slow");
+	box.css("left", ( $(window).width() - box.width() ) / 2 + $(window).scrollLeft() + "px");
+	$("#errorDialog #msg").html(msg);	
 }
 
 // Convert an integer UL/DL value into a 2-dp floating point value with 2 letter abbreviation
@@ -183,6 +216,12 @@ $(document).ready(function(){
 		$("a[href^='http'], #donateForm").attr('target','_blank');
 
 		$("noscript").hide(); // Needed for IE8
+		$("#errorDialog, #modalBackground").hide();
+		
+		$("#errorDialog button").click(function(e){
+			$("#errorDialog").fadeOut("slow");
+			$("#modalBackground").hide();
+		});
 	});
 
 

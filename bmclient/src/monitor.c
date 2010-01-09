@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.2.0
+ * BitMeterOS v0.3.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,9 +22,12 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
+ * Build Date: Sat, 09 Jan 2010 16:37:16 +0000
  */
 
+#ifdef _WIN32
+	#define __USE_MINGW_ANSI_STDIO 1
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -75,7 +78,8 @@ void doMonitor(){
 		dl = ul = 0;
 
 	 // Get the values for 1 second ago (values for the current second may not be in the d/b yet)
-		values = getMonitorValues(getTime() - 1);
+	 	time_t now = getTime();
+		values = getMonitorValues(now - 1);
 
 		if (values == NULL){
 		 // We print out zeroes if there is nothing from the db
@@ -85,8 +89,11 @@ void doMonitor(){
 
 	 // We expect to get only 1 value, but may get more under certain conditions (eg heavily loaded system where query is delayed by blocking)
 		while(currentValue != NULL){
-			dl += currentValue->dl;
-			ul += currentValue->ul;
+		 // If system clock gets put back we don't want to include all the values that now lie in the future
+			if (currentValue->ts <= now){
+				dl += currentValue->dl;
+				ul += currentValue->ul;
+			}
 			currentValue = currentValue->next;
 		}
 
@@ -129,9 +136,7 @@ static void printBar(BW_INT dl, BW_INT ul){
 }
 
 static void printText(BW_INT dl, BW_INT ul){
- // For some reason Windows won't print the second value correctly if we do both in the same printf()
-	printf("DL: %llu ", dl); 
-	printf("UL: %llu\n", ul);
+	printf("DL: %llu UL: %llu\n", dl, ul);
 }
 
 static void sigIntHandler(){

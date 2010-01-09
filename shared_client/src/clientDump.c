@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.2.0
+ * BitMeterOS v0.3.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
+ * Build Date: Sat, 09 Jan 2010 16:37:16 +0000
  */
 
 #include <stdio.h>
@@ -42,7 +42,7 @@ static sqlite3_stmt *stmt = NULL;
 void getDumpValues(void (*callback)(struct Data*)){
  // The callback function gets invoked once for each row in the 'data' table
     if (stmt == NULL){
-         prepareSql(&stmt, "SELECT ts AS ts, dr AS dr, dl AS dl, ul AS ul, ad AS ad FROM data ORDER BY ts DESC");
+         prepareSql(&stmt, "SELECT ts AS ts, dr AS dr, dl AS dl, ul AS ul, ad AS ad, hs AS hs FROM data ORDER BY ts DESC");
     }
 
     runSelectAndCallback(stmt, callback);

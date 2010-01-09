@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.2.0
+ * BitMeterOS v0.3.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
+ * Build Date: Sat, 09 Jan 2010 16:37:16 +0000
  */
 
 #include <stdio.h>
@@ -51,10 +51,7 @@ void doSummary(){
 	printSummary(summary);
 
  // Free memory
-	freeData(summary.today);
-	freeData(summary.month);
-	freeData(summary.year);
-	freeData(summary.total);
+	freeSummary(&summary);
 }
 
 static void printSummary(struct Summary summary){
@@ -107,6 +104,18 @@ static void printSummary(struct Summary summary){
         printf("Data recorded from: %s %s\n", minTsDate, minTsTime);
         printf("Data recorded to:   %s %s\n", maxTsDate, maxTsTime);
         printf("\n");
+
+        if (summary.hostCount == 0){
+            printf("No data for other hosts.\n");
+        } else {
+            printf("Totals include data for %d other host%s:\n", summary.hostCount, (summary.hostCount == 1) ? "" : "s");
+            int i;
+            for (i=0; i<summary.hostCount; i++){
+                printf("    %s\n", summary.hostNames[i]);
+            }
+        }
+        printf("\n");
+
     } else {
         printf("        The database is empty.\n\n");
     }

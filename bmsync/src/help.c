@@ -25,21 +25,22 @@
  * Build Date: Sat, 09 Jan 2010 16:37:16 +0000
  */
 
-#include "common.h"
-#include "bmdb.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include "bmsync.h"
+#include "common.h"
 
 /*
-Displays some pieces of version information which might be useful.
+Contains the code that handles help and version requests made via the bmsync utility.
+Help text is read from the helpText.c file which is generated during the build process.
 */
-int doVersion(){
-	printf(
-		"App Version:    %s\n"
-		"DB Version:     %d\n"
-		"SQLite Version: %s\n",
-		VERSION,
-		getDbVersion(),
-		sqlite3_libversion());
 
-    return SUCCESS;
+extern char* helpTxt;
+
+void doHelp(){
+	printf(helpTxt);
+}
+
+void doVersion(){
+	printf("%s v%s\n", SYNC_NAME, VERSION);
 }

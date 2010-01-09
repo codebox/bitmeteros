@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.2.0
+ * BitMeterOS v0.3.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
+ * Build Date: Sat, 09 Jan 2010 16:37:16 +0000
  */
 
 #include "test.h"
@@ -34,12 +34,12 @@
 Contains unit tests for the clientSummary module.
 */
 
-static void checkSummary(CuTest *, struct Summary, time_t, time_t, BW_INT, BW_INT, BW_INT, BW_INT, BW_INT, BW_INT, BW_INT, BW_INT);
+static void checkSummary(CuTest *, struct Summary, time_t, time_t, BW_INT, BW_INT, BW_INT, BW_INT, BW_INT, BW_INT, BW_INT, BW_INT, int, char**);
 
 void testSummaryEmptyDb(CuTest *tc) {
- // Check that we behave correctly when the data table is empty	
+ // Check that we behave correctly when the data table is empty
     emptyDb();
-    checkSummary(tc, getSummaryValues(), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+    checkSummary(tc, getSummaryValues(), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL);
 }
 
 void testSummaryOneEntry(CuTest *tc) {
@@ -47,8 +47,8 @@ void testSummaryOneEntry(CuTest *tc) {
     time_t now = makeTs("2009-01-01 10:00:00");
     setTime(now);
     emptyDb();
-    addDbRow(now, 1, "eth0", 123, 456);
-    checkSummary(tc, getSummaryValues(), now, now, 123, 456, 123, 456, 123, 456, 123, 456);
+    addDbRow(now, 1, "eth0", 123, 456, NULL);
+    checkSummary(tc, getSummaryValues(), now, now, 123, 456, 123, 456, 123, 456, 123, 456, 0, NULL);
 }
 
 void testSummaryTwoEntriesSameTime(CuTest *tc) {
@@ -56,9 +56,9 @@ void testSummaryTwoEntriesSameTime(CuTest *tc) {
     time_t now = makeTs("2009-01-01 10:00:00");
     setTime(now);
     emptyDb();
-    addDbRow(now, 1, "eth0", 100, 400);
-    addDbRow(now, 1, "eth1", 23, 56);
-    checkSummary(tc, getSummaryValues(), now, now, 123, 456, 123, 456, 123, 456, 123, 456);
+    addDbRow(now, 1, "eth0", 100, 400, NULL);
+    addDbRow(now, 1, "eth1", 23, 56, NULL);
+    checkSummary(tc, getSummaryValues(), now, now, 123, 456, 123, 456, 123, 456, 123, 456, 0, NULL);
 }
 
 void testSummaryTwoEntriesDifferentTimes(CuTest *tc) {
@@ -66,9 +66,9 @@ void testSummaryTwoEntriesDifferentTimes(CuTest *tc) {
     time_t now = makeTs("2009-01-01 10:00:00");
     setTime(now);
     emptyDb();
-    addDbRow(now - 1, 1, "eth0", 100, 400);
-    addDbRow(now - 2, 1, "eth1", 23, 56);
-    checkSummary(tc, getSummaryValues(), now - 2, now - 1, 123, 456, 123, 456, 123, 456, 123, 456);
+    addDbRow(now - 1, 1, "eth0", 100, 400, NULL);
+    addDbRow(now - 2, 1, "eth1", 23, 56, NULL);
+    checkSummary(tc, getSummaryValues(), now - 2, now - 1, 123, 456, 123, 456, 123, 456, 123, 456, 0, NULL);
 }
 
 void testSummaryEntriesSpanningDayBoundary(CuTest *tc) {
@@ -76,32 +76,32 @@ void testSummaryEntriesSpanningDayBoundary(CuTest *tc) {
     time_t now = makeTs("2009-01-02 00:00:01");
     setTime(now);
     emptyDb();
-    addDbRow(now,     1, "eth0", 1, 10); //today
-    addDbRow(now - 1, 1, "eth1", 2, 11); //today
-    addDbRow(now - 2, 1, "eth0", 4, 12); //yesterday
-    checkSummary(tc, getSummaryValues(), now - 2, now, 3, 21, 7, 33, 7, 33, 7, 33);
+    addDbRow(now,     1, "eth0", 1, 10, NULL); //today
+    addDbRow(now - 1, 1, "eth1", 2, 11, NULL); //today
+    addDbRow(now - 2, 1, "eth0", 4, 12, NULL); //yesterday
+    checkSummary(tc, getSummaryValues(), now - 2, now, 3, 21, 7, 33, 7, 33, 7, 33, 0, NULL);
 }
 
 void testSummaryEntriesSpanningMonthBoundary(CuTest *tc) {
- // Check that results are correct when our data spans a month boundary	
+ // Check that results are correct when our data spans a month boundary
     time_t now = makeTs("2009-02-01 00:00:01");
     setTime(now);
     emptyDb();
-    addDbRow(now,     1, "eth0", 1, 10); //today
-    addDbRow(now - 1, 1, "eth1", 2, 11); //today
-    addDbRow(now - 2, 1, "eth0", 4, 12); //yesterday and last month
-    checkSummary(tc, getSummaryValues(), now - 2, now, 3, 21, 3, 21, 7, 33, 7, 33);
+    addDbRow(now,     1, "eth0", 1, 10, NULL); //today
+    addDbRow(now - 1, 1, "eth1", 2, 11, NULL); //today
+    addDbRow(now - 2, 1, "eth0", 4, 12, NULL); //yesterday and last month
+    checkSummary(tc, getSummaryValues(), now - 2, now, 3, 21, 3, 21, 7, 33, 7, 33, 0, NULL);
 }
 
 void testSummaryEntriesSpanningYearBoundary(CuTest *tc) {
- // Check that results are correct when our data spans a year boundary	
+ // Check that results are correct when our data spans a year boundary
     time_t now = makeTs("2009-01-01 00:00:01");
     setTime(now);
     emptyDb();
-    addDbRow(now,     1, "eth0", 1, 10); //today
-    addDbRow(now - 1, 1, "eth1", 2, 11); //today
-    addDbRow(now - 2, 1, "eth0", 4, 12); //yesterday and last year
-    checkSummary(tc, getSummaryValues(), now - 2, now, 3, 21, 3, 21, 3, 21, 7, 33);
+    addDbRow(now,     1, "eth0", 1, 10, NULL); //today
+    addDbRow(now - 1, 1, "eth1", 2, 11, NULL); //today
+    addDbRow(now - 2, 1, "eth0", 4, 12, NULL); //yesterday and last year
+    checkSummary(tc, getSummaryValues(), now - 2, now, 3, 21, 3, 21, 3, 21, 7, 33, 0, NULL);
 }
 
 void testSummaryMultipleEntries(CuTest *tc) {
@@ -111,41 +111,74 @@ void testSummaryMultipleEntries(CuTest *tc) {
     emptyDb();
 
  // Entries for today
-    addDbRow(makeTs("2009-03-02 10:00:00"), 1,    "eth1", 1, 10);
-    addDbRow(makeTs("2009-03-02 09:59:59"), 1,    "eth0", 1, 10);
-    addDbRow(makeTs("2009-03-02 08:00:00"), 60,   "eth0", 1, 10);
-    addDbRow(makeTs("2009-03-02 07:59:00"), 60,   "eth1", 1, 10);
-    addDbRow(makeTs("2009-03-02 07:58:00"), 60,   "eth0", 1, 10);
-    addDbRow(makeTs("2009-03-02 01:00:00"), 3600, "eth2", 1, 10);
+    addDbRow(makeTs("2009-03-02 10:00:00"), 1,    "eth1", 1, 10, NULL);
+    addDbRow(makeTs("2009-03-02 09:59:59"), 1,    "eth0", 1, 10, NULL);
+    addDbRow(makeTs("2009-03-02 08:00:00"), 60,   "eth0", 1, 10, NULL);
+    addDbRow(makeTs("2009-03-02 07:59:00"), 60,   "eth1", 1, 10, NULL);
+    addDbRow(makeTs("2009-03-02 07:58:00"), 60,   "eth0", 1, 10, NULL);
+    addDbRow(makeTs("2009-03-02 01:00:00"), 3600, "eth2", 1, 10, NULL);
 
  // Entries for earlier this month
-    addDbRow(makeTs("2009-03-01 10:00:00"), 3600, "eth0", 1, 10);
-    addDbRow(makeTs("2009-03-01 11:00:00"), 3600, "eth1", 1, 10);
+    addDbRow(makeTs("2009-03-01 10:00:00"), 3600, "eth0", 1, 10, NULL);
+    addDbRow(makeTs("2009-03-01 11:00:00"), 3600, "eth1", 1, 10, NULL);
 
  // Entries for earlier this year
-    addDbRow(makeTs("2009-02-01 10:00:00"), 3600, "eth0", 1, 10);
-    addDbRow(makeTs("2009-01-01 11:00:00"), 3600, "eth1", 1, 10);
+    addDbRow(makeTs("2009-02-01 10:00:00"), 3600, "eth0", 1, 10, NULL);
+    addDbRow(makeTs("2009-01-01 11:00:00"), 3600, "eth1", 1, 10, NULL);
 
  // Entries for previous years
-    addDbRow(makeTs("2008-12-31 10:00:00"), 3600, "eth0", 1, 10);
-    addDbRow(makeTs("2007-01-01 11:00:00"), 3600, "eth1", 1, 10);
+    addDbRow(makeTs("2008-12-31 10:00:00"), 3600, "eth0", 1, 10, NULL);
+    addDbRow(makeTs("2007-01-01 11:00:00"), 3600, "eth1", 1, 10, NULL);
 
-    checkSummary(tc, getSummaryValues(), makeTs("2007-01-01 11:00:00"), now, 6, 60, 8, 80, 10, 100, 12, 120);
+    checkSummary(tc, getSummaryValues(), makeTs("2007-01-01 11:00:00"), now, 6, 60, 8, 80, 10, 100, 12, 120, 0, NULL);
+}
+
+void testSummaryOneOtherHost(CuTest *tc) {
+    time_t now = makeTs("2009-01-01 00:00:01");
+    setTime(now);
+    emptyDb();
+    addDbRow(now, 1, "eth0", 1, 1, "server");
+    addDbRow(now, 1, "eth1", 1, 1, NULL);
+    addDbRow(now, 1, "eth0", 1, 1, "server");
+    char* hosts[1] = {"server"};
+    checkSummary(tc, getSummaryValues(), now, now, 3, 3, 3, 3, 3, 3, 3, 3, 1, hosts);
+}
+
+void testSummaryMultipleOtherHosts(CuTest *tc) {
+    time_t now = makeTs("2009-01-01 00:00:01");
+    setTime(now);
+    emptyDb();
+    addDbRow(now, 1, "eth0",   1, 1, "server1");
+    addDbRow(now, 1, "eth1",   1, 1, NULL);
+    addDbRow(now, 1, "eth0",   1, 1, "server2");
+    addDbRow(now, 1, "random", 1, 1, "server3");
+    addDbRow(now, 1, "eth0",   1, 1, "server1");
+    addDbRow(now, 1, "eth1",   1, 1, "server1");
+
+    char* hosts[3] = {"server1", "server2", "server3"};
+    checkSummary(tc, getSummaryValues(), now, now, 6, 6, 6, 6, 6, 6, 6, 6, 3, hosts);
 }
 
 static void checkSummary(CuTest *tc, struct Summary summary, time_t tsMin, time_t tsMax,
-        BW_INT todayDl, BW_INT todayUl, BW_INT monthDl, BW_INT monthUl, BW_INT yearDl, BW_INT yearUl, BW_INT totalDl, BW_INT totalUl){
- // Helper function used to verify the contents of a Summary struct        	
-    CuAssertIntEquals(tc, tsMin,   summary.tsMin);
-    CuAssertIntEquals(tc, tsMax,   summary.tsMax);
-    CuAssertIntEquals(tc, todayDl, summary.today->dl);
-    CuAssertIntEquals(tc, todayUl, summary.today->ul);
-    CuAssertIntEquals(tc, monthDl, summary.month->dl);
-    CuAssertIntEquals(tc, monthUl, summary.month->ul);
-    CuAssertIntEquals(tc, yearDl,  summary.year->dl);
-    CuAssertIntEquals(tc, yearUl,  summary.year->ul);
-    CuAssertIntEquals(tc, totalDl, summary.total->dl);
-    CuAssertIntEquals(tc, totalUl, summary.total->ul);
+        BW_INT todayDl, BW_INT todayUl, BW_INT monthDl, BW_INT monthUl, BW_INT yearDl, BW_INT yearUl, BW_INT totalDl, BW_INT totalUl,
+        int hostCount, char** hostNames){
+ // Helper function used to verify the contents of a Summary struct
+    CuAssertIntEquals(tc, tsMin,     summary.tsMin);
+    CuAssertIntEquals(tc, tsMax,     summary.tsMax);
+    CuAssertIntEquals(tc, todayDl,   summary.today->dl);
+    CuAssertIntEquals(tc, todayUl,   summary.today->ul);
+    CuAssertIntEquals(tc, monthDl,   summary.month->dl);
+    CuAssertIntEquals(tc, monthUl,   summary.month->ul);
+    CuAssertIntEquals(tc, yearDl,    summary.year->dl);
+    CuAssertIntEquals(tc, yearUl,    summary.year->ul);
+    CuAssertIntEquals(tc, totalDl,   summary.total->dl);
+    CuAssertIntEquals(tc, totalUl,   summary.total->ul);
+    CuAssertIntEquals(tc, hostCount, summary.hostCount);
+
+    int i;
+    for(i=0; i<hostCount; i++){
+        CuAssertStrEquals(tc, hostNames[i], summary.hostNames[i]);
+    }
 }
 
 CuSuite* clientSummaryGetSuite() {
@@ -158,5 +191,7 @@ CuSuite* clientSummaryGetSuite() {
     SUITE_ADD_TEST(suite, testSummaryEntriesSpanningMonthBoundary);
     SUITE_ADD_TEST(suite, testSummaryEntriesSpanningYearBoundary);
     SUITE_ADD_TEST(suite, testSummaryMultipleEntries);
+    SUITE_ADD_TEST(suite, testSummaryOneOtherHost);
+    SUITE_ADD_TEST(suite, testSummaryMultipleOtherHosts);
     return suite;
 }

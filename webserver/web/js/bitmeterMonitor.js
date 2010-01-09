@@ -31,8 +31,8 @@ function updateMonitor(){
 		var showDl = model.getMonitorShowDl();
 		var showUl = model.getMonitorShowUl();
 
-	 // Loop through all the data currently displayed on the graph and accumulate totals and peak values
-		var dlTotal = 0, ulTotal = 0, dlPeak = 0, ulPeak = 0;
+	 // Loop through all the data currently displayed on the graph and accumulate totals, peaks and best-fit current values
+		var dlTotal = 0, ulTotal = 0, dlPeak = 0, ulPeak = 0, dlCurr = 0, ulCurr = 0, bestTs = 5;
 		$.each(jsonData, function(i,o){
 			dlTotal += o.dl;
 			if (o.dl > dlPeak){
@@ -43,18 +43,26 @@ function updateMonitor(){
 			if (o.ul > ulPeak){
 				ulPeak = o.ul;
 			}
+			
+		 /* Use the most recent values to display in the 'Current' fields to the right of the graph, but ignore
+		 	any values which have timestamps in the future (this can happen if we have synchronised with another
+		 	host which has a clock set slightly ahead of the local clock). We cant assume there will be a value
+		 	with exactly ts===0, so count anything within the last 5 seconds, picking the newest values that meet 
+		 	all these criteria. */
+			if (o.ts < bestTs && o.ts >= 0){
+				bestTs = o.ts;
+				dlCurr = o.dl;
+				ulCurr = o.ul;
+			}
 		});
 		
 	 // Store the peak values, we will need them again later
 		model.setMonitorDlPeak(dlPeak);
 		model.setMonitorUlPeak(ulPeak);
 
-		var currentDl = (typeof(jsonData[0]) === "undefined") ? 0 : jsonData[0].dl;
-		var currentUl = (typeof(jsonData[0]) === "undefined") ? 0 : jsonData[0].ul;
-		
 	 // Format the values and display them
-		$('#monitorDlCurrent').html(showDl ? formatAmount(currentDl)                + '/s' : '');
-		$('#monitorUlCurrent').html(showUl ? formatAmount(currentUl)                + '/s' : '');
+		$('#monitorDlCurrent').html(showDl ? formatAmount(dlCurr)                   + '/s' : '');
+		$('#monitorUlCurrent').html(showUl ? formatAmount(ulCurr)                   + '/s' : '');
 		$('#monitorDlAverage').html(showDl ? formatAmount(dlTotal/MONITOR_TS)       + '/s' : '');
 		$('#monitorUlAverage').html(showUl ? formatAmount(ulTotal/MONITOR_TS)       + '/s' : '');
 		$('#monitorDlPeak').html(   showDl ? formatAmount(model.getMonitorDlPeak()) + '/s' : '');

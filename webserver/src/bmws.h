@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.2.0
+ * BitMeterOS v0.3.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
+ * Build Date: Sat, 09 Jan 2010 16:37:16 +0000
  */
 
 #include "common.h"
@@ -40,10 +40,13 @@
 #define MIME_JPEG "image/jpeg"
 #define MIME_GIF  "image/gif"
 #define MIME_PNG  "image/png"
+#define MIME_ICO  "image/vnd.microsoft.icon"
 #define MIME_JS   "application/x-javascript"
 #define MIME_CSS  "text/css"
 #define MIME_BIN  "application/octet-stream"
 
+#define SYNC_CONTENT_TYPE   "application/vnd.codebox.bitmeter-sync"
+#define HEADER_CONTENT_TYPE "Content-Type"
 #define HTTP_EOL "\r\n"
 
 struct HttpResponse{
@@ -68,10 +71,6 @@ struct Request{
 struct Request* parseRequest(char* requestTxt);
 void freeRequest(struct Request* request);
 
-#ifndef _WIN32
-	typedef int SOCKET;
-#endif
-
 #ifdef _WIN32
 	void initMutex();
 	void waitForMutex();
@@ -92,6 +91,7 @@ void processFileRequest(SOCKET fd, struct Request* req);
 void writeText(SOCKET fd, char* txt);
 void writeDataToJson(SOCKET fd, struct Data* data);
 void writeSingleDataToJson(SOCKET fd, struct Data* data);
+void writeSyncData(SOCKET fd, struct Data* data);
 void writeHeaders(SOCKET fd, struct HttpResponse response, char* contentType, int size);
 void processRequest(SOCKET fd, char* buffer);
 

@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.2.0
+ * BitMeterOS v0.3.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
+ * Build Date: Sat, 09 Jan 2010 16:37:16 +0000
  */
 
 #include <stdio.h>
@@ -64,11 +64,11 @@ void testParamsOk(CuTest *tc) {
 
  // The query range covers the second, third and fourth rows only
     emptyDb();
-    addDbRow(makeTs("2009-11-01 12:00:00"), 3600, NULL,  1,  1);
-    addDbRow(makeTs("2009-11-02 12:00:00"), 3600, NULL,  2,  2); // Match
-    addDbRow(makeTs("2009-11-03 12:00:00"), 3600, NULL,  4,  4); // Match
-    addDbRow(makeTs("2009-11-04 12:00:00"), 3600, NULL,  8,  8); // Match
-    addDbRow(makeTs("2009-11-05 12:00:00"), 3600, NULL, 16, 16);
+    addDbRow(makeTs("2009-11-01 12:00:00"), 3600, NULL,  1,  1, NULL);
+    addDbRow(makeTs("2009-11-02 12:00:00"), 3600, NULL,  2,  2, NULL); // Match
+    addDbRow(makeTs("2009-11-03 12:00:00"), 3600, NULL,  4,  4, NULL); // Match
+    addDbRow(makeTs("2009-11-04 12:00:00"), 3600, NULL,  8,  8, NULL); // Match
+    addDbRow(makeTs("2009-11-05 12:00:00"), 3600, NULL, 16, 16, NULL);
 
     int tmpFd = makeTmpFile();
     processQueryRequest(tmpFd, &req);
@@ -83,7 +83,7 @@ void testParamsOk(CuTest *tc) {
         "Server: BitMeterOS " VERSION " Web Server" HTTP_EOL
         "Date: Sun, 08 Nov 2009 10:00:00 +0000" HTTP_EOL
         "Connection: Close" HTTP_EOL HTTP_EOL
-        "[{dl: 14, ul: 14, ts: 1257379200, dr: 259200}]"
+        "[{dl: 14,ul: 14,ts: 1257379200,dr: 259200}]"
     , result);
 }
 
@@ -94,11 +94,11 @@ void testGroupByDay(CuTest *tc) {
     struct Request req = {"GET", "/query", &groupParam, NULL};
 
     emptyDb();
-    addDbRow(makeTs("2009-11-01 10:00:00"), 3600, NULL,  1,  1);
-    addDbRow(makeTs("2009-11-01 11:00:00"), 3600, NULL,  2,  2);
-    addDbRow(makeTs("2009-11-01 12:00:00"), 3600, NULL,  4,  4);
-    addDbRow(makeTs("2009-11-02 09:00:00"), 3600, NULL,  8,  8);
-    addDbRow(makeTs("2009-11-02 23:00:00"), 3600, NULL, 16, 16);
+    addDbRow(makeTs("2009-11-01 10:00:00"), 3600, NULL,  1,  1, NULL);
+    addDbRow(makeTs("2009-11-01 11:00:00"), 3600, NULL,  2,  2, NULL);
+    addDbRow(makeTs("2009-11-01 12:00:00"), 3600, NULL,  4,  4, NULL);
+    addDbRow(makeTs("2009-11-02 09:00:00"), 3600, NULL,  8,  8, NULL);
+    addDbRow(makeTs("2009-11-02 23:00:00"), 3600, NULL, 16, 16, NULL);
 
     int tmpFd = makeTmpFile();
     processQueryRequest(tmpFd, &req);
@@ -111,7 +111,7 @@ void testGroupByDay(CuTest *tc) {
         "Server: BitMeterOS " VERSION " Web Server" HTTP_EOL
         "Date: Sun, 08 Nov 2009 10:00:00 +0000" HTTP_EOL
         "Connection: Close" HTTP_EOL HTTP_EOL
-        "[{dl: 7, ul: 7, ts: 1257120000, dr: 50401},{dl: 24, ul: 24, ts: 1257206400, dr: 86400}]"
+        "[{dl: 7,ul: 7,ts: 1257120000,dr: 50401},{dl: 24,ul: 24,ts: 1257206400,dr: 86400}]"
     , result);
 }
 
@@ -123,11 +123,11 @@ void testParamsOkReversed(CuTest *tc) {
 
  // The query range covers the third and fourth rows only
     emptyDb();
-    addDbRow(makeTs("2009-11-01 12:00:00"), 3600, NULL,  1,  1);
-    addDbRow(makeTs("2009-11-02 12:00:00"), 3600, NULL,  2,  2);
-    addDbRow(makeTs("2009-11-03 12:00:00"), 3600, NULL,  4,  4); // Match
-    addDbRow(makeTs("2009-11-04 12:00:00"), 3600, NULL,  8,  8); // Match
-    addDbRow(makeTs("2009-11-05 12:00:00"), 3600, NULL, 16, 16);
+    addDbRow(makeTs("2009-11-01 12:00:00"), 3600, NULL,  1,  1, NULL);
+    addDbRow(makeTs("2009-11-02 12:00:00"), 3600, NULL,  2,  2, NULL);
+    addDbRow(makeTs("2009-11-03 12:00:00"), 3600, NULL,  4,  4, NULL); // Match
+    addDbRow(makeTs("2009-11-04 12:00:00"), 3600, NULL,  8,  8, NULL); // Match
+    addDbRow(makeTs("2009-11-05 12:00:00"), 3600, NULL, 16, 16, NULL);
 
     int tmpFd = makeTmpFile();
     processQueryRequest(tmpFd, &req);
@@ -142,7 +142,7 @@ void testParamsOkReversed(CuTest *tc) {
         "Server: BitMeterOS " VERSION " Web Server" HTTP_EOL
         "Date: Sun, 08 Nov 2009 10:00:00 +0000" HTTP_EOL
         "Connection: Close" HTTP_EOL HTTP_EOL
-        "[{dl: 4, ul: 4, ts: 1257292800, dr: 86400},{dl: 8, ul: 8, ts: 1257379200, dr: 86400}]"
+        "[{dl: 4,ul: 4,ts: 1257292800,dr: 86400},{dl: 8,ul: 8,ts: 1257379200,dr: 86400}]"
     , result);
 }
 

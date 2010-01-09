@@ -16,3 +16,9 @@ p{
 	margin-top: 5px;	
 	margin-bottom: 8px;
 }
+#modalBackground{
+	filter: alpha(opacity=50);	
+}
+* html #errorDialog{
+	position: absolute;	
+}

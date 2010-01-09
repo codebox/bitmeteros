@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.2.0
+ * BitMeterOS v0.3.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
+ * Build Date: Sat, 09 Jan 2010 16:37:16 +0000
  */
 
 #include <stdlib.h>
@@ -92,8 +92,8 @@ Contains platform-specific code for obtaining the network stats that we need.
 	struct Data* extractDataFromIf(struct if_msghdr2 *ifHdr){
 	 // Allocate a new Data struct, and populate the dl, ul, and ad parts of it
 		struct Data* data = allocData();
-		data->dl = ifHdr->ifm_data.ifi_ibytes;
-	    data->ul = ifHdr->ifm_data.ifi_obytes;
+		data->dl = (BW_INT) ifHdr->ifm_data.ifi_ibytes;
+	    data->ul = (BW_INT) ifHdr->ifm_data.ifi_obytes;
 
 		char ifName[IF_NAMESIZE];
 		if_indextoname(ifHdr->ifm_index, ifName);
@@ -203,12 +203,21 @@ Contains platform-specific code for obtaining the network stats that we need.
 				    char hexString[MAC_ADDR_LEN * 2 + 1];
 				    makeHexString(hexString, (char*) &(pIfRow->bPhysAddr), MAC_ADDR_LEN);
 				    setAddress(thisData, hexString);
-				    /*char addr[pIfRow->dwPhysAddrLen + 1];
-                    memcpy(addr, &(pIfRow->bPhysAddr), pIfRow->dwPhysAddrLen);
-                    addr[pIfRow->dwPhysAddrLen] = 0;
-                    setAddress(thisData, addr);*/
 
-					appendData(&firstData, thisData);
+                 // Windows Vista and later include duplicate entries in the IF table results, filter them out here
+                    int isDuplicate = FALSE;
+                    struct Data* prevData = firstData;
+                    while (prevData != NULL) {
+                        if (strcmp(prevData->ad, thisData->ad) == 0){
+                            isDuplicate = TRUE;
+                            break;
+                        }
+                        prevData = prevData->next;
+                    }
+
+                    if (isDuplicate == FALSE){
+                        appendData(&firstData, thisData);
+                    }
 				}
 			}
 

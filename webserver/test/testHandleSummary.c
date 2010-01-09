@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.2.0
+ * BitMeterOS v0.3.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
+ * Build Date: Sat, 09 Jan 2010 16:37:16 +0000
  */
 
 #include <stdio.h>
@@ -36,12 +36,12 @@
 Contains unit tests for the handleSummary module.
 */
 
-void testSummary(CuTest *tc) {
+void testSummaryNoHosts(CuTest *tc) {
     emptyDb();
-    addDbRow(makeTs("2008-11-02 12:00:00"), 3600, NULL,  1,  1); // Last year
-    addDbRow(makeTs("2009-10-01 12:00:00"), 3600, NULL,  2,  2); // Earlier this year
-    addDbRow(makeTs("2009-11-04 12:00:00"), 3600, NULL,  4,  4); // Earlier this month
-    addDbRow(makeTs("2009-11-08 01:00:00"), 3600, NULL,  8,  8); // Today
+    addDbRow(makeTs("2008-11-02 12:00:00"), 3600, NULL,  1,  1, NULL); // Last year
+    addDbRow(makeTs("2009-10-01 12:00:00"), 3600, NULL,  2,  2, NULL); // Earlier this year
+    addDbRow(makeTs("2009-11-04 12:00:00"), 3600, NULL,  4,  4, NULL); // Earlier this month
+    addDbRow(makeTs("2009-11-08 01:00:00"), 3600, NULL,  8,  8, NULL); // Today
 
     struct Request req = {"GET", "/summary", NULL, NULL};
 
@@ -59,12 +59,41 @@ void testSummary(CuTest *tc) {
         "Server: BitMeterOS " VERSION " Web Server" HTTP_EOL
         "Date: Sun, 08 Nov 2009 10:00:00 +0000" HTTP_EOL
         "Connection: Close" HTTP_EOL HTTP_EOL
-        "{today: {dl: 8, ul: 8, ts: 0, dr: 0}, month: {dl: 12, ul: 12, ts: 0, dr: 0}, year: {dl: 14, ul: 14, ts: 0, dr: 0}, total: {dl: 15, ul: 15, ts: 0, dr: 0}}"
+        "{today: {dl: 8,ul: 8,ts: 0,dr: 0}, month: {dl: 12,ul: 12,ts: 0,dr: 0}, year: {dl: 14,ul: 14,ts: 0,dr: 0}, total: {dl: 15,ul: 15,ts: 0,dr: 0}, hosts: [], since: 1225627200}"
+    , result);
+}
+
+void testSummaryWithHosts(CuTest *tc) {
+    emptyDb();
+    addDbRow(makeTs("2008-11-02 12:00:00"), 3600, NULL,  1,  1, "server"); // Last year
+    addDbRow(makeTs("2009-10-01 12:00:00"), 3600, NULL,  2,  2, NULL); // Earlier this year
+    addDbRow(makeTs("2009-11-04 12:00:00"), 3600, NULL,  4,  4, "windowsbox"); // Earlier this month
+    addDbRow(makeTs("2009-11-08 01:00:00"), 3600, NULL,  8,  8, "windowsbox"); // Today
+
+    struct Request req = {"GET", "/summary", NULL, NULL};
+
+    time_t now = makeTs("2009-11-08 10:00:00");
+    setTime(now);
+
+    int tmpFd = makeTmpFile();
+    processSummaryRequest(tmpFd, &req);
+
+    char* result = readTmpFile();
+
+    CuAssertStrEquals(tc,
+        "HTTP/1.0 200 OK" HTTP_EOL
+        "Content-Type: application/json" HTTP_EOL
+        "Server: BitMeterOS " VERSION " Web Server" HTTP_EOL
+        "Date: Sun, 08 Nov 2009 10:00:00 +0000" HTTP_EOL
+        "Connection: Close" HTTP_EOL HTTP_EOL
+        "{today: {dl: 8,ul: 8,ts: 0,dr: 0}, month: {dl: 12,ul: 12,ts: 0,dr: 0}, year: {dl: 14,ul: 14,ts: 0,dr: 0}, total: {dl: 15,ul: 15,ts: 0,dr: 0}"
+        ", hosts: ['server', 'windowsbox'], since: 1225627200}"
     , result);
 }
 
 CuSuite* handleSummaryGetSuite() {
     CuSuite* suite = CuSuiteNew();
-    SUITE_ADD_TEST(suite, testSummary);
+    SUITE_ADD_TEST(suite, testSummaryNoHosts);
+    SUITE_ADD_TEST(suite, testSummaryWithHosts);
     return suite;
 }

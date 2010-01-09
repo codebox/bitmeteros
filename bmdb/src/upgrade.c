@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.2.0
+ * BitMeterOS v0.3.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
+ * Build Date: Sat, 09 Jan 2010 16:37:16 +0000
  */
 
 #define _GNU_SOURCE
@@ -41,6 +41,7 @@ Performs database upgrades, which are sometimes required when a new version of t
 
 static int upgradeTo(int level);
 static int upgrade2();
+static int upgrade3();
 
 int doUpgrade(FILE* file, int argc, char** argv){
     int requestLevel;
@@ -97,10 +98,13 @@ static int upgradeTo(int level){
 
 	int status = FAIL;
  // The upgrade must be atomic - all or nothing
-	beginTrans();
+	beginTrans(FALSE);
 	switch (level){
 		case 2:
 			status = upgrade2();
+			break;
+		case 3:
+			status = upgrade3();
 			break;
 		default:
 			assert(FALSE);
@@ -227,4 +231,22 @@ static int upgrade2(){
 	#endif
 
 	return SUCCESS;
+}
+
+static int upgrade3(){
+ // Upgrade the db from version 2 to version 3
+    int status = setDbVersion(3);
+    if (status == FAIL){
+		return FAIL;
+	}
+
+    sqlite3_stmt* stmtAddColumn;
+    prepareSql(&stmtAddColumn, "ALTER TABLE data ADD COLUMN hs;");
+    status = sqlite3_step(stmtAddColumn);
+    if (status != SQLITE_DONE){
+        logMsg(LOG_ERR, "add column failed rc=%d error=%s", status, getDbError());
+        return FAIL;
+    }
+
+    return SUCCESS;
 }

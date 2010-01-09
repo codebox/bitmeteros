@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.2.0
+ * BitMeterOS v0.3.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
+ * Build Date: Sat, 09 Jan 2010 16:37:16 +0000
  */
 
 #ifndef COMMON_H
@@ -44,8 +44,8 @@
 #define EOL "\n"
 #endif
 
-#define VERSION "0.2.0"
-#define DB_VERSION 2
+#define VERSION "0.3.0"
+#define DB_VERSION 3
 
 #ifdef _WIN32
 #define COPYRIGHT "BitMeter OS v" VERSION " Copyright (c) 2009 Rob Dawson" EOL "Licenced under the GNU General Public License" EOL EOL
@@ -96,8 +96,14 @@ struct Data{
 	BW_INT dl;
 	BW_INT ul;
 	char*  ad;
+	char*  hs;
 	struct Data* next;
 };
+
+#ifndef _WIN32
+	typedef int SOCKET;
+#endif
+
 // ----
 void prepareSql(sqlite3_stmt**, const char*);
 sqlite3* openDb();
@@ -105,10 +111,11 @@ void prepareDb();
 struct Data* runSelect(sqlite3_stmt *stmt);
 void runSelectAndCallback(sqlite3_stmt *stmt, void (*callback)(struct Data*));
 int executeSql(const char* sql, int (*callback)(void*, int, char**, char**) );
-void beginTrans();
+void beginTrans(int immediate);
 void commitTrans();
 void rollbackTrans();
 void dbVersionCheck();
+void setBusyWait(int waitInMs);
 const char* getDbError();
 void closeDb();
 int getConfigInt(const char* key);
@@ -120,6 +127,7 @@ struct Data makeData();
 void freeData(struct Data* );
 void appendData(struct Data** , struct Data* );
 void setAddress(struct Data* data, const char* addr);
+void setHost(struct Data* data, const char* host);
 // ----
 void doSleep(int interval);
 void getDbPath(char* path);
@@ -133,6 +141,8 @@ void setLogToFile(int );
 void setLogLevel(int);
 void setAppName(const char*);
 void logMsg(int level, char* msg, ...);
+void statusMsg(const char* msg, ...);
+void resetStatusMsg();
 // ----
 void formatAmount(const BW_INT amount, const int binary, const int abbrev, char* txt);
 void toTime(char* timeText, time_t ts);

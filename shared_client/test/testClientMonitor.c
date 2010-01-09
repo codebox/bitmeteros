@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.2.0
+ * BitMeterOS v0.3.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
+ * Build Date: Sat, 09 Jan 2010 16:37:16 +0000
  */
 
 #include "test.h"
@@ -48,7 +48,7 @@ void testMonitorNoDataAfterTs(CuTest *tc) {
     time_t now = makeTs("2009-01-01 10:00:00");
     setTime(now);
     emptyDb();
-    addDbRow(now - 2, 1, "eth0", 123, 456);
+    addDbRow(now - 2, 1, "eth0", 123, 456, NULL);
 
     CuAssertTrue(tc, getMonitorValues(now - 1) == NULL);
 }
@@ -59,12 +59,12 @@ void testMonitorDataOnTs(CuTest *tc) {
     time_t now = makeTs("2009-01-01 10:00:00");
     setTime(now);
     emptyDb();
-    addDbRow(now - 1, 1, "eth0", 1, 10);
-    addDbRow(now - 1, 1, "eth1", 1, 10);
-    addDbRow(now - 1, 1, "eth2", 1, 10);
+    addDbRow(now - 1, 1, "eth0", 1, 10, NULL);
+    addDbRow(now - 1, 1, "eth1", 1, 10, NULL);
+    addDbRow(now - 1, 1, "eth2", 1, 10, NULL);
 
     struct Data* data = getMonitorValues(now - 1);
-    checkData(tc, data, now-1, 1, NULL, 3, 30); // We group data by ts, so expect just 1 result
+    checkData(tc, data, now-1, 1, NULL, 3, 30, NULL); // We group data by ts, so expect just 1 result
     CuAssertTrue(tc, data->next == NULL);
 }
 
@@ -74,19 +74,19 @@ void testMonitorDataOnAndAfterTs(CuTest *tc) {
     time_t now = makeTs("2009-01-01 10:00:00");
     setTime(now);
     emptyDb();
-    addDbRow(now - 1, 1, "eth0", 1, 10);
-    addDbRow(now - 1, 1, "eth1", 1, 10);
-    addDbRow(now - 1, 1, "eth2", 1, 10);
+    addDbRow(now - 1, 1, "eth0", 1, 10, NULL);
+    addDbRow(now - 1, 1, "eth1", 1, 10, NULL);
+    addDbRow(now - 1, 1, "eth2", 1, 10, NULL);
 
-    addDbRow(now - 2, 1, "eth0", 5, 50);
-    addDbRow(now - 2, 1, "eth1", 5, 50);
-    addDbRow(now - 2, 1, "eth2", 5, 50);
+    addDbRow(now - 2, 1, "eth0", 5, 50, NULL);
+    addDbRow(now - 2, 1, "eth1", 5, 50, NULL);
+    addDbRow(now - 2, 1, "eth2", 5, 50, NULL);
 
     struct Data* data = getMonitorValues(now - 2);
-    checkData(tc, data, now-1, 1, NULL, 3, 30);
+    checkData(tc, data, now-1, 1, NULL, 3, 30, NULL);
 
     data = data->next;
-    checkData(tc, data, now-2, 1, NULL, 15, 150);
+    checkData(tc, data, now-2, 1, NULL, 15, 150, NULL);
 
     CuAssertTrue(tc, data->next == NULL);
 }
@@ -99,22 +99,22 @@ void testMonitorDataOnAndLongAfterTs(CuTest *tc) {
 
     setTime(now);
     emptyDb();
-    addDbRow(now, 1, "eth0", 1, 10);
-    addDbRow(now, 1, "eth1", 1, 10);
-    addDbRow(now, 1, "eth2", 1, 10);
+    addDbRow(now, 1, "eth0", 1, 10, NULL);
+    addDbRow(now, 1, "eth1", 1, 10, NULL);
+    addDbRow(now, 1, "eth2", 1, 10, NULL);
 
-    addDbRow(then + 3600, 3600, "eth0", 5, 50);
-    addDbRow(then,        3600, "eth1", 6, 60);
-    addDbRow(then - 3600, 3600, "eth2", 7, 70);
+    addDbRow(then + 3600, 3600, "eth0", 5, 50, NULL);
+    addDbRow(then,        3600, "eth1", 6, 60, NULL);
+    addDbRow(then - 3600, 3600, "eth2", 7, 70, NULL);
 
     struct Data* data = getMonitorValues(then);
-    checkData(tc, data, now, 1, NULL, 3, 30);
+    checkData(tc, data, now, 1, NULL, 3, 30, NULL);
 
     data = data->next;
-    checkData(tc, data, then + 3600, 3600, NULL, 5, 50);
+    checkData(tc, data, then + 3600, 3600, NULL, 5, 50, NULL);
 
     data = data->next;
-    checkData(tc, data, then, 3600, NULL, 6, 60);
+    checkData(tc, data, then, 3600, NULL, 6, 60, NULL);
 
     CuAssertTrue(tc, data->next == NULL);
 }

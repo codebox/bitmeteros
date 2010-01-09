@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.2.0
+ * BitMeterOS v0.3.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
+ * Build Date: Sat, 09 Jan 2010 16:37:16 +0000
  */
 
 #define _GNU_SOURCE
@@ -263,7 +263,9 @@ static int setRange(struct Prefs *prefs, char* rangeTxt){
 		 // There was a hyphen, so split the range into its 'from' and 'to' components
 			int hyphenPos = hyphen - rangeTxt;
 			strncpy(rangeFrom, rangeTxt, hyphenPos);
-			strncpy(rangeTo, rangeTxt+hyphenPos+1, 10);
+			rangeFrom[hyphenPos] = 0;
+
+			strncpy(rangeTo, rangeTxt+hyphenPos+1, 11);
 		}
 
 	 // Turn the text into timestamps

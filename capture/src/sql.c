@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.2.0
+ * BitMeterOS v0.3.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
+ * Build Date: Sat, 09 Jan 2010 16:37:16 +0000
  */
 
 #include <stdio.h>
@@ -63,9 +63,9 @@ static int compressDbStage(int secKeepInterval, int oldDr, int newDr, int (*fnRo
 
 void setupDb(){
  // Initialise things, this must be called first
-	prepareSql(&stmtInsertData,           "INSERT INTO data (ts,dr,ad,dl,ul) VALUES (?,?,?,?,?)");
+	prepareSql(&stmtInsertData,           "INSERT INTO data (ts,dr,ad,dl,ul,hs) VALUES (?,?,?,?,?,?)");
 	prepareSql(&stmtSelectMinTsForDr,     "SELECT MIN(ts) FROM data WHERE dr=?");
-	prepareSql(&stmtSelectForCompression, "SELECT ad, SUM(dl), SUM(ul) FROM (SELECT * FROM data WHERE ts<=? AND dr=?) GROUP BY ad;");
+	prepareSql(&stmtSelectForCompression, "SELECT ad, hs, SUM(dl), SUM(ul) FROM (SELECT * FROM data WHERE ts<=? AND dr=?) GROUP BY ad, hs;");
 	prepareSql(&stmtDeleteCompressed,     "DELETE FROM data WHERE ts<=? AND dr=?");
 
  // Read various values out of the 'config' table
@@ -112,18 +112,27 @@ int getNextCompressTime(){
 }
 
 
-static int doInsert(int ts, int dr, const char* addr, int dl, int ul){
+static int doInsert(int ts, int dr, const char* addr, BW_INT dl, BW_INT ul, const char* host){
  // Inserts a row with the specified values into the 'data' table
 	sqlite3_bind_int(stmtInsertData,  1, ts);
 	sqlite3_bind_int(stmtInsertData,  2, dr);
-	sqlite3_bind_text(stmtInsertData, 3, addr, strlen(addr), SQLITE_TRANSIENT);
-	sqlite3_bind_int(stmtInsertData,  4, dl);
-  	sqlite3_bind_int(stmtInsertData,  5, ul);
+	if (addr != NULL){
+        sqlite3_bind_text(stmtInsertData, 3, addr, strlen(addr), SQLITE_TRANSIENT);
+	} else {
+        sqlite3_bind_null(stmtInsertData, 3);
+	}
+	sqlite3_bind_int64(stmtInsertData,  4, dl);
+  	sqlite3_bind_int64(stmtInsertData,  5, ul);
+  	if (host != NULL){
+        sqlite3_bind_text(stmtInsertData, 6, host, strlen(host), SQLITE_TRANSIENT);
+  	} else {
+  	    sqlite3_bind_null(stmtInsertData, 6);
+  	}
 
 	int status;
   	int rc = sqlite3_step(stmtInsertData);
   	if (rc != SQLITE_DONE){
-  		logMsg(LOG_ERR, "doInsert() failed to insert values %d,%d,%s,%d,%d into db rc=%d error=%s", ts, dr, addr, dl, ul, rc, getDbError());
+  		logMsg(LOG_ERR, "doInsert() failed to insert values %d,%d,%s,%llu,%llu,%s into db rc=%d error=%s", ts, dr, addr, dl, ul, host, rc, getDbError());
   		status = FAIL;
   	} else {
         status = SUCCESS;
@@ -135,12 +144,12 @@ static int doInsert(int ts, int dr, const char* addr, int dl, int ul){
 
 static int insertDataPartial(int ts, int dr, struct Data* data){
  // Inserts the data for a single Data struct into the 'data' table
-	return doInsert(ts, dr, data->ad, data->dl, data->ul);
+	return doInsert(ts, dr, data->ad, data->dl, data->ul, data->hs);
 }
 
 int insertData(struct Data* data){
  // Inserts the data for a single Data struct into the 'data' table
-	return doInsert(data->ts, data->dr, data->ad, data->dl, data->ul);
+	return doInsert(data->ts, data->dr, data->ad, data->dl, data->ul, data->hs);
 }
 
 static int doDelete(int ts, int dr){
@@ -170,20 +179,23 @@ static int doCompress(int ts, int oldDr, int newDr){
 	sqlite3_bind_int(stmtSelectForCompression, 1, ts);
 	sqlite3_bind_int(stmtSelectForCompression, 2, oldDr);
 
-	int rc, dlTotal, ulTotal;
+	int rc;
+	BW_INT dlTotal, ulTotal;
 	const void *addr;
+	const void *host;
     int status = SUCCESS;
     int insertedOk, deletedOk;
 
 	while((rc=sqlite3_step(stmtSelectForCompression)) == SQLITE_ROW){
-     // We get 1 row back for each network adapter
-		addr     = sqlite3_column_text(stmtSelectForCompression, 0);
-		dlTotal  = sqlite3_column_int(stmtSelectForCompression,  1);
-		ulTotal  = sqlite3_column_int(stmtSelectForCompression,  2);
+     // We get 1 row back for each network adapter/host combination
+		addr     = sqlite3_column_text(stmtSelectForCompression,  0);
+		host     = sqlite3_column_text(stmtSelectForCompression,  1);
+		dlTotal  = sqlite3_column_int64(stmtSelectForCompression, 2);
+		ulTotal  = sqlite3_column_int64(stmtSelectForCompression, 3);
 
-		logMsg(LOG_INFO, "row dl=%d ul=%d", dlTotal, ulTotal);
+		logMsg(LOG_INFO, "row dl=%llu ul=%llu", dlTotal, ulTotal);
 
-		insertedOk = doInsert(ts, newDr, addr, dlTotal, ulTotal);
+		insertedOk = doInsert(ts, newDr, addr, dlTotal, ulTotal, host);
 		if (insertedOk){
          // Only remove the old rows if we succeeded in inserting the new one
 			deletedOk = doDelete(ts, oldDr);
@@ -236,7 +248,7 @@ static int compressDbStage(int secKeepInterval, int oldDr, int newDr, int (*fnRo
     int compressOk;
 
  // Make sure the compression operation is atomic (this includes the deletion of old rows)
-	beginTrans();
+	beginTrans(FALSE);
     while((minTs != 0) && (minTsRoundedUp <= keepBoundary)){
      // We have rows that need to be compressed, ie that have the correct 'dr' value and are older than the boundary we established earlier
         compressOk = doCompress(minTsRoundedUp, oldDr, newDr);

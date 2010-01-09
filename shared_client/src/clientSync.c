@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.2.0
+ * BitMeterOS v0.3.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
+ * Build Date: Sat, 09 Jan 2010 16:37:16 +0000
  */
 
 #include <sqlite3.h>
@@ -33,18 +33,33 @@
 TODO
 */
 
-static sqlite3_stmt *stmt = NULL;
+#define CLIENT_SYNC_SQL "SELECT ts AS ts, dl AS dl, ul AS ul, dr AS dr, ad AS ad FROM data WHERE ts > ? AND hs IS NULL ORDER BY ts ASC"
 
-struct Data* getSyncValues(int ts){
- // A list of Data structs will be returned, once for each db entry with a timestamp >= ts
+#ifndef MULTI_THREADED_CLIENT
+	static sqlite3_stmt *stmt = NULL;
+#endif
 
-    if (stmt == NULL){
-        prepareSql(&stmt, "SELECT ts AS ts, dl AS dl, ul AS ul, dr AS dr, ad AS ad FROM data WHERE ts > ? AND hs IS NULL ORDER BY ts DESC");
-    }
+
+struct Data* getSyncValues(time_t ts){
+ // A list of Data structs will be returned, once for each db entry with a timestamp > ts
+
+    #ifdef MULTI_THREADED_CLIENT
+    	sqlite3_stmt *stmt = NULL;
+    	prepareSql(&stmt, CLIENT_SYNC_SQL);
+    #else
+    	if (stmt == NULL){
+    		prepareSql(&stmt, CLIENT_SYNC_SQL);
+    	}
+    #endif
 
 	sqlite3_bind_int(stmt, 1, ts);
 	struct Data* result = runSelect(stmt);
-	sqlite3_reset(stmt);
+
+    #ifdef MULTI_THREADED_CLIENT
+    	sqlite3_finalize(stmt);
+    #else
+    	sqlite3_reset(stmt);
+    #endif
 
 	return result;
 }

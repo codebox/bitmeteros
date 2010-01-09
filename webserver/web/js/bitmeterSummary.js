@@ -10,6 +10,8 @@ function tabShowSummary(){
 	var tdYearUl  = $('#summaryYearUl');
 	var tdTotalDl = $('#summaryTotalDl');
 	var tdTotalUl = $('#summaryTotalUl');
+	var tdHosts   = $('#summaryHosts');
+	var tdSince   = $('#summarySince');
 	
 	function updateSummary(){
 		function populateSummary(){
@@ -22,6 +24,18 @@ function tabShowSummary(){
 			tdYearUl.html(formatAmount(model.getSummary().year.ul));
 			tdTotalDl.html(formatAmount(model.getSummary().total.dl));
 			tdTotalUl.html(formatAmount(model.getSummary().total.ul));
+			
+			var sinceDate = new Date(model.getSummary().since * 1000);
+			tdSince.html(sinceDate.toString());
+			
+			if (model.getSummary().hosts.length === 0){
+				tdHosts.html('No data from other hosts');
+			} else {
+				tdHosts.html('');
+				$.each(model.getSummary().hosts, function(i,o){
+					tdHosts.append(o + '<br>');	
+				});
+			}
 		}
 		$.get('summary', function(objSummary){
 			 // Get the next set of summary data from the server and display it

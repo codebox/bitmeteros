@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.2.0
+ * BitMeterOS v0.3.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
+ * Build Date: Sat, 09 Jan 2010 16:37:16 +0000
  */
 
 #include "test.h"
@@ -47,11 +47,11 @@ void testSyncNoMatchingData(CuTest *tc) {
     addDbRow(1, 1, "eth0", 123, 456, NULL);
     addDbRow(3, 1, "eth0", 123, 456, "other host");
 
-    CuAssertTrue(tc, getSyncValues(2) == NULL);
+    CuAssertTrue(tc, getSyncValues(1) == NULL);
 }
 
 void testSyncDataOnAndAfterTs(CuTest *tc) {
- /* Check that we behave correctly when the data table contains rows that meet our 
+ /* Check that we behave correctly when the data table contains rows that meet our
     criterion, and have differing timestamps */
     emptyDb();
     addDbRow(9,  1, "eth0", 1, 10, NULL);
@@ -60,7 +60,7 @@ void testSyncDataOnAndAfterTs(CuTest *tc) {
     addDbRow(11, 1, "eth1", 3, 12, NULL);
     addDbRow(11, 1, "eth1", 4, 13, "other host");
 
-    struct Data* data = getSyncValues(10);
+    struct Data* data = getSyncValues(9);
     checkData(tc, data, 10, 1, "eth0", 1, 10, NULL);
 
     data = data->next;

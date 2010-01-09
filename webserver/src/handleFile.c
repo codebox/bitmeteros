@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.2.0
+ * BitMeterOS v0.3.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
+ * Build Date: Sat, 09 Jan 2010 16:37:16 +0000
  */
 
 #include <stdlib.h>
@@ -59,6 +59,7 @@ struct MimeType MIME_TYPES[] = {
 	{"jpg",  MIME_JPEG, TRUE},
 	{"gif",  MIME_GIF,  TRUE},
 	{"png",  MIME_PNG,  TRUE},
+	{"ico",  MIME_ICO,  TRUE},
 	{"js",   MIME_JS,   FALSE},
 	{"css",  MIME_CSS,  FALSE},
 	{NULL,   NULL,      FALSE}

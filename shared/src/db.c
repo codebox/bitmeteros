@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.2.0
+ * BitMeterOS v0.3.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
+ * Build Date: Sat, 09 Jan 2010 16:37:16 +0000
  */
 
 #include <unistd.h>
@@ -33,7 +33,7 @@
 #include <string.h>
 #include "common.h"
 
-#define BUSY_WAIT_INTERVAL 10000
+#define BUSY_WAIT_INTERVAL 30000
 
 /*
 Contains common database-handling routines.
@@ -86,9 +86,13 @@ sqlite3* openDb(){
 	}
 
 	dbOpen = TRUE;
-	sqlite3_busy_timeout(db, BUSY_WAIT_INTERVAL);
+	setBusyWait(BUSY_WAIT_INTERVAL);
 
 	return db;
+}
+
+void setBusyWait(int waitInMs){
+    sqlite3_busy_timeout(db, waitInMs);
 }
 
 void dbVersionCheck(){
@@ -152,6 +156,10 @@ static struct Data* dataForRow(int colCount, sqlite3_stmt *stmt){
             const unsigned char* addr = sqlite3_column_text(stmt, col);
             setAddress(data, addr);
 
+		} else if (strcmp(colName, "hs") == 0){
+            const unsigned char* host = sqlite3_column_text(stmt, col);
+            setHost(data, host);
+
 		} else {
 			// ignore
 		}
@@ -204,13 +212,14 @@ struct Data* runSelect(sqlite3_stmt *stmt){
 	return result;
 }
 
-void beginTrans(){
+void beginTrans(int immediate){
  // Start a db transaction
 	assert(dbOpen);
 	assert(!inTransaction); // We dont use nested tranactions
 
     char *errMsg;
-    int rc = sqlite3_exec(db, "begin", NULL, NULL, &errMsg);
+    char *sql = (immediate == TRUE) ? "begin immediate" : "begin";
+    int rc = sqlite3_exec(db, sql, NULL, NULL, &errMsg);
 	if (rc != SQLITE_OK){
 		logMsg(LOG_ERR, "Unable to begin new transaction. rc=%d msg=%s", rc, errMsg);
 		sqlite3_free(errMsg);

@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.2.0
+ * BitMeterOS v0.3.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
+ * Build Date: Sat, 09 Jan 2010 16:37:16 +0000
  */
 
 #include <stdlib.h>
@@ -64,14 +64,14 @@ void processQueryRequest(SOCKET fd, struct Request* req){
      /* The client will send a 'from' ts that corresponds to the start of the first day of the range (ie 00:00:00)
         we need to adjust this to 01:00:00, which will be the ts value held in the database that covers the time
         range from 00:00:00 to 01:00:00. */
-        struct tm* cal = gmtime(&from);
+        /*struct tm* cal = gmtime(&from);
         cal->tm_hour++;
-        from = mktime(cal);
+        from = mktime(cal);*/
 
      /* The client will send the last date that should be included in the query range in the 'to' parameter. When
         computing the timestamp value that corresponds to this, we need to move to the end of the specified date to
         be sure of including all data transferred during that day. */
-        cal = gmtime(&to);
+        struct tm* cal = gmtime(&to);
         cal->tm_mday++;
         to = mktime(cal);
 

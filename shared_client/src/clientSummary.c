@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.2.0
+ * BitMeterOS v0.3.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,11 +22,12 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
+ * Build Date: Sat, 09 Jan 2010 16:37:16 +0000
  */
 
 #include <sqlite3.h>
 #include <stdlib.h>
+#include <string.h>
 #include "common.h"
 #include "client.h"
 
@@ -34,40 +35,51 @@
 Contains a helper function for use by clients that need to produce database summaries.
 */
 
-#define CLIENT_SUMMARY_SQL "SELECT SUM(dl) AS dl, SUM(ul) AS ul FROM data WHERE ts>=?"
+#define DATA_SUMMARY_SQL "SELECT SUM(dl) AS dl, SUM(ul) AS ul FROM data WHERE ts>=?"
+#define HOST_SUMMARY_SQL "SELECT DISTINCT(hs) AS hs FROM data WHERE hs NOT NULL"
 
 #ifndef MULTI_THREADED_CLIENT
-	static sqlite3_stmt *stmt = NULL;
+	static sqlite3_stmt *stmtData = NULL;
+	static sqlite3_stmt *stmtHost = NULL;
 #endif
 
 struct Summary getSummaryValues();
 static struct Data* calcTotalsSince(sqlite3_stmt *stmt, int ts);
+static void getHosts(sqlite3_stmt *stmt, char*** hostNames, int* hostCount);
 
 struct Summary getSummaryValues(){
  // Populate a Summary struct
- 
+
  	#ifdef MULTI_THREADED_CLIENT
-    	sqlite3_stmt *stmt = NULL;
-    	prepareSql(&stmt, CLIENT_SUMMARY_SQL);
+    	sqlite3_stmt *stmtData = NULL;
+    	prepareSql(&stmtData, DATA_SUMMARY_SQL);
+
+    	sqlite3_stmt *stmtHost = NULL;
+    	prepareSql(&stmtHost, HOST_SUMMARY_SQL);
+
     #else
-    	if (stmt == NULL){
-    		prepareSql(&stmt, CLIENT_SUMMARY_SQL);
+    	if (stmtData == NULL){
+    		prepareSql(&stmtData, DATA_SUMMARY_SQL);
     	}
-    #endif	
+
+    	if (stmtHost == NULL){
+    		prepareSql(&stmtHost, HOST_SUMMARY_SQL);
+    	}
+    #endif
 
 	struct Summary summary;
 	int now = getTime();
 
 	int tsForStartOfToday = getCurrentDayForTs(now);
-	summary.today = calcTotalsSince(stmt, tsForStartOfToday);
+	summary.today = calcTotalsSince(stmtData, tsForStartOfToday);
 
 	int tsForStartOfMonth = getCurrentMonthForTs(now);
-	summary.month = calcTotalsSince(stmt, tsForStartOfMonth);
+	summary.month = calcTotalsSince(stmtData, tsForStartOfMonth);
 
 	int tsForStartOfYear = getCurrentYearForTs(now);
-	summary.year = calcTotalsSince(stmt, tsForStartOfYear);
+	summary.year = calcTotalsSince(stmtData, tsForStartOfYear);
 
-	summary.total = calcTotalsSince(stmt, 0);
+	summary.total = calcTotalsSince(stmtData, 0);
 
 	struct ValueBounds* tsBounds = calcTsBounds();
 	if (tsBounds != NULL){
@@ -80,13 +92,53 @@ struct Summary getSummaryValues(){
         summary.tsMax = 0;
 	}
 
+    getHosts(stmtHost, &(summary.hostNames), &(summary.hostCount));
+
 	#ifdef MULTI_THREADED_CLIENT
-    	sqlite3_finalize(stmt);
+    	sqlite3_finalize(stmtData);
+    	sqlite3_finalize(stmtHost);
     #else
-    	sqlite3_reset(stmt);
-    #endif	
-    
+    	sqlite3_reset(stmtData);
+    	sqlite3_reset(stmtHost);
+    #endif
+
 	return summary;
+}
+
+void freeSummary(struct Summary* summary){
+ // Release all the memory allocated to this struct
+    freeData(summary->today);
+	freeData(summary->month);
+	freeData(summary->year);
+	freeData(summary->total);
+
+    int i;
+    for(i=0; i<summary->hostCount; i++){
+        free(summary->hostNames[i]);
+    }
+}
+
+
+static void getHosts(sqlite3_stmt *stmt, char*** hostNames, int* hostCount){
+    struct Data* data = runSelect(stmt);
+    struct Data* thisData;
+
+    *hostCount = 0;
+    thisData = data;
+    while(thisData != NULL){
+        (*hostCount)++;
+        thisData = thisData->next;
+    }
+
+    *hostNames = malloc(sizeof(char*) * (*hostCount));
+
+    thisData = data;
+    int offset = 0;
+    while(thisData != NULL){
+
+        (*hostNames)[offset++] = strdup(thisData->hs);
+        thisData = thisData->next;
+    }
 }
 
 static struct Data* calcTotalsSince(sqlite3_stmt *stmt, int ts){

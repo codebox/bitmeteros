@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.2.0
+ * BitMeterOS v0.3.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
+ * Build Date: Sat, 09 Jan 2010 16:37:16 +0000
  */
 
 #include <stdio.h>
@@ -62,7 +62,7 @@ void doDump(){
 
 	if (computeMaxValues){
 	 // We need a transaction because the max values must be consistent with the data that we are dumping out
-        beginTrans();
+        beginTrans(FALSE);
 		maxValues = calcMaxValues();
 	}
 
@@ -97,7 +97,7 @@ static void printRow(struct Data* row){
 
 	if (prefs.dumpFormat == PREF_DUMP_FORMAT_CSV){
 	 // Output in CSV is easy, just print it
-		printf("%s,%s,%s,%d,%s,%s,%s\n", date, timeFrom, timeTo, row->dr, dlTxt, ulTxt, row->ad);
+		printf("%s,%s,%s,%d,%s,%s,%s,%s\n", date, timeFrom, timeTo, row->dr, dlTxt, ulTxt, row->ad, (row->hs == NULL) ? "" : row->hs);
 
 	} else if (prefs.dumpFormat == PREF_DUMP_FORMAT_FIXED_WIDTH){
 	 // For fixed-width output we need to work out how wide to make the columns
@@ -128,7 +128,7 @@ static void printRow(struct Data* row){
 				assert(FALSE); // Should have caught invalid units before now
 				break;
 		}
-		printf("%s %s %s %4d %*s %*s %s\n", date, timeFrom, timeTo, row->dr, dlWidth, dlTxt, ulWidth, ulTxt, row->ad);
+		printf("%s %s %s %4d %*s %*s %s %s\n", date, timeFrom, timeTo, row->dr, dlWidth, dlTxt, ulWidth, ulTxt, row->ad, (row->hs == NULL) ? "" : row->hs);
 
 	}
 	freeData(row);

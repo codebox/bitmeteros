@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.2.0
+ * BitMeterOS v0.3.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
+ * Build Date: Sat, 09 Jan 2010 16:37:16 +0000
  */
 
 #define _GNU_SOURCE
@@ -46,6 +46,7 @@ struct Data* allocData(){
 	data->ul = 0;
 	data->dr = 0;
 	data->ad = NULL;
+	data->hs = NULL;
 	data->next = NULL;
 
 	return data;
@@ -60,6 +61,7 @@ struct Data makeData(){
 	data.ul = 0;
 	data.dr = 0;
 	data.ad = NULL;
+	data.hs = NULL;
 	data.next = NULL;
 
 	return data;
@@ -69,11 +71,24 @@ void setAddress(struct Data* data, const char* addr){
     if (addr == NULL){
         data->ad = NULL;
     } else {
-     // Copy the specified address string onto the heap, and associate the Data struct with it
+     // Remove any leading/trailing whitespace
         char* addrTrimmed = trim(strdupa(addr));
 
+     // Copy the specified address string onto the heap, and associate the Data struct with it
         data->ad = malloc(strlen(addrTrimmed)+1);
         strcpy(data->ad, addrTrimmed);
+    }
+}
+
+void setHost(struct Data* data, const char* host){
+    if (host == NULL){
+        data->hs = NULL;
+    } else {
+     // Copy the specified host name onto the heap, and associate the Data struct with it
+        char* hostTrimmed = trim(strdupa(host));
+
+        data->hs = malloc(strlen(hostTrimmed)+1);
+        strcpy(data->hs, hostTrimmed);
     }
 }
 
@@ -84,6 +99,9 @@ void freeData(struct Data* data){
 		next = data->next;
 		if (data->ad != NULL){
 			free(data->ad);
+		}
+		if (data->hs != NULL){
+			free(data->hs);
 		}
 		free(data);
 		data = next;

@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.2.0
+ * BitMeterOS v0.3.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,9 +22,12 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
+ * Build Date: Sat, 09 Jan 2010 16:37:16 +0000
  */
 
+#ifdef _WIN32
+	#define __USE_MINGW_ANSI_STDIO 1
+#endif
 #include <assert.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -51,7 +54,7 @@ static void writeHeader(SOCKET fd, char* name, char* value){
 }
 
 static void writeMimeType(SOCKET fd, char* contentType){
-	writeHeader(fd, "Content-Type", contentType);
+	writeHeader(fd, HEADER_CONTENT_TYPE, contentType);
 }
 
 static void writeResponseCode(SOCKET fd, struct HttpResponse response){
@@ -117,8 +120,8 @@ void processRequest(SOCKET fd, char* buffer){
 		} else if (strcmp(req->path, "/query") == 0){
             op = Query;
 
-		/*} else if (strcmp(req->path, "/sync") == 0){
-            op = Sync;*/
+		} else if (strcmp(req->path, "/sync") == 0){
+            op = Sync;
 
 		} else if (strcmp(req->path, "/config") == 0){
             op = Config;
@@ -148,8 +151,8 @@ void processRequest(SOCKET fd, char* buffer){
 		} else if (op == Query){
             processQueryRequest(fd, req);
 
-		/*} else if (op == Sync){
-            processSyncRequest(fd, req);*/
+		} else if (op == Sync){
+            processSyncRequest(fd, req);
 
 		} else if (op == Config){
             processConfigRequest(fd, req);
@@ -203,24 +206,21 @@ void writeDataToJson(SOCKET fd, struct Data* data){
 }
 
 void writeSingleDataToJson(SOCKET fd, struct Data* data){
-	char jsonBuffer[32];
+	char jsonBuffer[64];
 
 	writeText(fd, "{");
 
 	if (data != NULL){
-		sprintf(jsonBuffer, "dl: %llu", data->dl);
-		writeText(fd, jsonBuffer);
-
-		sprintf(jsonBuffer, ", ul: %llu", data->ul);
-		writeText(fd, jsonBuffer);
-
-		sprintf(jsonBuffer, ", ts: %d", (int)data->ts);
-		writeText(fd, jsonBuffer);
-
-		sprintf(jsonBuffer, ", dr: %d", data->dr);
+		sprintf(jsonBuffer, "dl: %llu,ul: %llu,ts: %d,dr: %d", data->dl, data->ul, (int)data->ts, data->dr);
 		writeText(fd, jsonBuffer);
 	}
 	writeText(fd, "}");
+}
+
+void writeSyncData(SOCKET fd, struct Data* data){
+	char row[64];
+	sprintf(row, "%d,%d,%llu,%llu,%s" HTTP_EOL, (int)data->ts, data->dr, data->dl, data->ul, data->ad);
+	writeText(fd, row);
 }
 
 #ifdef _WIN32

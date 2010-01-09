@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.2.0
+ * BitMeterOS v0.3.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
+ * Build Date: Sat, 09 Jan 2010 16:37:16 +0000
  */
 
 #include <stdio.h>
@@ -57,17 +57,27 @@ void processMonitorRequest(SOCKET fd, struct Request* req){
         int queryTs = now - ts;
 
         struct Data* result = getMonitorValues(queryTs);
+        
+     /* The database may contain values with timestamps that lie in the future, relative to the current system time. This
+        can happen as a result of changes to/from GMT, or if the system clock is altered manually or accidentally. We don't
+        want to return values with future timestamps, so move through the result list until we find a timestamp <= the
+        current time. */
+        struct Data* resultsFromNow = result; 
+		while((resultsFromNow != NULL) && (resultsFromNow->ts > now)){
+			resultsFromNow = resultsFromNow->next;
+		}
 
      // Change the 'ts' values in the response so that they contain the timestamp offset from the current time
-        struct Data* curr = result;
+        struct Data* curr = resultsFromNow;
         while(curr != NULL){
             curr->ts = (now - curr->ts);
             curr = curr->next;
         }
+        
         char jsonBuffer[64];
         sprintf(jsonBuffer, "{serverTime : %d, data : ", now);
         writeText(fd, jsonBuffer);
-        writeDataToJson(fd, result);
+        writeDataToJson(fd, resultsFromNow);
         writeText(fd, "}");
         freeData(result);
 	}

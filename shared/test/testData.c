@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.2.0
+ * BitMeterOS v0.3.0
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2009 Rob Dawson
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Wed, 25 Nov 2009 10:48:23 +0000
+ * Build Date: Sat, 09 Jan 2010 16:37:16 +0000
  */
 
 #include "test.h"
@@ -89,9 +89,37 @@ void testSetAddress(CuTest *tc){
     CuAssertTrue(tc, data.next == NULL);
 }
 
+void testSetHost(CuTest *tc){
+ // Check hostname is set correctly, and whitespace is trimmed
+    struct Data data = makeData();
+
+    CuAssertTrue(tc, data.next == NULL);
+    setHost(&data, "host1");
+    CuAssertStrEquals(tc, "host1", data.hs);
+
+    setHost(&data, "  host2  ");
+    CuAssertStrEquals(tc, "host2", data.hs);
+
+    setHost(&data, "host3  ");
+    CuAssertStrEquals(tc, "host3", data.hs);
+
+    setHost(&data, "  host4");
+    CuAssertStrEquals(tc, "host4", data.hs);
+
+    setHost(&data, "");
+    CuAssertStrEquals(tc, "", data.hs);
+
+    setHost(&data, "   ");
+    CuAssertStrEquals(tc, "", data.hs);
+
+    setHost(&data, NULL);
+    CuAssertTrue(tc, data.next == NULL);
+}
+
 CuSuite* dataGetSuite() {
     CuSuite* suite = CuSuiteNew();
     SUITE_ADD_TEST(suite, testAppendData);
     SUITE_ADD_TEST(suite, testSetAddress);
+    SUITE_ADD_TEST(suite, testSetHost);
     return suite;
 }
