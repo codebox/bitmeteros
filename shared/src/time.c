@@ -1,8 +1,8 @@
 /*
- * BitMeterOS v0.3.0
+ * BitMeterOS v0.3.2
  * http://codebox.org.uk/bitmeterOS
  *
- * Copyright (c) 2009 Rob Dawson
+ * Copyright (c) 2010 Rob Dawson
  *
  * Licensed under the GNU General Public License
  * http://www.gnu.org/licenses/gpl.txt
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Sat, 09 Jan 2010 16:37:16 +0000
+ * Build Date: Sun, 07 Mar 2010 14:49:47 +0000
  */
 
 #include <stdlib.h>
@@ -41,6 +41,7 @@ time_t getCurrentYearForTs(time_t ts){
 	t->tm_hour = 0;
 	t->tm_mday = 1;
 	t->tm_mon  = 0;
+	t->tm_isdst = -1;
 	return mktime(t);
 }
 
@@ -51,6 +52,7 @@ time_t getCurrentMonthForTs(time_t ts){
 	t->tm_min  = 0;
 	t->tm_hour = 0;
 	t->tm_mday = 1;
+    t->tm_isdst = -1;
 	return mktime(t);
 }
 
@@ -60,6 +62,7 @@ time_t getCurrentDayForTs(time_t ts){
 	t->tm_sec  = 0;
 	t->tm_min  = 0;
 	t->tm_hour = 0;
+    t->tm_isdst = -1;
 	return mktime(t);
 }
 
@@ -124,13 +127,14 @@ time_t getNextHourForTs(time_t ts){
 time_t getNextMinForTs(time_t ts){
  // Returns a timestamp value representing the start of the minute following the one in which 'ts' occurs
 	ts += SECS_PER_MIN;
-	struct tm *t = gmtime(&ts);
+	struct tm *t = localtime(&ts);
 
 	if (t->tm_sec == 0 ){
 	 // We were exactly on the minute, so return the ts that was passed in
 		return ts;
 	} else {
 		t->tm_sec = 0;
+		t->tm_isdst = -1;
 		return mktime(t);
 	}
 }

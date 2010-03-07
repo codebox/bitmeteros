@@ -1,8 +1,8 @@
 /*
- * BitMeterOS v0.3.0
+ * BitMeterOS v0.3.2
  * http://codebox.org.uk/bitmeterOS
  *
- * Copyright (c) 2009 Rob Dawson
+ * Copyright (c) 2010 Rob Dawson
  *
  * Licensed under the GNU General Public License
  * http://www.gnu.org/licenses/gpl.txt
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Sat, 09 Jan 2010 16:37:16 +0000
+ * Build Date: Sun, 07 Mar 2010 14:49:47 +0000
  */
 
 #include <stdio.h>
@@ -40,6 +40,9 @@ void testConfig(CuTest *tc) {
     addConfigRow(CONFIG_WEB_MONITOR_INTERVAL, "1");
     addConfigRow(CONFIG_WEB_SUMMARY_INTERVAL, "2");
     addConfigRow(CONFIG_WEB_HISTORY_INTERVAL, "3");
+    addConfigRow(CONFIG_WEB_SERVER_NAME,      "server");
+    addConfigRow(CONFIG_WEB_COLOUR_DL,        "#ff0000");
+    addConfigRow(CONFIG_WEB_COLOUR_UL,        "#00ff00");
 
     time_t now = makeTs("2009-11-08 10:00:00");
     setTime(now);
@@ -55,7 +58,7 @@ void testConfig(CuTest *tc) {
         "Server: BitMeterOS " VERSION " Web Server" HTTP_EOL
         "Date: Sun, 08 Nov 2009 10:00:00 +0000" HTTP_EOL
         "Connection: Close" HTTP_EOL HTTP_EOL
-        "var config = { 'monitorInterval' : 1, 'summaryInterval' : 2, 'historyInterval' : 3, 'version' : '" VERSION "' };"
+        "var config = { 'monitorInterval' : 1, 'summaryInterval' : 2, 'historyInterval' : 3, 'serverName' : 'server', 'dlColour' : '#ff0000', 'ulColour' : '#00ff00', 'version' : '" VERSION "' };"
     , result);
 }
 

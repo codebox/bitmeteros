@@ -1,8 +1,8 @@
 /*
- * BitMeterOS v0.3.0
+ * BitMeterOS v0.3.2
  * http://codebox.org.uk/bitmeterOS
  *
- * Copyright (c) 2009 Rob Dawson
+ * Copyright (c) 2010 Rob Dawson
  *
  * Licensed under the GNU General Public License
  * http://www.gnu.org/licenses/gpl.txt
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Sat, 09 Jan 2010 16:37:16 +0000
+ * Build Date: Sun, 07 Mar 2010 14:49:47 +0000
  */
 
 #define _GNU_SOURCE
@@ -42,6 +42,7 @@ Performs database upgrades, which are sometimes required when a new version of t
 static int upgradeTo(int level);
 static int upgrade2();
 static int upgrade3();
+static int upgrade4();
 
 int doUpgrade(FILE* file, int argc, char** argv){
     int requestLevel;
@@ -105,6 +106,9 @@ static int upgradeTo(int level){
 			break;
 		case 3:
 			status = upgrade3();
+			break;
+		case 4:
+			status = upgrade4();
 			break;
 		default:
 			assert(FALSE);
@@ -247,6 +251,31 @@ static int upgrade3(){
         logMsg(LOG_ERR, "add column failed rc=%d error=%s", status, getDbError());
         return FAIL;
     }
+
+    return SUCCESS;
+}
+
+static int upgrade4(){
+ // Upgrade the db from version 3 to version 4
+    int status = setDbVersion(4);
+    if (status == FAIL){
+		return FAIL;
+	}
+
+    status = setConfigTextValue(CONFIG_WEB_SERVER_NAME, "");
+    if (status == FAIL){
+		return FAIL;
+	}
+
+    status = setConfigTextValue(CONFIG_WEB_COLOUR_DL, "#ff0000");
+    if (status == FAIL){
+		return FAIL;
+	}
+
+    status = setConfigTextValue(CONFIG_WEB_COLOUR_UL, "#00ff00");
+    if (status == FAIL){
+		return FAIL;
+	}
 
     return SUCCESS;
 }

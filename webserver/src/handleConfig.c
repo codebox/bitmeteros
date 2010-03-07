@@ -1,8 +1,8 @@
 /*
- * BitMeterOS v0.3.0
+ * BitMeterOS v0.3.2
  * http://codebox.org.uk/bitmeterOS
  *
- * Copyright (c) 2009 Rob Dawson
+ * Copyright (c) 2010 Rob Dawson
  *
  * Licensed under the GNU General Public License
  * http://www.gnu.org/licenses/gpl.txt
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Sat, 09 Jan 2010 16:37:16 +0000
+ * Build Date: Sun, 07 Mar 2010 14:49:47 +0000
  */
 
 #include <stdlib.h>
@@ -35,7 +35,8 @@
 Handles '/config' requests received by the web server.
 */
 
-static void writeConfigValue(SOCKET fd, char* key, char* value);
+static void writeNumConfigValue(SOCKET fd, char* key, char* value);
+static void writeTxtConfigValue(SOCKET fd, char* key, char* value);
 extern struct HttpResponse HTTP_OK;
 
 void processConfigRequest(SOCKET fd, struct Request* req){
@@ -45,27 +46,49 @@ void processConfigRequest(SOCKET fd, struct Request* req){
 	writeText(fd, "var config = { ");
 
 	char* val = getConfigText(CONFIG_WEB_MONITOR_INTERVAL);
-    writeConfigValue(fd, "monitorInterval", val);
+    writeNumConfigValue(fd, "monitorInterval", val);
     free(val);
 
     writeText(fd, ", ");
     val = getConfigText(CONFIG_WEB_SUMMARY_INTERVAL);
-    writeConfigValue(fd, "summaryInterval", val);
+    writeNumConfigValue(fd, "summaryInterval", val);
     free(val);
 
     writeText(fd, ", ");
     val = getConfigText(CONFIG_WEB_HISTORY_INTERVAL);
-    writeConfigValue(fd, "historyInterval", val);
+    writeNumConfigValue(fd, "historyInterval", val);
     free(val);
 
     writeText(fd, ", ");
-    writeConfigValue(fd, "version", "'" VERSION "'");
+    val = getConfigText(CONFIG_WEB_SERVER_NAME);
+    writeTxtConfigValue(fd, "serverName", val);
+    free(val);
+
+    writeText(fd, ", ");
+    val = getConfigText(CONFIG_WEB_COLOUR_DL);
+    writeTxtConfigValue(fd, "dlColour", val);
+    free(val);
+
+    writeText(fd, ", ");
+    val = getConfigText(CONFIG_WEB_COLOUR_UL);
+    writeTxtConfigValue(fd, "ulColour", val);
+    free(val);
+
+    writeText(fd, ", ");
+    writeTxtConfigValue(fd, "version", VERSION);
 	writeText(fd, " };");
 }
 
-static void writeConfigValue(SOCKET fd, char* key, char* value){
+static void writeNumConfigValue(SOCKET fd, char* key, char* value){
  // Helper function, writes a key/value pair to the stream
     char txt[64];
     sprintf(txt, "'%s' : %s", key, value);
+    writeText(fd, txt);
+}
+
+static void writeTxtConfigValue(SOCKET fd, char* key, char* value){
+ // Helper function, writes a key/value pair to the stream surrounding the value with quotes
+    char txt[64];
+    sprintf(txt, "'%s' : '%s'", key, value);
     writeText(fd, txt);
 }

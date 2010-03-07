@@ -1,8 +1,8 @@
 /*
- * BitMeterOS v0.3.0
+ * BitMeterOS v0.3.2
  * http://codebox.org.uk/bitmeterOS
  *
- * Copyright (c) 2009 Rob Dawson
+ * Copyright (c) 2010 Rob Dawson
  *
  * Licensed under the GNU General Public License
  * http://www.gnu.org/licenses/gpl.txt
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Sat, 09 Jan 2010 16:37:16 +0000
+ * Build Date: Sun, 07 Mar 2010 14:49:47 +0000
  */
 
 #define _GNU_SOURCE
@@ -103,6 +103,23 @@ static void testUpgradeFrom2To3(CuTest *tc){
     populateConfigTable();
 }
 
+static void testUpgradeFrom3To4(CuTest *tc){
+    executeSql("drop table data;", NULL);
+    executeSql("create table data (ts,dl,ul,dr,ad);", NULL);
+    executeSql("delete from config;", NULL);
+
+    int status = doUpgradeTest(4);
+    CuAssertTrue(tc, status == SUCCESS);
+    CuAssertIntEquals(tc, 4,  getDbVersion());
+    CuAssertStrEquals(tc, "", getConfigText(CONFIG_WEB_SERVER_NAME));
+    CuAssertStrEquals(tc, "#ff0000", getConfigText(CONFIG_WEB_COLOUR_DL));
+    CuAssertStrEquals(tc, "#00ff00", getConfigText(CONFIG_WEB_COLOUR_UL));
+
+    executeSql("drop table data;", NULL);
+    executeSql("create table data (ts,dl,ul,dr,ad,hs);", NULL);
+    populateConfigTable();
+}
+
 static int doUpgradeTest(int level){
     char* txt = malloc(4);
     sprintf(txt, "%d", level);
@@ -154,6 +171,7 @@ CuSuite* bmdbUpgradeGetSuite() {
     SUITE_ADD_TEST(suite, testUpgradeAboveMaxLevel);
     SUITE_ADD_TEST(suite, testUpgradeFrom1To2);
     SUITE_ADD_TEST(suite, testUpgradeFrom2To3);
+    SUITE_ADD_TEST(suite, testUpgradeFrom3To4);
     SUITE_ADD_TEST(suite, testConvertAddrValues);
     return suite;
 }

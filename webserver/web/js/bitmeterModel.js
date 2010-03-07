@@ -18,7 +18,9 @@ function buildModel(){
 		'historyDayScale'  : 17694720000,
 		'queryGrouping'    : 2,
 		'queryResultsPerPage' : 20,
-		'queryResults' : []
+		'queryResults' : [],
+		'dlColour' : config.dlColour,
+		'ulColour' : config.ulColour
 	};
 	
 	function get(key){
@@ -136,6 +138,21 @@ function buildModel(){
 	}
 	model.setQueryResultsPerPage = function(resultsPerPage){
 		set('queryResultsPerPage', '' + resultsPerPage, true);
+	}
+	
+ // Colours for Upload/Download plots on graphs
+	model.getDownloadColour = function(){
+		return get('dlColour');
+	}
+	model.setDownloadColour = function(dlColour){
+		set('dlColour', dlColour, true);
+	}
+
+	model.getUploadColour = function(){
+		return get('ulColour');
+	}
+	model.setUploadColour = function(ulColour){
+		set('ulColour', ulColour, true);
 	}
 	
 	return model;

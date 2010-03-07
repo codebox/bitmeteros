@@ -26,7 +26,8 @@ function tabShowSummary(){
 			tdTotalUl.html(formatAmount(model.getSummary().total.ul));
 			
 			var sinceDate = new Date(model.getSummary().since * 1000);
-			tdSince.html(sinceDate.toString());
+			var sinceDateTxt = WEEKDAYS[sinceDate.getDay()] + ', ' + sinceDate.getDate() + ' ' + MONTHS[sinceDate.getMonth()] + ' ' + (1900 + sinceDate.getYear()) + ' ' + sinceDate.getHours() + ':00:00';
+			tdSince.html(sinceDateTxt);
 			
 			if (model.getSummary().hosts.length === 0){
 				tdHosts.html('No data from other hosts');

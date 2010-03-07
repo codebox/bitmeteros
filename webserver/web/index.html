@@ -5,6 +5,7 @@
 		<link type="text/css" href="css/jquery.css" rel="stylesheet" />
 		<link type="text/css" href="css/bitmeter.css" rel="stylesheet" />
 		<link type="text/css" href="css/flexigrid.css" rel="stylesheet" />
+		<link type="text/css" href="css/farbtastic.css" rel="stylesheet" />
 		<!--[if IE]>
 		<link type="text/css" href="css/ie.css" rel="stylesheet" />
 		<![endif]-->
@@ -16,13 +17,15 @@
 		<![endif]-->
 		<script type="text/javascript" src="js/jquery.flot.min.js"></script>
 		<script type="text/javascript" src="js/flexigrid.js"></script>		
+		<script type="text/javascript" src="config"></script>
 		<script type="text/javascript" src="js/bitmeterModel.js"></script>
 		<script type="text/javascript" src="js/bitmeterMonitor.js"></script>
 		<script type="text/javascript" src="js/bitmeterQuery.js"></script>		
 		<script type="text/javascript" src="js/bitmeterHistory.js"></script>
 		<script type="text/javascript" src="js/bitmeterSummary.js"></script>
+		<script type="text/javascript" src="js/bitmeterPrefs.js"></script>
 		<script type="text/javascript" src="js/bitmeter.js"></script>
-		<script type="text/javascript" src="config"></script>
+		<script type="text/javascript" src="js/farbtastic.js"></script>
 	</head>
 	<body>
 		<h1>BitMeter OS</h1>
@@ -33,7 +36,8 @@
 		        <li><a href="#history"><span>History</span></a></li>
 		        <li><a href="#summary"><span>Summary</span></a></li>
 		        <li><a href="#query"><span>Query</span></a></li>
-			<li><a href="#about"><span>About</span></a></li>
+		        <li><a href="#prefs"><span>Preferences</span></a></li>
+				<li><a href="#about"><span>About</span></a></li>
 		    </ul>
 		    <div id="monitor">
 		        <h2>Monitor</h2><div class="helpLink" id="monitorHelpLink"><a title="Help" class="ui-icon ui-icon-newwin"></a></div>
@@ -166,9 +170,9 @@
 		        <h2>Summary</h2><div class="helpLink" id="summaryHelpLink"><a title="Help" class="ui-icon ui-icon-newwin"></a></div>
 		        <div class="panelContainer">
 			        <table>
-					<tr>
-						<th>&nbsp;</th><th>Download</th><th>Upload</th>
-					</tr>
+						<tr>
+							<th>&nbsp;</th><th>Download</th><th>Upload</th>
+						</tr>
 			        	<tr>
 			        		<td class="name">Today</td><td id="summaryTodayDl" class="value"></td><td id="summaryTodayUl" class="value"></td>
 			        	</tr>
@@ -225,16 +229,20 @@
 			        			</select>
 			        		</td>
 			        	</tr>
-			        	<tr><td><button id="queryButton">Go</button></td><td>
-			        		<div id="queryErrBox" class="ui-state-error ui-corner-all">
-			        			<p>
-			        				<span class="ui-icon ui-icon-alert"> </span>
-									<strong>Error:</strong> 
-									<ul id="errMsgList">
-									</ul>
-								</p>
-			        		</div>
-			        	</td></tr>
+			        	<tr>
+			        		<td></td>
+			        		<td>
+				        		<button id="queryButton">Go</button>
+					    		<div id="queryErrBox" class="ui-state-error ui-corner-all">
+					    			<p>
+					    				<span class="ui-icon ui-icon-alert"> </span>
+										<strong>Error:</strong> 
+										<ul id="errMsgList">
+										</ul>
+									</p>
+					    		</div>
+			        		</td>
+			        	</tr>
 			        </table>
 			        
 			        <table id="queryResults" cellpadding="0" cellspacing="0">
@@ -270,48 +278,78 @@
 		    	</div>
 		    	<div class="spacer"></div>
 		    </div>
-		    <div id="about">
-			<h2>About BitMeterOS</h2><br>
+		    <div id="prefs">
+				<h2>Preferences</h2><br>
 		        <div class="panelContainer">
-				<p>
-				This is the web interface for <a href="http://codebox.org.uk/bitmeterOs">BitMeterOS</a> v<span id="version"></span>
-				</p>
-				<p>
-				Copyright &copy; 2009 Rob Dawson
-				</p>
-				<p>
-				Licensed under the <a href="http://www.gnu.org/licenses/gpl.txt">GNU General Public License</a>
-				</p>
-
-				<p>
-				BitMeterOS is free software: you can redistribute it and/or modify
-				it under the terms of the GNU General Public License as published by
-				the Free Software Foundation, either version 3 of the License, or
-				(at your option) any later version.
-				</p>
-
-				<p>
-				BitMeterOS is distributed in the hope that it will be useful,
-				but WITHOUT ANY WARRANTY; without even the implied warranty of
-				MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-				GNU General Public License for more details.
-				</p>
-				
-				<p>
-					<br/>
-				If you wish to thank the author for this software, and encourage future development, you can send a donation by clicking the button below.
-				</p>
-				
-				<p>
-					<form id="donateForm" action="https://www.paypal.com/cgi-bin/webscr" method="post">
-					<input type="hidden" name="cmd" value="_s-xclick">
-					<input type="hidden" name="hosted_button_id" value="9675111">
-					<input type="image" src="https://www.paypal.com/en_GB/i/btn/btn_donate_SM.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online.">
-					<img alt="" border="0" src="https://www.paypal.com/en_GB/i/scr/pixel.gif" width="1" height="1">
-					</form>
-				</p>
+					<p>Change the appearance and behavior of the Web Interface by adjusting these values. Note that any changes made here will be stored locally using a browser cookie, and therefore will not
+					be visible to other users, and will be reset if you clear your cookies. To make persistent changes, visible to all users, use the <a href="http://codebox.org.uk/bitmeteros/bmdb/man">bmdb</a> utility.</p>
+					<h3>Colours</h3>
+					<div class="prefName">Download</div>
+					<div class="prefValue" id="dlColourPicker"></div>
+					<div class="spacer"></div>
+					<div class="prefName">Upload</div>
+					<div class="prefValue" id="ulColourPicker"></div>
+					<div class="spacer"></div>
+					<div class="dialog" title="Colour Picker">
+						<div id="colourPickerDiv"></div>
+						<div id="colourPickerTxtDiv">
+							<h4></h4>
+							<p>Pick a colour using the Colour Wheel, or click one of the links below. Click OK when you have made your choice.</p>
+							<input type="text" id="colourPickerTxt" name="colourPickerTxt" value="" /><br>
+							<ul>
+								<li id="ff0000">Red</li>
+								<li id="00ff00">Green</li>
+								<li id="0000ff">Blue</li>
+								<li id="ffff00">Yellow</li>
+								<li id="ff00ff">Magenta</li>
+								<li id="00ffff">Cyan</li>
+							</ul>						
+						</div>
+					</div>					
+				</div>
 			</div>
-		    </div>
+		    <div id="about">
+				<h2>About BitMeterOS</h2><br>
+		        <div class="panelContainer">
+					<p>
+					This is the web interface for <a href="http://codebox.org.uk/bitmeterOs">BitMeterOS</a> v<span id="version"></span>
+					</p>
+					<p>
+					Copyright &copy; 2010 Rob Dawson
+					</p>
+					<p>
+					Licensed under the <a href="http://www.gnu.org/licenses/gpl.txt">GNU General Public License</a>
+					</p>
+
+					<p>
+					BitMeterOS is free software: you can redistribute it and/or modify
+					it under the terms of the GNU General Public License as published by
+					the Free Software Foundation, either version 3 of the License, or
+					(at your option) any later version.
+					</p>
+
+					<p>
+					BitMeterOS is distributed in the hope that it will be useful,
+					but WITHOUT ANY WARRANTY; without even the implied warranty of
+					MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+					GNU General Public License for more details.
+					</p>
+				
+					<p>
+						<br/>
+					If you wish to thank the author for this software, and encourage future development, you can send a donation by clicking the button below.
+					</p>
+				
+					<p>
+						<form id="donateForm" action="https://www.paypal.com/cgi-bin/webscr" method="post">
+						<input type="hidden" name="cmd" value="_s-xclick">
+						<input type="hidden" name="hosted_button_id" value="9675111">
+						<input type="image" src="https://www.paypal.com/en_GB/i/btn/btn_donate_SM.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online.">
+						<img alt="" border="0" src="https://www.paypal.com/en_GB/i/scr/pixel.gif" width="1" height="1">
+						</form>
+					</p>
+				</div>
+			</div>
 		</div>
 		<div id="errorDialog">
 			<h2>Error</h2>
@@ -321,6 +359,20 @@
 				<button>OK</button>
 			</p>
 		</div>		
+		<div id="newVersion">
+			<h2>Version </h2><br>
+	        <div class="panelContainer">
+				<p>
+				A new version of BitMeter OS is available! This release includes the following changes:
+				</p>
+				<p id="newVersionInfo">
+				</p>
+				<p>
+				<br>
+				<a id="newVersionDownload">Download</a>
+				</p>
+			</div>
+		</div>
 		<div id="floater"></div>
 		<div id="modalBackground"></div>
 	</body>

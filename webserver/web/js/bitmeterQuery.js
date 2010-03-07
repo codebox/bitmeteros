@@ -54,6 +54,9 @@ $(document).ready(function(){
 		$('#fromDate').datepicker(datePickerOpts);
 		$('#toDate').datepicker(datePickerOpts);
 		
+		WEEKDAYS = $('#fromDate').datepicker('option', 'dayNamesShort');
+		MONTHS   = $('#fromDate').datepicker('option', 'monthNamesShort');
+
 	 // Indicate what date format we are using
 		var dateFormat = $('#fromDate').datepicker('option', 'dateFormat');
 		$('.dateFormat').text(dateFormat);

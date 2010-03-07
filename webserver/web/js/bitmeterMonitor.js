@@ -2,7 +2,10 @@
 Contains code that handles the Monitor page.
 */
 var monitorGraph;
-var MONITOR_TS=150;
+
+function getMonitorTs(){
+	return Math.floor($('#monitorDisplay').width() / 4);
+}
 
 function updateMonitor(){
 // Update the graph with new data
@@ -17,8 +20,8 @@ function updateMonitor(){
 		});
 		
 		graphObj.setData([
-			{color: "rgb(255,0,0)", label : (showDl ? 'Download' : null), data: dlData, lines : {show : showDl}}, 
-			{color: "rgb(0,255,0)", label : (showUl ? 'Upload' : null),   data: ulData, lines : {show : showUl}}
+			{color: model.getDownloadColour(), label : (showDl ? 'Download' : null), data: dlData, lines : {show : showDl}}, 
+			{color: model.getUploadColour(),   label : (showUl ? 'Upload' : null),   data: ulData, lines : {show : showUl}}
 		]);
 		
 	 // Redraw the graph and scale
@@ -61,16 +64,17 @@ function updateMonitor(){
 		model.setMonitorUlPeak(ulPeak);
 
 	 // Format the values and display them
+	 	var ts = getMonitorTs();
 		$('#monitorDlCurrent').html(showDl ? formatAmount(dlCurr)                   + '/s' : '');
 		$('#monitorUlCurrent').html(showUl ? formatAmount(ulCurr)                   + '/s' : '');
-		$('#monitorDlAverage').html(showDl ? formatAmount(dlTotal/MONITOR_TS)       + '/s' : '');
-		$('#monitorUlAverage').html(showUl ? formatAmount(ulTotal/MONITOR_TS)       + '/s' : '');
+		$('#monitorDlAverage').html(showDl ? formatAmount(dlTotal/ts)               + '/s' : '');
+		$('#monitorUlAverage').html(showUl ? formatAmount(ulTotal/ts)               + '/s' : '');
 		$('#monitorDlPeak').html(   showDl ? formatAmount(model.getMonitorDlPeak()) + '/s' : '');
 		$('#monitorUlPeak').html(   showUl ? formatAmount(model.getMonitorUlPeak()) + '/s' : '');				
 	}
 
 // Sends the AJAX request to get the Monitor data
-	$.get('monitor?ts=' + MONITOR_TS, function(responseTxt){
+	$.get('monitor?ts=' + getMonitorTs(), function(responseTxt){
 			var response = doEval(responseTxt);
 			/* The response is formatted as follows, with the 'ts' values being offsets from the serverTime:
 				{ serverTime : 123456, 
@@ -113,6 +117,12 @@ function updateMonitor(){
 function tabShowMonitor(){
 	updateMonitor();
 	refreshTimer = setInterval(updateMonitor, config.monitorInterval);	
+	
+ // Make sure the readout values are coloured correctly
+ 	$('#monitorDlCurrent, #monitorDlPeak, #monitorDlAverage').css('color', model.getDownloadColour());
+ 	$('#monitorUlCurrent, #monitorUlPeak, #monitorUlAverage').css('color', model.getUploadColour());
+
+	$(window).resize();
 };
 
 $(document).ready(function(){
@@ -134,19 +144,42 @@ $(document).ready(function(){
 		
 	 // Prepare the graph
 		var monitorDisplayObj = $('#monitorDisplay');
-		monitorGraph = $.plot(monitorDisplayObj, [{color: "rgb(255,0,0)", data: []}, {color: "rgb(0,255,0)", data: []}], {
-				yaxis: {min: 0, ticks : makeYAxisIntervalFn(5), tickFormatter: formatAmount},
-				xaxis: {max: MONITOR_TS, min: 0, tickFormatter: function(v){ 
-					 // The horizontal scale shows an offset from the current time, in MM:SS format
-						var secs = v % 60;
-						var mins = Math.floor(v / 60);
-						return mins + ':' + zeroPad(secs);
-					}},
-				series: {lines : {show: true, fill: true}}
-			});
+		
+		function setupGraph(){
+			monitorGraph = $.plot(monitorDisplayObj, [{color: model.getDownloadColour(), data: []}, {color: model.getUploadColour(), data: []}], {
+					yaxis: {min: 0, ticks : makeYAxisIntervalFn(5), tickFormatter: formatAmount},
+					xaxis: {max: getMonitorTs(), min: 0, tickFormatter: function(v){ 
+						 // The horizontal scale shows an offset from the current time, in MM:SS format
+							var secs = v % 60;
+							var mins = Math.floor(v / 60);
+							return mins + ':' + zeroPad(secs);
+						}},
+					series: {lines : {show: true, fill: true}},
+					legend : {
+						labelFormatter: function(label, series) {
+							return '<span id="#monitorLabel' + label + '">' + label + '</span>';
+						}
+					}
+				});
+				
+		 // Set the initial y-axis scale for the graph
+			applyScale(monitorGraph, model.getMonitorScale());
 			
-	 // Set the initial y-axis scale for the graph
-		applyScale(monitorGraph, model.getMonitorScale());
+		};
+		setupGraph();
+		
+	 // Stretch the graph when the window is resized
+		var readoutWidth = $('#monitorReadout table').width();
+		var panel = $('#monitor');
+		$(window).resize(function() {
+			var graphWidth = panel.width() - readoutWidth - 50;
+			if (graphWidth > 200){
+				monitorDisplayObj.width(graphWidth);
+				setupGraph();
+			}
+		});
+		$(window).resize();
+		
 		
 	 // Set up the click events for the Scale Up and Scale Down arrows
 		$('#monitorScaleUp').click(function(){

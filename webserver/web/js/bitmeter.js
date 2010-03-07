@@ -5,6 +5,7 @@ var model = buildModel();
 var refreshTimer;
 
 var errorDialog;
+var WEEKDAYS, MONTHS;
 
 // Prevent AJAX GET requests from being cached on IE
 $.ajaxSetup({
@@ -201,9 +202,7 @@ $(document).ready(function(){
 						} else if (tabIndex === 3){
 							tabShowQuery();
 						} else if (tabIndex === 4){
-							// About
-						} else {
-							assert(false, 'Bad tab index: ' + tabIndex);
+							tabShowPrefs();
 						}
 					},
 				cookie: { expires: 30 }
@@ -211,6 +210,13 @@ $(document).ready(function(){
 
 	 // Display the app version on the About screen
 		$('#version').html(config.version);
+		
+	 // If the host serving this page has a name then display it in the appropriate places
+	 	if (config.serverName){
+	 		var serverNameSuffix = ' - ' + config.serverName;
+		 	$('h1').append(serverNameSuffix);
+		 	document.title += serverNameSuffix;
+		}
 		
 	 // External links open new windows
 		$("a[href^='http'], #donateForm").attr('target','_blank');
@@ -222,6 +228,36 @@ $(document).ready(function(){
 			$("#errorDialog").fadeOut("slow");
 			$("#modalBackground").hide();
 		});
+		
+		$.getJSON("http://updates.codebox.org.uk/version/bitmeteros/version.js?callback=?", showVersion);
+
 	});
+
+function showVersion(data){
+	function isNewVersion(currentVersion, newVersion){
+		var currentVersionParts = currentVersion.split('.');
+		var newVersionParts     = newVersion.split('.');
+		if (currentVersionParts.length === 3 && newVersionParts.length === 3){
+			function makeVersionPartsNum(parts){
+				return (parts[0] * 100 * 100) + (parts[1] * 100) + parts[2];
+			}
+			var diff = makeVersionPartsNum(newVersionParts) - makeVersionPartsNum(currentVersionParts);
+			return diff > 0;
+			
+		} else {
+			return false;
+		}
+	}
+	if (isNewVersion(config.version, data.number)){
+		$('#newVersion h2').append(data.number);
+		$('#newVersionDownload').attr('href', data.url);
+		$("#tabs").tabs("add", "#newVersion", "New Version");
+		$('#newVersionInfo').html(data.description);
+		$('#version').show();
+		$('#newVersion').show();
+	
+		$('a[href=#newVersion]').effect("pulsate", { times: 10 }, 4000);
+	}
+}
 
 

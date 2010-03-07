@@ -1,8 +1,8 @@
 /*
- * BitMeterOS v0.3.0
+ * BitMeterOS v0.3.2
  * http://codebox.org.uk/bitmeterOS
  *
- * Copyright (c) 2009 Rob Dawson
+ * Copyright (c) 2010 Rob Dawson
  *
  * Licensed under the GNU General Public License
  * http://www.gnu.org/licenses/gpl.txt
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Sat, 09 Jan 2010 16:37:16 +0000
+ * Build Date: Sun, 07 Mar 2010 14:49:47 +0000
  */
 
 #include <stdio.h>
@@ -43,6 +43,7 @@ static int doVacuum();
 static int dumpActions();
 static int doWebRemote(FILE* file, int argc, char** argv);
 static int doWebLocal(FILE* file, int argc, char** argv);
+static int doSetConfig(FILE* file, int argc, char** argv);
 
 // This struct represents an action that can be performed by this utility
 struct Action{
@@ -54,6 +55,7 @@ struct Action{
 // The 'name' values are specified on the command-line by the user
 struct Action actions[] = {
     {"showconfig", "Displays all configuration values", &doConfig},
+    {"setconfig",  "Adds or updates a configuration value", &doSetConfig},
     {"vac",        "Vacuums the database, freeing unused space", &doVacuum},
     {"version",    "Displays version information", &doVersion},
     {"upgrade",    "Upgrades the database", &doUpgrade},
@@ -114,6 +116,19 @@ static int doVacuum(){
 	printf("Finished.\n");
 
 	return status;
+}
+
+static int doSetConfig(FILE* file, int argc, char** argv){
+    int status;
+    if (argc == 2){
+        setConfigTextValue(argv[0], argv[1]);
+        printf("Config value '%s' set to '%s'\n", argv[0], argv[1]);
+        status = SUCCESS;
+    } else {
+        printf("Error - you must specify the name and value of the config parameter.\n");
+        status = FAIL;
+    }
+    return status;
 }
 
 static int doWebRemote(FILE* file, int argc, char** argv){

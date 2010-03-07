@@ -1,8 +1,8 @@
 /*
- * BitMeterOS v0.3.0
+ * BitMeterOS v0.3.2
  * http://codebox.org.uk/bitmeterOS
  *
- * Copyright (c) 2009 Rob Dawson
+ * Copyright (c) 2010 Rob Dawson
  *
  * Licensed under the GNU General Public License
  * http://www.gnu.org/licenses/gpl.txt
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Sat, 09 Jan 2010 16:37:16 +0000
+ * Build Date: Sun, 07 Mar 2010 14:49:47 +0000
  */
 
 #include <unistd.h>
@@ -257,7 +257,7 @@ void rollbackTrans(){
     inTransaction = FALSE;
 }
 
-int getConfigInt(const char* key){
+static int getConfigIntInternal(const char* key, int quiet){
    	assert(dbOpen);
 
  // Return the specified value from the 'config' table
@@ -269,7 +269,9 @@ int getConfigInt(const char* key){
 	if (rc == SQLITE_ROW){
 		value = sqlite3_column_int(stmtSelectConfig, 0);
 	} else {
-		logMsg(LOG_ERR, "Unable to retrieve config value for '%s' rc=%d error=%s", key, rc, getDbError());
+	    if (!quiet){
+            logMsg(LOG_ERR, "Unable to retrieve config value for '%s' rc=%d error=%s", key, rc, getDbError());
+	    }
 		value = -1;
 	}
 
@@ -277,8 +279,11 @@ int getConfigInt(const char* key){
 
   	return value;
 }
+int getConfigInt(const char* key){
+    return getConfigIntInternal(key, FALSE);
+}
 
-char* getConfigText(const char* key){
+static char* getConfigTextInternal(const char* key, int quiet){
    	assert(dbOpen);
 
  // Return the specified value from the 'config' table
@@ -290,7 +295,9 @@ char* getConfigText(const char* key){
 	if (rc == SQLITE_ROW){
 		value = strdup(sqlite3_column_text(stmtSelectConfig, 0));
 	} else {
-		logMsg(LOG_ERR, "Unable to retrieve config value for '%s' rc=%d error=%s", key, rc, getDbError());
+	    if (!quiet){
+            logMsg(LOG_ERR, "Unable to retrieve config value for '%s' rc=%d error=%s", key, rc, getDbError());
+	    }
 		value = NULL;
 	}
 
@@ -298,14 +305,28 @@ char* getConfigText(const char* key){
 
   	return value;
 }
+char* getConfigText(const char* key){
+    return getConfigTextInternal(key, FALSE);
+}
 
 int setConfigIntValue(char* key, int value){
-    char* currentValue = getConfigText(key);
+    char* currentValue = getConfigTextInternal(key, TRUE);
     char sql[100];
     if (currentValue == NULL){
         sprintf(sql, "INSERT INTO config (key, value) VALUES ('%s', %d)", key, value);
     } else {
         sprintf(sql, "UPDATE config SET key='%s', value=%d WHERE key='%s'", key, value, key);
+    }
+    return executeSql(sql, NULL);
+}
+
+int setConfigTextValue(char* key, char* value){
+    char* currentValue = getConfigTextInternal(key, TRUE);
+    char sql[200];
+    if (currentValue == NULL){
+        sprintf(sql, "INSERT INTO config (key, value) VALUES ('%s', '%s')", key, value);
+    } else {
+        sprintf(sql, "UPDATE config SET key='%s', value='%s' WHERE key='%s'", key, value, key);
     }
     return executeSql(sql, NULL);
 }

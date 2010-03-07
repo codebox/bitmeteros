@@ -1,8 +1,8 @@
 /*
- * BitMeterOS v0.3.0
+ * BitMeterOS v0.3.2
  * http://codebox.org.uk/bitmeterOS
  *
- * Copyright (c) 2009 Rob Dawson
+ * Copyright (c) 2010 Rob Dawson
  *
  * Licensed under the GNU General Public License
  * http://www.gnu.org/licenses/gpl.txt
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Build Date: Sat, 09 Jan 2010 16:37:16 +0000
+ * Build Date: Sun, 07 Mar 2010 14:49:47 +0000
  */
 
 #ifndef COMMON_H
@@ -44,13 +44,13 @@
 #define EOL "\n"
 #endif
 
-#define VERSION "0.3.0"
-#define DB_VERSION 3
+#define VERSION "0.3.2"
+#define DB_VERSION 4
 
 #ifdef _WIN32
-#define COPYRIGHT "BitMeter OS v" VERSION " Copyright (c) 2009 Rob Dawson" EOL "Licenced under the GNU General Public License" EOL EOL
+#define COPYRIGHT "BitMeter OS v" VERSION " Copyright (c) 2010 Rob Dawson" EOL "Licenced under the GNU General Public License" EOL EOL
 #else
-#define COPYRIGHT "BitMeter OS v" VERSION " Copyright © 2009 Rob Dawson" EOL "Licenced under the GNU General Public License" EOL EOL
+#define COPYRIGHT "BitMeter OS v" VERSION " Copyright © 2010 Rob Dawson" EOL "Licenced under the GNU General Public License" EOL EOL
 #endif
 
 #define DB_NAME      "bitmeter.db"
@@ -66,6 +66,9 @@
 #define CONFIG_WEB_MONITOR_INTERVAL "web.monitor_interval"
 #define CONFIG_WEB_SUMMARY_INTERVAL "web.summary_interval"
 #define CONFIG_WEB_HISTORY_INTERVAL "web.history_interval"
+#define CONFIG_WEB_SERVER_NAME      "web.server_name"
+#define CONFIG_WEB_COLOUR_DL        "web.colour_dl"
+#define CONFIG_WEB_COLOUR_UL        "web.colour_ul"
 #define CONFIG_WEB_ALLOW_REMOTE     "web.allow_remote"
 // ----
 #define LOG_INFO 1
@@ -120,6 +123,8 @@ const char* getDbError();
 void closeDb();
 int getConfigInt(const char* key);
 char* getConfigText(const char* key);
+int setConfigTextValue(char* key, char* value);
+int setConfigIntValue(char* key, int value);
 int getDbVersion();
 // ----
 struct Data* allocData();
