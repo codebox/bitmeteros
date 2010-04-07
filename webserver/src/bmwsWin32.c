@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.3.2
+ * BitMeterOS
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2010 Rob Dawson
@@ -21,8 +21,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- *
- * Build Date: Sun, 07 Mar 2010 14:49:47 +0000
  */
 
 #include <winsock2.h>
@@ -67,25 +65,30 @@ static void web(void* fdVoid){
 
 }
 
+static int port;
 static int getPort(){
  // This returns the TCP port that we listen on
-    char* envValue;
-    if ((envValue = getenv(ENV_PORT)) == NULL){
-     /* If the 'BITMETER_WEB_PORT' environment variable hasn't been set then we just use the default. */
+    int configValue;
+    if ((configValue = getConfigInt(CONFIG_WEB_PORT, TRUE)) < 0){
+     /* If a value hasn't been specified in the db config table then we just use the default. */
         return DEFAULT_PORT;
 
     } else {
-     // The 'BITMETER_WEB_PORT' environment variable is set, so use that port instead, assuming it is valid.
-        int port = strToInt(envValue, 0);
-        if (port >= MIN_PORT && port <= MAX_PORT){
-            return port;
+     // A value was specified in the db, so use that port instead, assuming it is valid.
+        if (configValue >= MIN_PORT && configValue <= MAX_PORT){
+            return configValue;
 
         } else {
-            logMsg(LOG_ERR, "The %s environment variable contained an invalid port number of %s, using default of %d instead.",
-                    ENV_PORT, envValue, DEFAULT_PORT);
+            logMsg(LOG_ERR, "The db config value %s contained an invalid port number of %s, using default of %d instead.",
+                    CONFIG_WEB_PORT, configValue, DEFAULT_PORT);
             return DEFAULT_PORT;
         }
     }
+}
+
+static char webRoot[MAX_PATH_LEN];
+void getWebRoot(char* path){
+    strcpy(path, webRoot);
 }
 
 static void readDbConfig(){
@@ -93,7 +96,9 @@ static void readDbConfig(){
 	openDb();
 	prepareDb();
 	dbVersionCheck();
-	allowRemoteConnect = getConfigInt(CONFIG_WEB_ALLOW_REMOTE);
+	allowRemoteConnect = getConfigInt(CONFIG_WEB_ALLOW_REMOTE, FALSE);
+	port = getPort();
+    getWebRootPath(webRoot);	
 	closeDb();
 }
 
@@ -128,7 +133,7 @@ void setupWeb(){
     SOCKADDR_IN serverAddress;
 	serverAddress.sin_family = AF_INET;
 	serverAddress.sin_addr.s_addr = (allowRemoteConnect ? INADDR_ANY : LOCAL_ONLY);
-	serverAddress.sin_port = htons(getPort());
+	serverAddress.sin_port = htons(port);
 
 	rc = bind(listener, (struct sockaddr *) &serverAddress, sizeof(SOCKADDR_IN));
 	if (rc == SOCKET_ERROR){

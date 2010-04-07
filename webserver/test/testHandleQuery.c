@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.3.2
+ * BitMeterOS
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2010 Rob Dawson
@@ -21,8 +21,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- *
- * Build Date: Sun, 07 Mar 2010 14:49:47 +0000
  */
 
 #include <stdio.h>

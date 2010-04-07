@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.3.2
+ * BitMeterOS
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2010 Rob Dawson
@@ -21,8 +21,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- *
- * Build Date: Sun, 07 Mar 2010 14:49:47 +0000
  */
 
 #include <stdio.h>
@@ -44,6 +42,7 @@ static int dumpActions();
 static int doWebRemote(FILE* file, int argc, char** argv);
 static int doWebLocal(FILE* file, int argc, char** argv);
 static int doSetConfig(FILE* file, int argc, char** argv);
+static int doHelp();
 
 // This struct represents an action that can be performed by this utility
 struct Action{
@@ -61,6 +60,7 @@ struct Action actions[] = {
     {"upgrade",    "Upgrades the database", &doUpgrade},
     {"webremote",  "Enable remote access to the web interface", &doWebRemote},
     {"weblocal",   "Disable remote access to the web interface", &doWebLocal},
+    {"help",       "Displays full help text", &doHelp},
     {NULL, NULL, NULL}
 };
 
@@ -133,7 +133,7 @@ static int doSetConfig(FILE* file, int argc, char** argv){
 
 static int doWebRemote(FILE* file, int argc, char** argv){
  // Allow remote access to the web interface
-    int webRemoteValue = getConfigInt(CONFIG_WEB_ALLOW_REMOTE);
+    int webRemoteValue = getConfigInt(CONFIG_WEB_ALLOW_REMOTE, FALSE);
     int status;
     if (webRemoteValue == TRUE){
         printf("Remote access to the web interface is already enabled\n");
@@ -148,7 +148,7 @@ static int doWebRemote(FILE* file, int argc, char** argv){
 
 static int doWebLocal(FILE* file, int argc, char** argv){
  // Disallow remote access to the web interface
-    int webRemoteValue = getConfigInt(CONFIG_WEB_ALLOW_REMOTE);
+    int webRemoteValue = getConfigInt(CONFIG_WEB_ALLOW_REMOTE, FALSE);
     int status;
     if (webRemoteValue == FALSE){
         printf("Remote access to the web interface is already disabled\n");
@@ -159,6 +159,12 @@ static int doWebLocal(FILE* file, int argc, char** argv){
         status = SUCCESS;
     }
     return status;
+}
+
+extern char* helpTxt;
+static int doHelp(){
+	printf(helpTxt);
+	return SUCCESS;
 }
 
 static int dumpActions(){

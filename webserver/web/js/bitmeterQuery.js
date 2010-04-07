@@ -6,8 +6,9 @@ function tabShowQuery(){
 }
 
 $(document).ready(function(){
-		function runQuery(){
+		function runQuery(){			
 			$('#queryErrBox').hide();
+			$('#queryStatusBox').html('Searching... <img src="css/images/working.gif" alt="search in progress" />');
 			var fromDate = $('#fromDate').val();
 			var toDate   = $('#toDate').val();
 
@@ -35,9 +36,12 @@ $(document).ready(function(){
 				var req = '/query?from=' + fd + '&to=' + td + '&group=' + $('#queryDisplay').val();
 				$.get(req, function(objQuery){
 					 // Store the results, we need them elsewhere
-						model.setQueryResults(doEval(objQuery));
+						var results = doEval(objQuery);
+						model.setQueryResults(results);
 						model.setQueryGrouping($('#queryDisplay').val());
 						queryResultsGridObj[0].grid.populate();
+						var resultCount = results.length;
+						$('#queryStatusBox').html('Search found ' + resultCount + ' result' + (resultCount === 1 ? '' : 's') + '.');
 					});
 			} else {
 			 // There was a problem with the dates, show an error and don't send the query
@@ -62,7 +66,10 @@ $(document).ready(function(){
 		$('.dateFormat').text(dateFormat);
 		
 	 // Set up event handlers etc
-		$('#queryButton').click(runQuery);
+		$('#queryButton').click(function(){
+			queryResultsGridObj.flexChangePage('first');
+			runQuery();
+		});
 		$('#queryErrBox').hide();
 		
 		var queryDialog   = $('#query .dialog').dialog(dialogOpts);

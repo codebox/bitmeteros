@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.3.2
+ * BitMeterOS
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2010 Rob Dawson
@@ -21,8 +21,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- *
- * Build Date: Sun, 07 Mar 2010 14:49:47 +0000
  */
 
 #include <stdlib.h>
@@ -41,36 +39,35 @@ extern struct HttpResponse HTTP_OK;
 
 void processConfigRequest(SOCKET fd, struct Request* req){
  // Write the JSON object out to the stream
-    writeHeaders(fd, HTTP_OK, MIME_JSON, 0);
+    writeHeaders(fd, HTTP_OK, MIME_JS, 0);
 
 	writeText(fd, "var config = { ");
-
-	char* val = getConfigText(CONFIG_WEB_MONITOR_INTERVAL);
+	char* val = getConfigText(CONFIG_WEB_MONITOR_INTERVAL, FALSE);
     writeNumConfigValue(fd, "monitorInterval", val);
     free(val);
 
     writeText(fd, ", ");
-    val = getConfigText(CONFIG_WEB_SUMMARY_INTERVAL);
+    val = getConfigText(CONFIG_WEB_SUMMARY_INTERVAL, FALSE);
     writeNumConfigValue(fd, "summaryInterval", val);
     free(val);
 
     writeText(fd, ", ");
-    val = getConfigText(CONFIG_WEB_HISTORY_INTERVAL);
+    val = getConfigText(CONFIG_WEB_HISTORY_INTERVAL, FALSE);
     writeNumConfigValue(fd, "historyInterval", val);
     free(val);
 
     writeText(fd, ", ");
-    val = getConfigText(CONFIG_WEB_SERVER_NAME);
+    val = getConfigText(CONFIG_WEB_SERVER_NAME, FALSE);
     writeTxtConfigValue(fd, "serverName", val);
     free(val);
 
     writeText(fd, ", ");
-    val = getConfigText(CONFIG_WEB_COLOUR_DL);
+    val = getConfigText(CONFIG_WEB_COLOUR_DL, FALSE);
     writeTxtConfigValue(fd, "dlColour", val);
     free(val);
 
     writeText(fd, ", ");
-    val = getConfigText(CONFIG_WEB_COLOUR_UL);
+    val = getConfigText(CONFIG_WEB_COLOUR_UL, FALSE);
     writeTxtConfigValue(fd, "ulColour", val);
     free(val);
 

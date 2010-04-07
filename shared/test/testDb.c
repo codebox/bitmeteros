@@ -23,23 +23,31 @@
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include "bmclient.h"
+#include "test.h"
 #include "common.h"
+#include <string.h>
+#include <stdlib.h>
+#include "CuTest.h"
 
 /*
-Contains the code that handles help and version requests made via the bmclient utility.
-Help text is read from the helpText.c file which is generated during the build process.
+Contains unit tests for the 'db' module.
 */
 
-extern char* helpTxt;
-
-void doHelp(){
-	doVersion();
-	printf(helpTxt);
+void testGetConfigInt(CuTest *tc){
+    CuAssertIntEquals(tc, -1, getConfigInt("config.int", TRUE));
+    addConfigRow("config.int", "7");
+    CuAssertIntEquals(tc, 7, getConfigInt("config.int", TRUE));
 }
 
-void doVersion(){
-	printf("%s v%s\n", CLIENT_NAME, VERSION);	
+void testGetConfigText(CuTest *tc){
+    CuAssertTrue(tc, getConfigText("config.txt", TRUE) == NULL);
+    addConfigRow("config.txt", "text");
+    CuAssertStrEquals(tc, "text", getConfigText("config.txt", TRUE));
+}
+
+CuSuite* dbGetSuite() {
+    CuSuite* suite = CuSuiteNew();
+    SUITE_ADD_TEST(suite, testGetConfigInt);
+    SUITE_ADD_TEST(suite, testGetConfigText);
+    return suite;
 }

@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.3.2
+ * BitMeterOS
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2010 Rob Dawson
@@ -21,8 +21,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- *
- * Build Date: Sun, 07 Mar 2010 14:49:47 +0000
  */
 
 #include <unistd.h>
@@ -89,6 +87,10 @@ sqlite3* openDb(){
 	setBusyWait(BUSY_WAIT_INTERVAL);
 
 	return db;
+}
+
+int isDbOpen(){
+    return dbOpen;
 }
 
 void setBusyWait(int waitInMs){
@@ -257,7 +259,7 @@ void rollbackTrans(){
     inTransaction = FALSE;
 }
 
-static int getConfigIntInternal(const char* key, int quiet){
+int getConfigInt(const char* key, int quiet){
    	assert(dbOpen);
 
  // Return the specified value from the 'config' table
@@ -279,11 +281,8 @@ static int getConfigIntInternal(const char* key, int quiet){
 
   	return value;
 }
-int getConfigInt(const char* key){
-    return getConfigIntInternal(key, FALSE);
-}
 
-static char* getConfigTextInternal(const char* key, int quiet){
+char* getConfigText(const char* key, int quiet){
    	assert(dbOpen);
 
  // Return the specified value from the 'config' table
@@ -305,12 +304,9 @@ static char* getConfigTextInternal(const char* key, int quiet){
 
   	return value;
 }
-char* getConfigText(const char* key){
-    return getConfigTextInternal(key, FALSE);
-}
 
 int setConfigIntValue(char* key, int value){
-    char* currentValue = getConfigTextInternal(key, TRUE);
+    char* currentValue = getConfigText(key, TRUE);
     char sql[100];
     if (currentValue == NULL){
         sprintf(sql, "INSERT INTO config (key, value) VALUES ('%s', %d)", key, value);
@@ -321,7 +317,7 @@ int setConfigIntValue(char* key, int value){
 }
 
 int setConfigTextValue(char* key, char* value){
-    char* currentValue = getConfigTextInternal(key, TRUE);
+    char* currentValue = getConfigText(key, TRUE);
     char sql[200];
     if (currentValue == NULL){
         sprintf(sql, "INSERT INTO config (key, value) VALUES ('%s', '%s')", key, value);
@@ -332,7 +328,7 @@ int setConfigTextValue(char* key, char* value){
 }
 
 int getDbVersion(){
-    int dbVersion = getConfigInt(CONFIG_DB_VERSION);
+    int dbVersion = getConfigInt(CONFIG_DB_VERSION, TRUE);
     if (dbVersion <= 0){
      // This is an early version of the d/b that doesn't have a 'db.version' config item - call this version 1
         dbVersion = 1;

@@ -130,7 +130,7 @@ $(document).ready(function(){
      // Manage the floating info div that appears when we hover over bars on the graph
 		var floaterVisible = false;
 		function floatMouseMoveHandler(e){
-			$('#floater').css({'left' : e.clientX + 15, 'top' : e.clientY });
+			$('#floater').css({'left' : e.pageX + 15, 'top' : e.pageY });
 		}
 		
 		function showFloater(evObj){
@@ -141,6 +141,7 @@ $(document).ready(function(){
 			$('#floater').fadeIn(500);
 			
 			$(this).bind('mousemove', floatMouseMoveHandler);
+			$(this).css('cursor', 'crosshair');
 			    
 			floaterVisible = true;
 		}
@@ -149,6 +150,7 @@ $(document).ready(function(){
 			floaterVisible = false;				
 			$('#floater').fadeOut(500);
 			
+			$(this).css('cursor', '');
 			$(this).unbind('mousemove', floatMouseMoveHandler);
 		}			
 
@@ -242,7 +244,9 @@ $(document).ready(function(){
 				historyDisplayMinutes, 
 				function(time, dl, ul){
 					var timeTxt = makeMinRange(time.getHours(), time.getMinutes());
-					return timeTxt + '<br><span class="historyHoverDir">DL:</span> ' + formatAmount(dl) + ' <span class="historyHoverDir">UL:</span> ' + formatAmount(ul);
+					var SECS_PER_MIN = 60;
+					
+					return buildHoverTable(timeTxt, dl, ul, SECS_PER_MIN);
 				},
 				function(tick){
 					return new Date((historyDisplayMinutes.serverTime + 60 - tick) * 1000);
@@ -319,7 +323,9 @@ $(document).ready(function(){
 				historyDisplayHours, 
 				function(time, dl, ul){
 					var timeTxt = WEEKDAYS[time.getDay()] + ' ' + time.getDate() + '  ' + makeHourRange(time.getHours());
-					return timeTxt + '<br><span class="historyHoverDir">DL:</span> ' + formatAmount(dl) + ' <span class="historyHoverDir">UL:</span> ' + formatAmount(ul);
+					var SECS_PER_HOUR = 3600;
+					
+					return buildHoverTable(timeTxt, dl, ul, SECS_PER_HOUR);
 				},
 				function(tick){
 					return new Date((getTime() + 3600 - tick) * 1000);
@@ -394,7 +400,9 @@ $(document).ready(function(){
 				historyDisplayDays, 
 				function(time, dl, ul){
 					var timeTxt = WEEKDAYS[time.getDay()] + ' ' + time.getDate() + ' ' + MONTHS[time.getMonth()];
-					return timeTxt + '<br><span class="historyHoverDir">DL:</span> ' + formatAmount(dl) + ' <span class="historyHoverDir">UL:</span> ' + formatAmount(ul);
+					var SECS_PER_DAY = 86400;
+					
+					return buildHoverTable(timeTxt, dl, ul, SECS_PER_DAY);
 				},
 				function(tick){
 					return new Date(new Date().getTime() - tick * 1000);
@@ -404,6 +412,26 @@ $(document).ready(function(){
 			historyDisplayDaysObj.hover(showFloater, hideFloater);			
 		}
 		setupDaysGraph();
+		
+		function buildHoverTable(dateTimeTxt, dl, ul, intervalInSecs){
+			var arrHtml = [
+				'<table>',
+					'<tr><td class="historyHoverTime" colspan="3">', dateTimeTxt, '</td></tr>',
+					'<tr>',
+						'<td class="historyHoverDir">DL:</td>',
+						'<td class="historyHoverData">', formatAmount(dl), '</td>',
+						'<td class="historyHoverData">[ ', formatAmount(dl/intervalInSecs), '/s ]</td>',
+					'</tr>',
+					'<tr>',
+						'<td class="historyHoverDir">UL:</td>',
+						'<td class="historyHoverData">', formatAmount(ul), '</td>',
+						'<td class="historyHoverData">[ ', formatAmount(ul/intervalInSecs), '/s ]</td>',
+					'</tr>',
+				'</table>'
+			];
+			
+			return arrHtml.join('');
+		}
 		
 	 // Set up the click events for the Scale Up and Scale Down arrows		
 		$('#historyDaysScaleUp').click(function(){
@@ -442,7 +470,6 @@ $(document).ready(function(){
 				updateHistory();
 			}
 		});
-		$(window).resize();
 	});
 
 

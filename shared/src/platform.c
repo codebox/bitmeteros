@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.3.2
+ * BitMeterOS
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2010 Rob Dawson
@@ -21,8 +21,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- *
- * Build Date: Sun, 07 Mar 2010 14:49:47 +0000
  */
 
 #include "common.h"
@@ -62,41 +60,43 @@ time_t getTime(){
     }
 
 
-    void getLogPath(char* path){char* envValue;
-        if ((envValue = getenv(ENV_LOG)) == NULL){
-         /* If the 'BITMETER_LOG' environment variable hasn't been set then we write the
-            log out to the 'All Users\Application Data\BitMeterOS' folder. */
+    void getLogPath(char* path){
+        char* configValue;
+        if ((isDbOpen() == FALSE) || (configValue = getConfigText(CONFIG_LOG_PATH, TRUE)) == NULL){
+         /* If an alternative path has not been specified in the db config table, or if the
+            database isn't open yet, then we write the log out to the 'All Users\Application Data\BitMeterOS'
+            folder. */
             SHGetFolderPath(NULL, CSIDL_COMMON_APPDATA, NULL, 0, path);
             PathAppend(path, TEXT(OUT_DIR));
             PathAppend(path, TEXT(LOG_NAME));
         } else {
-         //The 'BITMETER_LOG' environment variable is set, so use that location instead.
-            strcpy(path, envValue);
+         // A value was supplied in the config table, so use that location instead.
+            strcpy(path, configValue);
         }
     }
 
     void getWebRootPath(char* path){
-        char* envValue;
-        if ((envValue = getenv(ENV_WEB)) == NULL){
-         /* If the 'BITMETER_WEB_DIR' environment variable hasn't been set then we use the
-            'All Users\Application Data\BitMeterOS' folder as the web server root. */
+        char* configValue;
+        if ((configValue = getConfigText(CONFIG_WEB_DIR, TRUE)) == NULL){
+         /* If an alternative path has not been specified in the db config table then we
+            use the 'All Users\Application Data\BitMeterOS' folder as the web server root. */
             SHGetFolderPath(NULL, CSIDL_COMMON_APPDATA, NULL, 0, path);
             PathAppend(path, TEXT(OUT_DIR));
             PathAppend(path, "web");
 
         } else {
-         // The 'BITMETER_WEB_DIR' environment variable is set, so use that location instead.
-            strcpy(path, envValue);
+         // A value was supplied in the config table, so use that location instead.
+            strcpy(path, configValue);
         }
-        
-     // Need to ensure we end on a folder delimiter character, so we can prevent directory-traversal attachs
+
+     // Need to ensure we end on a folder delimiter character, so we can prevent directory-traversal attacks
         int pathLen = strlen(path);
         if (path[pathLen-1] != '\\'){
         	path[pathLen] = '\\';
         	path[pathLen + 1] = (char) 0;
         }
     }
-    
+
 	void logWin32ErrMsg(char* msg, int rc) {
 	    LPVOID lpMsgBuf;
 
@@ -104,7 +104,7 @@ time_t getTime(){
 	            NULL, rc, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR) &lpMsgBuf, 0, NULL );
 		logMsg(LOG_ERR, "%s. Code=%d Msg=%s", msg, rc, lpMsgBuf);
 	    LocalFree(lpMsgBuf);
-	}    
+	}
 
 #endif
 
@@ -130,26 +130,26 @@ time_t getTime(){
     }
 
     void getLogPath(char* path){
-        char* envValue;
-        if ((envValue = getenv(ENV_LOG)) == NULL){
-         /* If the 'BITMETER_LOG' environment variable hasn't been set then we write the
-            log out to the /var/log/bitmeter directory. */
+        char* configValue;
+        if ((isDbOpen() == FALSE) || (configValue = getConfigText(CONFIG_LOG_PATH, TRUE)) == NULL){
+         /* If an alternative path has not been specified in the db config table, or if the
+            database isn't open yet, then we write the log out to the /var/log/bitmeter directory. */
             strcpy(path, "/var/log/bitmeter/error.log");
         } else {
-         // The 'BITMETER_LOG' environment variable is set, so use that location instead.
-            strcpy(path, envValue);
+         // A value was supplied in the config table, so use that location instead.
+            strcpy(path, configValue);
         }
     }
 
     void getWebRootPath(char* path){
-        char* envValue;
-        if ((envValue = getenv(ENV_WEB)) == NULL){
-         /* If the 'BITMETER_WEB_DIR' environment variable hasn't been set then we use the
-            /var/www/bitmeter directory as the web server root. */
+        char* configValue;
+        if ((configValue = getConfigText(CONFIG_WEB_DIR, TRUE)) == NULL){
+         /* If an alternative path has not been specified in the db config table then we
+            use the /var/www/bitmeter directory as the web server root. */
             strcpy(path, "/var/www/bitmeter/");
         } else {
-         // The 'BITMETER_WEB_DIR' environment variable is set, so use that location instead.
-            strcpy(path, envValue);
+         // A value was supplied in the config table, so use that location instead.
+            strcpy(path, configValue);
         }
     }
 #endif
@@ -174,26 +174,26 @@ time_t getTime(){
     }
 
     void getLogPath(char* path){
-        char* envValue;
-        if ((envValue = getenv(ENV_LOG)) == NULL){
-         /* If the 'BITMETER_LOG' environment variable hasn't been set then we write the
-            log out to the /Library/Logs directory. */
+        char* configValue;
+        if ((isDbOpen() == FALSE) || (configValue = getConfigText(CONFIG_LOG_PATH, TRUE)) == NULL){
+         /* If an alternative path has not been specified in the db config table, or if the
+            database isn't open yet, then we write the log out to the /Library/Logs directory. */
             strcpy(path, "/Library/Logs/bitmeter.log");
         } else {
-         // The 'BITMETER_LOG' environment variable is set, so use that location instead.
-            strcpy(path, envValue);
+         // A value was supplied in the config table, so use that location instead.
+            strcpy(path, configValue);
         }
     }
 
     void getWebRootPath(char* path){
-        char* envValue;
-        if ((envValue = getenv(ENV_WEB)) == NULL){
-         /* If the 'BITMETER_WEB_DIR' environment variable hasn't been set then we use the
-            /var/lib/bitmeter directory as the web server root. */
+        char* configValue;
+        if ((configValue = getConfigText(CONFIG_WEB_DIR, TRUE)) == NULL){
+         /* If an alternative path has not been specified in the db config table then we
+            use the /Library/Application Support/BitMeter/www directory as the web server root. */
             strcpy(path, "/Library/Application Support/BitMeter/www/");
         } else {
-         // The 'BITMETER_WEB_DIR' environment variable is set, so use that location instead.
-            strcpy(path, envValue);
+         // A value was supplied in the config table, so use that location instead.
+            strcpy(path, configValue);
         }
     }
 #endif

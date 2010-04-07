@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.3.2
+ * BitMeterOS
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2010 Rob Dawson
@@ -21,8 +21,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- *
- * Build Date: Sun, 07 Mar 2010 14:49:47 +0000
  */
 
 #define _GNU_SOURCE
@@ -73,10 +71,10 @@ static void testUpgradeFrom1To2(CuTest *tc){
     int status = doUpgradeTest(2);
     CuAssertTrue(tc, status == SUCCESS);
     CuAssertIntEquals(tc, 2,     getDbVersion());
-    CuAssertIntEquals(tc, 1000,  getConfigInt(CONFIG_WEB_MONITOR_INTERVAL));
-    CuAssertIntEquals(tc, 10000, getConfigInt(CONFIG_WEB_SUMMARY_INTERVAL));
-    CuAssertIntEquals(tc, 10000, getConfigInt(CONFIG_WEB_HISTORY_INTERVAL));
-    CuAssertIntEquals(tc, 0,     getConfigInt(CONFIG_WEB_ALLOW_REMOTE));
+    CuAssertIntEquals(tc, 1000,  getConfigInt(CONFIG_WEB_MONITOR_INTERVAL, FALSE));
+    CuAssertIntEquals(tc, 10000, getConfigInt(CONFIG_WEB_SUMMARY_INTERVAL, FALSE));
+    CuAssertIntEquals(tc, 10000, getConfigInt(CONFIG_WEB_HISTORY_INTERVAL, FALSE));
+    CuAssertIntEquals(tc, 0,     getConfigInt(CONFIG_WEB_ALLOW_REMOTE, FALSE));
 
     executeSql("drop table data;", NULL);
     executeSql("create table data (ts,dl,ul,dr,ad,hs);", NULL);
@@ -111,9 +109,9 @@ static void testUpgradeFrom3To4(CuTest *tc){
     int status = doUpgradeTest(4);
     CuAssertTrue(tc, status == SUCCESS);
     CuAssertIntEquals(tc, 4,  getDbVersion());
-    CuAssertStrEquals(tc, "", getConfigText(CONFIG_WEB_SERVER_NAME));
-    CuAssertStrEquals(tc, "#ff0000", getConfigText(CONFIG_WEB_COLOUR_DL));
-    CuAssertStrEquals(tc, "#00ff00", getConfigText(CONFIG_WEB_COLOUR_UL));
+    CuAssertStrEquals(tc, "", getConfigText(CONFIG_WEB_SERVER_NAME, FALSE));
+    CuAssertStrEquals(tc, "#ff0000", getConfigText(CONFIG_WEB_COLOUR_DL, FALSE));
+    CuAssertStrEquals(tc, "#00ff00", getConfigText(CONFIG_WEB_COLOUR_UL, FALSE));
 
     executeSql("drop table data;", NULL);
     executeSql("create table data (ts,dl,ul,dr,ad,hs);", NULL);

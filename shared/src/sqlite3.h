@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.3.2
+ * BitMeterOS
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2010 Rob Dawson
@@ -21,8 +21,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- *
- * Build Date: Sun, 07 Mar 2010 14:49:47 +0000
  */
 
 /*
@@ -57,7 +55,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite3.h,v 1.6 2010/03/07 15:01:26 codebox_rob Exp $
+** @(#) $Id: sqlite3.h,v 1.7 2010/04/07 12:01:26 codebox_rob Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_

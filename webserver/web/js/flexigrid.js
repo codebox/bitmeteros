@@ -5,7 +5,7 @@
  * Dual licensed under the MIT (MIT-LICENSE.txt)
  * and GPL (GPL-LICENSE.txt) licenses.
  *
- * $Date: 2010/03/07 15:01:26 $
+ * $Date: 2010/04/07 12:01:25 $
  */
  
 (function($){
@@ -598,7 +598,7 @@
 				if (!p.newp) p.newp = 1;
 				
 				if (p.page>p.pages) p.page = p.pages;
-				//var param = {page:p.newp, rp: p.rp, sortname: p.sortname, sortorder: p.sortorder, query: p.query, qtype: p.qtype};
+
 				var param = [
 					 { name : 'page', value : p.newp }
 					,{ name : 'rp', value : p.rp }
@@ -849,9 +849,7 @@
 			$(g.gDiv).addClass('novstripe');
 
 		$(t).before(g.gDiv);
-		$(g.gDiv)
-		.append(t)
-		;
+		$(g.gDiv).append(t);
 
 		//set toolbar
 		if (p.buttons) 
@@ -1438,6 +1436,15 @@
 
 		return this.each( function() {
 				if (this.grid) this.grid.addData(data);
+			});
+
+	};
+
+
+	$.fn.flexChangePage = function(pg) { // added to expose page navigation functions
+
+		return this.each( function() {
+				if (this.grid) this.grid.changePage(pg);
 			});
 
 	};

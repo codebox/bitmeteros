@@ -11,7 +11,7 @@ $(document).ready(function(){
 	
 	var dialogOpts = {
 		autoOpen : false,
-		minHeight: 280,
+		minHeight: 300,
 		minWidth: 440,
 		height: 280,
 		width: 440		

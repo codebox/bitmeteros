@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.3.2
+ * BitMeterOS
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2010 Rob Dawson
@@ -21,8 +21,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- *
- * Build Date: Sun, 07 Mar 2010 14:49:47 +0000
  */
 
 #include <stdlib.h>
@@ -97,7 +95,7 @@ static struct MimeType* getMimeTypeForFile(char* fileName){
 	static void setupEnv(){
 	 // Make sure we are correctly set up in a chroot jail before looking for the file
 	    char webRoot[MAX_PATH_LEN];
-	    getWebRootPath(webRoot);
+	    getWebRoot(webRoot);
 
 		int rc = chdir(webRoot);
 	    if (rc < 0){
@@ -130,7 +128,7 @@ static struct MimeType* getMimeTypeForFile(char* fileName){
 		}
 
 	    char filePath[MAX_PATH];
-	    getWebRootPath(filePath);
+	    getWebRoot(filePath);
 	   	char *webPath = strdupa(filePath);
 
 	 // Find the absolute path of the requested file
@@ -198,8 +196,8 @@ void processFileRequest(SOCKET fd, struct Request* req){
 
     } else {
      // We got the file, write out the headers and then send the content
-	    int size = getFileSize(fp);
-        writeHeaders(fd, HTTP_OK, mimeType->contentType, size);
+	    //int size = getFileSize(fp); this was causing problems on Google Chrome so removed, dont think we actually need to send this
+        writeHeaders(fd, HTTP_OK, mimeType->contentType, 0);
 
         int rc;
         char buffer[BUFSIZE];

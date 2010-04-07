@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.3.2
+ * BitMeterOS
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2010 Rob Dawson
@@ -21,8 +21,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- *
- * Build Date: Sun, 07 Mar 2010 14:49:47 +0000
  */
 
 #ifndef COMMON_H
@@ -44,7 +42,7 @@
 #define EOL "\n"
 #endif
 
-#define VERSION "0.3.2"
+#define VERSION "0.3.3"
 #define DB_VERSION 4
 
 #ifdef _WIN32
@@ -58,11 +56,11 @@
 #define OUT_DIR      "BitMeterOS"
 #define IN_MEMORY_DB ":memory:"
 #define ENV_DB       "BITMETER_DB"
-#define ENV_LOG      "BITMETER_LOG"
-#define ENV_WEB      "BITMETER_WEB_DIR"
-#define ENV_PORT     "BITMETER_WEB_PORT"
 
 #define CONFIG_DB_VERSION           "db.version"
+#define CONFIG_LOG_PATH             "cap.logpath"
+#define CONFIG_WEB_PORT             "web.port"
+#define CONFIG_WEB_DIR              "web.dir"
 #define CONFIG_WEB_MONITOR_INTERVAL "web.monitor_interval"
 #define CONFIG_WEB_SUMMARY_INTERVAL "web.summary_interval"
 #define CONFIG_WEB_HISTORY_INTERVAL "web.history_interval"
@@ -110,6 +108,7 @@ struct Data{
 // ----
 void prepareSql(sqlite3_stmt**, const char*);
 sqlite3* openDb();
+int isDbOpen();
 void prepareDb();
 struct Data* runSelect(sqlite3_stmt *stmt);
 void runSelectAndCallback(sqlite3_stmt *stmt, void (*callback)(struct Data*));
@@ -121,8 +120,8 @@ void dbVersionCheck();
 void setBusyWait(int waitInMs);
 const char* getDbError();
 void closeDb();
-int getConfigInt(const char* key);
-char* getConfigText(const char* key);
+int getConfigInt(const char* key, int quiet);
+char* getConfigText(const char* key, int quiet);
 int setConfigTextValue(char* key, char* value);
 int setConfigIntValue(char* key, int value);
 int getDbVersion();

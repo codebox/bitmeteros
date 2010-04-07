@@ -68,6 +68,12 @@ input.hasDatepicker{
 #queryFields td{
 	height: 30px;
 }
+#queryStatusBox{
+	line-height: 3em;
+}
+#queryStatusBox img{
+	margin-left: 1.5em;
+}
 div.flexigrid{
 	left: 20px;
 }
@@ -95,11 +101,31 @@ h2{
 	display: none;
 	background-color: white;
 	padding: 0.5em;
-	padding-top: 0.3em;
-	padding-bottom: 0.3em;
-	border: 2px solid black;
+	border: 2px solid #2E6E9E;
 	font-size: 1.1em;
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
 }
+#floater table{
+	border-collapse:collapse;
+}
+#floater td{
+	padding: 0;
+	white-space: nowrap;
+}
+#floater td.historyHoverDir, #floater td.historyHoverData{
+	padding-right: 0.5em;
+}
+#floater td.historyHoverTime{
+	padding-bottom: 0.2em;
+}
+#floater td.historyHoverDir{
+	font-weight: bold;
+}
+#floater td.historyHoverData{
+	text-align: right;
+}
+
 div.spacer{
 	clear: both;
 }
@@ -230,9 +256,6 @@ div.spacer{
 }
 #colourPickerTxtDiv li{
 	cursor: pointer;
-}
-.historyHoverDir{
-	font-weight: bold;
 }
 a[href="#newVersion"]{
 	color: #E17009 !important;

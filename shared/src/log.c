@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.3.2
+ * BitMeterOS
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2010 Rob Dawson
@@ -21,8 +21,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- *
- * Build Date: Sun, 07 Mar 2010 14:49:47 +0000
  */
 
 #ifdef _WIN32
@@ -37,16 +35,10 @@
 /*
 Contains logging functions.
 */
-
-static char* logPath;
-void setLogToFile(int logToFile){
+int logToFile = FALSE;
+void setLogToFile(int toFile){
  // Determine whether we write log messages to a file, or to stdout
-	if (logToFile){
-		logPath = malloc(MAX_PATH_LEN);
-		getLogPath(logPath);
-	} else {
-		logPath	= NULL;
-	}
+	logToFile = toFile;
 }
 
 static int logLevel;
@@ -65,20 +57,32 @@ void logMsg(int level, char* msg, ...){
  // Log the specified message, if its level is high enough
 	if (level >= logLevel){
 	 // The level (importance) of this message is sufficiently high that we want to log it
-		FILE* logFile;
-		if (logPath == NULL){
-			if (level <= LOG_INFO){
+        FILE* logFile;
+        if (logToFile == TRUE){
+            char* logPath = malloc(MAX_PATH_LEN);
+            getLogPath(logPath);
+            logFile = fopen(logPath, "a+");
+
+            if (logFile == NULL){
+             // The specified log file can't be accessed
+                logToFile = FALSE;
+                logMsg(LOG_ERR, "Unable to log to the file %s, logging to stdout instead", logPath);
+                free(logPath);
+                logMsg(level, msg); // log the original message
+                return;
+            }
+            free(logPath);
+
+        } else {
+            if (level <= LOG_INFO){
 				logFile = stdout;
 			} else {
 				logFile = stderr;
 			}
+        }
 
-		} else {
-			logFile = fopen(logPath, "a+");
-		}
-
-        if (logPath != NULL){
-         // Write out the timestamp first
+        if (logToFile == TRUE){
+         // Only write a timestamp if we are logging to a file (as opposed to stdout/err)
             const time_t time = (time_t) getTime();
             struct tm* cal = localtime(&time);
             int y  = 1900 + cal->tm_year;
@@ -104,7 +108,7 @@ void logMsg(int level, char* msg, ...){
 
 		fflush(logFile);
 
-		if (logPath != NULL){
+		if (logToFile == TRUE){
 			fclose(logFile);
 		}
 	}

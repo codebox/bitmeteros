@@ -1,5 +1,5 @@
 /*
- * BitMeterOS v0.3.2
+ * BitMeterOS
  * http://codebox.org.uk/bitmeterOS
  *
  * Copyright (c) 2010 Rob Dawson
@@ -21,8 +21,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- *
- * Build Date: Sun, 07 Mar 2010 14:49:47 +0000
  */
 
 #include <stdio.h>
@@ -69,9 +67,9 @@ void setupDb(){
 	prepareSql(&stmtDeleteCompressed,     "DELETE FROM data WHERE ts<=? AND dr=?");
 
  // Read various values out of the 'config' table
-	keepPerSecLimit  = getConfigInt("cap.keep_sec_limit");
-	keepPerMinLimit  = getConfigInt("cap.keep_min_limit");
-	compressInterval = getConfigInt("cap.compress_interval");
+	keepPerSecLimit  = getConfigInt("cap.keep_sec_limit", FALSE);
+	keepPerMinLimit  = getConfigInt("cap.keep_min_limit", FALSE);
+	compressInterval = getConfigInt("cap.compress_interval", FALSE);
 }
 
 int updateDb(int ts, int dr, struct Data* diffList){
