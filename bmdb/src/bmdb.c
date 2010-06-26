@@ -43,6 +43,7 @@ static int doWebRemote(FILE* file, int argc, char** argv);
 static int doWebLocal(FILE* file, int argc, char** argv);
 static int doSetConfig(FILE* file, int argc, char** argv);
 static int doHelp();
+static int doPurge();
 
 // This struct represents an action that can be performed by this utility
 struct Action{
@@ -60,6 +61,11 @@ struct Action actions[] = {
     {"upgrade",    "Upgrades the database", &doUpgrade},
     {"webremote",  "Enable remote access to the web interface", &doWebRemote},
     {"weblocal",   "Disable remote access to the web interface", &doWebLocal},
+    {"webstop",    "Stop the web server process", &doWebStop},
+    {"webstart",   "Start the web server process", &doWebStart},
+    {"capstop",    "Stop the data capture process", &doCapStop},
+    {"capstart",   "Start the data capture process", &doCapStart},
+    {"purge",      "Delete all bandwidth data from the database", &doPurge},
     {"help",       "Displays full help text", &doHelp},
     {NULL, NULL, NULL}
 };
@@ -107,6 +113,26 @@ static struct Action* getActionForName(char* name){
 	}
 
 	return namedAction;
+}
+
+static int doPurge(){
+ // Deletes all bandwidth data from the database
+    printf("This action will delete ALL BitMeter data, and cannot be undone.\nAre you sure you want to proceed? (Enter Y/N): ");
+    
+    int status = SUCCESS;
+    int c = getchar();
+    if (c == 'y' || c == 'Y'){
+    	status = executeSql("DELETE FROM data", NULL);
+    	if (status == SUCCESS){
+    		printf("Data deleted.");
+    	} else {
+    		printf("Unable to delete data.");
+    	}
+    } else {
+    	printf("Action aborted, no data deleted.");
+    }
+
+	return status;
 }
 
 static int doVacuum(){

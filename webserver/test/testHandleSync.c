@@ -64,12 +64,12 @@ void testSyncTsParamOk(CuTest *tc) {
     setTime(now);
 
     emptyDb();
-    addDbRow(makeTs("2009-10-31 10:00:00"), 1, "eth0",  1,  1, NULL);
-    addDbRow(makeTs("2009-11-01 10:00:00"), 1, "eth1",  2,  2, NULL);
+    addDbRow(makeTs("2009-10-31 10:00:00"), 1, "eth0",  1,  1, "");
+    addDbRow(makeTs("2009-11-01 10:00:00"), 1, "eth1",  2,  2, "");
     addDbRow(makeTs("2009-11-01 10:00:01"), 1, "eth2",  4,  4, "mac");
-    addDbRow(makeTs("2009-11-02 00:00:00"), 1, "eth1",  8,  8, NULL);
-    addDbRow(makeTs("2009-11-02 00:00:00"), 1, "eth2", 16, 16, NULL);
-    addDbRow(makeTs("2009-11-02 01:00:00"), 1, "eth1", 32, 32, NULL);
+    addDbRow(makeTs("2009-11-02 00:00:00"), 1, "eth1",  8,  8, "");
+    addDbRow(makeTs("2009-11-02 00:00:00"), 1, "eth2", 16, 16, "");
+    addDbRow(makeTs("2009-11-02 01:00:00"), 1, "eth1", 32, 32, "");
     addDbRow(makeTs("2010-01-01 00:00:00"), 1, "eth0", 64, 64, "linux");
 
     int tmpFd = makeTmpFile();

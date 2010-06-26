@@ -42,7 +42,7 @@ void testSyncNoMatchingData(CuTest *tc) {
  // Check that we behave correctly when the data table contains rows but none meet our criterion
     emptyDb();
     addDbRow(0, 1, "eth0", 123, 456, "other host");
-    addDbRow(1, 1, "eth0", 123, 456, NULL);
+    addDbRow(1, 1, "eth0", 123, 456, "");
     addDbRow(3, 1, "eth0", 123, 456, "other host");
 
     CuAssertTrue(tc, getSyncValues(1) == NULL);
@@ -52,10 +52,10 @@ void testSyncDataOnAndAfterTs(CuTest *tc) {
  /* Check that we behave correctly when the data table contains rows that meet our
     criterion, and have differing timestamps */
     emptyDb();
-    addDbRow(9,  1, "eth0", 1, 10, NULL);
-    addDbRow(10, 1, "eth0", 1, 10, NULL);
-    addDbRow(10, 1, "eth0", 2, 11, NULL);
-    addDbRow(11, 1, "eth1", 3, 12, NULL);
+    addDbRow(9,  1, "eth0", 1, 10, "");
+    addDbRow(10, 1, "eth0", 1, 10, "");
+    addDbRow(10, 1, "eth0", 2, 11, "");
+    addDbRow(11, 1, "eth1", 3, 12, "");
     addDbRow(11, 1, "eth1", 4, 13, "other host");
 
     struct Data* data = getSyncValues(9);

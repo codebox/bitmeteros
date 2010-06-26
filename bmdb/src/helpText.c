@@ -26,33 +26,48 @@
 #include "common.h"
 char* helpTxt=
 "bmdb [<action>]" EOL
-"" EOL
+" " EOL
 "Performs various admin and configuration operations on the BitMeterOS database. Running the utility without an 'action' argument will list the available actions. The following actions are defined:" EOL
-"" EOL
+" " EOL
 "showconfig" EOL
 "Displays all the configuration parameters currently stored in the database" EOL
-"" EOL
+" " EOL
 "setconfig <name> <value>" EOL
 "Updates the named configuration parameter with the specified value. If no parameter currently exists with a matching name then a new one is added." EOL
-"" EOL
+" " EOL
 "vac" EOL
 "Performs a vacuum operation on the database, freeing any unused space still occupied by the file" EOL
-"" EOL
+" " EOL
 "version" EOL
 "Displays various pieces of versioning information" EOL
-"" EOL
+" " EOL
 "upgrade <level>" EOL
 "Performs a database upgrade to the specified level. This operation is performed automatically by the BitMeterOS installer during software upgrades, and should not have to be executed manually." EOL
-"" EOL
+" " EOL
 "webremote" EOL
 "Enables remote access to the BitMeterOS web interface." EOL
-"" EOL
+" " EOL
 "weblocal" EOL
 "Disables remote access to the BitMeterOS web interface." EOL
-"" EOL
+" " EOL
+"webstop" EOL
+"Stops the BitMeterOS web server process, removing all access to the web interface." EOL
+" " EOL
+"webstart" EOL
+"Start the BitMeterOS web server process, restoring access to the web interface." EOL
+" " EOL
+"capstop" EOL
+"Stop the BitMeterOS data capture process, so that no bandwidth data will be logged to the database." EOL
+" " EOL
+"capstart" EOL
+"Starts the BitMeterOS data capture process, so that bandwidth data will be logged to the database." EOL
+" " EOL
+"purge" EOL
+"Deletes all BitMeterOS bandwidth data from the database." EOL
+" " EOL
 "help" EOL
 "Displays this help page." EOL
-"" EOL
+" " EOL
 "Email: rob@codebox.org.uk" EOL
-"Web:   http://codebox.org.uk/bitmeterOs" EOL
-"";
+"Web:   http://codebox.org.uk/bitmeteros" EOL
+" " EOL"";

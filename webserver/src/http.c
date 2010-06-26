@@ -42,9 +42,9 @@ extern struct HttpResponse HTTP_OK;
 extern struct HttpResponse HTTP_NOT_ALLOWED;
 
 // These are the different operations that we can perform on behalf of the client
-enum OpType{File, Monitor, Summary, Query, Sync, Config};
+enum OpType{File, Monitor, Summary, Query, Sync, Config, Export};
 
-static void writeHeader(SOCKET fd, char* name, char* value){
+void writeHeader(SOCKET fd, char* name, char* value){
  // Helper function, writes out a single HTTP header with the appropriate separator and line terminator
 	char buffer[HEADER_BUFSIZE];
     sprintf(buffer, "%s: %s" HTTP_EOL, name, value);
@@ -80,12 +80,12 @@ static void writeCommonHeaders(SOCKET fd){
 	writeHeader(fd, "Connection", "Close");
 }
 
-static void writeEndOfHeaders(SOCKET fd){
+void writeEndOfHeaders(SOCKET fd){
     char* buffer = HTTP_EOL;
     writeText(fd, buffer);
 }
 
-void writeHeaders(SOCKET fd, struct HttpResponse response, char* contentType, int size){
+void writeHeaders(SOCKET fd, struct HttpResponse response, char* contentType, int endHeaders){
  // Writes out a full set of headers including the specified HTTP response and, if appropriate, the MIME type
     writeResponseCode(fd, response);
 
@@ -94,12 +94,11 @@ void writeHeaders(SOCKET fd, struct HttpResponse response, char* contentType, in
         writeMimeType(fd, contentType);
     }
 
-    if (size > 0){
-    	writeContentLength(fd, size);
-    }
-
     writeCommonHeaders(fd);
-    writeEndOfHeaders(fd);
+    
+    if (endHeaders){
+    	writeEndOfHeaders(fd);
+    }
 }
 
 void processRequest(SOCKET fd, char* buffer){
@@ -123,6 +122,9 @@ void processRequest(SOCKET fd, char* buffer){
 
 		} else if (strcmp(req->path, "/config") == 0){
             op = Config;
+
+		} else if (strcmp(req->path, "/export") == 0){
+            op = Export;
 
         } else {
             op = File;
@@ -155,6 +157,9 @@ void processRequest(SOCKET fd, char* buffer){
 		} else if (op == Config){
             processConfigRequest(fd, req);
 
+		} else if (op == Export){
+            processExportRequest(fd, req);
+
         } else if (op == File){
             processFileRequest(fd, req);
 
@@ -183,7 +188,9 @@ void writeText(SOCKET fd, char* txt){
  // Helper function, computes the length of the text for us
     #ifdef TESTING
         write(fd, txt, strlen(txt));
-        fsync(fd);
+        #ifndef _WIN32
+        	fsync(fd);
+        #endif
     #else
         send(fd, txt, strlen(txt), 0);
     #endif
@@ -213,6 +220,16 @@ void writeSingleDataToJson(SOCKET fd, struct Data* data){
 		writeText(fd, jsonBuffer);
 	}
 	writeText(fd, "}");
+}
+void writeTextValueToJson(SOCKET fd, char* key, char* value){
+    char jsonBuffer[64];
+	sprintf(jsonBuffer, "%s : '%s'", key, value);
+	writeText(fd, jsonBuffer);
+}
+void writeNumValueToJson(SOCKET fd, char* key, BW_INT value){
+    char jsonBuffer[64];
+	sprintf(jsonBuffer, "%s : %llu", key, value);
+	writeText(fd, jsonBuffer);
 }
 
 void writeSyncData(SOCKET fd, struct Data* data){

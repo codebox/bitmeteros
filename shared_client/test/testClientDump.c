@@ -39,7 +39,7 @@ void testDumpEmptyDb(CuTest *tc) {
  // Check that we behave correctly if the data table is empty
     emptyDb();
     dumpResult = NULL;
-    getDumpValues(&onDumpRow);
+    getDumpValues(&onDumpRow, 0);
     CuAssertTrue(tc, dumpResult == NULL);
 }
 
@@ -48,9 +48,9 @@ void testDumpOneEntry(CuTest *tc) {
     emptyDb();
     dumpResult = NULL;
 
-    addDbRow(1234, 1, "eth0", 1, 2, NULL);
-    getDumpValues(&onDumpRow);
-    checkData(tc, dumpResult, 1234, 1, "eth0", 1, 2, NULL);
+    addDbRow(1234, 1, "eth0", 1, 2, "");
+    getDumpValues(&onDumpRow, 0);
+    checkData(tc, dumpResult, 1234, 1, "eth0", 1, 2, "");
 
     dumpResult = dumpResult->next;
     CuAssertTrue(tc, dumpResult == NULL);
@@ -61,19 +61,19 @@ void testDumpMultipleEntries(CuTest *tc) {
     emptyDb();
     dumpResult = NULL;
 
-    addDbRow(1233, 1, "eth0", 1, 2, NULL);
-    addDbRow(1234, 2, "eth1", 2, 3, NULL);
-    addDbRow(1235, 3, "eth0", 3, 4, NULL);
+    addDbRow(1233, 1, "eth0", 1, 2, "");
+    addDbRow(1234, 2, "eth1", 2, 3, "");
+    addDbRow(1235, 3, "eth0", 3, 4, "");
 
-    getDumpValues(&onDumpRow);
+    getDumpValues(&onDumpRow, 0);
 
-    checkData(tc, dumpResult, 1235, 3, "eth0", 3, 4, NULL);
-
-	dumpResult = dumpResult->next;
-	checkData(tc, dumpResult, 1234, 2, "eth1", 2, 3, NULL);
+    checkData(tc, dumpResult, 1235, 3, "eth0", 3, 4, "");
 
 	dumpResult = dumpResult->next;
-	checkData(tc, dumpResult, 1233, 1, "eth0", 1, 2, NULL);
+	checkData(tc, dumpResult, 1234, 2, "eth1", 2, 3, "");
+
+	dumpResult = dumpResult->next;
+	checkData(tc, dumpResult, 1233, 1, "eth0", 1, 2, "");
 
     dumpResult = dumpResult->next;
     CuAssertTrue(tc, dumpResult == NULL);

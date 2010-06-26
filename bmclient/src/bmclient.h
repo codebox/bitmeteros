@@ -120,6 +120,9 @@
 #define ERR_OPT_BAD_UNIT         "Unrecognised unit type"
 #define ERR_OPT_BAD_DUMP_FORMAT  "Unrecognised dump format"
 #define ERR_OPT_BAD_MODE         "Unrecognised mode"
+#define ERR_OPT_BAD_ADAPTER      "Bad adapter value"
+// ----
+#define OPT_ADAPTER 'a'
 // ----
 struct Prefs{
 	unsigned int mode;
@@ -134,6 +137,8 @@ struct Prefs{
 	unsigned int barChars;
 	unsigned int maxAmount;
 	unsigned int monitorType;
+	char* host;
+	char* adapter;
     char* errorMsg;
 };
 // ----

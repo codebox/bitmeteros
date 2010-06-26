@@ -33,8 +33,6 @@
 Contains functions for creating and updating Data struts.
 */
 
-static char *trim(char *str);
-
 struct Data* allocData(){
  // Create a Data struct on the heap
 	struct Data* data = (struct Data*) malloc( sizeof( struct Data ) );
@@ -119,24 +117,4 @@ void appendData(struct Data** earlierData, struct Data* newData){
         }
         curr->next = newData;
     }
-}
-
-static char *trim(char *str){
-    char *end;
-
- // Trim leading space
-    while(isspace(*str)){
-        str++;
-    }
-
- // Trim trailing space
-    end = str + strlen(str) - 1;
-    while(end > str && isspace(*end)){
-        end--;
-    }
-
- // Write new null terminator
-    *(end+1) = 0;
-
-    return str;
 }

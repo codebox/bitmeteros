@@ -35,7 +35,7 @@ Contains the entry-point for the bmclient command-line utility.
 */
 
 // This struct get populated by the various flags/options read from the command-line
-struct Prefs prefs = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL};
+struct Prefs prefs = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL};
 
 int main(int argc, char **argv){
  // Interpret the command-lin arguments and decide if they make sense

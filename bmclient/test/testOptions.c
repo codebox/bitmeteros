@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include "common.h"
 #include "string.h"
+#include "getopt.h"
 #include "test.h"
 #include "client.h"
 #include "bmclient.h"
@@ -36,56 +37,65 @@
 Contains unit tests for the options module.
 */
 
-extern int optind;
+extern int optind, optreset;
 static void checkPrefs(CuTest *tc, struct Prefs expectedPrefs, char* cmdLine);
 
 static void checkQueryRangeOk(CuTest *tc, char* cmdLine, time_t from, time_t to){
  // Helper function for range-related tests that we expect to pass
-	struct Prefs prefs = {PREF_MODE_QUERY, 0, 0, 0, 0, from, to, 0, 0, 0, 0, 0, NULL};
+	struct Prefs prefs = {PREF_MODE_QUERY, 0, 0, 0, 0, from, to, 0, 0, 0, 0, 0, NULL, NULL, NULL};
 	checkPrefs(tc, prefs, cmdLine);
 }
 
 static void checkQueryRangeErr(CuTest *tc, char* cmdLine){
  // Helper function for range-related tests that we expect to fail
-	struct Prefs prefs = {PREF_MODE_QUERY, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ERR_OPT_BAD_RANGE};
+	struct Prefs prefs = {PREF_MODE_QUERY, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, ERR_OPT_BAD_RANGE};
 	checkPrefs(tc, prefs, cmdLine);
 }
 
 void testQueryMode(CuTest *tc) {
  // Query-mode tests
-	struct Prefs prefs1 = {PREF_MODE_QUERY, 0, 0, 0, 0, 1230768000, 1262304000, PREF_GROUP_HOURS, 0, 0, 0, 0, NULL};
+	struct Prefs prefs1 = {PREF_MODE_QUERY, 0, 0, 0, 0, 1230768000, 1262304000, PREF_GROUP_HOURS, 0, 0, 0, 0, NULL, NULL, NULL};
 	checkPrefs(tc, prefs1, "-mq -r2009 -gh");
-
-	struct Prefs prefs2 = {PREF_MODE_QUERY, 0, 0, 0, 0, 1230768000, 1262304000, PREF_GROUP_DAYS, 0, 0, 0, 0, NULL};
+    
+	struct Prefs prefs2 = {PREF_MODE_QUERY, 0, 0, 0, 0, 1230768000, 1262304000, PREF_GROUP_DAYS, 0, 0, 0, 0, NULL, NULL, NULL};
 	checkPrefs(tc, prefs2, "-mq -r2009 -gd");
-
-	struct Prefs prefs3 = {PREF_MODE_QUERY, 0, 0, 0, 0, 1230768000, 1262304000, PREF_GROUP_MONTHS, 0, 0, 0, 0, NULL};
+    
+	struct Prefs prefs3 = {PREF_MODE_QUERY, 0, 0, 0, 0, 1230768000, 1262304000, PREF_GROUP_MONTHS, 0, 0, 0, 0, NULL, NULL, NULL};
 	checkPrefs(tc, prefs3, "-mq -r2009 -gm");
-
-	struct Prefs prefs4 = {PREF_MODE_QUERY, 0, 0, 0, 0, 1230768000, 1262304000, PREF_GROUP_YEARS, 0, 0, 0, 0, NULL};
+    
+	struct Prefs prefs4 = {PREF_MODE_QUERY, 0, 0, 0, 0, 1230768000, 1262304000, PREF_GROUP_YEARS, 0, 0, 0, 0, NULL, NULL, NULL};
 	checkPrefs(tc, prefs4, "-mq -r2009 -gy");
-
-	struct Prefs prefs5 = {PREF_MODE_QUERY, 0, 0, 0, 0, 1230768000, 1262304000, PREF_GROUP_TOTAL, 0, 0, 0, 0, NULL};
+    
+	struct Prefs prefs5 = {PREF_MODE_QUERY, 0, 0, 0, 0, 1230768000, 1262304000, PREF_GROUP_TOTAL, 0, 0, 0, 0, NULL, NULL, NULL};
 	checkPrefs(tc, prefs5, "-mq -r2009 -gt");
-
-	struct Prefs prefs6 = {PREF_MODE_QUERY, 0, 0, 0, 0, 1230768000, 1262304000, 0, 0, 0, 0, 0, ERR_OPT_BAD_GROUP};
+    
+	struct Prefs prefs6 = {PREF_MODE_QUERY, 0, 0, 0, 0, 1230768000, 1262304000, 0, 0, 0, 0, 0, NULL, NULL, ERR_OPT_BAD_GROUP};
 	checkPrefs(tc, prefs6, "-mq -r2009 -gz");
-
-	struct Prefs prefs7 = {PREF_MODE_QUERY, 0, PREF_UNITS_BYTES, 0, 0, 1230768000, 1262304000, 0, 0, 0, 0, 0, NULL};
+    
+	struct Prefs prefs7 = {PREF_MODE_QUERY, 0, PREF_UNITS_BYTES, 0, 0, 1230768000, 1262304000, 0, 0, 0, 0, 0, NULL, NULL, NULL};
 	checkPrefs(tc, prefs7, "-mq -r2009 -ub");
-
-	struct Prefs prefs8 = {PREF_MODE_QUERY, 0, PREF_UNITS_ABBREV, 0, 0, 1230768000, 1262304000, 0, 0, 0, 0, 0, NULL};
+    
+	struct Prefs prefs8 = {PREF_MODE_QUERY, 0, PREF_UNITS_ABBREV, 0, 0, 1230768000, 1262304000, 0, 0, 0, 0, 0, NULL, NULL, NULL};
 	checkPrefs(tc, prefs8, "-mq -r2009 -ua");
-
-	struct Prefs prefs9 = {PREF_MODE_QUERY, 0, PREF_UNITS_FULL, 0, 0, 1230768000, 1262304000, 0, 0, 0, 0, 0, NULL};
+    
+	struct Prefs prefs9 = {PREF_MODE_QUERY, 0, PREF_UNITS_FULL, 0, 0, 1230768000, 1262304000, 0, 0, 0, 0, 0, NULL, NULL, NULL};
 	checkPrefs(tc, prefs9, "-mq -r2009 -uf");
-
-	struct Prefs prefs10 = {PREF_MODE_QUERY, 0, 0, 0, 0, 1230768000, 1262304000, 0, 0, 0, 0, 0, ERR_OPT_BAD_UNIT};
+    
+	struct Prefs prefs10 = {PREF_MODE_QUERY, 0, 0, 0, 0, 1230768000, 1262304000, 0, 0, 0, 0, 0, NULL, NULL, ERR_OPT_BAD_UNIT};
 	checkPrefs(tc, prefs10, "-mq -r2009 -uz");
-
-	struct Prefs prefs11 = {PREF_MODE_QUERY, 0, 0, 0, 0, 1230768000, 1262304000, 0, 0, 0, 0, 0, NULL};
+    
+	struct Prefs prefs11 = {PREF_MODE_QUERY, 0, 0, 0, 0, 1230768000, 1262304000, 0, 0, 0, 0, 0, NULL, NULL, NULL};
 	checkPrefs(tc, prefs11, "-mq -r2009");
-
+    
+	struct Prefs prefs12 = {PREF_MODE_QUERY, 0, 0, 0, 0, 1230768000, 1262304000, 0, 0, 0, 0, 0, "host1", NULL, NULL};
+	checkPrefs(tc, prefs12, "-mq -r2009 -a host1");
+    
+	struct Prefs prefs13 = {PREF_MODE_QUERY, 0, 0, 0, 0, 1230768000, 1262304000, 0, 0, 0, 0, 0, "host1", "eth0", NULL};
+	checkPrefs(tc, prefs13, "-mq -r2009 -a host1:eth0");
+    
+	struct Prefs prefs14 = {PREF_MODE_QUERY, 0, 0, 0, 0, 1230768000, 1262304000, 0, 0, 0, 0, 0, "", "eth0", NULL};
+	checkPrefs(tc, prefs14, "-mq -r2009 -a :eth0");
+    
 	//checkQueryRangeErr(tc, "-mq");
 	checkQueryRangeErr(tc, "-mq -rz");
 	checkQueryRangeErr(tc, "-mq -r200");
@@ -98,7 +108,7 @@ void testQueryMode(CuTest *tc) {
 	//checkQueryRangeErr(tc, "-mq -r20090100");
 	//checkQueryRangeErr(tc, "-mq -r20090132");
 	//checkQueryRangeErr(tc, "-mq -r20090229");
-
+    
 	checkQueryRangeErr(tc, "-mq -r2009-");
 	checkQueryRangeErr(tc, "-mq -r2009-x");
 	//checkQueryRangeErr(tc, "-mq -r2009-1960");
@@ -106,7 +116,7 @@ void testQueryMode(CuTest *tc) {
 	//checkQueryRangeErr(tc, "-mq -r20090112-20090132");
 	//checkQueryRangeErr(tc, "-mq -r2009011223-2009011225");
 	checkQueryRangeErr(tc, "-mq -r2009011222-20090112239");
-
+    
 	checkQueryRangeOk(tc, "-mq -r1970", 0, 31536000);
 	checkQueryRangeOk(tc, "-mq -r1970-1970", 0, 31536000);
 	checkQueryRangeOk(tc, "-mq -r1970-2008", 0, 1230768000);
@@ -116,109 +126,128 @@ void testQueryMode(CuTest *tc) {
 	checkQueryRangeOk(tc, "-mq -r197001-197001", 0, 2678400);
 	checkQueryRangeOk(tc, "-mq -r197001-200812", 0, 1230768000);
 	checkQueryRangeOk(tc, "-mq -r200812-197001", 0, 1230768000);
-
+    
 	checkQueryRangeOk(tc, "-mq -r19700101", 0, 86400);
 	checkQueryRangeOk(tc, "-mq -r19700101-19700101", 0, 86400);
 	checkQueryRangeOk(tc, "-mq -r19700101-20021231", 0, 1041379200);
 	checkQueryRangeOk(tc, "-mq -r20021231-19700101", 0, 1041379200);
-
+    
 	checkQueryRangeOk(tc, "-mq -r1970010100", 0, 3600);
 	checkQueryRangeOk(tc, "-mq -r1970010100-1970010100", 0, 3600);
 	checkQueryRangeOk(tc, "-mq -r1970010100-2008123123", 0, 1230768000);
 	checkQueryRangeOk(tc, "-mq -r2008123123-1970010100", 0, 1230768000);
-
+    
 	checkQueryRangeOk(tc, "-mq -r2008-2001011119", 979239600, 1230768000);
-	checkQueryRangeOk(tc, "-mq -r200807-20090101", 1214870400, 1230854400);
+	checkQueryRangeOk(tc, "-mq -r200807-20090101", 1214866800, 1230854400);
 }
 
 void testSummaryMode(CuTest *tc) {
  // Summary-mode tests
-	struct Prefs prefs = {PREF_MODE_SUMMARY, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL};
-	checkPrefs(tc, prefs, "-ms");
+	struct Prefs prefs1 = {PREF_MODE_SUMMARY, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL};
+	checkPrefs(tc, prefs1, "-ms");
+
+	struct Prefs prefs2 = {PREF_MODE_SUMMARY, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "host1", NULL, NULL};
+	checkPrefs(tc, prefs2, "-ms -a host1");
+
+	struct Prefs prefs3 = {PREF_MODE_SUMMARY, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "host1", "eth0", NULL};
+	checkPrefs(tc, prefs3, "-ms -a host1:eth0");
+
+	struct Prefs prefs4 = {PREF_MODE_SUMMARY, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "", "eth0", NULL};
+	checkPrefs(tc, prefs4, "-ms -a :eth0");
 
 }
 void testDumpMode(CuTest *tc) {
  // Dump-mode tests
-	struct Prefs prefs1 = {PREF_MODE_DUMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL};
+	struct Prefs prefs1 = {PREF_MODE_DUMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL};
 	checkPrefs(tc, prefs1, "-md");
 
-	struct Prefs prefs2 = {PREF_MODE_DUMP, PREF_DUMP_FORMAT_CSV, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL};
+	struct Prefs prefs2 = {PREF_MODE_DUMP, PREF_DUMP_FORMAT_CSV, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL};
 	checkPrefs(tc, prefs2, "-md -fc");
 
-	struct Prefs prefs3 = {PREF_MODE_DUMP, PREF_DUMP_FORMAT_FIXED_WIDTH, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL};
+	struct Prefs prefs3 = {PREF_MODE_DUMP, PREF_DUMP_FORMAT_FIXED_WIDTH, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL};
 	checkPrefs(tc, prefs3, "-md -ff");
 
-	struct Prefs prefs4 = {PREF_MODE_DUMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ERR_OPT_BAD_DUMP_FORMAT};
+	struct Prefs prefs4 = {PREF_MODE_DUMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, ERR_OPT_BAD_DUMP_FORMAT};
 	checkPrefs(tc, prefs4, "-md -fz");
 
-	struct Prefs prefs5 = {PREF_MODE_DUMP, 0, PREF_UNITS_BYTES, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL};
+	struct Prefs prefs5 = {PREF_MODE_DUMP, 0, PREF_UNITS_BYTES, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL};
 	checkPrefs(tc, prefs5, "-md -ub");
 
-	struct Prefs prefs6 = {PREF_MODE_DUMP, 0, PREF_UNITS_ABBREV, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL};
+	struct Prefs prefs6 = {PREF_MODE_DUMP, 0, PREF_UNITS_ABBREV, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL};
 	checkPrefs(tc, prefs6, "-md -ua");
 
-	struct Prefs prefs7 = {PREF_MODE_DUMP, 0, PREF_UNITS_FULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL};
+	struct Prefs prefs7 = {PREF_MODE_DUMP, 0, PREF_UNITS_FULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL};
 	checkPrefs(tc, prefs7, "-md -uf");
 
-	struct Prefs prefs8 = {PREF_MODE_DUMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ERR_OPT_BAD_UNIT};
+	struct Prefs prefs8 = {PREF_MODE_DUMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, ERR_OPT_BAD_UNIT};
 	checkPrefs(tc, prefs8, "-md -uz");
 }
 
 void testNoMode(CuTest *tc) {
  // Tests without any mode
-	struct Prefs prefs1 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ERR_OPT_NO_ARGS};
+	struct Prefs prefs1 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, ERR_OPT_NO_ARGS};
 	checkPrefs(tc, prefs1, "");
-
-	struct Prefs prefs2 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ERR_OPT_BAD_MODE};
+    
+	struct Prefs prefs2 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, ERR_OPT_BAD_MODE};
 	checkPrefs(tc, prefs2, "-mz");
-
-	struct Prefs prefs3 = {0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, NULL};
+    
+	struct Prefs prefs3 = {0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL};
 	checkPrefs(tc, prefs3, "-v");
-
-	struct Prefs prefs4 = {0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, NULL};
+    
+	struct Prefs prefs4 = {0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL};
 	checkPrefs(tc, prefs4, "-h");
 }
 
 void testMonitorMode(CuTest *tc) {
  // Monitor-mode tests
-	struct Prefs prefs1 = {PREF_MODE_MONITOR, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL};
+	struct Prefs prefs1 = {PREF_MODE_MONITOR, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL};
 	checkPrefs(tc, prefs1, "-mm");
 
-	struct Prefs prefs2 = {PREF_MODE_MONITOR, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, PREF_MONITOR_TYPE_NUMS, NULL};
+	struct Prefs prefs2 = {PREF_MODE_MONITOR, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, PREF_MONITOR_TYPE_NUMS, NULL, NULL, NULL};
 	checkPrefs(tc, prefs2, "-mm -tn");
 
-	struct Prefs prefs3 = {PREF_MODE_MONITOR, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, PREF_MONITOR_TYPE_BAR, NULL};
+	struct Prefs prefs3 = {PREF_MODE_MONITOR, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, PREF_MONITOR_TYPE_BAR, NULL, NULL, NULL};
 	checkPrefs(tc, prefs3, "-mm -tb");
 
-	struct Prefs prefs4 = {PREF_MODE_MONITOR, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ERR_OPT_BAD_MONITOR_TYPE};
+	struct Prefs prefs4 = {PREF_MODE_MONITOR, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, ERR_OPT_BAD_MONITOR_TYPE};
 	checkPrefs(tc, prefs4, "-mm -tz");
 
-	struct Prefs prefs5 = {PREF_MODE_MONITOR, 0, 0, 0, 0, 0, 0, 0, PREF_DIRECTION_DL, 0, 0, 0, NULL};
+	struct Prefs prefs5 = {PREF_MODE_MONITOR, 0, 0, 0, 0, 0, 0, 0, PREF_DIRECTION_DL, 0, 0, 0, NULL, NULL, NULL};
 	checkPrefs(tc, prefs5, "-mm -dd");
 
-	struct Prefs prefs6 = {PREF_MODE_MONITOR, 0, 0, 0, 0, 0, 0, 0, PREF_DIRECTION_UL, 0, 0, 0, NULL};
+	struct Prefs prefs6 = {PREF_MODE_MONITOR, 0, 0, 0, 0, 0, 0, 0, PREF_DIRECTION_UL, 0, 0, 0, NULL, NULL, NULL};
 	checkPrefs(tc, prefs6, "-mm -du");
 
-	struct Prefs prefs7 = {PREF_MODE_MONITOR, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ERR_OPT_BAD_DIRECTION};
+	struct Prefs prefs7 = {PREF_MODE_MONITOR, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, ERR_OPT_BAD_DIRECTION};
 	checkPrefs(tc, prefs7, "-mm -dz");
 
-	struct Prefs prefs8 = {PREF_MODE_MONITOR, 0, 0, 0, 0, 0, 0, 0, 0, 10, 0, 0, NULL};
+	struct Prefs prefs8 = {PREF_MODE_MONITOR, 0, 0, 0, 0, 0, 0, 0, 0, 10, 0, 0, NULL, NULL, NULL};
 	checkPrefs(tc, prefs8, "-mm -w10");
 
-	struct Prefs prefs9 = {PREF_MODE_MONITOR, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ERR_OPT_BAD_WIDTH};
+	struct Prefs prefs9 = {PREF_MODE_MONITOR, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, ERR_OPT_BAD_WIDTH};
 	checkPrefs(tc, prefs9, "-mm -w0");
 
-	struct Prefs prefs10 = {PREF_MODE_MONITOR, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ERR_OPT_BAD_WIDTH};
+	struct Prefs prefs10 = {PREF_MODE_MONITOR, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, ERR_OPT_BAD_WIDTH};
 	checkPrefs(tc, prefs10, "-mm -wz");
 
-	struct Prefs prefs11 = {PREF_MODE_MONITOR, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1000000, 0, NULL};
+	struct Prefs prefs11 = {PREF_MODE_MONITOR, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1000000, 0, NULL, NULL, NULL};
 	checkPrefs(tc, prefs11, "-mm -x1000000");
 
-	struct Prefs prefs12 = {PREF_MODE_MONITOR, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ERR_OPT_BAD_MAX};
+	struct Prefs prefs12 = {PREF_MODE_MONITOR, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, ERR_OPT_BAD_MAX};
 	checkPrefs(tc, prefs12, "-mm -x0");
 
-	struct Prefs prefs13 = {PREF_MODE_MONITOR, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ERR_OPT_BAD_MAX};
+	struct Prefs prefs13 = {PREF_MODE_MONITOR, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, ERR_OPT_BAD_MAX};
 	checkPrefs(tc, prefs13, "-mm -xz");
+
+	struct Prefs prefs14 = {PREF_MODE_MONITOR, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "host1", NULL, NULL};
+	checkPrefs(tc, prefs14, "-mm -a host1");
+
+	struct Prefs prefs15 = {PREF_MODE_MONITOR, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "host1", "eth0", NULL};
+	checkPrefs(tc, prefs15, "-mm -a host1:eth0");
+
+	struct Prefs prefs16 = {PREF_MODE_MONITOR, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "", "eth0", NULL};
+	checkPrefs(tc, prefs16, "-mm -a :eth0");
+
 }
 
 static void checkPrefs(CuTest *tc, struct Prefs expectedPrefs, char* cmdLine){
@@ -228,8 +257,9 @@ static void checkPrefs(CuTest *tc, struct Prefs expectedPrefs, char* cmdLine){
 
     parseCommandLine(cmdLine, &argv, &argc);
 
-	struct Prefs actualPrefs = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL};
+	struct Prefs actualPrefs = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL};
 	optind = 1; // need to reset this global between each call to getopt()
+	optreset = 1; // non-portable way to reset state - see getopt.h
 	parseArgs(argc, argv, &actualPrefs);
 
 	CuAssertIntEquals(tc, expectedPrefs.mode,        actualPrefs.mode);
@@ -245,11 +275,24 @@ static void checkPrefs(CuTest *tc, struct Prefs expectedPrefs, char* cmdLine){
 	CuAssertIntEquals(tc, expectedPrefs.maxAmount,   actualPrefs.maxAmount);
 	CuAssertIntEquals(tc, expectedPrefs.monitorType, actualPrefs.monitorType);
 
+	if (expectedPrefs.host == NULL){
+		CuAssertTrue(tc, actualPrefs.host == NULL);
+	} else {
+		CuAssertStrEquals(tc, expectedPrefs.host, actualPrefs.host);
+	}
+
+	if (expectedPrefs.adapter == NULL){
+		CuAssertTrue(tc, actualPrefs.adapter == NULL);
+	} else {
+		CuAssertStrEquals(tc, expectedPrefs.adapter, actualPrefs.adapter);
+	}
+
 	if (expectedPrefs.errorMsg == NULL){
 		CuAssertTrue(tc, actualPrefs.errorMsg == NULL);
 	} else {
 		CuAssertStrEquals(tc, expectedPrefs.errorMsg, actualPrefs.errorMsg);
-	}
+	}                         
+
 }
 
 CuSuite* optionsGetSuite() {

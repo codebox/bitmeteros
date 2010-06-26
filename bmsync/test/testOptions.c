@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include "common.h"
 #include "string.h"
+#include "getopt.h"
 #include "test.h"
 #include "bmsync.h"
 #include "CuTest.h"
@@ -35,7 +36,7 @@
 Contains unit tests for the options module of the bmsync utility.
 */
 
-extern int optind;
+extern int optind, optreset;
 static void checkPrefs(CuTest *tc, struct SyncPrefs expectedPrefs, char* cmdLine);
 
 static void testEmptyCmdLine(CuTest *tc){
@@ -49,15 +50,15 @@ static void testPort(CuTest *tc){
 	checkPrefs(tc, prefsBad, "-p 0 h1");
 	checkPrefs(tc, prefsBad, "-p 65536 h1");
 	checkPrefs(tc, prefsBad, "-p bork h1");
-
+    
     char *hosts[1];
     hosts[0] = "h1";
 	struct SyncPrefs prefsOk1 = {0, 0, hosts, 1, 1, NULL, NULL};
 	checkPrefs(tc, prefsOk1, "-p 1 h1");
-
+    
 	struct SyncPrefs prefsOk2 = {0, 0, hosts, 1, 65535, NULL, NULL};
 	checkPrefs(tc, prefsOk2, "-p 65535 h1");
-
+    
 	struct SyncPrefs prefsOk3 = {0, 0, hosts, 1, 80, NULL, NULL};
 	checkPrefs(tc, prefsOk3, "-p80 h1");
 }
@@ -143,6 +144,7 @@ static void checkPrefs(CuTest *tc, struct SyncPrefs expectedPrefs, char* cmdLine
 
 	struct SyncPrefs actualPrefs = {0, 0, NULL, 0, 0, NULL, NULL};
 	optind = 1; // need to reset this global between each call to getopt()
+	optreset = 1; // non-portable way to reset state - see getopt.h
 	parseSyncArgs(argc, argv, &actualPrefs);
 
 	CuAssertIntEquals(tc, expectedPrefs.help,      actualPrefs.help);

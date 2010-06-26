@@ -170,7 +170,7 @@ static struct Data* dataForRow(int colCount, sqlite3_stmt *stmt){
 	return data;
 }
 
-void runSelectAndCallback(sqlite3_stmt *stmt, void (*callback)(struct Data*)){
+void runSelectAndCallback(sqlite3_stmt *stmt, void (*callback)(struct Data*, int), int handle){
  // Runs the stmt (assumed to be a SQL SELECT) and performs a callback once for each row
 	assert(dbOpen);
 	int colCount = sqlite3_column_count(stmt);
@@ -181,7 +181,7 @@ void runSelectAndCallback(sqlite3_stmt *stmt, void (*callback)(struct Data*)){
 		thisRow = dataForRow(colCount, stmt);
 
 	 // Callback must free data
-		callback(thisRow);
+		callback(thisRow, handle);
 	}
 	sqlite3_reset(stmt);
 

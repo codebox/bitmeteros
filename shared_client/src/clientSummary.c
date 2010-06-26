@@ -33,72 +33,77 @@
 Contains a helper function for use by clients that need to produce database summaries.
 */
 
-#define DATA_SUMMARY_SQL "SELECT SUM(dl) AS dl, SUM(ul) AS ul FROM data WHERE ts>=?"
-#define HOST_SUMMARY_SQL "SELECT DISTINCT(hs) AS hs FROM data WHERE hs NOT NULL"
+#define DATA_SUMMARY_SQL_ALL          "SELECT SUM(dl) AS dl, SUM(ul) AS ul FROM data WHERE ts>=?"
+#define DATA_SUMMARY_SQL_HOST         "SELECT SUM(dl) AS dl, SUM(ul) AS ul FROM data WHERE ts>=? AND hs=?"
+#define DATA_SUMMARY_SQL_HOST_ADAPTER "SELECT SUM(dl) AS dl, SUM(ul) AS ul FROM data WHERE ts>=? AND hs=? AND ad=?"
+#define HOST_SUMMARY_SQL "SELECT DISTINCT(hs) AS hs FROM data WHERE hs != ''"
 
 #ifndef MULTI_THREADED_CLIENT
-	static sqlite3_stmt *stmtData = NULL;
-	static sqlite3_stmt *stmtHost = NULL;
+	static sqlite3_stmt *stmtAll  = NULL;
+	static sqlite3_stmt *stmtHs   = NULL;
+	static sqlite3_stmt *stmtHsAd = NULL;
+	static sqlite3_stmt *stmtHosts = NULL;
 #endif
 
-struct Summary getSummaryValues();
-static struct Data* calcTotalsSince(sqlite3_stmt *stmt, int ts);
-static void getHosts(sqlite3_stmt *stmt, char*** hostNames, int* hostCount);
+struct Summary getSummaryValues(char* hs, char* ad);
+static void getHosts(char*** hostNames, int* hostCount);
 
-struct Summary getSummaryValues(){
+struct Summary getSummaryValues(char* hs, char* ad){
+    int selectByAdapter = (ad == NULL ? FALSE : TRUE);
+    int selectByHost    = (hs == NULL ? FALSE : TRUE);
+
  // Populate a Summary struct
-
- 	#ifdef MULTI_THREADED_CLIENT
-    	sqlite3_stmt *stmtData = NULL;
-    	prepareSql(&stmtData, DATA_SUMMARY_SQL);
-
-    	sqlite3_stmt *stmtHost = NULL;
-    	prepareSql(&stmtHost, HOST_SUMMARY_SQL);
-
-    #else
-    	if (stmtData == NULL){
-    		prepareSql(&stmtData, DATA_SUMMARY_SQL);
-    	}
-
-    	if (stmtHost == NULL){
-    		prepareSql(&stmtHost, HOST_SUMMARY_SQL);
-    	}
-    #endif
-
 	struct Summary summary;
 	int now = getTime();
 
 	int tsForStartOfToday = getCurrentDayForTs(now);
-	summary.today = calcTotalsSince(stmtData, tsForStartOfToday);
-
 	int tsForStartOfMonth = getCurrentMonthForTs(now);
-	summary.month = calcTotalsSince(stmtData, tsForStartOfMonth);
-
 	int tsForStartOfYear = getCurrentYearForTs(now);
-	summary.year = calcTotalsSince(stmtData, tsForStartOfYear);
 
-	summary.total = calcTotalsSince(stmtData, 0);
+    struct Data* (*calcTotals)(int, char*, char*);
 
-	struct ValueBounds* tsBounds = calcTsBounds();
+    if (selectByAdapter == TRUE) {
+        if (selectByHost == TRUE) {
+         // We want data only for 1 specific adapter on 1 host
+            calcTotals = &calcTotalsForHsAdSince;
+            summary.hostNames = NULL;
+            summary.hostCount = 0;
+
+        } else {
+         // This doesn't really make sense
+            logMsg(LOG_WARN, "getSummaryValues called with null 'hs' but a non-null 'ad' of %s", ad);
+            calcTotals = NULL;
+        }
+
+    } else {
+        if (selectByHost == TRUE) {
+         // We want data only for 1 specific host
+            calcTotals = &calcTotalsForHsSince;
+            summary.hostNames = NULL;
+            summary.hostCount = 0;
+
+        } else {
+         // We want all data regardless of where it is from
+            calcTotals = &calcTotalsForAllSince;
+            getHosts(&(summary.hostNames), &(summary.hostCount));
+        }
+    }
+
+	summary.today = calcTotals(tsForStartOfToday, hs, ad);
+	summary.month = calcTotals(tsForStartOfMonth, hs, ad);
+	summary.year  = calcTotals(tsForStartOfYear, hs, ad);
+	summary.total = calcTotals(0, hs, ad);
+
+	struct ValueBounds* tsBounds = calcTsBounds(hs, ad);
 	if (tsBounds != NULL){
         summary.tsMin = tsBounds->min;
         summary.tsMax = tsBounds->max;
         free(tsBounds);
 	} else {
-	 // The data table is empty
+	 // No data found for host/adapter
         summary.tsMin = 0;
         summary.tsMax = 0;
 	}
-
-    getHosts(stmtHost, &(summary.hostNames), &(summary.hostCount));
-
-	#ifdef MULTI_THREADED_CLIENT
-    	sqlite3_finalize(stmtData);
-    	sqlite3_finalize(stmtHost);
-    #else
-    	sqlite3_reset(stmtData);
-    	sqlite3_reset(stmtHost);
-    #endif
 
 	return summary;
 }
@@ -117,7 +122,18 @@ void freeSummary(struct Summary* summary){
 }
 
 
-static void getHosts(sqlite3_stmt *stmt, char*** hostNames, int* hostCount){
+static void getHosts(char*** hostNames, int* hostCount){
+    sqlite3_stmt *stmt = NULL;
+
+	#ifdef MULTI_THREADED_CLIENT
+    	prepareSql(&stmt, HOST_SUMMARY_SQL);
+    #else
+    	if (stmtHosts == NULL){
+    		prepareSql(&stmtHosts, HOST_SUMMARY_SQL);
+    	}
+    	stmt = stmtHosts;
+    #endif
+
     struct Data* data = runSelect(stmt);
     struct Data* thisData;
 
@@ -133,17 +149,88 @@ static void getHosts(sqlite3_stmt *stmt, char*** hostNames, int* hostCount){
     thisData = data;
     int offset = 0;
     while(thisData != NULL){
-
         (*hostNames)[offset++] = strdup(thisData->hs);
         thisData = thisData->next;
     }
+
+    #ifdef MULTI_THREADED_CLIENT
+    	sqlite3_finalize(stmt);
+    #else
+    	sqlite3_reset(stmt);
+    #endif
 }
 
-static struct Data* calcTotalsSince(sqlite3_stmt *stmt, int ts){
+struct Data* calcTotalsForAllSince(int ts, char* hs, char* ad){
+    sqlite3_stmt *stmt = NULL;
+
+	#ifdef MULTI_THREADED_CLIENT
+    	prepareSql(&stmt, DATA_SUMMARY_SQL_ALL);
+    #else
+    	if (stmtAll == NULL){
+    		prepareSql(&stmtAll, DATA_SUMMARY_SQL_ALL);
+    	}
+    	stmt = stmtAll;
+    #endif
+
 	sqlite3_bind_int(stmt, 1, ts);
+	struct Data* result = runSelect(stmt);
+
+	#ifdef MULTI_THREADED_CLIENT
+    	sqlite3_finalize(stmt);
+    #else
+    	sqlite3_reset(stmt);
+    #endif
+
+	return result;
+}
+
+struct Data* calcTotalsForHsSince(int ts, char* hs, char* ad){
+    sqlite3_stmt *stmt = NULL;
+
+    #ifdef MULTI_THREADED_CLIENT
+    	prepareSql(&stmt, DATA_SUMMARY_SQL_HOST);
+    #else
+    	if (stmtHs == NULL){
+    		prepareSql(&stmtHs, DATA_SUMMARY_SQL_HOST);
+    	}
+    	stmt = stmtHs;
+    #endif
+
+	sqlite3_bind_int(stmt, 1, ts);
+    sqlite3_bind_text(stmt, 2, hs, strlen(hs), SQLITE_TRANSIENT);
 	struct Data* data = runSelect(stmt);
-	sqlite3_reset(stmt);
+
+	#ifdef MULTI_THREADED_CLIENT
+    	sqlite3_finalize(stmt);
+    #else
+    	sqlite3_reset(stmt);
+    #endif
 
 	return data;
 }
 
+struct Data* calcTotalsForHsAdSince(int ts, char* hs, char* ad){
+    sqlite3_stmt *stmt = NULL;
+
+    #ifdef MULTI_THREADED_CLIENT
+    	prepareSql(&stmt, DATA_SUMMARY_SQL_HOST_ADAPTER);
+    #else
+    	if (stmtHsAd == NULL){
+    		prepareSql(&stmtHsAd, DATA_SUMMARY_SQL_HOST_ADAPTER);
+    	}
+    	stmt = stmtHsAd;
+    #endif
+
+	sqlite3_bind_int(stmt, 1, ts);
+    sqlite3_bind_text(stmt, 2, hs, strlen(hs), SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 3, ad, strlen(ad), SQLITE_TRANSIENT);
+	struct Data* data = runSelect(stmt);
+
+	#ifdef MULTI_THREADED_CLIENT
+    	sqlite3_finalize(stmt);
+    #else
+    	sqlite3_reset(stmt);
+    #endif
+
+	return data;
+}

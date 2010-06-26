@@ -35,6 +35,7 @@
 
 #define MIME_JSON "application/json"
 #define MIME_HTML "text/html"
+#define MIME_CSV  "text/csv"
 #define MIME_JPEG "image/jpeg"
 #define MIME_GIF  "image/gif"
 #define MIME_PNG  "image/png"
@@ -84,14 +85,18 @@ void processSummaryRequest(SOCKET fd, struct Request* req);
 void processQueryRequest(SOCKET fd, struct Request* req);
 void processSyncRequest(SOCKET fd, struct Request* req);
 void processConfigRequest(SOCKET fd, struct Request* req);
+void processExportRequest(SOCKET fd, struct Request* req);
 void processFileRequest(SOCKET fd, struct Request* req);
 
 void writeText(SOCKET fd, char* txt);
 void writeDataToJson(SOCKET fd, struct Data* data);
 void writeSingleDataToJson(SOCKET fd, struct Data* data);
 void writeSyncData(SOCKET fd, struct Data* data);
-void writeHeaders(SOCKET fd, struct HttpResponse response, char* contentType, int size);
+void writeHeaders(SOCKET fd, struct HttpResponse response, char* contentType, int endHeaders);
+void writeHeader(SOCKET fd, char* name, char* value);
+void writeEndOfHeaders(SOCKET fd);
 void processRequest(SOCKET fd, char* buffer);
 
+void getWebRoot(char* path);
 
 #endif

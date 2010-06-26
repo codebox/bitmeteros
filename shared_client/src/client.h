@@ -39,6 +39,8 @@
 #define UNITS_ABBREV 2
 #define UNITS_FULL   3
 // ----
+#define LOCAL_HOST "local"
+// ----
 struct Summary{
 	struct Data* today;
 	struct Data* month;
@@ -54,13 +56,24 @@ struct ValueBounds{
 	BW_INT min;
 	BW_INT max;
 };
+// ----
+struct HostAdapter{
+    char* host;
+    char* adapter;
+};
 
-struct Data* getMonitorValues(int ts);
+struct Data* getMonitorValues(int ts, char* hs, char* ad);
 struct Summary getSummaryValues();
-struct ValueBounds* calcTsBounds();
+void freeSummary(struct Summary* summary);
+struct ValueBounds* calcTsBounds(char* hs, char* ad);
 struct Data* calcMaxValues();
 struct Data* getQueryValues();
 struct Data* getSyncValues(int ts);
-void getDumpValues(void (*callback)(struct Data*));
+void getDumpValues(void (*callback)(struct Data*, int), int);
+struct HostAdapter* getHostAdapter(char* hostAndAdapterTxt);
+int freeHostAdapter(struct HostAdapter *hostAdapter);
+struct Data* calcTotalsForAllSince(int ts, char* hs, char* ad);
+struct Data* calcTotalsForHsSince(int ts, char* hs, char* ad);
+struct Data* calcTotalsForHsAdSince(int ts, char* hs, char* ad);
 
 #endif

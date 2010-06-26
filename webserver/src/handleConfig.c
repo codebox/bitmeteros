@@ -29,17 +29,20 @@
 #include "client.h"
 #include "common.h"
 
+#define HOST_ADAPTER_SQL "SELECT hs AS hs, ad AS ad FROM data GROUP BY hs, ad"
+
 /*
 Handles '/config' requests received by the web server.
 */
 
 static void writeNumConfigValue(SOCKET fd, char* key, char* value);
 static void writeTxtConfigValue(SOCKET fd, char* key, char* value);
+static void writeHostAdapterList(SOCKET fd);
 extern struct HttpResponse HTTP_OK;
 
 void processConfigRequest(SOCKET fd, struct Request* req){
  // Write the JSON object out to the stream
-    writeHeaders(fd, HTTP_OK, MIME_JS, 0);
+    writeHeaders(fd, HTTP_OK, MIME_JS, TRUE);
 
 	writeText(fd, "var config = { ");
 	char* val = getConfigText(CONFIG_WEB_MONITOR_INTERVAL, FALSE);
@@ -73,6 +76,10 @@ void processConfigRequest(SOCKET fd, struct Request* req){
 
     writeText(fd, ", ");
     writeTxtConfigValue(fd, "version", VERSION);
+
+    writeText(fd, ", ");
+    writeHostAdapterList(fd);
+
 	writeText(fd, " };");
 }
 
@@ -88,4 +95,37 @@ static void writeTxtConfigValue(SOCKET fd, char* key, char* value){
     char txt[64];
     sprintf(txt, "'%s' : '%s'", key, value);
     writeText(fd, txt);
+}
+
+static void writeHostAdapterList(SOCKET fd){
+    sqlite3_stmt* stmt;
+
+    prepareSql(&stmt, HOST_ADAPTER_SQL);
+    struct Data* result = runSelect(stmt);
+    struct Data* currentResult = result;
+
+    writeText(fd, "'adapters' : [");
+    int firstResult = TRUE;
+    while(currentResult != NULL){
+        if (firstResult == FALSE){
+            writeText(fd, ",");
+        }
+
+        writeText(fd, "{");
+        if (strcmp("", currentResult->hs) == 0){
+            writeTxtConfigValue(fd, "hs", "local");
+        } else {
+            writeTxtConfigValue(fd, "hs", currentResult->hs);
+        }
+        writeText(fd, ",");
+        writeTxtConfigValue(fd, "ad", currentResult->ad);
+        writeText(fd, "}");
+
+        firstResult = FALSE;
+        currentResult = currentResult->next;
+    }
+    writeText(fd, "]");
+
+    sqlite3_finalize(stmt);
+    freeData(result);
 }

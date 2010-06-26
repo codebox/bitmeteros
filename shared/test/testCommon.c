@@ -157,12 +157,16 @@ static void testStrToLong(CuTest *tc){
 }
 
 CuSuite* commonGetSuite() {
-    putenv("TZ=GMT"); // Need this because the date/time fns use localtime
+	setTzToGmt();
+	    
     CuSuite* suite = CuSuiteNew();
     SUITE_ADD_TEST(suite, testFormatAmounts);
     SUITE_ADD_TEST(suite, testToTime);
     SUITE_ADD_TEST(suite, testToDate);
     SUITE_ADD_TEST(suite, testMakeHexString);
     SUITE_ADD_TEST(suite, testStrToLong);
+    
+    restoreTz();
+    
     return suite;
 }

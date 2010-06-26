@@ -20,7 +20,10 @@ function buildModel(){
 		'queryResultsPerPage' : 20,
 		'queryResults' : [],
 		'dlColour' : config.dlColour,
-		'ulColour' : config.ulColour
+		'ulColour' : config.ulColour,
+		'adapters' : '',
+		'binaryUnits' : 'true',
+		'showFilterWarning' : 'true'
 	};
 	
 	function get(key){
@@ -92,13 +95,13 @@ function buildModel(){
 	
  // Show/hide the upload and download data on the Monitor page	
 	model.getMonitorShowDl = function(){
-		return get('monitorShowDl') === 'true' ? true : false;
+		return get('monitorShowDl') === 'true';// ? true : false;
 	}
 	model.setMonitorShowDl = function(showFlag){
 		set('monitorShowDl', '' + showFlag, true);
 	}
 	model.getMonitorShowUl = function(){
-		return get('monitorShowUl') === 'true' ? true : false;
+		return get('monitorShowUl') === 'true';// ? true : false;
 	}
 	model.setMonitorShowUl = function(showFlag){
 		set('monitorShowUl', '' + showFlag, true);
@@ -155,6 +158,30 @@ function buildModel(){
 		set('ulColour', ulColour, true);
 	}
 	
+ // Value determines which adapters we display data for 
+	model.getAdapters = function(){
+		return get('adapters');
+	}
+	model.setAdapters = function(adapters){
+		set('adapters', adapters, true);
+	}
+
+ // Determines if a warning is shown when a data filter is active
+	model.getShowFilterWarning = function(){
+		return get('showFilterWarning') === 'true';
+	}
+	model.setShowFilterWarning = function(showFilterWarning){
+		set('showFilterWarning', '' + showFilterWarning, true);
+	}
+
+ // Determines whether we use binary or decimal units
+	model.getBinaryUnits = function(){
+		return get('binaryUnits') === 'true';
+	}
+	model.setBinaryUnits = function(binaryUnits){
+		set('binaryUnits', '' + binaryUnits, true);
+	}
+
 	return model;
 }
 

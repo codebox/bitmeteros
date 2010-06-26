@@ -97,6 +97,7 @@ Contains platform-specific code for obtaining the network stats that we need.
 		if_indextoname(ifHdr->ifm_index, ifName);
 
 	    setAddress(data, ifName);
+	    setHost(data, "");
 
 	    return data;
 	}
@@ -158,6 +159,7 @@ Contains platform-specific code for obtaining the network stats that we need.
 		data->dl = dl;
 	    data->ul = ul;
 	    setAddress(data, ifName);
+	    setHost(data, "");
 
 	    return data;
 	}
@@ -201,6 +203,7 @@ Contains platform-specific code for obtaining the network stats that we need.
 				    char hexString[MAC_ADDR_LEN * 2 + 1];
 				    makeHexString(hexString, (char*) &(pIfRow->bPhysAddr), MAC_ADDR_LEN);
 				    setAddress(thisData, hexString);
+				    setHost(thisData, "");
 
                  // Windows Vista and later include duplicate entries in the IF table results, filter them out here
                     int isDuplicate = FALSE;

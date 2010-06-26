@@ -36,7 +36,7 @@ void testQueryEmptyDb(CuTest *tc) {
  // Check that we behave correctly when the data table is empty
     emptyDb();
 
-    struct Data* data = getQueryValues(makeTs("2009-03-03 08:00:00"), makeTs("2009-03-03 11:00:00"), QUERY_GROUP_HOURS);
+    struct Data* data = getQueryValues(makeTs("2009-03-03 08:00:00"), makeTs("2009-03-03 11:00:00"), QUERY_GROUP_HOURS, NULL, NULL);
     CuAssertTrue(tc, data == NULL);
 }
 
@@ -44,10 +44,21 @@ void testQueryNoDataInRange(CuTest *tc) {
  // Check that we behave correctly when no data matches the criteria
     emptyDb();
 
-    addDbRow(makeTs("2009-03-03 08:00:00"), 3600, "eth0", 1, 2, NULL); // covers 07:00-08:00 so out of range
-    addDbRow(makeTs("2009-03-03 12:00:00"), 3600, "eth0", 1, 2, NULL); // covers 11:00-12:00 so out of range
+    addDbRow(makeTs("2009-03-03 08:00:00"), 3600, "eth0", 1, 2, ""); // covers 07:00-08:00 so out of range
+    addDbRow(makeTs("2009-03-03 12:00:00"), 3600, "eth0", 1, 2, ""); // covers 11:00-12:00 so out of range
 
-    struct Data* data = getQueryValues(makeTs("2009-03-03 08:00:00"), makeTs("2009-03-03 11:00:00"), QUERY_GROUP_HOURS);
+    struct Data* data = getQueryValues(makeTs("2009-03-03 08:00:00"), makeTs("2009-03-03 11:00:00"), QUERY_GROUP_HOURS, NULL, NULL);
+    CuAssertTrue(tc, data == NULL);
+}
+
+void testQueryNoDataForHost(CuTest *tc) {
+ // Check that we behave correctly when no data matches the criteria
+    emptyDb();
+
+    addDbRow(makeTs("2009-03-03 08:00:00"), 3600, "eth0", 1, 2, "");
+    addDbRow(makeTs("2009-03-03 12:00:00"), 3600, "eth0", 1, 2, "");
+
+    struct Data* data = getQueryValues(makeTs("2009-03-03 00:00:00"), makeTs("2009-03-04 00:00:00"), QUERY_GROUP_HOURS, "host1", NULL);
     CuAssertTrue(tc, data == NULL);
 }
 
@@ -55,12 +66,12 @@ void testQueryDataInRangeHours(CuTest *tc) {
  // Check that results are correct when we group by hour
     emptyDb();
 
-    addDbRow(makeTs("2009-03-03 08:00:00"), 3600, "eth0", 1, 11, NULL); // covers 07:00-08:00 so out of range
-    addDbRow(makeTs("2009-03-03 09:00:00"), 3600, "eth0", 2, 12, NULL); // covers 08:00-09:00 so in range
-    addDbRow(makeTs("2009-03-03 11:00:00"), 3600, "eth0", 3, 13, NULL); // covers 10:00-11:00 so in range
-    addDbRow(makeTs("2009-03-03 12:00:00"), 3600, "eth0", 4, 14, NULL); // covers 11:00-12:00 so out of range
+    addDbRow(makeTs("2009-03-03 08:00:00"), 3600, "eth0", 1, 11, ""); // covers 07:00-08:00 so out of range
+    addDbRow(makeTs("2009-03-03 09:00:00"), 3600, "eth0", 2, 12, ""); // covers 08:00-09:00 so in range
+    addDbRow(makeTs("2009-03-03 11:00:00"), 3600, "eth0", 3, 13, ""); // covers 10:00-11:00 so in range
+    addDbRow(makeTs("2009-03-03 12:00:00"), 3600, "eth0", 4, 14, ""); // covers 11:00-12:00 so out of range
 
-    struct Data* data = getQueryValues(makeTs("2009-03-03 08:00:00"), makeTs("2009-03-03 11:00:00"), QUERY_GROUP_HOURS);
+    struct Data* data = getQueryValues(makeTs("2009-03-03 08:00:00"), makeTs("2009-03-03 11:00:00"), QUERY_GROUP_HOURS, NULL, NULL);
 
     checkData(tc, data, makeTs("2009-03-03 09:00:00"), 3600, NULL, 2, 12, NULL);
     data = data->next;
@@ -75,19 +86,19 @@ void testQueryDataInRangeDays(CuTest *tc) {
  //  // Check that results are correct when we group by day
     emptyDb();
 
-    addDbRow(makeTs("2009-03-03 00:00:00"), 3600, "eth0", 1, 11, NULL); // out of range
+    addDbRow(makeTs("2009-03-03 00:00:00"), 3600, "eth0", 1, 11,""); // out of range
 
-    addDbRow(makeTs("2009-03-03 01:00:00"), 3600, "eth0", 2, 12, NULL);
-    addDbRow(makeTs("2009-03-03 23:00:00"), 3600, "eth0", 3, 13, NULL); // data for the 3rd
-    addDbRow(makeTs("2009-03-04 00:00:00"), 3600, "eth0", 4, 14, NULL);
+    addDbRow(makeTs("2009-03-03 01:00:00"), 3600, "eth0", 2, 12, "");
+    addDbRow(makeTs("2009-03-03 23:00:00"), 3600, "eth0", 3, 13, ""); // data for the 3rd
+    addDbRow(makeTs("2009-03-04 00:00:00"), 3600, "eth0", 4, 14, "");
 
-    addDbRow(makeTs("2009-03-04 01:00:00"), 3600, "eth0", 5, 15, NULL);
-    addDbRow(makeTs("2009-03-04 23:00:00"), 3600, "eth0", 6, 16, NULL); // data for the 4th
-    addDbRow(makeTs("2009-03-05 00:00:00"), 3600, "eth0", 7, 17, NULL);
+    addDbRow(makeTs("2009-03-04 01:00:00"), 3600, "eth0", 5, 15, "");
+    addDbRow(makeTs("2009-03-04 23:00:00"), 3600, "eth0", 6, 16, ""); // data for the 4th
+    addDbRow(makeTs("2009-03-05 00:00:00"), 3600, "eth0", 7, 17, "");
 
-    addDbRow(makeTs("2009-03-05 01:00:00"), 3600, "eth0", 8, 18, NULL); // out of range
+    addDbRow(makeTs("2009-03-05 01:00:00"), 3600, "eth0", 8, 18, ""); // out of range
 
-    struct Data* data = getQueryValues(makeTs("2009-03-03 00:00:00"), makeTs("2009-03-05 00:00:00"), QUERY_GROUP_DAYS);
+    struct Data* data = getQueryValues(makeTs("2009-03-03 00:00:00"), makeTs("2009-03-05 00:00:00"), QUERY_GROUP_DAYS, NULL, NULL);
 
     checkData(tc, data, makeTs("2009-03-04 00:00:00"), 3600 * 24, NULL, 9, 39, NULL); // data for the 3rd, remember ts is the END of the interval
     data = data->next;
@@ -102,24 +113,24 @@ void testQueryDataInRangeMonths(CuTest *tc) {
  // Check that results are correct when we group by month
     emptyDb();
 
-    addDbRow(makeTs("2009-03-01 00:00:00"), 3600, "eth0", 1, 101, NULL); // out of range
+    addDbRow(makeTs("2009-03-01 00:00:00"), 3600, "eth0", 1, 101, ""); // out of range
 
-    addDbRow(makeTs("2009-03-01 01:00:00"), 3600, "eth0", 2, 102, NULL);
-    addDbRow(makeTs("2009-03-30 23:00:00"), 3600, "eth0", 3, 103, NULL); // data for March
-    addDbRow(makeTs("2009-04-01 00:00:00"), 3600, "eth0", 4, 104, NULL);
+    addDbRow(makeTs("2009-03-01 01:00:00"), 3600, "eth0", 2, 102, "");
+    addDbRow(makeTs("2009-03-30 23:00:00"), 3600, "eth0", 3, 103, ""); // data for March
+    addDbRow(makeTs("2009-04-01 00:00:00"), 3600, "eth0", 4, 104, "");
 
-    addDbRow(makeTs("2009-04-01 01:00:00"), 3600, "eth0", 5, 105, NULL);
-    addDbRow(makeTs("2009-04-30 23:00:00"), 3600, "eth0", 6, 106, NULL); // data for April
-    addDbRow(makeTs("2009-05-01 00:00:00"), 3600, "eth0", 7, 107, NULL);
+    addDbRow(makeTs("2009-04-01 01:00:00"), 3600, "eth0", 5, 105, "");
+    addDbRow(makeTs("2009-04-30 23:00:00"), 3600, "eth0", 6, 106, ""); // data for April
+    addDbRow(makeTs("2009-05-01 00:00:00"), 3600, "eth0", 7, 107, "");
 
-    addDbRow(makeTs("2009-05-01 01:00:00"), 3600, "eth0", 8, 108, NULL); // out of range
+    addDbRow(makeTs("2009-05-01 01:00:00"), 3600, "eth0", 8, 108, ""); // out of range
 
-    struct Data* data = getQueryValues(makeTs("2009-03-01 00:00:00"), makeTs("2009-05-01 00:00:00"), QUERY_GROUP_MONTHS);
+    struct Data* data = getQueryValues(makeTs("2009-03-01 00:00:00"), makeTs("2009-05-01 00:00:00"), QUERY_GROUP_MONTHS, NULL, NULL);
 
     checkData(tc, data, makeTs("2009-04-01 00:00:00"), 31 * 3600 * 24, NULL, 9, 309, NULL); // data for March, remember ts is the END of the interval
     data = data->next;
 
-    checkData(tc, data, makeTs("2009-05-01 00:00:00"), 30 * 3600 * 24, NULL, 18, 318, NULL); // data for April
+    checkData(tc, data, makeTs("2009-05-01 00:00:00"), (30 * 24 - 1) * 3600, NULL, 18, 318, NULL); // data for April - switch to BST happens so lose 1 hour
     data = data->next;
 
     CuAssertTrue(tc, data == NULL);
@@ -129,19 +140,19 @@ void testQueryDataInRangeYears(CuTest *tc) {
  // Check that results are correct when we group by year
     emptyDb();
 
-    addDbRow(makeTs("2007-01-01 00:00:00"), 3600, "eth0", 1, 101, NULL); // out of range
+    addDbRow(makeTs("2007-01-01 00:00:00"), 3600, "eth0", 1, 101, ""); // out of range
 
-    addDbRow(makeTs("2007-01-01 01:00:00"), 3600, "eth0", 2, 102, NULL);
-    addDbRow(makeTs("2007-12-31 23:00:00"), 3600, "eth0", 3, 103, NULL); // data for 2007
-    addDbRow(makeTs("2008-01-01 00:00:00"), 3600, "eth0", 4, 104, NULL);
+    addDbRow(makeTs("2007-01-01 01:00:00"), 3600, "eth0", 2, 102, "");
+    addDbRow(makeTs("2007-12-31 23:00:00"), 3600, "eth0", 3, 103, ""); // data for 2007
+    addDbRow(makeTs("2008-01-01 00:00:00"), 3600, "eth0", 4, 104, "");
 
-    addDbRow(makeTs("2008-01-01 01:00:00"), 3600, "eth0", 5, 105, NULL);
-    addDbRow(makeTs("2008-12-31 23:00:00"), 3600, "eth0", 6, 106, NULL); // data for 2008
-    addDbRow(makeTs("2009-01-01 00:00:00"), 3600, "eth0", 7, 107, NULL);
+    addDbRow(makeTs("2008-01-01 01:00:00"), 3600, "eth0", 5, 105, "");
+    addDbRow(makeTs("2008-12-31 23:00:00"), 3600, "eth0", 6, 106, ""); // data for 2008
+    addDbRow(makeTs("2009-01-01 00:00:00"), 3600, "eth0", 7, 107, "");
 
-    addDbRow(makeTs("2009-01-01 01:00:00"), 3600, "eth0", 8, 108, NULL); // out of range
+    addDbRow(makeTs("2009-01-01 01:00:00"), 3600, "eth0", 8, 108, ""); // out of range
 
-    struct Data* data = getQueryValues(makeTs("2007-01-01 00:00:00"), makeTs("2009-01-01 00:00:00"), QUERY_GROUP_YEARS);
+    struct Data* data = getQueryValues(makeTs("2007-01-01 00:00:00"), makeTs("2009-01-01 00:00:00"), QUERY_GROUP_YEARS, NULL, NULL);
 
     checkData(tc, data, makeTs("2008-01-01 00:00:00"), 365 * 3600 * 24, NULL, 9, 309, NULL); // data for 2007, remember ts is the END of the interval
     data = data->next;
@@ -156,13 +167,13 @@ void testQueryDataNarrowValueRangeSingleResult(CuTest *tc) {
  // Check that results are correct when the range of values in the db is narrower than the range requested
     emptyDb();
 
-    addDbRow(makeTs("2008-02-01 01:00:00"), 3600, "eth0", 1, 101, NULL);
-    addDbRow(makeTs("2008-03-31 23:00:00"), 3600, "eth0", 2, 102, NULL);
-    addDbRow(makeTs("2008-04-01 00:00:00"), 3600, "eth0", 3, 103, NULL);
+    addDbRow(makeTs("2008-02-01 01:00:00"), 3600, "eth0", 1, 101, "");
+    addDbRow(makeTs("2008-03-31 23:00:00"), 3600, "eth0", 2, 102, "");
+    addDbRow(makeTs("2008-04-01 00:00:00"), 3600, "eth0", 3, 103, "");
 
-    struct Data* data = getQueryValues(makeTs("2008-01-01 00:00:00"), makeTs("2009-01-01 00:00:00"), QUERY_GROUP_YEARS);
+    struct Data* data = getQueryValues(makeTs("2008-01-01 00:00:00"), makeTs("2009-01-01 00:00:00"), QUERY_GROUP_YEARS, NULL, NULL);
 
-    checkData(tc, data, makeTs("2008-04-01 00:00:00"), 5180401, NULL, 6, 306, NULL);
+    checkData(tc, data, makeTs("2008-04-01 00:00:00"), 5184000, NULL, 6, 306, NULL);
     data = data->next;
 
     CuAssertTrue(tc, data == NULL);
@@ -172,17 +183,17 @@ void testQueryDataNarrowValueRangeMultiResults(CuTest *tc) {
  // Check that results are correct when the range of values in the db is narrower than the range requested
     emptyDb();
 
-    addDbRow(makeTs("2007-05-01 01:00:00"), 3600, "eth0", 1, 101, NULL);
+    addDbRow(makeTs("2007-05-01 01:00:00"), 3600, "eth0", 1, 101, "");
 
-    addDbRow(makeTs("2008-02-01 01:00:00"), 3600, "eth0", 2, 102, NULL);
-    addDbRow(makeTs("2008-03-31 23:00:00"), 3600, "eth0", 3, 103, NULL);
-    addDbRow(makeTs("2008-04-01 00:00:00"), 3600, "eth0", 4, 104, NULL);
+    addDbRow(makeTs("2008-02-01 01:00:00"), 3600, "eth0", 2, 102, "");
+    addDbRow(makeTs("2008-03-31 23:00:00"), 3600, "eth0", 3, 103, "");
+    addDbRow(makeTs("2008-04-01 00:00:00"), 3600, "eth0", 4, 104, "");
 
-    addDbRow(makeTs("2009-05-01 01:00:00"), 3600, "eth0", 5, 105, NULL);
+    addDbRow(makeTs("2009-05-01 01:00:00"), 3600, "eth0", 5, 105, "");
 
-    struct Data* data = getQueryValues(makeTs("2006-01-01 00:00:00"), makeTs("2011-01-01 00:00:00"), QUERY_GROUP_YEARS);
+    struct Data* data = getQueryValues(makeTs("2006-01-01 00:00:00"), makeTs("2011-01-01 00:00:00"), QUERY_GROUP_YEARS, NULL, NULL);
 
-    checkData(tc, data, makeTs("2008-01-01 00:00:00"), 21164401, NULL, 1, 101, NULL);
+    checkData(tc, data, makeTs("2008-01-01 00:00:00"), 21171600, NULL, 1, 101, NULL); // 245 days plus 1 hour for BST to GMT change
 
     data = data->next;
     checkData(tc, data, makeTs("2009-01-01 00:00:00"), 31622400, NULL, 9, 309, NULL);
@@ -199,23 +210,93 @@ void testQueryLargeQueryRange(CuTest *tc) {
  // Check that results are correct when we dont group, and just produce a total
     emptyDb();
 
-    addDbRow(makeTs("2009-03-03 08:00:00"), 3600, "eth0", 1, 11, NULL);
-    addDbRow(makeTs("2009-03-03 09:00:00"), 3600, "eth0", 2, 12, NULL);
-    addDbRow(makeTs("2009-03-03 11:00:00"), 3600, "eth0", 3, 13, NULL);
-    addDbRow(makeTs("2009-03-03 12:00:00"), 3600, "eth0", 4, 14, NULL);
+    addDbRow(makeTs("2009-03-03 08:00:00"), 3600, "eth0", 1, 11, "");
+    addDbRow(makeTs("2009-03-03 09:00:00"), 3600, "eth0", 2, 12, "");
+    addDbRow(makeTs("2009-03-03 11:00:00"), 3600, "eth0", 3, 13, "");
+    addDbRow(makeTs("2009-03-03 12:00:00"), 3600, "eth0", 4, 14, "");
 
-    struct Data* data = getQueryValues(makeTs("2000-01-01 00:00:00"), makeTs("2019-01-01 00:00:00"), QUERY_GROUP_TOTAL);
+    struct Data* data = getQueryValues(makeTs("2000-01-01 00:00:00"), makeTs("2019-01-01 00:00:00"), QUERY_GROUP_TOTAL, NULL, NULL);
 
-    checkData(tc, data, makeTs("2009-03-03 12:00:00"), 14401, NULL, 10, 50, NULL);
+    checkData(tc, data, makeTs("2009-03-03 12:00:00"), 18000, NULL, 10, 50, NULL);
+    data = data->next;
+
+    CuAssertTrue(tc, data == NULL);
+}
+
+void testQueryFilterByHost(CuTest *tc) {
+ // Check that results are correct when we specify that only data for a single host should be returned
+    emptyDb();
+
+    addDbRow(makeTs("2009-03-02 14:00:00"), 3600, "eth0", 256, 2560, "host1"); // out of range
+
+    addDbRow(makeTs("2009-03-03 08:00:00"), 3600, "eth0", 1,   10, "");
+    addDbRow(makeTs("2009-03-03 09:00:00"), 3600, "eth0", 2,   20, "host1");
+    addDbRow(makeTs("2009-03-03 11:00:00"), 3600, "eth0", 4,   40, "host2");
+    addDbRow(makeTs("2009-03-03 12:00:00"), 3600, "eth0", 8,   80, "");
+    addDbRow(makeTs("2009-03-03 13:00:00"), 3600, "eth0", 16, 160, "host1");
+    addDbRow(makeTs("2009-03-03 14:00:00"), 3600, "eth0", 32, 320, "host3");
+    addDbRow(makeTs("2009-03-03 14:00:00"), 3600, "eth0", 64, 640, "host1");
+
+    addDbRow(makeTs("2009-03-04 14:00:00"), 3600, "eth0", 128, 1280, "host1"); // out of range
+
+    struct Data* data1 = getQueryValues(makeTs("2009-03-03 00:00:00"), makeTs("2009-03-04 00:00:00"), QUERY_GROUP_HOURS, "host1", NULL);
+
+    checkData(tc, data1, makeTs("2009-03-03 09:00:00"), 3600, NULL, 2, 20, NULL);
+    data1 = data1->next;
+
+    checkData(tc, data1, makeTs("2009-03-03 13:00:00"), 3600, NULL, 16, 160, NULL);
+    data1 = data1->next;
+
+    checkData(tc, data1, makeTs("2009-03-03 14:00:00"), 3600, NULL, 64, 640, NULL);
+    data1 = data1->next;
+
+    CuAssertTrue(tc, data1 == NULL);
+
+    struct Data* data2 = getQueryValues(makeTs("2009-03-03 00:00:00"), makeTs("2009-03-04 00:00:00"), QUERY_GROUP_HOURS, "", NULL);
+
+    checkData(tc, data2, makeTs("2009-03-03 08:00:00"), 3600, NULL, 1, 10, NULL);
+    data2 = data2->next;
+
+    checkData(tc, data2, makeTs("2009-03-03 12:00:00"), 3600, NULL, 8, 80, NULL);
+    data2 = data2->next;
+
+    CuAssertTrue(tc, data2 == NULL);
+}
+
+void testQueryFilterByHostAndAdapter(CuTest *tc) {
+ // Check that results are correct when we specify that only data for a single host/adapter combination should be returned
+    emptyDb();
+
+    addDbRow(makeTs("2009-03-01 00:00:00"), 3600, "eth0", 1, 101, "host1"); // out of range
+
+    addDbRow(makeTs("2009-03-01 01:00:00"), 3600, "eth0", 2, 102, "");
+    addDbRow(makeTs("2009-03-30 23:00:00"), 3600, "eth0", 3, 103, "");
+    addDbRow(makeTs("2009-04-01 00:00:00"), 3600, "eth0", 4, 104, "");
+
+    addDbRow(makeTs("2009-04-01 01:00:00"), 3600, "eth0", 5, 105, "");
+    addDbRow(makeTs("2009-04-30 23:00:00"), 3600, "eth0", 6, 106, "");
+    addDbRow(makeTs("2009-05-01 00:00:00"), 3600, "eth0", 7, 107, "");
+
+    addDbRow(makeTs("2009-05-01 01:00:00"), 3600, "eth0", 8, 108, "host1"); // out of range
+
+    struct Data* data = getQueryValues(makeTs("2009-03-01 00:00:00"), makeTs("2009-05-01 00:00:00"), QUERY_GROUP_MONTHS, NULL, NULL);
+
+    checkData(tc, data, makeTs("2009-04-01 00:00:00"), 31 * 3600 * 24, NULL, 9, 309, NULL); // data for March, remember ts is the END of the interval
+    data = data->next;
+
+    checkData(tc, data, makeTs("2009-05-01 00:00:00"), 30 * 3600 * 24, NULL, 18, 318, NULL); // data for April
     data = data->next;
 
     CuAssertTrue(tc, data == NULL);
 }
 
 CuSuite* clientQueryGetSuite() {
+	void setTzToGmt();
+	
     CuSuite* suite = CuSuiteNew();
     SUITE_ADD_TEST(suite, testQueryEmptyDb);
     SUITE_ADD_TEST(suite, testQueryNoDataInRange);
+    SUITE_ADD_TEST(suite, testQueryNoDataForHost);
     SUITE_ADD_TEST(suite, testQueryDataInRangeHours);
     SUITE_ADD_TEST(suite, testQueryDataInRangeDays);
     SUITE_ADD_TEST(suite, testQueryDataInRangeMonths);
@@ -223,5 +304,9 @@ CuSuite* clientQueryGetSuite() {
     SUITE_ADD_TEST(suite, testQueryLargeQueryRange);
     SUITE_ADD_TEST(suite, testQueryDataNarrowValueRangeSingleResult);
     SUITE_ADD_TEST(suite, testQueryDataNarrowValueRangeMultiResults);
+    SUITE_ADD_TEST(suite, testQueryFilterByHost);
+    
+    restoreTz();
+    
     return suite;
 }

@@ -33,10 +33,13 @@ $(document).ready(function(){
 			
 			if (errList.length === 0){
 			 // The date values were ok, so continue
-				var req = '/query?from=' + fd + '&to=' + td + '&group=' + $('#queryDisplay').val();
-				$.get(req, function(objQuery){
-					 // Store the results, we need them elsewhere
+				var reqTxt = addAdaptersToRequest('/query?from=' + fd + '&to=' + td + '&group=' + $('#queryDisplay').val());
+				$.get(reqTxt, function(objQuery){
+					 // Store the results, adding in combined totals - we need them elsewhere
 						var results = doEval(objQuery);
+						$.each(results, function(i,o){
+						    o.cm = o.dl + o.ul;    
+						});
 						model.setQueryResults(results);
 						model.setQueryGrouping($('#queryDisplay').val());
 						queryResultsGridObj[0].grid.populate();
@@ -88,7 +91,7 @@ $(document).ready(function(){
 				var rows = [];
 				$.each(data, function(i,o){
 				 // Subtract the duration from the timestamp so the new value represents the start of the interval
-					rows.push({id: o.ts, cell: [o.ts - o.dr, o.dl, o.ul]});
+					rows.push({id: o.ts, cell: [o.ts - o.dr, o.dl, o.ul, o.dl + o.ul]});
 				});
 				
 				return {total : model.getQueryResults().length, page : model.getQueryResultsPage(), rows: rows};
@@ -97,7 +100,8 @@ $(document).ready(function(){
 			colModel : [
 				{display: 'Date',     name : 'ts', width : 180, sortable : true, align: 'center'},
 				{display: 'Download', name : 'dl', width : 120, sortable : true, align: 'center'},
-				{display: 'Upload',   name : 'ul', width : 120, sortable : true, align: 'center'}
+				{display: 'Upload',   name : 'ul', width : 120, sortable : true, align: 'center'},
+				{display: 'Combined', name : 'cm', width : 120, sortable : true, align: 'center'}
 			],
 			sortname: "ts",
 			sortorder: "desc",
@@ -109,7 +113,7 @@ $(document).ready(function(){
 				model.setQueryResultsPerPage(newValue);
 			},
 			showTableToggleBtn: true,
-			width: 500,
+			width: 600,
 			height: 200,
 			getData : function(params){
 			 // This is non-standard, because we don't want flexigrid to do our AJAX calls - it gets data from here instead
@@ -161,6 +165,7 @@ $(document).ready(function(){
 					}
 				}, 
 				formatAmount, 
+				formatAmount,
 				formatAmount
 			],
 			onReload : runQuery

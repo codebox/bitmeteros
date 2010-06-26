@@ -76,7 +76,7 @@ void doQuery(){
 		printf("To:   %s %s\n", date2, time2);
 
 	 // Run the query here
-        struct Data* data = getQueryValues(prefs.rangeFrom, prefs.rangeTo, prefs.group);
+        struct Data* data = getQueryValues(prefs.rangeFrom, prefs.rangeTo, prefs.group, prefs.host, prefs.adapter);
         struct Data* initData = data;
 
 	 // How we display the results depends on how they are grouped...
@@ -194,7 +194,11 @@ static void printResultsForInterval(struct Data* result, char* rangeTxt){
  // Print the date/time range for this interval, followed by the formatted ul/dl values
 	char dlTxt[20];
 	char ulTxt[20];
-	formatAmounts(result->dl, result->ul, dlTxt, ulTxt, prefs.units);
 
+	if (result != NULL){
+        formatAmounts(result->dl, result->ul, dlTxt, ulTxt, prefs.units);
+	} else {
+	    formatAmounts(0, 0, dlTxt, ulTxt, prefs.units);
+	}
 	printf("%s DL=%s UL=%s\n", rangeTxt, dlTxt, ulTxt);
 }

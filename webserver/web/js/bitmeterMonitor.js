@@ -49,7 +49,7 @@ function updateMonitor(){
 			
 		 /* Use the most recent values to display in the 'Current' fields to the right of the graph, but ignore
 		 	any values which have timestamps in the future (this can happen if we have synchronised with another
-		 	host which has a clock set slightly ahead of the local clock). We cant assume there will be a value
+		 	host which has a clock set ahead of the local clock). We can't assume there will be a value
 		 	with exactly ts===0, so count anything within the last 5 seconds, picking the newest values that meet 
 		 	all these criteria. */
 			if (o.ts < bestTs && o.ts >= 0){
@@ -74,7 +74,8 @@ function updateMonitor(){
 	}
 
 // Sends the AJAX request to get the Monitor data
-	$.get('monitor?ts=' + getMonitorTs(), function(responseTxt){
+	var reqTxt = addAdaptersToRequest('monitor?ts=' + getMonitorTs());
+	$.get(reqTxt, function(responseTxt){
 			var response = doEval(responseTxt);
 			/* The response is formatted as follows, with the 'ts' values being offsets from the serverTime:
 				{ serverTime : 123456, 
@@ -112,6 +113,7 @@ function updateMonitor(){
 		 // Finally update the display with the new data
 			updateMonitorGraph(allData, monitorGraph, 1, model.getMonitorShowDl(), model.getMonitorShowUl());
 			updateFigures(allData);
+			stopwatch.newData(response.serverTime, allData);
 		});
 }
 function tabShowMonitor(){
@@ -122,9 +124,127 @@ function tabShowMonitor(){
  	$('#monitorDlCurrent, #monitorDlPeak, #monitorDlAverage').css('color', model.getDownloadColour());
  	$('#monitorUlCurrent, #monitorUlPeak, #monitorUlAverage').css('color', model.getUploadColour());
 
+	onTabHide = function(){
+		$('#swDialog').dialog("close");
+	}
+
 	$(window).resize();
 };
+                                                             
+var stopwatch = (function(){
+    var sw = {};
+    var timer;
+    var time, dlTotal, ulTotal, dlAvg, ulAvg, dlMax, ulMax, dlMin, ulMin;
+    var isRunning = false;
+    var latestServerTime = 0;
+    
+    sw.start = function(){
+        if (!timer){
+            timer = setInterval(function(){
+                time++;
+                sw.handler(sw);
+            }, 1000);   
+            isRunning = true;
+        }
+    };
+    sw.stop = function(){
+        if (timer){
+            clearInterval(timer);
+            timer = null;   
+            latestServerTime = 0;
+            sw.handler(sw);
+            isRunning = false;
+        }
+    };
+    sw.isRunning = function(){
+        return isRunning;  
+    };
+    sw.reset = function(){
+        time = dlTotal = ulTotal = dlAvg = ulAvg = dlMax = ulMax = 0;  
+        dlMin = ulMin = Number.MAX_VALUE;
+        latestServerTime = 0;
+        sw.handler && sw.handler(sw);
+    };
+    sw.setHandler = function(callback){
+        this.handler = callback;
+    };
+    function getTotalsAfterTs(ts, data){
+        var dlTotal = 0, ulTotal = 0;
 
+        $.each(data, function(i,o){
+            if (o.ts < ts) {
+                dlTotal += o.dl;   
+                ulTotal += o.ul;
+            } else {
+                return false; // data is sorted on ts so stop looping   
+            }
+        });
+        return [dlTotal, ulTotal];
+    }
+    function updateTotals(dl, ul){
+        dlTotal += dl;
+        ulTotal += ul;
+        
+        dlAvg = (time === 0 ? 0 : (dlTotal / time));
+        ulAvg = (time === 0 ? 0 : (ulTotal / time)); 
+        
+        dlMax = (dl > dlMax ? dl : dlMax);
+        ulMax = (ul > ulMax ? ul : ulMax);
+        
+        dlMin = (dl < dlMin ? dl : dlMin); 
+        ulMin = (ul < ulMin ? ul : ulMin);
+    }
+    sw.newData = function(serverTime, data){
+        var totals, secondsSinceLastData;
+        if (isRunning){
+            if (latestServerTime === 0) {
+             // This is the first batch of data since the stopwatch started
+                secondsSinceLastData = 1;
+            } else {
+                secondsSinceLastData = serverTime - latestServerTime;
+            }
+            totals = getTotalsAfterTs(secondsSinceLastData, data);
+            updateTotals(totals[0], totals[1]);
+            latestServerTime = serverTime - data[0].ts;
+        }
+    };
+    
+    sw.getTime = function(){
+        return time;
+    };
+    
+    sw.getDlTotal = function(){
+        return dlTotal;
+    };
+    sw.getUlTotal = function(){
+        return ulTotal;
+    };
+    
+    sw.getDlAvg = function(){
+        return dlAvg;
+    };
+    sw.getUlAvg = function(){
+        return ulAvg;
+    };
+    
+    sw.getDlMax = function(){
+        return dlMax;
+    };
+    sw.getUlMax = function(){
+        return ulMax;
+    };
+    
+    sw.getDlMin = function(){
+        return dlMin === Number.MAX_VALUE ? 0 : dlMin;
+    };
+    sw.getUlMin = function(){
+        return ulMin === Number.MAX_VALUE ? 0 : ulMin;
+    };
+    
+    sw.reset();
+    return sw;
+})();
+                                                             
 $(document).ready(function(){
 	 // Set up the event handlers for the Show Upload/Download checkboxes
 		$('#monitorShowDl').click(function(){
@@ -197,8 +317,69 @@ $(document).ready(function(){
 			}
 		});			
 		
+	 // Open the Stopwatch dialog when the icon is clicked
+		var swDialog = $('#swDialog').dialog({
+		    autoOpen : false,
+		    resizable : false,
+	        buttons :  { "OK" : function() { 
+	            $(this).dialog("close"); 
+	        }},
+			close : function(){
+	            stopwatch.stop();
+	            stopwatch.reset();
+			}
+
+		});
+		$('#monitorStopwatchIcon').click(function(){
+		        //$('.swDlValue').css('color', model.getDownloadColour());
+		        //$('.swUlValue').css('color', model.getUploadColour());
+				swDialog.dialog("open");
+				setSwButtonState();
+			});
+
+        var swReadout = $('#swReadout');
+        var swDlTotal = $('#swDlTotal');
+        var swUlTotal = $('#swUlTotal');
+        var swDlAvg   = $('#swDlAvg');
+        var swUlAvg   = $('#swUlAvg');
+        var swDlMax   = $('#swDlMax');
+        var swUlMax   = $('#swUlMax');
+        var swDlMin   = $('#swDlMin');
+        var swUlMin   = $('#swUlMin');
+        
+        stopwatch.setHandler(function(sw){
+            swReadout.html(formatInterval(sw.getTime(), FORMAT_INTERVAL_TINY));
+            swDlTotal.html(formatAmount(sw.getDlTotal()));
+            swUlTotal.html(formatAmount(sw.getUlTotal()));
+            swDlAvg.html(formatAmount(sw.getDlAvg()) + '/s');
+            swUlAvg.html(formatAmount(sw.getUlAvg()) + '/s');
+            swDlMax.html(formatAmount(sw.getDlMax()) + '/s');
+            swUlMax.html(formatAmount(sw.getUlMax()) + '/s');
+            swDlMin.html(formatAmount(sw.getDlMin()) + '/s');
+            swUlMin.html(formatAmount(sw.getUlMin()) + '/s');                                    
+        });
+		function setSwButtonState(){
+            if (stopwatch.isRunning()){
+                $('#swStopGo').attr('src', 'css/images/pause.png').attr('title', 'Pause');
+            } else {
+                $('#swStopGo').attr('src', 'css/images/play.png').attr('title', 'Go');          
+            }
+		}
+        $('#swStopGo').click(function(){
+            if (stopwatch.isRunning()){
+                stopwatch.stop();
+            } else {
+                stopwatch.start();    
+            }
+			setSwButtonState();
+        });
+        $('#swReset').click(function(){
+            stopwatch.reset();
+        });
+        $('#swReset').click();
+        
 	 // Show the Help dialog box when the help link is clicked
-		var monitorDialog = $('#monitor .dialog').dialog(dialogOpts);
+		var monitorDialog = $('#helpDialog').dialog(dialogOpts);
 		$('#monitorHelpLink').click(function(){
 				monitorDialog.dialog("open");
 			});

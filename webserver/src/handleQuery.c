@@ -43,14 +43,15 @@ void processQueryRequest(SOCKET fd, struct Request* req){
 
 	time_t from  = (time_t) getValueNumForName("from",  params,  BAD_PARAM);
 	time_t to    = (time_t) getValueNumForName("to",    params,  BAD_PARAM);
-	long group = getValueNumForName("group", params,  BAD_PARAM);
+    long group   = getValueNumForName("group", params,  BAD_PARAM);
+	char* ha     = getValueForName("ha", params, NULL);
 
     if (from == BAD_PARAM || to == BAD_PARAM || group == BAD_PARAM){
      // We need all 3 parameters
-        writeHeaders(fd, HTTP_SERVER_ERROR, NULL, 0);
+        writeHeaders(fd, HTTP_SERVER_ERROR, NULL, TRUE);
 
     } else {
-        writeHeaders(fd, HTTP_OK, MIME_JSON, 0);
+        writeHeaders(fd, HTTP_OK, MIME_JSON, TRUE);
 
         if (from > to){
          // Allow from/to values in either order
@@ -73,7 +74,23 @@ void processQueryRequest(SOCKET fd, struct Request* req){
         cal->tm_mday++;
         to = mktime(cal);
 
-        struct Data* result = getQueryValues(from, to, group);
+     // Set the host/adapter values if appropriate
+        char* hs = NULL;
+        char* ad = NULL;
+        struct HostAdapter* hostAdapter = NULL;
+
+        if (ha != NULL) {
+            hostAdapter = getHostAdapter(ha);
+            hs = hostAdapter->host;
+            ad = hostAdapter->adapter;
+        }
+
+        struct Data* result = getQueryValues(from, to, group, hs, ad);
+
+        if (ha != NULL) {
+            freeHostAdapter(hostAdapter);
+        }
+
         writeDataToJson(fd, result);
         freeData(result);
     }

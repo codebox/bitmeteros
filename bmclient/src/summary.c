@@ -43,7 +43,7 @@ struct ValueBounds tsBounds;
 
 void doSummary(){
  // Compute the summary data
-	struct Summary summary = getSummaryValues();
+	struct Summary summary = getSummaryValues(prefs.host, prefs.adapter);
 
  // Display the summary
 	printSummary(summary);
@@ -66,11 +66,11 @@ static void printSummary(struct Summary summary){
 	char maxTsDate[11];
 	char maxTsTime[9];
 
-    int dbEmpty = (summary.tsMax == 0);
+    int noData = (summary.tsMax == 0);
 
     printf("Summary\n");
 
-    if (!dbEmpty){
+    if (!noData){
      // Todays totals
         formatAmount(summary.today->dl,  TRUE, PREF_UNITS_ABBREV, todayDl);
         formatAmount(summary.today->ul,  TRUE, PREF_UNITS_ABBREV, todayUl);
@@ -103,19 +103,24 @@ static void printSummary(struct Summary summary){
         printf("Data recorded to:   %s %s\n", maxTsDate, maxTsTime);
         printf("\n");
 
-        if (summary.hostCount == 0){
-            printf("No data for other hosts.\n");
-        } else {
-            printf("Totals include data for %d other host%s:\n", summary.hostCount, (summary.hostCount == 1) ? "" : "s");
-            int i;
-            for (i=0; i<summary.hostCount; i++){
-                printf("    %s\n", summary.hostNames[i]);
+        if (prefs.host == NULL){
+         // It only makes sense to display this when no host/adapter filtering has been applied
+            if (summary.hostCount == 0){
+                printf("No data for other hosts.\n");
+            } else {
+                printf("Totals include data for %d other host%s:\n", summary.hostCount, (summary.hostCount == 1) ? "" : "s");
+                int i;
+                for (i=0; i<summary.hostCount; i++){
+                    printf("    %s\n", summary.hostNames[i]);
+                }
             }
+            printf("\n");
         }
-        printf("\n");
 
-    } else {
+    } else if (prefs.host == NULL) {
         printf("        The database is empty.\n\n");
+    } else {
+        printf("        No data found for the specified host/adapter combination.\n\n");
     }
 
 	char dbPath[MAX_PATH_LEN];

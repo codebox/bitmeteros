@@ -186,14 +186,16 @@ static time_t getMaxTsForHost(char* alias){
 static int sendRequest(int fd, time_t ts, char* host, int port){
  // Send an HTTP request to the specified host/port asking for any data newer than 'ts'
 	char buffer[MAX_REQUEST_LEN];
-    sprintf(buffer, "GET /sync?ts=%d HTTP/1.1" HTTP_EOL HTTP_EOL, (int)ts);
+    sprintf(buffer, "GET /sync?ts=%d HTTP/1.1" HTTP_EOL, (int)ts);
     send(fd, buffer, strlen(buffer), 0);
 
 	if (port == DEFAULT_HTTP_PORT){
-		sprintf(buffer, "Host: %s" HTTP_EOL, host);
+		sprintf(buffer, "Host: %s", host);
 	} else {
-		sprintf(buffer, "Host: %s:%d" HTTP_EOL, host, port);
+		sprintf(buffer, "Host: %s:%d", host, port);
 	}
+	sprintf(buffer, HTTP_EOL HTTP_EOL);
+
     send(fd, buffer, strlen(buffer), 0);
 
     return SUCCESS;
@@ -221,21 +223,30 @@ static int readLine(int fd, char* line){
     int prevChar = 0, thisChar = 0;
     int lineIndex = 0;
     int rc;
-    while ((rc = recv(fd, (line + lineIndex), 1, 0)) != 0) {
+    while ((rc = recv(fd, (line + lineIndex), 1, 0)) > 0) {
         thisChar = line[lineIndex++];
         if (thisChar== '\n' && prevChar == '\r'){
+         // We found an HTTP end-of-line sequence, so the current line has been read. Insert a string terminator and return.
+        	line[lineIndex] = 0;
             return TRUE;
+
         } else {
+         // Not at the end of a line yet, keep reading
             prevChar = thisChar;
         }
 
         if (lineIndex >= MAX_LINE_LEN){
          /* This is unlikely to have come from the BitMeter server, possibly a long header added
             in by a proxy en-route, we can just truncate it and continue */
+            line[MAX_LINE_LEN] = 0;
             return TRUE;
         }
     }
-    return (rc == 0) ? FALSE : TRUE;
+    if (rc < 0 && errno > 0){
+     // There was a problem reading from the socket
+    	statusMsg("ERR %d %d %s\r\n", rc, errno, strerror(errno));
+    }
+	return FALSE;
 }
 
 static int parseData(int fd, char* alias, int* rowCount){

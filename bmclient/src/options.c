@@ -43,6 +43,7 @@ static int setDirection(struct Prefs*, char* );
 static int setBarChars(struct Prefs*, char*);
 static int setMaxAmount(struct Prefs*, char* );
 static int setMonitorType(struct Prefs*, char* );
+static int setAdapterDetails(struct Prefs*, char* );
 static time_t makeTsFromRange(char* rangePart);
 static time_t adjustForEndOfRange(time_t, int );
 static void setErrMsg(struct Prefs *, char*);
@@ -55,10 +56,10 @@ Parse the bmclient command-line, and populate a Prefs structure to indicate what
 
 int parseArgs(int argc, char **argv, struct Prefs *prefs){
 	char OPT_LIST[28];
-	sprintf(OPT_LIST, "%c:%c:%c:%c%c%c:%c:%c:%c:%c:%c:",
+	sprintf(OPT_LIST, "%c:%c:%c:%c%c%c:%c:%c:%c:%c:%c:%c:",
 			OPT_MODE, OPT_DUMP_FORMAT, OPT_UNITS, OPT_HELP, OPT_VERSION,
 			OPT_RANGE, OPT_GROUP, OPT_DIRECTION, OPT_BAR_CHARS, OPT_MAX_AMOUNT,
-			OPT_MONITOR_TYPE);
+			OPT_MONITOR_TYPE, OPT_ADAPTER);
 
 	int status = FAIL;
 
@@ -69,10 +70,10 @@ int parseArgs(int argc, char **argv, struct Prefs *prefs){
 		int opt;
 		while ((opt = getopt(argc, argv, OPT_LIST)) != -1){
 			switch (opt){
-				case OPT_HELP:
+				case OPT_HELP:                 
 					status = setHelp(prefs);
 					break;
-				case OPT_VERSION:
+				case OPT_VERSION:                         
 					status = setVersion(prefs);
 					break;
 				case OPT_MODE:
@@ -102,6 +103,9 @@ int parseArgs(int argc, char **argv, struct Prefs *prefs){
 				case OPT_MONITOR_TYPE:
 					status = setMonitorType(prefs, optarg);
 					break;
+                case OPT_ADAPTER:
+                    status = setAdapterDetails(prefs, optarg);
+                    break;
 				default:
 					status = FAIL;
 					break;
@@ -308,7 +312,7 @@ static time_t makeTsFromRange(char* rangePart){
 
 	int rangeLen = strlen(rangePart);
     char fullDate[14];
-    strncpy(fullDate,"0000/00/00/00", 14);
+    strncpy(fullDate,"0000/00/01/00", 14);
 
 	switch(rangeLen){
 		case 10: // yyyymmddhh
@@ -338,7 +342,7 @@ static time_t makeTsFromRange(char* rangePart){
 	#endif
 	cal.tm_isdst = -1; // Get the library to handle Daylight Savings Time
 	cal.tm_mday  = 1;  // Default to the first day of the month
-	
+
     strptime(fullDate, "%Y/%m/%d/%H", &cal);
 
 	return mktime(&cal); // Need the GMT/UTC value
@@ -462,4 +466,39 @@ static int setMode(struct Prefs *prefs, char* mode){
 	}
 
 	return status;
+}
+
+static int setAdapterDetails(struct Prefs *prefs, char* hostAndAdapterTxt){
+    int status;
+    struct HostAdapter *hostAdapter = getHostAdapter(hostAndAdapterTxt);
+
+    if (hostAdapter != NULL) {
+     // Copy the 'host' value from the HostAdapter struct into the Prefs struct
+        if (prefs->host != NULL){
+            free(prefs->host);
+        }
+        if (hostAdapter->host != NULL){
+            prefs->host = strdup(hostAdapter->host);
+        } else {
+            prefs->host = NULL;
+        }
+
+     // Copy the 'adapter' value from the HostAdapter struct into the Prefs struct
+        if (prefs->adapter != NULL){
+            free(prefs->adapter);
+        }
+        if (hostAdapter->adapter != NULL){
+            prefs->adapter = strdup(hostAdapter->adapter);
+        } else {
+            prefs->adapter = NULL;
+        }
+
+        status = SUCCESS;
+
+    } else {
+        status = FAIL;
+    }
+
+    freeHostAdapter(hostAdapter);
+    return status;
 }

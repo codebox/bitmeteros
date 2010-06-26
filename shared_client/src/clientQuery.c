@@ -27,6 +27,7 @@
 #include <assert.h>
 #include <time.h>
 #include <stdlib.h>
+#include <string.h>
 #include "common.h"
 #include "client.h"
 
@@ -35,62 +36,114 @@ Contains a helper function for use by clients that need to perform database quer
 based on timestamp ranges, with result grouping.
 */
 
-#define CLIENT_QUERY_SQL "SELECT SUM(dl) AS dl, SUM(ul) AS ul FROM data WHERE ts>? AND ts<=?"
+#define CLIENT_QUERY_SQL_ALL           "SELECT SUM(dl) AS dl, SUM(ul) AS ul FROM data WHERE ts>? AND ts<=?"
+#define CLIENT_QUERY_SQL_HOST         "SELECT SUM(dl) AS dl, SUM(ul) AS ul FROM data WHERE ts>? AND ts<=? AND hs=?"
+#define CLIENT_QUERY_SQL_HOST_ADAPTER "SELECT SUM(dl) AS dl, SUM(ul) AS ul FROM data WHERE ts>? AND ts<=? AND hs=? AND ad=?"
 
 #ifndef MULTI_THREADED_CLIENT
-	static sqlite3_stmt *stmt = NULL;
+	static sqlite3_stmt *stmtTs   = NULL;
+	static sqlite3_stmt *stmtHs   = NULL;
+	static sqlite3_stmt *stmtHsAd = NULL;
 #endif
 
-static struct Data* doQueryForInterval(sqlite3_stmt* stmt, time_t tsFrom, time_t tsTo);
-static struct Data* doQuery(sqlite3_stmt *stmt, time_t minFrom, time_t maxTo, time_t (*getNext)(time_t), time_t (*addTo)(time_t));
+static struct Data* doQueryForInterval(sqlite3_stmt* stmt, time_t tsFrom, time_t tsTo,
+        char* hs, char* ad, void (*bindQueryParams)(sqlite3_stmt*, time_t, time_t, char*, char*));
+static struct Data* doQuery(sqlite3_stmt *stmt, time_t minFrom, time_t maxTo, time_t (*getNext)(time_t), time_t (*addTo)(time_t),
+        char* hs, char* ad, void (*bindQueryParams)(sqlite3_stmt*, time_t, time_t, char*, char*));
+
+
 static time_t addToDateY(time_t ts);
 static time_t addToDateM(time_t ts);
 static time_t addToDateD(time_t ts);
 static time_t addToDateH(time_t ts);
 
-struct Data* getQueryValues(time_t tsFrom, time_t tsTo, int group){
-	#ifdef MULTI_THREADED_CLIENT
-    	sqlite3_stmt *stmt = NULL;
-    	prepareSql(&stmt, CLIENT_QUERY_SQL);
-    #else
-    	if (stmt == NULL){
-    		prepareSql(&stmt, CLIENT_QUERY_SQL);
-    	}
-    #endif
+static void bindQueryParamsTs(sqlite3_stmt* stmt, time_t tsFrom, time_t tsTo, char* hs, char* ad);
+static void bindQueryParamsTsHs(sqlite3_stmt* stmt, time_t tsFrom, time_t tsTo, char* hs, char* ad);
+static void bindQueryParamsTsHsAd(sqlite3_stmt* stmt, time_t tsFrom, time_t tsTo, char* hs, char* ad);
+
+struct Data* getQueryValues(time_t tsFrom, time_t tsTo, int group, char* hs, char* ad){
+    int selectByAdapter = (ad == NULL ? FALSE : TRUE);
+    int selectByHost    = (hs == NULL ? FALSE : TRUE);
+
+    sqlite3_stmt *stmt = NULL;
+    void (*bindQueryParams)(sqlite3_stmt*, time_t, time_t, char*, char*);
+
+    if (selectByAdapter == TRUE) {
+        if (selectByHost == TRUE) {
+            #ifdef MULTI_THREADED_CLIENT
+                prepareSql(&stmt, CLIENT_QUERY_SQL_HOST_ADAPTER);
+            #else
+                if (stmtHsAd == NULL){
+                    prepareSql(&stmtHsAd, CLIENT_QUERY_SQL_HOST_ADAPTER);
+                }
+                stmt = stmtHsAd;
+            #endif
+            bindQueryParams = &bindQueryParamsTsHsAd;
+
+        } else {
+         // This doesn't really make sense
+            logMsg(LOG_WARN, "getQueryValues called with null 'hs' but a non-null 'ad' of %s", ad);
+        }
+
+    } else {
+        if (selectByHost == TRUE) {
+            #ifdef MULTI_THREADED_CLIENT
+                prepareSql(&stmt, CLIENT_QUERY_SQL_HOST);
+            #else
+                if (stmtHs == NULL){
+                    prepareSql(&stmtHs, CLIENT_QUERY_SQL_HOST);
+                }
+                stmt = stmtHs;
+            #endif
+            bindQueryParams = &bindQueryParamsTsHs;
+
+        } else {
+            #ifdef MULTI_THREADED_CLIENT
+                prepareSql(&stmt, CLIENT_QUERY_SQL_ALL);
+            #else
+                if (stmtTs == NULL){
+                    prepareSql(&stmtTs, CLIENT_QUERY_SQL_ALL);
+                }
+                stmt = stmtTs;
+            #endif
+            bindQueryParams = &bindQueryParamsTs;
+
+        }
+    }
 
     struct Data* result = NULL;
-    struct ValueBounds* tsBounds = calcTsBounds();
+    struct ValueBounds* tsBounds = calcTsBounds(hs, ad);
 
     if (tsBounds != NULL){
         time_t minInDb = (time_t) tsBounds->min;
         time_t maxInDb = (time_t) tsBounds->max;
         free(tsBounds);
 
-     /* If we are using the min d/b value then must subtract 1 from minInDb to ensure that the lowest
+     /* If we are using the min d/b value then must subtract 1 hour from minInDb to ensure that the lowest
         ts row gets included in the query results */
-        time_t minFrom = (minInDb > tsFrom ? minInDb-1 : tsFrom);
-        time_t maxTo   = (maxInDb < tsTo   ? maxInDb   : tsTo);
+        time_t minFrom = (minInDb > tsFrom ? minInDb - 3600 : tsFrom);
+        time_t maxTo   = (maxInDb < tsTo   ? maxInDb : tsTo);
 
 	 // Decide how the results should be grouped
         switch(group){
             case QUERY_GROUP_HOURS:
-                result = doQuery(stmt, minFrom, maxTo, &getNextHourForTs, &addToDateH);
+                result = doQuery(stmt, minFrom, maxTo, &getNextHourForTs, &addToDateH, hs, ad, bindQueryParams);
                 break;
 
             case QUERY_GROUP_DAYS:
-                result = doQuery(stmt, minFrom, maxTo, &getNextDayForTs, &addToDateD);
+                result = doQuery(stmt, minFrom, maxTo, &getNextDayForTs, &addToDateD, hs, ad, bindQueryParams);
                 break;
 
             case QUERY_GROUP_MONTHS:
-                result = doQuery(stmt, minFrom, maxTo, &getNextMonthForTs, &addToDateM);
+                result = doQuery(stmt, minFrom, maxTo, &getNextMonthForTs, &addToDateM, hs, ad, bindQueryParams);
                 break;
 
             case QUERY_GROUP_YEARS:
-                result = doQuery(stmt, minFrom, maxTo, &getNextYearForTs, &addToDateY);
+                result = doQuery(stmt, minFrom, maxTo, &getNextYearForTs, &addToDateY, hs, ad, bindQueryParams);
                 break;
 
             case QUERY_GROUP_TOTAL:
-                result = doQueryForInterval(stmt, minFrom, maxTo);
+                result = doQueryForInterval(stmt, minFrom, maxTo, hs, ad, bindQueryParams);
                 break;
 
             default:
@@ -107,7 +160,8 @@ struct Data* getQueryValues(time_t tsFrom, time_t tsTo, int group){
     return result;
 }
 
-static struct Data* doQuery(sqlite3_stmt *stmt, time_t minFrom, time_t maxTo, time_t (*getNext)(time_t), time_t (*addTo)(time_t)){
+static struct Data* doQuery(sqlite3_stmt *stmt, time_t minFrom, time_t maxTo, time_t (*getNext)(time_t), time_t (*addTo)(time_t),
+        char* hs, char* ad, void (*bindQueryParams)(sqlite3_stmt*, time_t, time_t, char*, char*)){
  /* Performs a series of SELECT queries to return the amount of data recorded between minFrom
     and maxTo. The data is returned in a list of Data structs, each one covering an interval
     within the specified range. The length of the interval represented by each Data struct
@@ -124,7 +178,7 @@ static struct Data* doQuery(sqlite3_stmt *stmt, time_t minFrom, time_t maxTo, ti
     struct Data* current;
 
 	while(TRUE){
-	    current = doQueryForInterval(stmt, from, to);
+	    current = doQueryForInterval(stmt, from, to, hs, ad, bindQueryParams);
 	    if (current->dl > 0 || current->ul > 0){
 	     // Only return the struct if it contains some data
             appendData(&result, current);
@@ -166,10 +220,10 @@ static time_t addToDateH(time_t ts){
     return addToDate(ts, 'h', 1);
 }
 
-static struct Data* doQueryForInterval(sqlite3_stmt *stmt, time_t tsFrom, time_t tsTo){
+static struct Data* doQueryForInterval(sqlite3_stmt *stmt, time_t tsFrom, time_t tsTo, char* hs, char* ad,
+        void (*bindQueryParams)(sqlite3_stmt*, time_t, time_t, char*, char*)){
  // Perform a SQL SELECT for the specified interval
-	sqlite3_bind_int(stmt, 1, tsFrom);
-	sqlite3_bind_int(stmt, 2, tsTo);
+	bindQueryParams(stmt, tsFrom, tsTo, hs, ad);
 
 	struct Data* data = runSelect(stmt);
 	sqlite3_reset(stmt);
@@ -180,4 +234,24 @@ static struct Data* doQueryForInterval(sqlite3_stmt *stmt, time_t tsFrom, time_t
 	assert(data->next == NULL); // We should only ever have 1 row
 
 	return data;
+}
+
+static void bindQueryParamsTs(sqlite3_stmt* stmt, time_t tsFrom, time_t tsTo, char* hs, char* ad) {
+	sqlite3_bind_int(stmt, 1, tsFrom);
+	sqlite3_bind_int(stmt, 2, tsTo);
+ // hs and ad are ignored
+}
+
+static void bindQueryParamsTsHs(sqlite3_stmt* stmt, time_t tsFrom, time_t tsTo, char* hs, char* ad) {
+	sqlite3_bind_int(stmt, 1, tsFrom);
+	sqlite3_bind_int(stmt, 2, tsTo);
+    sqlite3_bind_text(stmt, 3, hs, strlen(hs), SQLITE_TRANSIENT);
+ // ad is ignored
+}
+
+static void bindQueryParamsTsHsAd(sqlite3_stmt* stmt, time_t tsFrom, time_t tsTo, char* hs, char* ad) {
+	sqlite3_bind_int(stmt, 1, tsFrom);
+	sqlite3_bind_int(stmt, 2, tsTo);
+    sqlite3_bind_text(stmt, 3, hs, strlen(hs), SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 4, ad, strlen(ad), SQLITE_TRANSIENT);
 }

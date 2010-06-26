@@ -24,14 +24,13 @@
  */
 
 #include <sqlite3.h>
-#include <pthread.h>
 #include "common.h"
 
 /*
-TODO
+Contains a helper function for use by clients that need to retrieve data to be synchronized with another database.
 */
 
-#define CLIENT_SYNC_SQL "SELECT ts AS ts, dl AS dl, ul AS ul, dr AS dr, ad AS ad FROM data WHERE ts > ? AND hs IS NULL ORDER BY ts ASC"
+#define CLIENT_SYNC_SQL "SELECT ts AS ts, dl AS dl, ul AS ul, dr AS dr, ad AS ad FROM data WHERE ts > ? AND hs = '' ORDER BY ts ASC"
 
 #ifndef MULTI_THREADED_CLIENT
 	static sqlite3_stmt *stmt = NULL;

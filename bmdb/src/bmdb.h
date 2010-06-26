@@ -30,10 +30,14 @@
 #define ERR_BAD_UPGRADE_LEVEL "Invalid upgrade level specified"
 #define INFO_DUMPING_CONFIG "Dumping config table..."
 
-#define MAX_UPGRADE_LEVEL 4
+#define MAX_UPGRADE_LEVEL 6
 
 int doVersion();
 int convertAddrValues();
 int doConfig(FILE* file, int argc, char** argv);
 int doUpgrade(FILE* file, int argc, char** argv);
 int setConfigIntValue(char* key, int value);
+int doWebStop(FILE* file, int argc, char** argv);
+int doWebStart(FILE* file, int argc, char** argv);
+int doCapStop(FILE* file, int argc, char** argv);
+int doCapStart(FILE* file, int argc, char** argv);

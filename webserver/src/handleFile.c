@@ -192,12 +192,12 @@ void processFileRequest(SOCKET fd, struct Request* req){
         } else {
             response = HTTP_FORBIDDEN;
         }
-        writeHeaders(fd, response, NULL, 0);
+        writeHeaders(fd, response, NULL, TRUE);
 
     } else {
      // We got the file, write out the headers and then send the content
 	    //int size = getFileSize(fp); this was causing problems on Google Chrome so removed, dont think we actually need to send this
-        writeHeaders(fd, HTTP_OK, mimeType->contentType, 0);
+        writeHeaders(fd, HTTP_OK, mimeType->contentType, TRUE);
 
         int rc;
         char buffer[BUFSIZE];

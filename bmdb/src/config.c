@@ -44,7 +44,7 @@ int doConfig(FILE* file, int argc, char** argv){
 		value = sqlite3_column_text(stmt, 1);
 		fprintf(file, "%s=%s" EOL, key, value);
 	}
-	sqlite3_reset(stmt);
+	sqlite3_finalize(stmt);
 
 	if (rc != SQLITE_DONE){
 		logMsg(LOG_ERR, " sqlite3_step returned %d in doConfig, %s", rc, getDbError());

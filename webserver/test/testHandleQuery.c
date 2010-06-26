@@ -62,11 +62,11 @@ void testParamsOk(CuTest *tc) {
 
  // The query range covers the second, third and fourth rows only
     emptyDb();
-    addDbRow(makeTs("2009-11-01 12:00:00"), 3600, NULL,  1,  1, NULL);
-    addDbRow(makeTs("2009-11-02 12:00:00"), 3600, NULL,  2,  2, NULL); // Match
-    addDbRow(makeTs("2009-11-03 12:00:00"), 3600, NULL,  4,  4, NULL); // Match
-    addDbRow(makeTs("2009-11-04 12:00:00"), 3600, NULL,  8,  8, NULL); // Match
-    addDbRow(makeTs("2009-11-05 12:00:00"), 3600, NULL, 16, 16, NULL);
+    addDbRow(makeTs("2009-11-01 12:00:00"), 3600, NULL,  1,  1, "");
+    addDbRow(makeTs("2009-11-02 12:00:00"), 3600, NULL,  2,  2, ""); // Match
+    addDbRow(makeTs("2009-11-03 12:00:00"), 3600, NULL,  4,  4, ""); // Match
+    addDbRow(makeTs("2009-11-04 12:00:00"), 3600, NULL,  8,  8, ""); // Match
+    addDbRow(makeTs("2009-11-05 12:00:00"), 3600, NULL, 16, 16, "");
 
     int tmpFd = makeTmpFile();
     processQueryRequest(tmpFd, &req);
@@ -92,11 +92,11 @@ void testGroupByDay(CuTest *tc) {
     struct Request req = {"GET", "/query", &groupParam, NULL};
 
     emptyDb();
-    addDbRow(makeTs("2009-11-01 10:00:00"), 3600, NULL,  1,  1, NULL);
-    addDbRow(makeTs("2009-11-01 11:00:00"), 3600, NULL,  2,  2, NULL);
-    addDbRow(makeTs("2009-11-01 12:00:00"), 3600, NULL,  4,  4, NULL);
-    addDbRow(makeTs("2009-11-02 09:00:00"), 3600, NULL,  8,  8, NULL);
-    addDbRow(makeTs("2009-11-02 23:00:00"), 3600, NULL, 16, 16, NULL);
+    addDbRow(makeTs("2009-11-01 10:00:00"), 3600, NULL,  1,  1, "");
+    addDbRow(makeTs("2009-11-01 11:00:00"), 3600, NULL,  2,  2, "");
+    addDbRow(makeTs("2009-11-01 12:00:00"), 3600, NULL,  4,  4, "");
+    addDbRow(makeTs("2009-11-02 09:00:00"), 3600, NULL,  8,  8, "");
+    addDbRow(makeTs("2009-11-02 23:00:00"), 3600, NULL, 16, 16, "");
 
     int tmpFd = makeTmpFile();
     processQueryRequest(tmpFd, &req);
@@ -109,7 +109,7 @@ void testGroupByDay(CuTest *tc) {
         "Server: BitMeterOS " VERSION " Web Server" HTTP_EOL
         "Date: Sun, 08 Nov 2009 10:00:00 +0000" HTTP_EOL
         "Connection: Close" HTTP_EOL HTTP_EOL
-        "[{dl: 7,ul: 7,ts: 1257120000,dr: 50401},{dl: 24,ul: 24,ts: 1257206400,dr: 86400}]"
+        "[{dl: 7,ul: 7,ts: 1257120000,dr: 54000},{dl: 24,ul: 24,ts: 1257206400,dr: 86400}]"
     , result);
 }
 
@@ -121,11 +121,11 @@ void testParamsOkReversed(CuTest *tc) {
 
  // The query range covers the third and fourth rows only
     emptyDb();
-    addDbRow(makeTs("2009-11-01 12:00:00"), 3600, NULL,  1,  1, NULL);
-    addDbRow(makeTs("2009-11-02 12:00:00"), 3600, NULL,  2,  2, NULL);
-    addDbRow(makeTs("2009-11-03 12:00:00"), 3600, NULL,  4,  4, NULL); // Match
-    addDbRow(makeTs("2009-11-04 12:00:00"), 3600, NULL,  8,  8, NULL); // Match
-    addDbRow(makeTs("2009-11-05 12:00:00"), 3600, NULL, 16, 16, NULL);
+    addDbRow(makeTs("2009-11-01 12:00:00"), 3600, NULL,  1,  1, "");
+    addDbRow(makeTs("2009-11-02 12:00:00"), 3600, NULL,  2,  2, "");
+    addDbRow(makeTs("2009-11-03 12:00:00"), 3600, NULL,  4,  4, ""); // Match
+    addDbRow(makeTs("2009-11-04 12:00:00"), 3600, NULL,  8,  8, ""); // Match
+    addDbRow(makeTs("2009-11-05 12:00:00"), 3600, NULL, 16, 16, "");
 
     int tmpFd = makeTmpFile();
     processQueryRequest(tmpFd, &req);
@@ -144,11 +144,42 @@ void testParamsOkReversed(CuTest *tc) {
     , result);
 }
 
+void testQueryHostAdapterParams(CuTest *tc) {
+    struct NameValuePair fromParam  = {"from", "0", NULL};
+    struct NameValuePair toParam    = {"to",   "1258281927", &fromParam}; // 2009-11-15...
+    struct NameValuePair groupParam = {"group", "2", &toParam};
+    struct NameValuePair haParam    = {"ha", "local:eth0", &groupParam};
+    struct Request req = {"GET", "/query", &haParam, NULL};
+
+    emptyDb();
+    addDbRow(makeTs("2009-11-01 10:00:00"), 3600, "eth0",  1,  1, ""); // Match
+    addDbRow(makeTs("2009-11-01 11:00:00"), 3600, "eth1",  2,  2, "");
+    addDbRow(makeTs("2009-11-01 12:00:00"), 3600, "eth0",  4,  4, "host1");
+    addDbRow(makeTs("2009-11-01 12:00:00"), 3600, "eth0",  8,  8, ""); // Match
+    addDbRow(makeTs("2009-11-02 09:00:00"), 3600, "eth1", 16, 16, "host1");
+    addDbRow(makeTs("2009-11-02 23:00:00"), 3600, "eth0", 32, 32, ""); // Match
+
+    int tmpFd = makeTmpFile();
+    processQueryRequest(tmpFd, &req);
+
+    char* result = readTmpFile();
+
+    CuAssertStrEquals(tc,
+        "HTTP/1.0 200 OK" HTTP_EOL
+        "Content-Type: application/json" HTTP_EOL
+        "Server: BitMeterOS " VERSION " Web Server" HTTP_EOL
+        "Date: Sun, 08 Nov 2009 10:00:00 +0000" HTTP_EOL
+        "Connection: Close" HTTP_EOL HTTP_EOL
+        "[{dl: 9,ul: 9,ts: 1257120000,dr: 54000},{dl: 32,ul: 32,ts: 1257206400,dr: 86400}]"
+    , result);
+}
+
 CuSuite* handleQueryGetSuite() {
     CuSuite* suite = CuSuiteNew();
     SUITE_ADD_TEST(suite, testMissingParam);
     SUITE_ADD_TEST(suite, testParamsOk);
     SUITE_ADD_TEST(suite, testGroupByDay);
     SUITE_ADD_TEST(suite, testParamsOkReversed);
+    SUITE_ADD_TEST(suite, testQueryHostAdapterParams);
     return suite;
 }

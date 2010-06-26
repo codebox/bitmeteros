@@ -36,9 +36,27 @@ static void writeTotal(SOCKET, char*, BW_INT, BW_INT);
 extern struct HttpResponse HTTP_OK;
 
 void processSummaryRequest(SOCKET fd, struct Request* req){
-    writeHeaders(fd, HTTP_OK, MIME_JSON, 0);
+    struct NameValuePair* params = req->params;
+    char* ha = getValueForName("ha", params, NULL);
 
-	struct Summary summary = getSummaryValues();
+    writeHeaders(fd, HTTP_OK, MIME_JSON, TRUE);
+
+ // Set the host/adapter values if appropriate
+    char* hs = NULL;
+    char* ad = NULL;
+    struct HostAdapter* hostAdapter = NULL;
+
+    if (ha != NULL) {
+        hostAdapter = getHostAdapter(ha);
+        hs = hostAdapter->host;
+        ad = hostAdapter->adapter;
+    }
+
+	struct Summary summary = getSummaryValues(hs, ad);
+
+    if (ha != NULL) {
+        freeHostAdapter(hostAdapter);
+    }
 
 	writeText(fd, "{");
 	writeTotal(fd, "today", summary.today->dl, summary.today->ul);
@@ -49,20 +67,26 @@ void processSummaryRequest(SOCKET fd, struct Request* req){
 	writeText(fd, ", ");
 	writeTotal(fd, "total", summary.total->dl, summary.total->ul);
 	writeText(fd, ", ");
-	writeText(fd, "hosts: [");
 
-	int i;
-	for(i=0; i<summary.hostCount; i++){
-	    if (i>0){
-            writeText(fd, ", ");
-	    }
-	    writeText(fd, "'");
-	    writeText(fd, summary.hostNames[i]);
-	    writeText(fd, "'");
+	if (summary.hostNames != NULL){
+        writeText(fd, "hosts: [");
+
+        int i;
+        for(i=0; i<summary.hostCount; i++){
+            if (i>0){
+                writeText(fd, ", ");
+            }
+            writeText(fd, "'");
+            writeText(fd, summary.hostNames[i]);
+            writeText(fd, "'");
+        }
+
+        writeText(fd, "]");
+	} else {
+	    writeText(fd, "hosts: null");
 	}
 
-	writeText(fd, "], ");
-	writeText(fd, "since: ");
+	writeText(fd, ", since: ");
 
 	char sinceTs[12];
     unsigned long since = (unsigned long) summary.tsMin;

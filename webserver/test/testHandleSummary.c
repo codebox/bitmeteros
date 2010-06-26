@@ -36,10 +36,10 @@ Contains unit tests for the handleSummary module.
 
 void testSummaryNoHosts(CuTest *tc) {
     emptyDb();
-    addDbRow(makeTs("2008-11-02 12:00:00"), 3600, NULL,  1,  1, NULL); // Last year
-    addDbRow(makeTs("2009-10-01 12:00:00"), 3600, NULL,  2,  2, NULL); // Earlier this year
-    addDbRow(makeTs("2009-11-04 12:00:00"), 3600, NULL,  4,  4, NULL); // Earlier this month
-    addDbRow(makeTs("2009-11-08 01:00:00"), 3600, NULL,  8,  8, NULL); // Today
+    addDbRow(makeTs("2008-11-02 12:00:00"), 3600, NULL,  1,  1, ""); // Last year
+    addDbRow(makeTs("2009-10-01 12:00:00"), 3600, NULL,  2,  2, ""); // Earlier this year
+    addDbRow(makeTs("2009-11-04 12:00:00"), 3600, NULL,  4,  4, ""); // Earlier this month
+    addDbRow(makeTs("2009-11-08 01:00:00"), 3600, NULL,  8,  8, ""); // Today
 
     struct Request req = {"GET", "/summary", NULL, NULL};
 
@@ -64,7 +64,7 @@ void testSummaryNoHosts(CuTest *tc) {
 void testSummaryWithHosts(CuTest *tc) {
     emptyDb();
     addDbRow(makeTs("2008-11-02 12:00:00"), 3600, NULL,  1,  1, "server"); // Last year
-    addDbRow(makeTs("2009-10-01 12:00:00"), 3600, NULL,  2,  2, NULL); // Earlier this year
+    addDbRow(makeTs("2009-10-01 12:00:00"), 3600, NULL,  2,  2, ""); // Earlier this year
     addDbRow(makeTs("2009-11-04 12:00:00"), 3600, NULL,  4,  4, "windowsbox"); // Earlier this month
     addDbRow(makeTs("2009-11-08 01:00:00"), 3600, NULL,  8,  8, "windowsbox"); // Today
 
@@ -89,9 +89,43 @@ void testSummaryWithHosts(CuTest *tc) {
     , result);
 }
 
+void testSummaryWithHostAdapterParams(CuTest *tc) {
+    emptyDb();
+    addDbRow(makeTs("2008-11-02 12:00:00"), 3600, "eth0",  1,  1, "host1"); // Last year
+    addDbRow(makeTs("2008-11-02 12:00:00"), 3600, "eth0",  1,  1, "host2"); // Last year
+    addDbRow(makeTs("2009-10-01 12:00:00"), 3600, "eth0",  2,  2, "host1"); // Earlier this year
+    addDbRow(makeTs("2009-10-01 12:00:00"), 3600, "eth0",  2,  2, ""); // Earlier this year
+    addDbRow(makeTs("2009-11-04 12:00:00"), 3600, "eth0",  4,  4, "host1"); // Earlier this month
+    addDbRow(makeTs("2009-11-04 12:00:00"), 3600, "eth0",  4,  4, ""); // Earlier this month
+    addDbRow(makeTs("2009-11-08 01:00:00"), 3600, "eth0",  8,  8, "host1"); // Today
+    addDbRow(makeTs("2009-11-08 01:00:00"), 3600, "eth0",  8,  8, ""); // Today
+
+    struct NameValuePair param = {"ha", "host1:eth0", NULL};
+    struct Request req = {"GET", "/summary", &param, NULL};
+
+    time_t now = makeTs("2009-11-08 10:00:00");
+    setTime(now);
+
+    int tmpFd = makeTmpFile();
+    processSummaryRequest(tmpFd, &req);
+
+    char* result = readTmpFile();
+
+    CuAssertStrEquals(tc,
+        "HTTP/1.0 200 OK" HTTP_EOL
+        "Content-Type: application/json" HTTP_EOL
+        "Server: BitMeterOS " VERSION " Web Server" HTTP_EOL
+        "Date: Sun, 08 Nov 2009 10:00:00 +0000" HTTP_EOL
+        "Connection: Close" HTTP_EOL HTTP_EOL
+        "{today: {dl: 8,ul: 8,ts: 0,dr: 0}, month: {dl: 12,ul: 12,ts: 0,dr: 0}, year: {dl: 14,ul: 14,ts: 0,dr: 0}, total: {dl: 15,ul: 15,ts: 0,dr: 0}"
+        ", hosts: null, since: 1225627200}"
+    , result);
+}
+
 CuSuite* handleSummaryGetSuite() {
     CuSuite* suite = CuSuiteNew();
     SUITE_ADD_TEST(suite, testSummaryNoHosts);
     SUITE_ADD_TEST(suite, testSummaryWithHosts);
+    SUITE_ADD_TEST(suite, testSummaryWithHostAdapterParams);
     return suite;
 }

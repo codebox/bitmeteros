@@ -38,7 +38,7 @@ void testMonitorEmptyDb(CuTest *tc) {
     setTime(now);
     emptyDb();
 
-    CuAssertTrue(tc, getMonitorValues(now - 1) == NULL);
+    CuAssertTrue(tc, getMonitorValues(now - 1, NULL, NULL) == NULL);
 }
 
 void testMonitorNoDataAfterTs(CuTest *tc) {
@@ -46,9 +46,9 @@ void testMonitorNoDataAfterTs(CuTest *tc) {
     time_t now = makeTs("2009-01-01 10:00:00");
     setTime(now);
     emptyDb();
-    addDbRow(now - 2, 1, "eth0", 123, 456, NULL);
+    addDbRow(now - 2, 1, "eth0", 123, 456, "");
 
-    CuAssertTrue(tc, getMonitorValues(now - 1) == NULL);
+    CuAssertTrue(tc, getMonitorValues(now - 1, NULL, NULL) == NULL);
 }
 
 void testMonitorDataOnTs(CuTest *tc) {
@@ -57,11 +57,11 @@ void testMonitorDataOnTs(CuTest *tc) {
     time_t now = makeTs("2009-01-01 10:00:00");
     setTime(now);
     emptyDb();
-    addDbRow(now - 1, 1, "eth0", 1, 10, NULL);
-    addDbRow(now - 1, 1, "eth1", 1, 10, NULL);
-    addDbRow(now - 1, 1, "eth2", 1, 10, NULL);
+    addDbRow(now - 1, 1, "eth0", 1, 10, "");
+    addDbRow(now - 1, 1, "eth1", 1, 10, "");
+    addDbRow(now - 1, 1, "eth2", 1, 10, "");
 
-    struct Data* data = getMonitorValues(now - 1);
+    struct Data* data = getMonitorValues(now - 1, NULL, NULL);
     checkData(tc, data, now-1, 1, NULL, 3, 30, NULL); // We group data by ts, so expect just 1 result
     CuAssertTrue(tc, data->next == NULL);
 }
@@ -72,15 +72,15 @@ void testMonitorDataOnAndAfterTs(CuTest *tc) {
     time_t now = makeTs("2009-01-01 10:00:00");
     setTime(now);
     emptyDb();
-    addDbRow(now - 1, 1, "eth0", 1, 10, NULL);
-    addDbRow(now - 1, 1, "eth1", 1, 10, NULL);
-    addDbRow(now - 1, 1, "eth2", 1, 10, NULL);
+    addDbRow(now - 1, 1, "eth0", 1, 10, "");
+    addDbRow(now - 1, 1, "eth1", 1, 10, "");
+    addDbRow(now - 1, 1, "eth2", 1, 10, "");
 
-    addDbRow(now - 2, 1, "eth0", 5, 50, NULL);
-    addDbRow(now - 2, 1, "eth1", 5, 50, NULL);
-    addDbRow(now - 2, 1, "eth2", 5, 50, NULL);
+    addDbRow(now - 2, 1, "eth0", 5, 50, "");
+    addDbRow(now - 2, 1, "eth1", 5, 50, "");
+    addDbRow(now - 2, 1, "eth2", 5, 50, "");
 
-    struct Data* data = getMonitorValues(now - 2);
+    struct Data* data = getMonitorValues(now - 2, NULL, NULL);
     checkData(tc, data, now-1, 1, NULL, 3, 30, NULL);
 
     data = data->next;
@@ -97,15 +97,15 @@ void testMonitorDataOnAndLongAfterTs(CuTest *tc) {
 
     setTime(now);
     emptyDb();
-    addDbRow(now, 1, "eth0", 1, 10, NULL);
-    addDbRow(now, 1, "eth1", 1, 10, NULL);
-    addDbRow(now, 1, "eth2", 1, 10, NULL);
+    addDbRow(now, 1, "eth0", 1, 10, "");
+    addDbRow(now, 1, "eth1", 1, 10, "");
+    addDbRow(now, 1, "eth2", 1, 10, "");
 
-    addDbRow(then + 3600, 3600, "eth0", 5, 50, NULL);
-    addDbRow(then,        3600, "eth1", 6, 60, NULL);
-    addDbRow(then - 3600, 3600, "eth2", 7, 70, NULL);
+    addDbRow(then + 3600, 3600, "eth0", 5, 50, "");
+    addDbRow(then,        3600, "eth1", 6, 60, "");
+    addDbRow(then - 3600, 3600, "eth2", 7, 70, "");
 
-    struct Data* data = getMonitorValues(then);
+    struct Data* data = getMonitorValues(then, NULL, NULL);
     checkData(tc, data, now, 1, NULL, 3, 30, NULL);
 
     data = data->next;
@@ -117,6 +117,50 @@ void testMonitorDataOnAndLongAfterTs(CuTest *tc) {
     CuAssertTrue(tc, data->next == NULL);
 }
 
+void testMonitorDataForHost(CuTest *tc) {
+ /* Check that host selection works correctly. */
+    time_t now = makeTs("2009-01-01 10:00:00");
+    setTime(now);
+    emptyDb();
+    addDbRow(now - 2, 1, "eth2",   1,   10, "host1"); // too old
+    addDbRow(now - 1, 1, "eth0",   2,   20, "");
+    addDbRow(now - 1, 1, "eth1",   4,   40, "host1"); // want this
+    addDbRow(now - 1, 1, "eth2",   8,   80, "host1"); // want this
+    addDbRow(now - 1, 1, "eth2",  16,  160, "host1"); // want this
+    addDbRow(now - 1, 1, "eth2",  32,  320, "host2");
+    addDbRow(now + 1, 1, "eth2",  64,  640, "host1"); // want this
+    addDbRow(now + 1, 1, "eth2", 128, 1280, "host3");
+
+    struct Data* data = getMonitorValues(now - 1, "host1", NULL);
+    checkData(tc, data, now + 1, 1, NULL, 64, 640, NULL);
+    data = data->next;
+    checkData(tc, data, now - 1, 1, NULL, 28, 280, NULL);
+
+    CuAssertTrue(tc, data->next == NULL);
+}
+
+void testMonitorDataForHostAndAdapter(CuTest *tc) {
+ /* Check that host/adapter selection works correctly. */
+    time_t now = makeTs("2009-01-01 10:00:00");
+    setTime(now);
+    emptyDb();
+    addDbRow(now - 2, 1, "eth2",   1,   10, "host1"); // too old
+    addDbRow(now - 1, 1, "eth0",   2,   20, "");
+    addDbRow(now - 1, 1, "eth1",   4,   40, "host1"); // wrong adapter
+    addDbRow(now - 1, 1, "eth2",   8,   80, "host1"); // want this
+    addDbRow(now - 1, 1, "eth2",  16,  160, "host1"); // want this
+    addDbRow(now - 1, 1, "eth2",  32,  320, "host2");
+    addDbRow(now + 1, 1, "eth2",  64,  640, "host1"); // want this
+    addDbRow(now + 1, 1, "eth2", 128, 1280, "host3");
+
+    struct Data* data = getMonitorValues(now - 1, "host1", "eth2");
+    checkData(tc, data, now + 1, 1, NULL, 64, 640, NULL);
+    data = data->next;
+    checkData(tc, data, now - 1, 1, NULL, 24, 240, NULL);
+
+    CuAssertTrue(tc, data->next == NULL);
+}
+
 CuSuite* clientMonitorGetSuite() {
     CuSuite* suite = CuSuiteNew();
     SUITE_ADD_TEST(suite, testMonitorEmptyDb);
@@ -124,5 +168,7 @@ CuSuite* clientMonitorGetSuite() {
     SUITE_ADD_TEST(suite, testMonitorDataOnTs);
     SUITE_ADD_TEST(suite, testMonitorDataOnAndAfterTs);
     SUITE_ADD_TEST(suite, testMonitorDataOnAndLongAfterTs);
+    SUITE_ADD_TEST(suite, testMonitorDataForHost);
+    SUITE_ADD_TEST(suite, testMonitorDataForHostAndAdapter);
     return suite;
 }

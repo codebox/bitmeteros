@@ -77,7 +77,7 @@ void doMonitor(){
 
 	 // Get the values for 1 second ago (values for the current second may not be in the d/b yet)
 	 	time_t now = getTime();
-		values = getMonitorValues(now - 1);
+		values = getMonitorValues(now - 1, prefs.host, prefs.adapter);
 
 		if (values == NULL){
 		 // We print out zeroes if there is nothing from the db

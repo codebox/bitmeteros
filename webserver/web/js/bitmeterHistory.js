@@ -43,7 +43,8 @@ function updateHistory(){
 	/* Sends the AJAX request for the Minutes graph. The results returned by a /query request don't have sufficient
 	   granularity for what we need here, so call /monitor instead, and sort the values in minute-sized groups. */
 	var minGraphTs = historyDisplayMinutes.getOptions().xaxis.max;
-	$.get('monitor?ts=' + 60 * getHistoryMinutesTs(), function(responseTxt){
+	var minGraphReqTxt = addAdaptersToRequest('monitor?ts=' + 60 * getHistoryMinutesTs());
+	$.get(minGraphReqTxt, function(responseTxt){
 	        /* We get back an object like this, with ts values expressed as an offset from the serverTime value:
 				{ serverTime : 123456, 
 				  data : [
@@ -58,7 +59,6 @@ function updateHistory(){
 			historyDisplayMinutes.serverTime = serverTime;
 			
 			var minuteBuckets = {};
-			var newestRoundedTs = 0;
 			$.each(jsonData, function(i,o){
 			 // The response data contains offsets rather than real timestamps
 				o.ts = (serverTime - o.ts);
@@ -72,9 +72,6 @@ function updateHistory(){
 					roundedTs = o.ts;
 				}
 				
-				if (roundedTs > newestRoundedTs){
-					newestRoundedTs = roundedTs;
-				}
 				if (!minuteBuckets[roundedTs]){
 				 /* This is the first value we have encountered for this particular minute, so create a
 				    new entry in the minuteBuckets object, settings the ul/dl values to 0. */
@@ -93,14 +90,15 @@ function updateHistory(){
 			});
 			
 			updateGraph(roundedJsonData, historyDisplayMinutes, function(ts){
-					return newestRoundedTs - ts;
+					return now - ts - (now % 60) + 60;
 				});
 		});
 	
 	/* Sends the AJAX request for the Hours graph */
 	var hourGraphMax = now;
 	var hourGraphMin = now - historyDisplayHours.getOptions().xaxis.max;
-	$.get('query?from=' + hourGraphMin + '&to=' + hourGraphMax + '&group=1', function(arrData){
+	var hourGraphReqTxt = addAdaptersToRequest('query?from=' + hourGraphMin + '&to=' + hourGraphMax + '&group=1');
+	$.get(hourGraphReqTxt, function(arrData){
 			var jsonData = doEval(arrData);
 			var now = getTime();
 			var modSeconds = now % 3600;
@@ -111,7 +109,8 @@ function updateHistory(){
 	/* Sends the AJAX request for the Days graph */
 	var dayGraphMax = now;
 	var dayGraphMin = now - historyDisplayDays.getOptions().xaxis.max;
-	$.get('query?from=' + dayGraphMin + '&to=' + dayGraphMax + '&group=2', function(arrData){
+	var dayGraphReqTxt = addAdaptersToRequest('query?from=' + dayGraphMin + '&to=' + dayGraphMax + '&group=2');
+	$.get(dayGraphReqTxt, function(arrData){
 			var jsonData = doEval(arrData);
 			var now = getTime();
 			var modSeconds = now % 86400;

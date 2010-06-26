@@ -118,6 +118,36 @@ static void testUpgradeFrom3To4(CuTest *tc){
     populateConfigTable();
 }
 
+static void testUpgradeFrom4To5(CuTest *tc){
+    executeSql("delete from data;", NULL);
+
+    addDbRow(100, 1, "eth0", 1, 1, "host1");
+    addDbRow(101, 1, "eth0", 2, 2, "");
+    addDbRow(102, 1, "eth0", 4, 4, NULL);
+    addDbRow(103, 1, "eth0", 8, 8, NULL);
+    addDbRow(103, 1, "eth2", 16, 16, "host2");
+
+    int status = doUpgradeTest(5);
+    CuAssertTrue(tc, status == SUCCESS);
+    CuAssertIntEquals(tc, 5,  getDbVersion());
+
+    sqlite3_stmt* stmt;
+    prepareSql(&stmt, "SELECT ts AS ts, ad AS ad, dl AS dl, ul AS ul, dr AS dr, hs AS hs FROM data ORDER BY ts ASC");
+    struct Data* data = runSelect(stmt);
+
+    checkData(tc, data, 100, 1, "eth0", 1, 1, "host1");
+    data = data->next;
+    checkData(tc, data, 101, 1, "eth0", 2, 2, "");
+    data = data->next;
+    checkData(tc, data, 102, 1, "eth0", 4, 4, "");
+    data = data->next;
+    checkData(tc, data, 103, 1, "eth0", 8, 8, "");
+    data = data->next;
+    checkData(tc, data, 103, 1, "eth2", 16, 16, "host2");
+
+    CuAssertTrue(tc, data->next == NULL);
+}
+
 static int doUpgradeTest(int level){
     char* txt = malloc(4);
     sprintf(txt, "%d", level);
@@ -170,6 +200,8 @@ CuSuite* bmdbUpgradeGetSuite() {
     SUITE_ADD_TEST(suite, testUpgradeFrom1To2);
     SUITE_ADD_TEST(suite, testUpgradeFrom2To3);
     SUITE_ADD_TEST(suite, testUpgradeFrom3To4);
+    SUITE_ADD_TEST(suite, testUpgradeFrom4To5);
+    SUITE_ADD_TEST(suite, testUpgradeFrom5To6);
     SUITE_ADD_TEST(suite, testConvertAddrValues);
     return suite;
 }

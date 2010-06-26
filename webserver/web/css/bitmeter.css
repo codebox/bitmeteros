@@ -41,7 +41,7 @@ input.hasDatepicker{
 	margin-top: 0.5em;
 	padding: 2px 10px 2px 10px !important;
 }
-#query button, #query input, #query select {
+#query button, #query input, #query select, #calculator input, #calculator button {
 	border: 1px solid #2E6E9E;
 	background-color: white;
 	padding: 3px;
@@ -96,6 +96,10 @@ h2{
 .panelContainer{
 	clear: left;	
 }
+.roundedCorners{
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+}
 #floater{
 	position: absolute;
 	display: none;
@@ -103,8 +107,6 @@ h2{
 	padding: 0.5em;
 	border: 2px solid #2E6E9E;
 	font-size: 1.1em;
-	-moz-border-radius: 5px;
-	-webkit-border-radius: 5px;
 }
 #floater table{
 	border-collapse:collapse;
@@ -142,9 +144,12 @@ div.spacer{
 #monitorDlPeak, #monitorUlPeak, #monitorDlAverage, #monitorUlAverage, .monitorScaleLinks {
 	font-size: 150%; 
 }
-#monitorDlCurrent, #monitorUlCurrent, #monitorDlPeak, #monitorUlPeak, #monitorDlAverage, #monitorUlAverage, td.monitorShowSeries {
+#monitorDlCurrent, #monitorUlCurrent, #monitorDlPeak, #monitorUlPeak, #monitorDlAverage, #monitorUlAverage, td.monitorShowSeries, #monitorStopwatch {
 	text-align: right;
 }
+#monitorStopwatchIcon{
+    cursor: pointer;   
+}    
 .monitorLabel{
 	font-size: 120%;
 	color: grey;
@@ -271,4 +276,123 @@ a[href="#newVersion"]{
 	border: 2px solid;
 	padding: 0.3em;
 }
+input.prefRadio{
+	margin-right: 2em;
+}
+table.prefTable input, table.prefTable label{
+	cursor: pointer;
+}
+h3{
+	margin-bottom: 0.5em;
+}
+p.compact{
+	margin-top: 0.2em;
+	margin-bottom: 0.2em;
+}
+a.refreshLink{
+	cursor: pointer;
+	text-decoration: underline;
+}
+p.filterWarning{
+	color: red;
+	clear: both;
+	margin-top: 0.2em;
+	margin-bottom: 0.5em;
 
+}
+#calcSlider, #calcTextFields, #calcSliderLabels{
+    float: left;   
+    position: relative;
+}
+#calcSlider, #calcSliderLabels{
+    height: 250px;
+}
+#calcSlider{
+    margin-left: 2em;
+    padding-top: 20px;
+}
+.calcTable td{
+    padding: 0.2em;   
+}
+#calcSliderMax, #calcSliderCaption, #calcSliderValue, #calcSliderMin{
+    position: absolute;
+    white-space: nowrap;
+}
+#calcSliderMax{
+    top: 20;    
+}
+#calcSliderCaption{
+    font-weight: bold;
+    width: 6em;
+    text-align: center;
+    top: 125px;
+}
+#calcSliderValue{
+    width: 8em;
+    text-align: center;
+    top: 140px;
+}
+#calcSliderMin{
+    top: 260px;
+}
+span#calcHowMuchSpeedInputSpan, span#calcHowLongSpeedInputSpan{
+    display: none;   
+}
+a#calcHideHowLongSpeedLink, a#calcShowHowLongSpeedLink, a#calcHideHowMuchSpeedLink, a#calcShowHowMuchSpeedLink{
+    cursor: pointer;
+}
+.calcTable input{
+    margin-bottom: 0.5em;   
+    text-align: right;
+}
+p.calcDesc{
+    width: 50em;
+}
+td.calcTableName{
+    font-weight: bold;  
+}
+h3#calcHowMuch{
+    margin-top: 2em;   
+}
+#calcHowMuchResult, #calcHowLongResult, #calcHowMuchDesc, #calcHowLongDesc{
+	width: 10em;
+	text-align: center;
+	padding-left: 1em;
+}
+#calcHowMuchResult, #calcHowLongResult{
+    font-size: 2em;
+}
+#calcHowMuchDesc, #calcHowLongDesc{
+    font-size: 0.8em;
+    vertical-align: top;
+}
+.calcTableInput{
+	width: 20em;
+}
+#swPanel{
+    text-align: center;    
+}
+#swReadout{
+    border: 1px solid;    
+    padding: 0.5em;
+    font-size: 3em;
+}
+#swButtons{
+    margin-top: 1em;
+    margin-left: auto;
+    margin-right: auto;
+}
+#swReset, #swStopGo{
+    margin: 5px;  
+    cursor: pointer;
+}
+.swDlValue, .swUlValue{
+    text-align: right;
+    width: 40%;    
+}
+.swLabel{
+    font-weight: bold;   
+}
+#swValues{
+    width: 90%;   
+}

@@ -41,6 +41,7 @@ static int upgradeTo(int level);
 static int upgrade2();
 static int upgrade3();
 static int upgrade4();
+static int upgrade5();
 
 int doUpgrade(FILE* file, int argc, char** argv){
     int requestLevel;
@@ -108,12 +109,17 @@ static int upgradeTo(int level){
 		case 4:
 			status = upgrade4();
 			break;
+		case 5:
+			status = upgrade5();
+			break;
 		default:
 			assert(FALSE);
 	}
 
 	if (status == SUCCESS){
 		commitTrans();
+		logMsg(LOG_INFO, "Database level upgraded to %d.", level);
+
 	} else {
 		rollbackTrans();
 	}
@@ -178,7 +184,7 @@ int convertAddrValues(){
             curr->next = newAddr;
         }
 	}
-	sqlite3_reset(stmtSelect);
+	sqlite3_finalize(stmtSelect);
 
     struct BinaryAddress* curr = addrList;
  // Go through each of the BinaryAddress structs we populated earlier and run some SQL to convert the ad values to hex strings
@@ -195,6 +201,7 @@ int convertAddrValues(){
         sqlite3_reset(stmtUpdate);
         curr = curr->next;
     }
+    sqlite3_finalize(stmtUpdate);
 
     return SUCCESS;
 }
@@ -277,3 +284,19 @@ static int upgrade4(){
 
     return SUCCESS;
 }
+
+static int upgrade5(){
+ // Upgrade the db from version 4 to version 5
+    int status = setDbVersion(5);
+    if (status == FAIL){
+		return FAIL;
+	}
+
+    status = executeSql("UPDATE data SET hs = '' WHERE hs IS NULL", NULL);
+    if (status == FAIL){
+		return FAIL;
+	}
+
+    return SUCCESS;
+}
+

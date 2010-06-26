@@ -40,13 +40,15 @@ extern struct HttpResponse HTTP_SERVER_ERROR;
 void processMonitorRequest(SOCKET fd, struct Request* req){
 	struct NameValuePair* params = req->params;
 
-	int ts = getValueNumForName("ts", params, NO_TS);
+	int   ts = getValueNumForName("ts", params, NO_TS);
+	char* ha = getValueForName("ha", params, NULL);
+
 	if (ts == NO_TS){
      // We need a 'ts' parameter
-	    writeHeaders(fd, HTTP_SERVER_ERROR, NULL, 0);
+	    writeHeaders(fd, HTTP_SERVER_ERROR, NULL, TRUE);
 
 	} else {
-        writeHeaders(fd, HTTP_OK, MIME_JSON, 0);
+        writeHeaders(fd, HTTP_OK, MIME_JSON, TRUE);
 
      /* The 'ts' parameter is an offset from the current (server) time rather than an actual timestamp, done like this
         because there may be differences in the clocks on the client and server, if the client was a minute
@@ -54,13 +56,27 @@ void processMonitorRequest(SOCKET fd, struct Request* req){
         int now = getTime();
         int queryTs = now - ts;
 
-        struct Data* result = getMonitorValues(queryTs);
-        
+        char* hs = NULL;
+        char* ad = NULL;
+        struct HostAdapter* hostAdapter = NULL;
+
+        if (ha != NULL) {
+            hostAdapter = getHostAdapter(ha);
+            hs = hostAdapter->host;
+            ad = hostAdapter->adapter;
+        }
+
+        struct Data* result = getMonitorValues(queryTs, hs, ad);
+
+        if (ha != NULL) {
+            freeHostAdapter(hostAdapter);
+        }
+
      /* The database may contain values with timestamps that lie in the future, relative to the current system time. This
         can happen as a result of changes to/from GMT, or if the system clock is altered manually or accidentally. We don't
         want to return values with future timestamps, so move through the result list until we find a timestamp <= the
         current time. */
-        struct Data* resultsFromNow = result; 
+        struct Data* resultsFromNow = result;
 		while((resultsFromNow != NULL) && (resultsFromNow->ts > now)){
 			resultsFromNow = resultsFromNow->next;
 		}
@@ -71,7 +87,7 @@ void processMonitorRequest(SOCKET fd, struct Request* req){
             curr->ts = (now - curr->ts);
             curr = curr->next;
         }
-        
+
         char jsonBuffer[64];
         sprintf(jsonBuffer, "{serverTime : %d, data : ", now);
         writeText(fd, jsonBuffer);

@@ -42,8 +42,8 @@
 #define EOL "\n"
 #endif
 
-#define VERSION "0.3.3"
-#define DB_VERSION 4
+#define VERSION "0.5.0"
+#define DB_VERSION 5
 
 #ifdef _WIN32
 #define COPYRIGHT "BitMeter OS v" VERSION " Copyright (c) 2010 Rob Dawson" EOL "Licenced under the GNU General Public License" EOL EOL
@@ -101,6 +101,33 @@ struct Data{
 	struct Data* next;
 };
 
+struct DateCriteriaPart{
+	int isRelative;
+	int val1;
+	int val2;
+	struct DateCriteriaPart* next; // used eg 1-2,3,6-10 is 3 separate DateCriteriaParts
+};
+
+struct DateCriteria{ 
+	struct DateCriteriaPart* year;
+	struct DateCriteriaPart* month;
+	struct DateCriteriaPart* day;
+	struct DateCriteriaPart* weekday;
+	struct DateCriteriaPart* hour;
+	struct DateCriteria* next;
+};
+
+struct Alert{
+    int id;
+    char* name;
+    int active;
+    struct DateCriteria* bound;
+    struct DateCriteria* periods;
+    int direction;
+    BW_INT amount;
+    struct Alert* next;
+};
+
 #ifndef _WIN32
 	typedef int SOCKET;
 #endif
@@ -111,7 +138,7 @@ sqlite3* openDb();
 int isDbOpen();
 void prepareDb();
 struct Data* runSelect(sqlite3_stmt *stmt);
-void runSelectAndCallback(sqlite3_stmt *stmt, void (*callback)(struct Data*));
+void runSelectAndCallback(sqlite3_stmt *stmt, void (*callback)(struct Data*, int), int handle);
 int executeSql(const char* sql, int (*callback)(void*, int, char**, char**) );
 void beginTrans(int immediate);
 void commitTrans();
@@ -125,6 +152,10 @@ char* getConfigText(const char* key, int quiet);
 int setConfigTextValue(char* key, char* value);
 int setConfigIntValue(char* key, int value);
 int getDbVersion();
+// ----
+struct DateCriteria* makeDateCriteria(char* yearTxt, char* monthTxt, char* dayTxt, char* weekdayTxt, char* hourTxt);
+int isDateCriteriaMatch(struct DateCriteria* criteria, time_t ts);
+time_t findFirstMatchingDate(struct DateCriteria* criteria, time_t now);
 // ----
 struct Data* allocData();
 struct Data makeData();
@@ -154,6 +185,7 @@ void toDate(char* dateText, time_t ts);
 void makeHexString(char* hexString, const char* data, int dataLen);
 long strToLong(char* txt, long defaultValue);
 int strToInt(char* txt, int defaultValue);
+char *trim(char *str);
 // ----
 time_t getTime();
 time_t getCurrentYearForTs(time_t ts);

@@ -28,7 +28,6 @@
 #include <string.h>
 #include <time.h>
 #include <stdlib.h>
-#include "capture.h"
 #include "CuTest.h"
 
 /*
@@ -116,7 +115,8 @@ void testAddToDate(CuTest *tc){
 }
 
 CuSuite* timeGetSuite() {
-    putenv("TZ=GMT"); // Need this because the date/time fns use localtime
+    setTzToGmt();
+    
     CuSuite* suite = CuSuiteNew();
     SUITE_ADD_TEST(suite, testGetCurrentYearForTs);
     SUITE_ADD_TEST(suite, testGetCurrentMonthForTs);
@@ -128,5 +128,8 @@ CuSuite* timeGetSuite() {
     SUITE_ADD_TEST(suite, testGetNextMinForTs);
     SUITE_ADD_TEST(suite, testGetYearFromTs);
     SUITE_ADD_TEST(suite, testAddToDate);
+    
+    restoreTz();
+    
     return suite;
 }

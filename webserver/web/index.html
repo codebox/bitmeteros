@@ -23,6 +23,7 @@
 		<script type="text/javascript" src="js/bitmeterQuery.js"></script>		
 		<script type="text/javascript" src="js/bitmeterHistory.js"></script>
 		<script type="text/javascript" src="js/bitmeterSummary.js"></script>
+		<script type="text/javascript" src="js/bitmeterCalc.js"></script>
 		<script type="text/javascript" src="js/bitmeterPrefs.js"></script>
 		<script type="text/javascript" src="js/bitmeter.js"></script>
 		<script type="text/javascript" src="js/farbtastic.js"></script>
@@ -36,11 +37,13 @@
 		        <li><a href="#history"><span>History</span></a></li>
 		        <li><a href="#summary"><span>Summary</span></a></li>
 		        <li><a href="#query"><span>Query</span></a></li>
+		        <li><a href="#calculator"><span>Calculator</span></a></li>
 		        <li><a href="#prefs"><span>Preferences</span></a></li>
 				<li><a href="#about"><span>About</span></a></li>
 		    </ul>
 		    <div id="monitor">
 		        <h2>Monitor</h2><div class="helpLink" id="monitorHelpLink"><a title="Help" class="ui-icon ui-icon-newwin"></a></div>
+		        <p class="filterWarning"></p>
 		        <div class="panelContainer">
 		        	<div id="monitorDisplay" style="width:600px;height:300px;float: left;"></div>
 		        	<div id="monitorReadout">
@@ -93,11 +96,16 @@
 		        					<input id="monitorShowUl" type="checkbox" />
 		        				</td>
 		        			</tr>
+		        			<tr><td colspan="2" class="monitorSeparator"><hr></td></tr>
+		        			<tr>
+		        			    <td class="monitorLabel">Stopwatch</td>
+		        			    <td id="monitorStopwatch"><img id="monitorStopwatchIcon" src="css/images/stopwatch.png"></td>
+		        			</tr>
 		        		</table>
 		        	</div>
 		        </div>
 		        <div class="spacer"></div>
-		        <div class="dialog" title="Help">
+		        <div class="dialog" id="helpDialog" title="Help">
 		        	<p>
 		        		The <strong>Monitor</strong> page shows real-time connection usage, updating its display once each second by default.
 		        	</p>
@@ -108,10 +116,52 @@
 		        	<p>
 		        		To adjust the vertical scale, use the <em>Up</em> and <em>Down</em> arrows on the right of the page.
 		        	</p>
+		        	<p>
+		        		The Stopwatch tool can be displayed by clicking the icon at the bottom right of the page. The Stopwatch allows the measurement of upload and download
+		        		speeds over short intervals of time; automatically calculating totals, together with average, maximum and minimum speeds. The Stopwatch can be paused
+		        		and reset as required using the large buttons in the center of the display.  
+		        	</p>
+		        </div>
+		        <div class="dialog" id="swDialog" title="Stopwatch">
+		            <div id="swPanel">
+		                <div id="swReadout">00:00:00</div>
+		                <div id="swButtons">
+		                    <img src="css/images/reset.png" class="swButton" title="Reset" id="swReset" />
+		                    <img src="css/images/play.png"  class="swButton" title="Go"    id="swStopGo" />
+		                </div> 
+		            </div>
+		            <table id="swValues">
+		                <tr>
+		                    <th></th>
+		                    <th class="swDlValue">Download</th>
+		                    <th class="swUlValue">Upload</th>
+		                </tr>
+		                <tr>
+		                    <td class="swLabel">Total</td>
+		                    <td class="swDlValue" id="swDlTotal">0</td>
+		                    <td class="swUlValue" id="swUlTotal">0</td>
+		                </tr>
+		                <tr>
+		                    <td class="swLabel">Average</td>
+		                    <td class="swDlValue" id="swDlAvg">0</td>
+		                    <td class="swUlValue" id="swUlAvg">0</td>
+		                </tr>
+		                <tr>
+		                    <td class="swLabel">Max</td>
+		                    <td class="swDlValue" id="swDlMax">0</td>
+		                    <td class="swUlValue" id="swUlMax">0</td>
+		                </tr>
+		                <tr>
+		                    <td class="swLabel">Min</td>
+		                    <td class="swDlValue" id="swDlMin">0</td>
+		                    <td class="swUlValue" id="swUlMin">0</td>
+		                </tr>
+		            </table>
 		        </div>
 		    </div>
 			<div id="history">
 		        <h2>History</h2><div class="helpLink" id="historyHelpLink"><a title="Help" class="ui-icon ui-icon-newwin"></a></div>
+		        <p class="filterWarning"></p>
 		        <div class="panelContainer">
 		        	<h3>Minutes</h3>
 		        	<div class="historyContainer">
@@ -138,6 +188,10 @@
 		        		</div>
 			        </div>
 			        <div class="spacer"></div>
+					<p>
+					<a href="export">Export data in CSV format</a>
+					</p>
+			        <div class="spacer"></div>
 		        </div>
 		        <div class="dialog" title="Help">
 		        	<p>
@@ -163,33 +217,50 @@
 		        	</p>
 		        	<p>
 		        		In the lower graph, entitled <em>Days</em>, each vertical bar represents 1 day.
-		        	</p>		        			        	
+		        	</p>
+		        	<p>
+						This page also provides an <em>Export</em> link, below the graphs, which allows you to download a CSV file containing
+						all the data held in the Bitmeter OS database. The CSV file can be viewed in any spreadsheet application or text-editor,
+						and contains 1 line for each entry in the database. Each line in the file represents a period of time during which your
+						network connection was active, and contains the following 7 values:
+						<ul>
+							<li><strong>Date</strong> - The date on which the row's values were recorded</li>
+							<li><strong>Start Time</strong> - The start of the time interval covered by the row</li>
+							<li><strong>End Time</strong> - The end of the time interval covered by the row</li>
+							<li><strong>Download</strong> - The number of bytes downloaded during this time interval</li>
+							<li><strong>Upload</strong> - The number of bytes uploaded during this time interval</li>
+							<li><strong>Host</strong> - If the row represents data retrieved from BitMeter OS running on another computer (using the synchronisation feature),
+							then the name of the computer will appear here, otherwise this value will be strongpty.</li>
+							<li><strong>Adapter</strong> - The name of the network adapter used to upload/download the data</li>
+						</ul>
+					</p>		        			        	
 		        </div>
 		    </div>
 		    <div id="summary">
 		        <h2>Summary</h2><div class="helpLink" id="summaryHelpLink"><a title="Help" class="ui-icon ui-icon-newwin"></a></div>
+		        <p class="filterWarning"></p>
 		        <div class="panelContainer">
 			        <table>
 						<tr>
-							<th>&nbsp;</th><th>Download</th><th>Upload</th>
+							<th>&nbsp;</th><th>Download</th><th>Upload</th><th>Combined</th>
 						</tr>
 			        	<tr>
-			        		<td class="name">Today</td><td id="summaryTodayDl" class="value"></td><td id="summaryTodayUl" class="value"></td>
+			        		<td class="name">Today</td><td id="summaryTodayDl" class="value"></td><td id="summaryTodayUl" class="value"></td><td id="summaryTodayCm" class="value"></td>
 			        	</tr>
 			        	<tr>
-			        		<td class="name">This Month</td><td id="summaryMonthDl" class="value"></td><td id="summaryMonthUl" class="value"></td>
+			        		<td class="name">This Month</td><td id="summaryMonthDl" class="value"></td><td id="summaryMonthUl" class="value"></td><td id="summaryMonthCm" class="value"></td>
 			        	</tr>
 			        	<tr>
-			        		<td class="name">This Year</td><td id="summaryYearDl" class="value"></td><td id="summaryYearUl" class="value"></td>
+			        		<td class="name">This Year</td><td id="summaryYearDl" class="value"></td><td id="summaryYearUl" class="value"></td><td id="summaryYearCm" class="value"></td>
 			        	</tr>                                          
 			        	<tr>
-			        		<td class="name">Total</td><td id="summaryTotalDl" class="value"></td><td id="summaryTotalUl" class="value"></td>
+			        		<td class="name">Total</td><td id="summaryTotalDl" class="value"></td><td id="summaryTotalUl" class="value"></td><td id="summaryTotalCm" class="value"></td>
 			        	</tr>
 			        	<tr>
-			        		<td class="name">Since</td><td colspan="2" id="summarySince" class="value"></td>
+			        		<td class="name">Since</td><td colspan="3" id="summarySince" class="value"></td>
 			        	</tr>                                          
-			        	<tr>
-			        		<td class="name">Hosts</td><td colspan="2" id="summaryHosts" class="value"></td>
+			        	<tr id="summaryHostRow">
+			        		<td class="name">Hosts</td><td colspan="3" id="summaryHosts" class="value"></td>
 			        	</tr>                                          			        
 			        </table>
 				</div>
@@ -209,6 +280,7 @@
 		    </div>
 		    <div id="query">
 		        <h2>Query</h2><div class="helpLink" id="queryHelpLink"><a title="Help" class="ui-icon ui-icon-newwin"></a></div>
+		        <p class="filterWarning"></p>
 		        <div class="panelContainer">
 			        <table id="queryFields">
 			        	<tr>
@@ -253,6 +325,7 @@
 								<th id="dateCol"></th>
 								<th id="dlCol"></th>	
 								<th id="ulCol"></th>
+								<th id="cmCol"></th>
 							</tr>
 						</thead>
 						<tbody>
@@ -280,23 +353,115 @@
 		    	</div>
 		    	<div class="spacer"></div>
 		    </div>
+		    <div id="calculator">
+				<h2>Calculator</h2><br>
+				<div class="panelContainer">
+				    <div id="calcTextFields">
+    				    <h3>How long</h3>
+    				    <p class="compact calcDesc">
+    				    Work out how long it will take to transfer a given amount. Enter the amount in bytes below,
+    				    or specify other units using one of the standard abbreviations: <strong>kB</strong>, <strong>MB</strong>, <strong>GB</strong>, <strong>TB</strong>.
+    				    </p>
+    				    <table class="calcTable" id="calcHowLongTable">
+    				        <tr>
+    				            <td class="calcTableName">Amount</td>
+    				            <td class="calcTableInput"><input id="calcHowLongAmountInput" type="text" maxlength="10" /></td>
+    				            <td id="calcHowLongResult"></td>
+    				        </tr>
+    				        <tr>
+    				            <td class="calcTableName">Speed</td>
+    				            <td class="calcTableInput">
+    				                <span id="calcHowLongSpeedInputSpan">
+        				                <input id="calcHowLongSpeedInput" type="text" id="calcSpeed" maxlength="10" /> kB/s<br>
+        				                <a id="calcHideHowLongSpeedLink">Click here</a> to set speed using the slider
+        				            </span>
+        				            <span id="calcHowLongSpeedLinkSpan">
+            				            Speed is set using the slider on the right<br> <a id="calcShowHowLongSpeedLink">Click here</a> to enter speed manually
+        				            </span>
+    				            </td>
+    				            <td id="calcHowLongDesc"></td>
+    				        </tr>
+    				    </table>
+    				    <h3 id="calcHowMuch">How much</h3>
+    				    <p class="compact calcDesc">
+    				    Work out how much you can transfer in a given time. Enter the time interval below in seconds,
+    				    or use other units, either singly or in combination, using the standard abbreviations: 
+    				    <strong>s</strong> (seconds), <strong>m</strong> (minutes), <strong>h</strong> (hours) and
+    				    <strong>d</strong> (days).
+    				    </p>
+    				    <table class="calcTable" id="calcHowMuchTable">
+    				        <tr>
+    				            <td class="calcTableName">Time</td>
+    				            <td class="calcTableInput"><input id="calcHowMuchTimeInput" type="text" maxlength="12" /></td>
+    				            <td id="calcHowMuchResult"></td>
+    				        </tr>
+    				        <tr>
+    				            <td class="calcTableName">Speed</td>
+    				            <td class="calcTableInput">
+    				                <span id="calcHowMuchSpeedInputSpan">
+        				                <input id="calcHowMuchSpeedInput" type="text" maxlength="10" /> kB/s<br>
+        				                <a id="calcHideHowMuchSpeedLink">Click here</a> to set speed using the slider
+        				            </span>
+        				            <span id="calcHowMuchSpeedLinkSpan">
+        				                Speed is set using the slider on the right<br> <a id="calcShowHowMuchSpeedLink">Click here</a> to enter speed manually
+        				            </span>
+    				            </td>
+    				            <td id="calcHowMuchDesc"></td>
+    				        </tr>
+    				    </table>
+    				</div>
+				    <div id="calcSlider"></div>
+				    <div id="calcSliderLabels">
+				        <span id="calcSliderMax">- 100</span>
+				        <span id="calcSliderCaption">Speed</span>
+				        <span id="calcSliderValue">50kB/s</span>
+				        <span id="calcSliderMin">- 0</span>
+				    </div>
+				    <div class="spacer"></div>
+				</div>
+			</div>
 		    <div id="prefs">
 				<h2>Preferences</h2><br>
 		        <div class="panelContainer">
-					<p>Change the appearance and behavior of the Web Interface by adjusting these values. Note that any changes made here will be stored locally using a browser cookie, and therefore will not
+					<p class="compact">Change the appearance and behavior of the Web Interface by adjusting these values. Note that any changes made here will be stored locally using a browser cookie, and therefore will not
 					be visible to other users, and will be reset if you clear your cookies. To make persistent changes, visible to all users, use the <a href="http://codebox.org.uk/bitmeteros/bmdb/man">bmdb</a> utility.</p>
+					
 					<h3>Colours</h3>
+					<p class="compact">Pick the colours to be used to represent Upload and Download data on the graphs.</p>
 					<div class="prefName">Download</div>
 					<div class="prefValue" id="dlColourPicker"></div>
 					<div class="spacer"></div>
 					<div class="prefName">Upload</div>
 					<div class="prefValue" id="ulColourPicker"></div>
 					<div class="spacer"></div>
+					
+					<h3>Data Filter</h3>
+					<p class="compact">If the database contains data from multiple hosts/adapters then use these options to determine what gets displayed. To import
+					data from other hosts use the <a href="http://codebox.org.uk/bitmeteros/bmsync/man">bmsync</a> utility.</p>
+					<table class="prefTable" id="adapterTable">
+					</table>
+					<p class="compact">
+					<label for="chkShowFilterWarning">Display a warning when filter is active</label><input type="checkbox" id="chkShowFilterWarning" />
+					</p>
+					
+					<h3>Units</h3>
+					<p class="compact">What type of units should be used when displaying data speeds/volumes (<a class="refreshLink">refresh</a> page to apply changes).</p>
+					<table class="prefTable">
+						<tr>
+							<td><input type="radio" class="prefRadio" id="binaryUnits" name="displayUnits" /></td>
+							<td><label for="binaryUnits">Binary Units (1kB = 1024 bytes)</label></td>
+						</tr>
+						<tr>
+							<td><input type="radio" class="prefRadio"id="decimalUnits" name="displayUnits" /></td>
+							<td><label for="decimalUnits">Decimal/SI Units (1kB = 1000 bytes)</label></td>
+						</tr>
+					</table>
+					
 					<div class="dialog" title="Colour Picker">
 						<div id="colourPickerDiv"></div>
 						<div id="colourPickerTxtDiv">
 							<h4></h4>
-							<p>Pick a colour using the Colour Wheel, or click one of the links below. Click OK when you have made your choice.</p>
+							<p class="compact">Pick a colour using the Colour Wheel, or click one of the links below. Click OK when you have made your choice.</p>
 							<input type="text" id="colourPickerTxt" name="colourPickerTxt" value="" /><br>
 							<ul>
 								<li id="ff0000">Red</li>
@@ -353,12 +518,9 @@
 				</div>
 			</div>
 		</div>
-		<div id="errorDialog">
+		<div id="errorDialog" class="roundedCorners">
 			<h2>Error</h2>
 			<p id="msg">
-			</p>
-			<p>
-				<button>OK</button>
 			</p>
 		</div>		
 		<div id="newVersion">
@@ -375,7 +537,7 @@
 				</p>
 			</div>
 		</div>
-		<div id="floater"></div>
+		<div id="floater" class="roundedCorners"></div>
 		<div id="modalBackground"></div>
 	</body>
 </html>

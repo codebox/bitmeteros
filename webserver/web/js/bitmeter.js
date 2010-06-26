@@ -4,6 +4,9 @@ var model = buildModel();
 // Manages the automatic screen refreshes
 var refreshTimer;
 
+// Gets called to signal to the current tab that it is being closed
+var onTabHide;
+
 var errorDialog;
 var WEEKDAYS, MONTHS;
 
@@ -30,7 +33,11 @@ $.ajaxSetup({
 			    msg = "An error occurred while attempting to communicate with the server: " + errType;
     		}
 			showError(msg);
-		}
+		},
+	dataFilter : function(data, dataType){
+		hideError();
+		return data;
+	}
 });
 
 // Help dialogs use these config values
@@ -69,13 +76,28 @@ function getTime(){
 
 // Add leading zero to values less than 10
 function zeroPad(val){
-	if (val < 10){
+    if (val === 0){
+        return '00';
+	} else if (val < 10){
 		return '0' + val;
 	} else {
 		return '' + val;
 	}
 }
 
+function addAdaptersToRequest(req){
+	if (model.getAdapters()){
+		if (req.indexOf('?') < 0){
+			req += '?';
+		} else {
+			req += '&';
+		}
+		req += ('ha=' + model.getAdapters());
+	}
+	return req;
+}
+
+var errDialogVisible = false;
 function showError(msg){
 	var bg = $("#modalBackground");
 	bg.show();
@@ -84,11 +106,99 @@ function showError(msg){
 	box.fadeIn("slow");
 	box.css("left", ( $(window).width() - box.width() ) / 2 + $(window).scrollLeft() + "px");
 	$("#errorDialog #msg").html(msg);	
+	errDialogVisible = true;
 }
+function hideError(){
+	if (errDialogVisible){
+		errDialogVisible = false;
+		$("#errorDialog").fadeOut("slow");
+		$("#modalBackground").hide();
+	}
+}
+
+function getBytesPerK(){
+    return model.getBinaryUnits() ? 1024 : 1000;   
+}
+var FORMAT_INTERVAL_TINY  = 0;
+var FORMAT_INTERVAL_SHORT = 1;
+var FORMAT_INTERVAL_LONG  = 2;
+
+var formatInterval = (function(){
+    var SECS_PER_MINUTE = 60;
+    var SECS_PER_HOUR   = 60 * 60;
+    
+    return function(intervalInSec, compactness){
+        var rem = intervalInSec;
+        
+        var sec  = intervalInSec % 60;
+        rem -= sec;
+        
+        var min  = (rem / 60) % 60;
+        rem -= min * 60;
+        
+        var hour = (rem / 3600) % 24;
+        rem -= hour * 3600;
+        
+        var day  = (rem / 86400);
+
+        if (compactness === FORMAT_INTERVAL_TINY){
+            return zeroPad(hour) + ':' + zeroPad(min) + ':' + zeroPad(Math.round(sec));
+            
+        } else if (compactness === FORMAT_INTERVAL_SHORT){
+            if (intervalInSec === 0){
+                return '0 sec';   
+                
+            } else if (intervalInSec < 1){
+                return '<1 sec';   
+                
+            } else {
+                var result = '';
+                if (day > 0){
+                    result += day + 'd ';
+                }
+                if (hour > 0){
+                    result += hour + 'h ';
+                }
+                if (min > 0){
+                    result += min + 'm ';
+                }
+                if (sec > 0){
+                    result += Math.round(sec) + 's';
+                }                     
+                return result;           
+            }
+            
+		} else if (compactness === FORMAT_INTERVAL_LONG){
+            if (intervalInSec === 0){
+                return '0 sec';   
+            } else if (intervalInSec < 1){
+                return '<1 sec';   
+            } else {
+                var result = '';
+                if (day > 0){
+                    result += (day + ' day' + (day===1 ? '' : 's') + ' ');
+                }
+                if (hour > 0){
+                    result += (hour + ' hour' + (hour===1 ? '' : 's') + ' ');
+                }
+                if (min > 0){
+                    result += (min + ' minute' + (min===1 ? '' : 's') + ' ');
+                }
+                if (sec > 0){
+                	var roundedSec = Math.round(sec); 
+                    result += (roundedSec + ' second' + (roundedSec===1 ? '' : 's'));
+                }                     
+                return result;           
+            }            
+        } else {
+        	assert(false, 'Bad compactness value: ' + compactness);
+        }
+    };
+})();
 
 // Convert an integer UL/DL value into a 2-dp floating point value with 2 letter abbreviation
 var formatAmount = (function(){
-	var K=1024;
+	var K = getBytesPerK();
 	var KB_MIN = K;
 	var MB_MIN = KB_MIN * K;
 	var GB_MIN = MB_MIN * K;
@@ -192,6 +302,10 @@ $(document).ready(function(){
 					 // If there was a refresh timer active for the previous tab then clear it
 						refreshTimer && clearInterval(refreshTimer);
 						
+					 // If there is any code that the current tab should run before it gets hidden then do it now
+						onTabHide && onTabHide();
+						onTabHide = null;
+						
 						var tabIndex = ui.index;
 						if (tabIndex === 0){
 							tabShowMonitor();
@@ -202,6 +316,8 @@ $(document).ready(function(){
 						} else if (tabIndex === 3){
 							tabShowQuery();
 						} else if (tabIndex === 4){
+							tabShowCalc();
+						} else if (tabIndex === 5){
 							tabShowPrefs();
 						}
 					},
@@ -223,11 +339,6 @@ $(document).ready(function(){
 
 		$("noscript").hide(); // Needed for IE8
 		$("#errorDialog, #modalBackground").hide();
-		
-		$("#errorDialog button").click(function(e){
-			$("#errorDialog").fadeOut("slow");
-			$("#modalBackground").hide();
-		});
 		
 		$.getJSON("http://updates.codebox.org.uk/version/bitmeteros/version.js?callback=?", showVersion);
 

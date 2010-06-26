@@ -105,7 +105,7 @@ struct Data* extractDiffs(struct Data* oldList, struct Data* newList){
     routine must handle cases where one or both lists are null, where the adapters do not appear in the
     same order within the 2 lists, and where adapters are present in one list and not in the other (this
     will happen if adapters are enabled or disabled while the application is running). */
-	unsigned long dl,ul;
+	BW_INT dl,ul;
 
  // These pointers reference the Data structs that we are currently examining, from each of the 2 lists
 	struct Data* oldData;
@@ -129,6 +129,7 @@ struct Data* extractDiffs(struct Data* oldList, struct Data* newList){
                         newDiff->dl = dl;
                         newDiff->ul = ul;
                         setAddress(newDiff, oldData->ad);
+                        setHost(newDiff, oldData->hs);
 
                         appendData(&diffData, newDiff);
                     }
