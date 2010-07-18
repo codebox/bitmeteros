@@ -4,9 +4,25 @@ SHARED_SRC=../../shared/src
 SHARED_CLIENT_SRC=../../shared_client/src
 WEB_SRC=../../webserver/src
 BMDB_SRC=../../bmdb/src
+SYNC_SRC=../../bmsync/src
 
-bmdb: bmdb.o bmdbConfig.o upgrade.o bmdbVersion.o log.o db.o common.o platform.o data.o
-	gcc bmdb.o bmdbConfig.o upgrade.o bmdbVersion.o log.o db.o common.o platform.o data.o -o bmdb -lsqlite3 -lm
+bmsync: bmsync.o syncHelp.o syncHelpText.o syncOptions.o sql.o common.o data.o db.o log.o platform.o time.o
+	gcc bmsync.o syncHelp.o syncHelpText.o syncOptions.o sql.o common.o data.o db.o log.o platform.o time.o -o bmsync -lsqlite3 -lm
+
+bmsync.o: $(SYNC_SRC)/bmsync.c $(SHARED_SRC)/common.h $(SYNC_SRC)/bmsync.h $(DAEMON_SRC)/capture.h $(WEB_SRC)/bmws.h
+	gcc -c $(SYNC_SRC)/bmsync.c -o bmsync.o -I$(SHARED_SRC) -I$(SYNC_SRC) -I$(DAEMON_SRC) -I$(WEB_SRC)
+
+syncHelp.o: $(SYNC_SRC)/help.c $(SHARED_SRC)/common.h $(SYNC_SRC)/bmsync.h
+	gcc -c $(SYNC_SRC)/help.c -o syncHelp.o -I$(SHARED_SRC) -I$(SYNC_SRC)
+
+syncHelpText.o: $(SYNC_SRC)/helpText.c $(SHARED_SRC)/common.h
+	gcc -c $(SYNC_SRC)/helpText.c -o syncHelpText.o -I$(SHARED_SRC)
+
+syncOptions.o: $(SYNC_SRC)/options.c $(SHARED_SRC)/common.h $(SYNC_SRC)/bmsync.h
+	gcc -c $(SYNC_SRC)/options.c -o syncOptions.o -I$(SHARED_SRC) -I$(SYNC_SRC)
+
+bmdb: bmdb.o bmdbConfig.o upgrade.o bmdbVersion.o bmdbHelpText.o log.o db.o common.o platform.o data.o admin.o
+	gcc bmdb.o bmdbConfig.o upgrade.o bmdbVersion.o bmdbHelpText.o log.o db.o common.o platform.o data.o -o bmdb admin.o -lsqlite3 -lm
 
 bmdbConfig.o: $(BMDB_SRC)/config.c $(SHARED_SRC)/common.h $(BMDB_SRC)/bmdb.h
 	gcc -c $(BMDB_SRC)/config.c -o bmdbConfig.o -I$(SHARED_SRC) -I$(BMDB_SRC)
@@ -14,14 +30,20 @@ bmdbConfig.o: $(BMDB_SRC)/config.c $(SHARED_SRC)/common.h $(BMDB_SRC)/bmdb.h
 upgrade.o: $(BMDB_SRC)/upgrade.c $(SHARED_SRC)/common.h $(BMDB_SRC)/bmdb.h
 	gcc -c $(BMDB_SRC)/upgrade.c -o upgrade.o -I$(SHARED_SRC) -I$(BMDB_SRC)
 
+admin.o: $(BMDB_SRC)/admin.c $(SHARED_SRC)/common.h $(BMDB_SRC)/bmdb.h
+	gcc -c $(BMDB_SRC)/admin.c -o admin.o -I$(SHARED_SRC) -I$(BMDB_SRC)
+
 bmdbVersion.o: $(BMDB_SRC)/version.c $(SHARED_SRC)/common.h $(BMDB_SRC)/bmdb.h
 	gcc -c $(BMDB_SRC)/version.c -o bmdbVersion.o -I$(SHARED_SRC) -I$(BMDB_SRC)
+
+bmdbHelpText.o: $(BMDB_SRC)/helpText.c $(SHARED_SRC)/common.h
+	gcc -c $(BMDB_SRC)/helpText.c -o bmdbHelpText.o -I$(SHARED_SRC)
 
 bmdb.o: $(BMDB_SRC)/bmdb.c $(BMDB_SRC)/bmdb.h $(SHARED_SRC)/common.h $(BMDB_SRC)/bmdb.h
 	gcc -c $(BMDB_SRC)/bmdb.c -o bmdb.o -I $(SHARED_SRC) -I$(BMDB_SRC)
 
-bmws: bmws.o handleConfig.o handleFile.o handleMonitor.o handleQuery.o handleSummary.o http.o httpRequest.o data.o common.o log.o platform.o db.o clientMonitor.o clientSummary.o clientQuery.o clientUtil.o time.o
-	gcc bmws.o handleConfig.o handleFile.o handleMonitor.o handleQuery.o handleSummary.o http.o httpRequest.o data.o common.o log.o platform.o db.o clientMonitor.o clientSummary.o clientQuery.o clientUtil.o time.o -o bmws -lsqlite3 -lm
+bmws: bmws.o handleConfig.o handleFile.o handleMonitor.o handleQuery.o handleSync.o handleExport.o handleSummary.o http.o httpRequest.o data.o common.o log.o platform.o db.o clientMonitor.o clientSummary.o clientSync.o clientQuery.o clientDump.o clientUtil.o time.o
+	gcc bmws.o handleConfig.o handleFile.o handleMonitor.o handleQuery.o handleSync.o handleExport.o handleSummary.o http.o httpRequest.o data.o common.o log.o platform.o db.o clientMonitor.o clientSummary.o clientSync.o clientQuery.o clientDump.o clientUtil.o time.o -o bmws -lsqlite3 -lm
 
 bmws.o: $(WEB_SRC)/bmws.c $(WEB_SRC)/bmws.h $(SHARED_SRC)/common.h
 	gcc -c $(WEB_SRC)/bmws.c -o bmws.o -I$(SHARED_SRC) 
@@ -34,6 +56,12 @@ handleFile.o: $(WEB_SRC)/handleFile.c $(WEB_SRC)/bmws.h $(SHARED_SRC)/common.h
 
 handleMonitor.o: $(WEB_SRC)/handleMonitor.c $(WEB_SRC)/bmws.h $(SHARED_SRC)/common.h $(SHARED_CLIENT_SRC)/client.h
 	gcc -c $(WEB_SRC)/handleMonitor.c -o handleMonitor.o -I$(SHARED_SRC) -I$(SHARED_CLIENT_SRC)
+
+handleSync.o: $(WEB_SRC)/handleSync.c $(WEB_SRC)/bmws.h $(SHARED_SRC)/common.h $(SHARED_CLIENT_SRC)/client.h
+	gcc -c $(WEB_SRC)/handleSync.c -o handleSync.o -I$(SHARED_SRC) -I$(SHARED_CLIENT_SRC)
+	
+handleExport.o: $(WEB_SRC)/handleExport.c $(WEB_SRC)/bmws.h $(SHARED_SRC)/common.h $(SHARED_CLIENT_SRC)/client.h
+	gcc -c $(WEB_SRC)/handleExport.c -o handleExport.o -I$(SHARED_SRC) -I$(SHARED_CLIENT_SRC)
 
 handleQuery.o: $(WEB_SRC)/handleQuery.c $(WEB_SRC)/bmws.h $(SHARED_SRC)/common.h $(SHARED_CLIENT_SRC)/client.h
 	gcc -c $(WEB_SRC)/handleQuery.c -o handleQuery.o -I$(SHARED_SRC) -I$(SHARED_CLIENT_SRC)
@@ -79,6 +107,9 @@ clientSummary.o: $(SHARED_CLIENT_SRC)/clientSummary.c $(SHARED_SRC)/common.h $(S
 
 clientQuery.o: $(SHARED_CLIENT_SRC)/clientQuery.c $(SHARED_SRC)/common.h $(SHARED_CLIENT_SRC)/client.h
 	gcc -c $(SHARED_CLIENT_SRC)/clientQuery.c -o clientQuery.o -I$(SHARED_SRC) -I$(SHARED_CLIENT_SRC)
+
+clientSync.o: $(SHARED_CLIENT_SRC)/clientSync.c $(SHARED_SRC)/common.h $(SHARED_CLIENT_SRC)/client.h
+	gcc -c $(SHARED_CLIENT_SRC)/clientSync.c -o clientSync.o -I$(SHARED_SRC) -I$(SHARED_CLIENT_SRC)
 
 clientUtil.o: $(SHARED_CLIENT_SRC)/clientUtil.c $(SHARED_SRC)/common.h $(SHARED_CLIENT_SRC)/client.h
 	gcc -c $(SHARED_CLIENT_SRC)/clientUtil.c -o clientUtil.o -I$(SHARED_SRC) -I$(SHARED_CLIENT_SRC)
