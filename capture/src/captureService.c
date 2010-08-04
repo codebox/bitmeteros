@@ -60,6 +60,7 @@ void ServiceMain(int argc, char** argv) {
 	ServiceStatus.dwWaitHint                = 0; 
  
  	setLogLevel(LOG_ERR);
+ 	setAppName("CAPTURE");
  	setLogToFile(TRUE);
 	setupCapture();
 	

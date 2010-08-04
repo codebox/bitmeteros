@@ -65,7 +65,6 @@ int main(int argc, char **argv){
 	} else {
 	 // We will need to go to the database if we end up here
 		openDb();
-		prepareDb();
         dbVersionCheck();
 
 		switch(prefs.mode){

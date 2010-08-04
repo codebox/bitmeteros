@@ -23,6 +23,9 @@
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifdef _WIN32
+	#define __USE_MINGW_ANSI_STDIO 1
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include "capture.h"
@@ -42,10 +45,18 @@ static struct Data* prevData;
 struct Data* extractDiffs(struct Data*, struct Data*);
 static int tsCompress;
 
+static void setCustomLogLevel(){
+ // If a custom logging level for the capture process has been set in the db then use it
+	int dbLogLevel = getConfigInt(CONFIG_CAP_LOG_LEVEL, TRUE);
+	if (dbLogLevel > 0) {
+		setLogLevel(dbLogLevel);
+	}
+}
+
 void setupCapture(){
  // Called once when the application starts - setup up the various db related things...
     openDb();
-    prepareDb();
+    setCustomLogLevel();
     dbVersionCheck();
 	setupDb();
 	compressDb();
@@ -71,13 +82,13 @@ int processCapture(){
 
 	logData(diffList);
 	freeData(diffList);
-	freeData(prevData);
 
 	if (status == FAIL){
         return FAIL;
 	}
 
  // Save the current values so we can compare against them next time
+	freeData(prevData);
 	prevData = currData;
 
  // Is it time to compress the database yet?
@@ -147,9 +158,11 @@ struct Data* extractDiffs(struct Data* oldList, struct Data* newList){
 }
 
 void logData(struct Data* data){
-	while(data != NULL){
-		logMsg(LOG_INFO, "%d DL=%lu UL=%lu $s", getTime(), data->dl, data->ul, data->ad);
-		data = data->next;
+	if (isLogDebug()){
+		while(data != NULL){
+			logMsg(LOG_DEBUG, "%d DL=%llu UL=%llu %s", getTime(), data->dl, data->ul, data->ad);
+			data = data->next;
+		}
 	}
 }
 

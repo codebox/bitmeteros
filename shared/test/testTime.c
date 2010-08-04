@@ -98,14 +98,6 @@ void testGetNextMinForTs(CuTest *tc){
     CuAssertIntEquals(tc, makeTs("2010-01-01 00:00:00"), getNextMinForTs(makeTs("2009-12-31 23:59:59")));
 }
 
-void testGetYearFromTs(CuTest *tc){
- // Check that the 'getYearFromTs' function correctly extracts the year component of various timestamps	
-    CuAssertIntEquals(tc, 1970, getYearFromTs(makeTs("1970-05-26 10:01:00")));
-    CuAssertIntEquals(tc, 2009, getYearFromTs(makeTs("2009-01-01 00:00:00")));
-    CuAssertIntEquals(tc, 2009, getYearFromTs(makeTs("2009-03-24 19:12:01")));
-    CuAssertIntEquals(tc, 2009, getYearFromTs(makeTs("2009-12-31 23:59:59")));
-}
-
 void testAddToDate(CuTest *tc){
  // Check that the 'addToDate' function correctly adds various different values to a timestamp
     CuAssertIntEquals(tc, makeTs("1970-05-26 11:01:00"), addToDate(makeTs("1970-05-26 10:01:00"), 'h', 1));
@@ -126,7 +118,6 @@ CuSuite* timeGetSuite() {
     SUITE_ADD_TEST(suite, testGetNextDayForTs);
     SUITE_ADD_TEST(suite, testGetNextHourForTs);
     SUITE_ADD_TEST(suite, testGetNextMinForTs);
-    SUITE_ADD_TEST(suite, testGetYearFromTs);
     SUITE_ADD_TEST(suite, testAddToDate);
     
     restoreTz();

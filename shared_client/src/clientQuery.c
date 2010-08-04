@@ -40,12 +40,6 @@ based on timestamp ranges, with result grouping.
 #define CLIENT_QUERY_SQL_HOST         "SELECT SUM(dl) AS dl, SUM(ul) AS ul FROM data WHERE ts>? AND ts<=? AND hs=?"
 #define CLIENT_QUERY_SQL_HOST_ADAPTER "SELECT SUM(dl) AS dl, SUM(ul) AS ul FROM data WHERE ts>? AND ts<=? AND hs=? AND ad=?"
 
-#ifndef MULTI_THREADED_CLIENT
-	static sqlite3_stmt *stmtTs   = NULL;
-	static sqlite3_stmt *stmtHs   = NULL;
-	static sqlite3_stmt *stmtHsAd = NULL;
-#endif
-
 static struct Data* doQueryForInterval(sqlite3_stmt* stmt, time_t tsFrom, time_t tsTo,
         char* hs, char* ad, void (*bindQueryParams)(sqlite3_stmt*, time_t, time_t, char*, char*));
 static struct Data* doQuery(sqlite3_stmt *stmt, time_t minFrom, time_t maxTo, time_t (*getNext)(time_t), time_t (*addTo)(time_t),
@@ -70,14 +64,7 @@ struct Data* getQueryValues(time_t tsFrom, time_t tsTo, int group, char* hs, cha
 
     if (selectByAdapter == TRUE) {
         if (selectByHost == TRUE) {
-            #ifdef MULTI_THREADED_CLIENT
-                prepareSql(&stmt, CLIENT_QUERY_SQL_HOST_ADAPTER);
-            #else
-                if (stmtHsAd == NULL){
-                    prepareSql(&stmtHsAd, CLIENT_QUERY_SQL_HOST_ADAPTER);
-                }
-                stmt = stmtHsAd;
-            #endif
+            stmt = getStmt(CLIENT_QUERY_SQL_HOST_ADAPTER);
             bindQueryParams = &bindQueryParamsTsHsAd;
 
         } else {
@@ -87,27 +74,12 @@ struct Data* getQueryValues(time_t tsFrom, time_t tsTo, int group, char* hs, cha
 
     } else {
         if (selectByHost == TRUE) {
-            #ifdef MULTI_THREADED_CLIENT
-                prepareSql(&stmt, CLIENT_QUERY_SQL_HOST);
-            #else
-                if (stmtHs == NULL){
-                    prepareSql(&stmtHs, CLIENT_QUERY_SQL_HOST);
-                }
-                stmt = stmtHs;
-            #endif
+			stmt = getStmt(CLIENT_QUERY_SQL_HOST);
             bindQueryParams = &bindQueryParamsTsHs;
 
         } else {
-            #ifdef MULTI_THREADED_CLIENT
-                prepareSql(&stmt, CLIENT_QUERY_SQL_ALL);
-            #else
-                if (stmtTs == NULL){
-                    prepareSql(&stmtTs, CLIENT_QUERY_SQL_ALL);
-                }
-                stmt = stmtTs;
-            #endif
+            stmt = getStmt(CLIENT_QUERY_SQL_ALL);
             bindQueryParams = &bindQueryParamsTs;
-
         }
     }
 
@@ -151,11 +123,7 @@ struct Data* getQueryValues(time_t tsFrom, time_t tsTo, int group, char* hs, cha
         }
     }
 
-	#ifdef MULTI_THREADED_CLIENT
-    	sqlite3_finalize(stmt);
-    #else
-    	sqlite3_reset(stmt);
-    #endif
+	finishedStmt(stmt);
 
     return result;
 }

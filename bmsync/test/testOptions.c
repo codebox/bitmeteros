@@ -144,7 +144,10 @@ static void checkPrefs(CuTest *tc, struct SyncPrefs expectedPrefs, char* cmdLine
 
 	struct SyncPrefs actualPrefs = {0, 0, NULL, 0, 0, NULL, NULL};
 	optind = 1; // need to reset this global between each call to getopt()
-	optreset = 1; // non-portable way to reset state - see getopt.h
+	#if HAVE_DECL_OPTRESET
+    	optreset = 1; // non-portable way to reset state - see getopt.h
+	#endif
+
 	parseSyncArgs(argc, argv, &actualPrefs);
 
 	CuAssertIntEquals(tc, expectedPrefs.help,      actualPrefs.help);

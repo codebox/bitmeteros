@@ -46,6 +46,12 @@ void setLogLevel(int level){
  // Determine logging verbosity here
 	logLevel = level;
 }
+int isLogDebug(){
+	return logLevel == LOG_DEBUG;	
+}
+int isLogInfo(){
+	return (logLevel == LOG_DEBUG) || (logLevel == LOG_INFO);	
+}
 
 static char* appName = NULL;
 void setAppName(const char* thisAppName){

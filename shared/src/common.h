@@ -42,8 +42,8 @@
 #define EOL "\n"
 #endif
 
-#define VERSION "0.5.0"
-#define DB_VERSION 5
+#define VERSION "0.6.0"
+#define DB_VERSION 6
 
 #ifdef _WIN32
 #define COPYRIGHT "BitMeter OS v" VERSION " Copyright (c) 2010 Rob Dawson" EOL "Licenced under the GNU General Public License" EOL EOL
@@ -59,6 +59,8 @@
 
 #define CONFIG_DB_VERSION           "db.version"
 #define CONFIG_LOG_PATH             "cap.logpath"
+#define CONFIG_CAP_LOG_LEVEL        "cap.loglevel"
+#define CONFIG_WEB_LOG_LEVEL        "web.loglevel"
 #define CONFIG_WEB_PORT             "web.port"
 #define CONFIG_WEB_DIR              "web.dir"
 #define CONFIG_WEB_MONITOR_INTERVAL "web.monitor_interval"
@@ -68,15 +70,23 @@
 #define CONFIG_WEB_COLOUR_DL        "web.colour_dl"
 #define CONFIG_WEB_COLOUR_UL        "web.colour_ul"
 #define CONFIG_WEB_ALLOW_REMOTE     "web.allow_remote"
+
+#define ALLOW_LOCAL_CONNECT_ONLY 0
+#define ALLOW_REMOTE_CONNECT 1
+#define ALLOW_REMOTE_ADMIN 2
 // ----
-#define LOG_INFO 1
-#define LOG_WARN 2
-#define LOG_ERR  3
+#define LOG_DEBUG 1
+#define LOG_INFO  2
+#define LOG_WARN  3
+#define LOG_ERR   4
 // ----
 #define SECS_PER_MIN    60
 #define SECS_PER_HOUR   60 * 60
 #define MAX_PATH_LEN    256
 #define MAC_ADDR_LEN 6
+// ----
+#define DL_FLAG 1
+#define UL_FLAG 2
 // ----
 #if defined(__APPLE__) || defined(_WIN32)
 #define strdupa(s) strcpy(alloca(strlen(s)+1), s)
@@ -138,8 +148,11 @@ sqlite3* openDb();
 int isDbOpen();
 void prepareDb();
 struct Data* runSelect(sqlite3_stmt *stmt);
-void runSelectAndCallback(sqlite3_stmt *stmt, void (*callback)(struct Data*, int), int handle);
+int runUpdate(sqlite3_stmt* stmt);
+void runSelectAndCallback(sqlite3_stmt *stmt, void (*callback)(int, struct Data*), int handle);
 int executeSql(const char* sql, int (*callback)(void*, int, char**, char**) );
+sqlite3_stmt* getStmt(char*);
+void finishedStmt(sqlite3_stmt*);
 void beginTrans(int immediate);
 void commitTrans();
 void rollbackTrans();
@@ -151,6 +164,7 @@ int getConfigInt(const char* key, int quiet);
 char* getConfigText(const char* key, int quiet);
 int setConfigTextValue(char* key, char* value);
 int setConfigIntValue(char* key, int value);
+int rmConfigValue(char* key);
 int getDbVersion();
 // ----
 struct DateCriteria* makeDateCriteria(char* yearTxt, char* monthTxt, char* dayTxt, char* weekdayTxt, char* hourTxt);
@@ -164,6 +178,10 @@ void appendData(struct Data** , struct Data* );
 void setAddress(struct Data* data, const char* addr);
 void setHost(struct Data* data, const char* host);
 // ----
+struct Alert* allocAlert();
+struct DateCriteriaPart* makeDateCriteriaPart(char* txt);
+char* dateCriteriaPartToText(struct DateCriteriaPart* part);
+// ----
 void doSleep(int interval);
 void getDbPath(char* path);
 void getLogPath(char* path);
@@ -175,6 +193,8 @@ void logWin32ErrMsg(char* msg, int rc);
 void setLogToFile(int );
 void setLogLevel(int);
 void setAppName(const char*);
+int isLogDebug();
+int isLogInfo();
 void logMsg(int level, char* msg, ...);
 void statusMsg(const char* msg, ...);
 void resetStatusMsg();
@@ -183,6 +203,7 @@ void formatAmount(const BW_INT amount, const int binary, const int abbrev, char*
 void toTime(char* timeText, time_t ts);
 void toDate(char* dateText, time_t ts);
 void makeHexString(char* hexString, const char* data, int dataLen);
+BW_INT strToBwInt(char* txt, BW_INT defaultValue);
 long strToLong(char* txt, long defaultValue);
 int strToInt(char* txt, int defaultValue);
 char *trim(char *str);
@@ -196,7 +217,6 @@ time_t getNextMonthForTs(time_t ts);
 time_t getNextDayForTs(time_t ts);
 time_t getNextHourForTs(time_t ts);
 time_t getNextMinForTs(time_t ts);
-time_t getYearFromTs(time_t ts);
 time_t addToDate(time_t ts, char unit, int num);
 
 #endif //#ifndef COMMON_H

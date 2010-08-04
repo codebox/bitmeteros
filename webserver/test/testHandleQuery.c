@@ -53,7 +53,6 @@ void testMissingParam(CuTest *tc) {
         "Connection: Close" HTTP_EOL HTTP_EOL
     , result);
 }
-
 void testParamsOk(CuTest *tc) {
     struct NameValuePair fromParam  = {"from", "1257120000", NULL};       // 2009-11-02
     struct NameValuePair toParam    = {"to",   "1257292800", &fromParam}; // 2009-11-04
@@ -81,7 +80,7 @@ void testParamsOk(CuTest *tc) {
         "Server: BitMeterOS " VERSION " Web Server" HTTP_EOL
         "Date: Sun, 08 Nov 2009 10:00:00 +0000" HTTP_EOL
         "Connection: Close" HTTP_EOL HTTP_EOL
-        "[{dl: 14,ul: 14,ts: 1257379200,dr: 259200}]"
+        "[{\"dl\": 14,\"ul\": 14,\"ts\": 1257379200,\"dr\": 259200}]"
     , result);
 }
 
@@ -109,7 +108,7 @@ void testGroupByDay(CuTest *tc) {
         "Server: BitMeterOS " VERSION " Web Server" HTTP_EOL
         "Date: Sun, 08 Nov 2009 10:00:00 +0000" HTTP_EOL
         "Connection: Close" HTTP_EOL HTTP_EOL
-        "[{dl: 7,ul: 7,ts: 1257120000,dr: 54000},{dl: 24,ul: 24,ts: 1257206400,dr: 86400}]"
+        "[{\"dl\": 7,\"ul\": 7,\"ts\": 1257120000,\"dr\": 54000},{\"dl\": 24,\"ul\": 24,\"ts\": 1257206400,\"dr\": 86400}]"
     , result);
 }
 
@@ -140,7 +139,7 @@ void testParamsOkReversed(CuTest *tc) {
         "Server: BitMeterOS " VERSION " Web Server" HTTP_EOL
         "Date: Sun, 08 Nov 2009 10:00:00 +0000" HTTP_EOL
         "Connection: Close" HTTP_EOL HTTP_EOL
-        "[{dl: 4,ul: 4,ts: 1257292800,dr: 86400},{dl: 8,ul: 8,ts: 1257379200,dr: 86400}]"
+        "[{\"dl\": 4,\"ul\": 4,\"ts\": 1257292800,\"dr\": 86400},{\"dl\": 8,\"ul\": 8,\"ts\": 1257379200,\"dr\": 86400}]"
     , result);
 }
 
@@ -170,7 +169,38 @@ void testQueryHostAdapterParams(CuTest *tc) {
         "Server: BitMeterOS " VERSION " Web Server" HTTP_EOL
         "Date: Sun, 08 Nov 2009 10:00:00 +0000" HTTP_EOL
         "Connection: Close" HTTP_EOL HTTP_EOL
-        "[{dl: 9,ul: 9,ts: 1257120000,dr: 54000},{dl: 32,ul: 32,ts: 1257206400,dr: 86400}]"
+        "[{\"dl\": 9,\"ul\": 9,\"ts\": 1257120000,\"dr\": 54000},{\"dl\": 32,\"ul\": 32,\"ts\": 1257206400,\"dr\": 86400}]"
+    , result);
+}
+
+void testGroupByDayCsv(CuTest *tc) {
+    struct NameValuePair fromParam  = {"from", "0", NULL};
+    struct NameValuePair toParam    = {"to",   "1258281927", &fromParam};
+    struct NameValuePair groupParam = {"group", "2", &toParam};
+    struct NameValuePair csvParam   = {"csv", "1", &groupParam};
+    struct Request req = {"GET", "/query", &csvParam, NULL};
+
+    emptyDb();
+    addDbRow(makeTs("2009-11-01 10:00:00"), 3600, NULL,  1,  1, "");
+    addDbRow(makeTs("2009-11-01 11:00:00"), 3600, NULL,  2,  2, "");
+    addDbRow(makeTs("2009-11-01 12:00:00"), 3600, NULL,  4,  4, "");
+    addDbRow(makeTs("2009-11-02 09:00:00"), 3600, NULL,  8,  8, "");
+    addDbRow(makeTs("2009-11-02 23:00:00"), 3600, NULL, 16, 16, "");
+
+    int tmpFd = makeTmpFile();
+    processQueryRequest(tmpFd, &req);
+
+    char* result = readTmpFile();
+
+    CuAssertStrEquals(tc,
+        "HTTP/1.0 200 OK" HTTP_EOL
+        "Content-Type: text/csv" HTTP_EOL
+        "Server: BitMeterOS " VERSION " Web Server" HTTP_EOL
+        "Date: Sun, 08 Nov 2009 10:00:00 +0000" HTTP_EOL
+        "Connection: Close" HTTP_EOL
+        "Content-Disposition: attachment;filename=bitmeterOsQuery.csv" HTTP_EOL HTTP_EOL
+        "2009-11-01 09:00:00,7,7\n"
+		"2009-11-02 00:00:00,24,24\n"
     , result);
 }
 
@@ -181,5 +211,6 @@ CuSuite* handleQueryGetSuite() {
     SUITE_ADD_TEST(suite, testGroupByDay);
     SUITE_ADD_TEST(suite, testParamsOkReversed);
     SUITE_ADD_TEST(suite, testQueryHostAdapterParams);
+    SUITE_ADD_TEST(suite, testGroupByDayCsv);
     return suite;
 }

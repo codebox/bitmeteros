@@ -42,9 +42,12 @@ struct HttpResponse HTTP_NOT_ALLOWED  = {405, "Method not allowed"};
 struct HttpResponse HTTP_SERVER_ERROR = {500, "Bad/missing parameter"};
 
 static void freeNameValuePairs(struct NameValuePair* param);
+static logRequest(struct Request* request);
 
 char* getValueForName(char* name, struct NameValuePair* pair, char* defaultValue){
- // Searches the list of name/value pairs for the value that corresponds to the specified name
+ /* Searches the list of name/value pairs for the value that corresponds to the specified name.
+    This returns a ponter to the value in the struct, not a copy, so don't change it if this will
+    cause problems later. */
 	while(pair != NULL){
 		if (strcmp(pair->name, name) == 0){
 			return pair->value;
@@ -55,7 +58,7 @@ char* getValueForName(char* name, struct NameValuePair* pair, char* defaultValue
 }
 
 long getValueNumForName(char* name, struct NameValuePair* pair, long defaultValue){
-// Searches the list of name/value pairs for the value that corresponds to the specified name, and converts it to an integer
+ // Searches the list of name/value pairs for the value that corresponds to the specified name, and converts it to an integer
 	char* valueTxt = getValueForName(name, pair, NULL);
 	return strToLong(valueTxt, defaultValue);
 }
@@ -96,14 +99,55 @@ static void appendNameValuePair(struct NameValuePair** earlierPair, struct NameV
     }
 }
 
+static struct NameValuePair escapeChars[] = {
+	{"%27", "'", NULL},
+	{"%20", " ", NULL},
+	{NULL, NULL, NULL}
+};
+static char* unescapeValue(char* value){
+	struct NameValuePair thisEscape;
+	char from[BUFSIZE], to[BUFSIZE]; 
+	strncpy(from, value, BUFSIZE);
+	
+	int escapeIndex = 0;
+	
+	while ((thisEscape = escapeChars[escapeIndex++]).name != NULL) {
+		char* nextFromReadPosn = from;
+		char* nextToWritePosn = to;
+		char* match, tmp;
+		int lenOfPartBeforeMatch, lenOfReplacedTxt, lenOfReplacementTxt;
+		
+		while ((match = strstr(nextFromReadPosn, thisEscape.name)) != NULL){
+			lenOfPartBeforeMatch = match - nextFromReadPosn;
+			strncpy(nextToWritePosn, nextFromReadPosn, lenOfPartBeforeMatch);
+			
+			lenOfReplacedTxt    = strlen(thisEscape.name);
+			lenOfReplacementTxt = strlen(thisEscape.value);
+			
+			nextToWritePosn  += lenOfPartBeforeMatch;
+			nextFromReadPosn += lenOfPartBeforeMatch;
+			strncpy(nextToWritePosn, thisEscape.value, lenOfReplacementTxt);
+			
+			nextToWritePosn  += lenOfReplacementTxt;
+			nextFromReadPosn += lenOfReplacedTxt;
+		}
+		strcpy(nextToWritePosn, nextFromReadPosn);
+		strncpy(from, to, BUFSIZE);
+	}
+	return strdup(to);	
+}
+
 struct Request* parseRequest(char* requestTxt){
  // Allocates a new Request struct and populates it with the contents of the request
     char httpMethod[BUFSIZE];
     char httpResource[BUFSIZE];
-    //char httpHeaders[BUFSIZE];
 
+	if (isLogDebug()){
+		logMsg(LOG_DEBUG, "Request: %s", requestTxt);
+	}
+	
  // Extract the HTTP method and resource
-    sscanf(requestTxt, "%s %s %*s", httpMethod, httpResource); //TODO headers contain whitespace, how to parse them with sscanf?
+    sscanf(requestTxt, "%s %s %*s", httpMethod, httpResource);
 
     struct Request* request = malloc(sizeof(struct Request));
 
@@ -134,35 +178,39 @@ struct Request* parseRequest(char* requestTxt){
              // Reached the end of the parameter list
                 break;
             } else {
-                struct NameValuePair* param = makeNameValuePair(paramName, paramValue);
+            	char* unescapedValue = unescapeValue(paramValue);
+                struct NameValuePair* param = makeNameValuePair(paramName, unescapedValue);
 				appendNameValuePair(&(request->params), param);
+				free(unescapedValue);
             }
         }
     }
 
-    char* headerName;
-    char* headerValue;
- // Extract the headers one at a time, and store them
-    while(1){
-    	headerName  = strtok(NULL, ": ");
-        headerValue = strtok(NULL, HTTP_EOL);
-        if (headerName == NULL || headerValue == NULL){
-        	break;
-        } else {
-			struct NameValuePair* header = makeNameValuePair(headerName, headerValue);
-			appendNameValuePair(&(request->headers), header);
-
-        }
-    }
-
+	if (isLogInfo()){
+		logRequest(request);
+	}
+	
     return request;
+}
+
+static logRequest(struct Request* request){
+	logMsg(LOG_INFO, "Parsed Request to: %s %s", request->method, request->path);
+	struct NameValuePair* param = request->params;
+	while (param != NULL){
+		logMsg(LOG_INFO, "        %s=%s", param->name, param->value);
+		param = param->next;	
+	}
 }
 
 void freeRequest(struct Request* request){
  // Free up all the memory used by a Request struct
 	if (request != NULL){
-		free(request->method);
-		free(request->path);
+		if (request->method != NULL){
+			free(request->method);
+		}
+		if (request->path != NULL){
+			free(request->path);
+		}
 		freeNameValuePairs(request->params);
 		freeNameValuePairs(request->headers);
 		free(request);
@@ -174,8 +222,12 @@ static void freeNameValuePairs(struct NameValuePair* param){
 	struct NameValuePair* nextParam;
 	while (param != NULL){
 		nextParam = param->next;
-		free(param->name);
-		free(param->value);
+		if (param->name != NULL){
+			free(param->name);
+		}
+		if (param->value != NULL){
+			free(param->value);
+		}
 		free(param);
 		param = nextParam;
 	}

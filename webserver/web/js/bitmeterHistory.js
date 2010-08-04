@@ -44,7 +44,7 @@ function updateHistory(){
 	   granularity for what we need here, so call /monitor instead, and sort the values in minute-sized groups. */
 	var minGraphTs = historyDisplayMinutes.getOptions().xaxis.max;
 	var minGraphReqTxt = addAdaptersToRequest('monitor?ts=' + 60 * getHistoryMinutesTs());
-	$.get(minGraphReqTxt, function(responseTxt){
+	$.get(minGraphReqTxt, function(response){
 	        /* We get back an object like this, with ts values expressed as an offset from the serverTime value:
 				{ serverTime : 123456, 
 				  data : [
@@ -53,7 +53,6 @@ function updateHistory(){
 					   etc
 				]}
 			*/
-			var response = doEval(responseTxt);
 			var jsonData   = response.data;
 			var serverTime = response.serverTime;
 			historyDisplayMinutes.serverTime = serverTime;
@@ -98,8 +97,7 @@ function updateHistory(){
 	var hourGraphMax = now;
 	var hourGraphMin = now - historyDisplayHours.getOptions().xaxis.max;
 	var hourGraphReqTxt = addAdaptersToRequest('query?from=' + hourGraphMin + '&to=' + hourGraphMax + '&group=1');
-	$.get(hourGraphReqTxt, function(arrData){
-			var jsonData = doEval(arrData);
+	$.get(hourGraphReqTxt, function(jsonData){
 			var now = getTime();
 			var modSeconds = now % 3600;
 			var secondsUntilNextFullHour = (modSeconds === 0 ? 0 : 3600 - modSeconds);
@@ -110,8 +108,7 @@ function updateHistory(){
 	var dayGraphMax = now;
 	var dayGraphMin = now - historyDisplayDays.getOptions().xaxis.max;
 	var dayGraphReqTxt = addAdaptersToRequest('query?from=' + dayGraphMin + '&to=' + dayGraphMax + '&group=2');
-	$.get(dayGraphReqTxt, function(arrData){
-			var jsonData = doEval(arrData);
+	$.get(dayGraphReqTxt, function(jsonData){
 			var now = getTime();
 			var modSeconds = now % 86400;
 			var secondsUntilNextFullDay = (modSeconds === 0 ? 0 : 86400 - modSeconds);
@@ -127,7 +124,6 @@ function tabShowHistory(){
 
 $(document).ready(function(){
      // Manage the floating info div that appears when we hover over bars on the graph
-		var floaterVisible = false;
 		function floatMouseMoveHandler(e){
 			$('#floater').css({'left' : e.pageX + 15, 'top' : e.pageY });
 		}
@@ -137,7 +133,7 @@ $(document).ready(function(){
 			var cOffset = $(this).offset();
 			
 			$('#floater').css({'left' : evObj.clientX - cOffset.left, 'top' : evObj.clientY - cOffset.top});
-			$('#floater').fadeIn(500);
+			$('#floater').fadeIn(200);
 			
 			$(this).bind('mousemove', floatMouseMoveHandler);
 			$(this).css('cursor', 'crosshair');
@@ -147,7 +143,7 @@ $(document).ready(function(){
 		function hideFloater(){
 		 // Hide the floating window
 			floaterVisible = false;				
-			$('#floater').fadeOut(500);
+			$('#floater').fadeOut(200);
 			
 			$(this).css('cursor', '');
 			$(this).unbind('mousemove', floatMouseMoveHandler);

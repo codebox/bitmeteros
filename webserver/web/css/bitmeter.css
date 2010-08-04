@@ -3,12 +3,23 @@
 	font-family: Helvetica, sans-serif;
 	color: #2E6E9E;
  }
- noscript{
+ noscript p{
 	font-size: 200%;
 	color: red;
 	border: 2px solid red;
 	padding: 5px;
 	background-color: #FFCCCC;	
+	text-align: center;
+}
+#noscriptMobile{
+	font-size: 0.7em;
+}
+#noscriptMobile a{
+	font-weight: bold;
+	color: red;
+}
+a{
+	cursor: pointer;	
 }
 #summary table{
 	border-collapse: collapse;
@@ -41,8 +52,9 @@ input.hasDatepicker{
 	margin-top: 0.5em;
 	padding: 2px 10px 2px 10px !important;
 }
-#query button, #query input, #query select, #calculator input, #calculator button {
+button, #query input, #query select, #calculator input {
 	border: 1px solid #2E6E9E;
+	color: #2E6E9E;
 	background-color: white;
 	padding: 3px;
 }
@@ -55,7 +67,7 @@ input.hasDatepicker{
 	position: relative;
 	top: 3px;
 }
-#query button, #query select {
+button, select {
 	cursor: pointer;	
 	color: #2E6E9E;
 }
@@ -73,6 +85,9 @@ input.hasDatepicker{
 }
 #queryStatusBox img{
 	margin-left: 1.5em;
+}
+#queryExportLink{
+	display: none;	
 }
 div.flexigrid{
 	left: 20px;
@@ -96,10 +111,6 @@ h2{
 .panelContainer{
 	clear: left;	
 }
-.roundedCorners{
-	-moz-border-radius: 5px;
-	-webkit-border-radius: 5px;
-}
 #floater{
 	position: absolute;
 	display: none;
@@ -107,6 +118,12 @@ h2{
 	padding: 0.5em;
 	border: 2px solid #2E6E9E;
 	font-size: 1.1em;
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+}
+.roundedCorners{
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
 }
 #floater table{
 	border-collapse:collapse;
@@ -127,7 +144,28 @@ h2{
 #floater td.historyHoverData{
 	text-align: right;
 }
-
+#floater h4{
+	margin: 0;	
+	margin-bottom: 0.5em;
+	text-decoration: underline;
+}
+#floater p{
+	margin-top: 0.5em;	
+	margin-bottom: 0.5em;	
+}
+#floater td.alertStatusFloaterName{
+	font-weight: bold;
+	padding-right: 0.5em;
+}
+#floater td.alertStatusFloaterValue{
+	text-align: right;
+}
+#floater.floaterErr{
+	border-color: #CD0A0A;	
+}
+#floater.floaterErr h4,#floater.floaterErr td, #floater.floaterErr p{
+	color: #CD0A0A;
+}
 div.spacer{
 	clear: both;
 }
@@ -188,44 +226,73 @@ div.spacer{
 	padding-left: 20px;
 	margin: 5px;	
 }
-#errorDialog {
+.dialogBox{
 	background-color: white; 
-	border: 8px solid red; 
 	padding: 8px;
-	color: red;
 	position: fixed;
 	width: 400px;
 	top: 100px;
-	z-index: 11;
+	z-index: 21;
 	display: none;	
 }
-#errorDialog h2{
+#errorDialog {
+	border: 8px solid red; 
+	color: red;
+}
+#confirmDialog{
+	border: 8px solid #2E6E9E; 
+	color: #2E6E9E;
+}
+.dialogBox h2{
 	font-size: 200%;
 	text-align: center;
 	float: none;
 	margin: 0;
 }
-#errorDialog p{
+.dialogBox p{
 	font-size: 150%;
 	text-align: center;
 	margin: 5px;
 }
-#errorDialog button{
-	border: 1px solid red;
+.dialogBox button{
 	background-color: white; 	
-	color: red;
 	cursor: pointer;
+	font-weight: bold;
+	padding-top: 2px;
+	padding-bottom: 2px;
+	padding-left: 5px;
+	padding-right: 5px;
+	border: 2px solid;
 }
-#modalBackground{
-	opacity: 0.5;
+#errorDialog button{
+	border-color: red;
+	color: red;
+}
+#confirmDialog button{
+	border-color: #2E6E9E;
+	color: #2E6E9E;
+	margin: 0.5em;
+}
+#confirmDialogButtons{
+	margin-left: auto;
+	margin-right: auto;
+	text-align: center;
+}
+#modalBackground, #dialogModalBackground{
+	opacity: 0.3;
 	position: fixed;
 	background-color: black;
-	z-index: 10;
 	top: 0px;
 	left: 0px;
 	width: 100%;
 	height: 100%;
 	display: none;
+}
+#dialogModalBackground{
+	z-index: 20;
+}
+#modalBackground{
+	z-index: 10;	
 }
 .prefName, .prefValue{
 	float: left;
@@ -290,7 +357,6 @@ p.compact{
 	margin-bottom: 0.2em;
 }
 a.refreshLink{
-	cursor: pointer;
 	text-decoration: underline;
 }
 p.filterWarning{
@@ -338,9 +404,6 @@ p.filterWarning{
 span#calcHowMuchSpeedInputSpan, span#calcHowLongSpeedInputSpan{
     display: none;   
 }
-a#calcHideHowLongSpeedLink, a#calcShowHowLongSpeedLink, a#calcHideHowMuchSpeedLink, a#calcShowHowMuchSpeedLink{
-    cursor: pointer;
-}
 .calcTable input{
     margin-bottom: 0.5em;   
     text-align: right;
@@ -354,20 +417,15 @@ td.calcTableName{
 h3#calcHowMuch{
     margin-top: 2em;   
 }
-#calcHowMuchResult, #calcHowLongResult, #calcHowMuchDesc, #calcHowLongDesc{
-	width: 10em;
-	text-align: center;
-	padding-left: 1em;
-}
 #calcHowMuchResult, #calcHowLongResult{
     font-size: 2em;
+    padding-left: 1em;
+    text-align: center;
 }
 #calcHowMuchDesc, #calcHowLongDesc{
     font-size: 0.8em;
-    vertical-align: top;
-}
-.calcTableInput{
-	width: 20em;
+    padding-left: 1em;
+    text-align: center;
 }
 #swPanel{
     text-align: center;    
@@ -382,9 +440,16 @@ h3#calcHowMuch{
     margin-left: auto;
     margin-right: auto;
 }
-#swReset, #swStopGo{
-    margin: 5px;  
+#swButtons button{
+	margin-bottom: 1em;
     cursor: pointer;
+    height: 3em;
+}
+#swReset{
+	margin-right: 0.5em;	
+}
+#swStopGo{
+	margin-left: 0.5em;
 }
 .swDlValue, .swUlValue{
     text-align: right;
@@ -395,4 +460,175 @@ h3#calcHowMuch{
 }
 #swValues{
     width: 90%;   
+}
+#alertsDisplay{
+	display: none;	
+}
+div.alertProgress, div.alertProgressFull{
+	width: 300px;
+	height: 16px;
+}
+div.alertProgressFull{
+	border: 1px solid;
+	background-color: #CD0A0A;
+}
+td.alertName{
+	font-weight: bold;	
+	padding-right: 2em;
+	padding-top: 0.5em;
+	padding-bottom: 0.5em;
+}
+td.alertStatus{
+	padding-right: 2em;	
+}
+td.alertLink{
+	padding-left:  1em;
+	padding-right: 1em;
+}
+#alertsTable th#alertTableSeparator{
+	border-bottom: 1px solid;
+	padding-bottom: 0.5em;
+	font-size: 0;
+}
+#alertsTable{
+	margin-bottom: 1em;	
+}
+#alertsTable td{
+	padding-top: 0.7em;
+	padding-bottom: 0;
+}
+#alertsTable th{
+	font-size: 1.2em;
+}
+#createAlertBox{
+	display: none;	
+	top: 100px;
+	z-index: 11;
+	position: fixed;
+	width: 50em;
+	padding: 20px;
+	padding-top: 10px;
+	background-color: white;
+	border: 4px solid;
+}
+#createAlertBoxAccordion .createAlertBoxAccordionPanel{
+	padding: 0;
+}
+#createAlertBoxAccordion .createAlertBoxAccordionPanel p{
+	margin: 1em;	
+}
+#createAlertStartFixedDetails, #createAlertStartRepeatingDetails, #createAlertStartRollingDetails{
+	display: none;	
+}
+.createAlertStartDetails{
+	padding: 1em;	
+}
+#ui-datepicker-div{
+	z-index: 12;	
+}
+#createAlertStartRepeatingDetails input{
+	margin-left: 4em;	
+}
+#createAlertStartRepeatingDetails, #createAlertStartRepeatingDetails p{
+	padding: 0;	
+}
+a.adminOnly.forbidden{
+	color: grey;	
+	cursor: default;
+}
+#createAlertStartRepeatingDateBox, #createAlertStartRepeatingTimeBox, #createAlertStartRepeatingDayBox{
+	display: none;	
+	margin-left: 6em;
+	float: left;
+}
+div.createAlertStartRepeatingTxt{
+	width: 28em;	
+}
+#createAlertStartRepeatingDetails select, .createAlertStartRepeatingTxt{
+	float: left;
+}
+#createAlertPeriodSomeDetails{
+	display: none;	
+	margin: 1em;		
+}
+#createAlertPeriodTimes{
+	width: 20em;	
+}
+#createAlertStartRepeatingDateBoxContainer{
+	padding-top: 0.5em;	
+	padding-bottom: 0.5em;	
+	float: left;
+}
+#createAlertPeriodDaysBox, #createAlertPeriodTimesBox{
+	margin-left: 2em;
+	float: left;	
+}
+#createAlertPeriodTimesTxt{
+	padding-top: 0.2em;	
+	padding-bottom: 0.5em;	
+}
+#createAlertPeriodSomeDetails h4{
+	margin-top: 0.5em;	
+	margin-bottom: 0.5em;
+}
+#createAlertPeriodAdd{
+	clear: left;
+	padding-right: 2em;
+	height: 2em;
+}
+#createAlertPeriodAddBtn{
+	float: right;
+}
+#createAlertPeriodList td{
+	padding-left: 1em;
+	padding-top: 0.2em;	
+}
+#createAlertStatusBox label{
+	float: left;
+	font-weight: bold;
+	font-size: 1.2em;
+	line-height: 2em;
+	margin-right: 1em;
+}
+#createAlertPercentageComplete{
+	margin-left: 1em;
+}
+#createAlertSave, #createAlertCancel{
+	float: right;
+	margin-left: 1em;
+	font-weight: bold;
+}
+#createAlertSave.saveDisabled{
+	color: grey;
+	border-color: grey;
+	cursor: default;
+}
+#createAlertBottomPanel{
+	margin-top: 1em;
+	margin-bottom: 1em;
+}
+#createAlertHelpText{
+	margin: 0;
+}
+#createAlertHelpText h3{
+	margin-top: 0;
+	font-size: 1.5em;
+}
+#createAlertHelpText p{
+	font-size: 1.2em;
+}
+#mobileLink{
+	display: none;	
+}
+#alertImg{
+	clear: none;
+	display: block;
+	float: left;
+	z-index: 100;
+}
+#alertsTable .ui-state-error{
+	border: 0;	
+}
+.alertStatusIcon{
+	cursor: pointer;	
 }

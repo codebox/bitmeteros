@@ -31,12 +31,6 @@
 Contains a helper function for use by clients that need to monitor the database.
 */
 
-#ifndef MULTI_THREADED_CLIENT
-	static sqlite3_stmt *stmtAll  = NULL;
-	static sqlite3_stmt *stmtHs   = NULL;
-	static sqlite3_stmt *stmtHsAd = NULL;
-#endif
-
 #define CLIENT_MONITOR_SQL_ALL          "SELECT ts AS ts, dr AS dr, SUM(dl) AS dl, SUM(ul) AS ul FROM data GROUP BY ts HAVING ts >= ? ORDER BY ts DESC"
 #define CLIENT_MONITOR_SQL_HOST         "SELECT ts AS ts, dr AS dr, SUM(dl) AS dl, SUM(ul) AS ul FROM data GROUP BY ts,hs HAVING ts >= ? AND hs = ? ORDER BY ts DESC"
 #define CLIENT_MONITOR_SQL_HOST_ADAPTER "SELECT ts AS ts, dr AS dr, SUM(dl) AS dl, SUM(ul) AS ul FROM data GROUP BY ts,hs,ad HAVING ts >= ? AND hs = ? AND ad = ? ORDER BY ts DESC"
@@ -78,66 +72,31 @@ struct Data* getMonitorValues(int ts, char* hs, char* ad){
 }
 
 static struct Data* getMonitorValuesForAll(int ts){
-    sqlite3_stmt *stmt = NULL;
-
-	#ifdef MULTI_THREADED_CLIENT
-    	prepareSql(&stmt, CLIENT_MONITOR_SQL_ALL);
-    #else
-    	if (stmtAll == NULL){
-    		prepareSql(&stmtAll, CLIENT_MONITOR_SQL_ALL);
-    	}
-    	stmt = stmtAll;
-    #endif
+    sqlite3_stmt *stmt = stmt = getStmt(CLIENT_MONITOR_SQL_ALL);
 
 	sqlite3_bind_int(stmt, 1, ts);
 	struct Data* result = runSelect(stmt);
 
-	#ifdef MULTI_THREADED_CLIENT
-    	sqlite3_finalize(stmt);
-    #else
-    	sqlite3_reset(stmt);
-    #endif
+	finishedStmt(stmt);
 
     return result;
 }
 
 static struct Data* getMonitorValuesForHost(int ts, char* hs){
-    sqlite3_stmt *stmt = NULL;
-
-	#ifdef MULTI_THREADED_CLIENT
-    	prepareSql(&stmt, CLIENT_MONITOR_SQL_HOST);
-    #else
-    	if (stmtHs == NULL){
-    		prepareSql(&stmtHs, CLIENT_MONITOR_SQL_HOST);
-    	}
-    	stmt = stmtHs;
-    #endif
+    sqlite3_stmt *stmt = stmt = getStmt(CLIENT_MONITOR_SQL_HOST);
 
 	sqlite3_bind_int(stmt, 1, ts);
 	sqlite3_bind_text(stmt, 2, hs, strlen(hs), SQLITE_TRANSIENT);
 
 	struct Data* result = runSelect(stmt);
 
-	#ifdef MULTI_THREADED_CLIENT
-    	sqlite3_finalize(stmt);
-    #else
-    	sqlite3_reset(stmt);
-    #endif
+	finishedStmt(stmt);
 
     return result;
 }
 
 static struct Data* getMonitorValuesForHostAndAdapter(int ts, char* hs, char* ad){
-    sqlite3_stmt *stmt = NULL;
-
-	#ifdef MULTI_THREADED_CLIENT
-    	prepareSql(&stmt, CLIENT_MONITOR_SQL_HOST_ADAPTER);
-    #else
-    	if (stmtHsAd == NULL){
-    		prepareSql(&stmtHsAd, CLIENT_MONITOR_SQL_HOST_ADAPTER);
-    	}
-    	stmt = stmtHsAd;
-    #endif
+    sqlite3_stmt *stmt = stmt = getStmt(CLIENT_MONITOR_SQL_HOST_ADAPTER);
 
 	sqlite3_bind_int(stmt, 1, ts);
 	sqlite3_bind_text(stmt, 2, hs, strlen(hs), SQLITE_TRANSIENT);
@@ -145,11 +104,7 @@ static struct Data* getMonitorValuesForHostAndAdapter(int ts, char* hs, char* ad
 
 	struct Data* result = runSelect(stmt);
 
-	#ifdef MULTI_THREADED_CLIENT
-    	sqlite3_finalize(stmt);
-    #else
-    	sqlite3_reset(stmt);
-    #endif
+	finishedStmt(stmt);
 
     return result;
 }

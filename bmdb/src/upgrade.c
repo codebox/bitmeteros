@@ -42,6 +42,7 @@ static int upgrade2();
 static int upgrade3();
 static int upgrade4();
 static int upgrade5();
+static int upgrade6();
 
 int doUpgrade(FILE* file, int argc, char** argv){
     int requestLevel;
@@ -111,6 +112,9 @@ static int upgradeTo(int level){
 			break;
 		case 5:
 			status = upgrade5();
+			break;
+		case 6:
+			status = upgrade6();
 			break;
 		default:
 			assert(FALSE);
@@ -300,3 +304,32 @@ static int upgrade5(){
     return SUCCESS;
 }
 
+static int upgrade6(){
+ // Upgrade the db from version 5 to version 6
+    int status = setDbVersion(6);
+    if (status == FAIL){
+		return FAIL;
+	}
+
+    status = executeSql("CREATE TABLE alert (id, name, active, bound, direction, amount)", NULL);
+    if (status == FAIL){
+		return FAIL;
+	}
+
+    status = executeSql("CREATE TABLE interval (id, yr, mn, dy, wk, hr)", NULL);
+    if (status == FAIL){
+		return FAIL;
+	}
+
+    status = executeSql("CREATE TABLE alert_interval (alert_id, interval_id)", NULL);
+    if (status == FAIL){
+		return FAIL;
+	}
+
+	status = executeSql("CREATE INDEX idxDataTs ON data(ts)", NULL);
+    if (status == FAIL){
+		return FAIL;
+	}
+	
+    return SUCCESS;
+}

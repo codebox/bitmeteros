@@ -31,7 +31,7 @@
 Displays a list of all the configuration values stored in the database.
 */
 
-int doConfig(FILE* file, int argc, char** argv){
+int doListConfig(FILE* file, int argc, char** argv){
 	int rc;
 	sqlite3_stmt *stmt;
 	prepareSql(&stmt, "SELECT key, value FROM config");
@@ -52,4 +52,36 @@ int doConfig(FILE* file, int argc, char** argv){
 	} else {
         return SUCCESS;
 	}
+}
+
+int doSetConfig(FILE* file, int argc, char** argv){
+    int status;
+    if (argc == 2){
+        status = setConfigTextValue(argv[0], argv[1]);
+        if (status == SUCCESS){
+        	printf("Config value '%s' set to '%s'\n", argv[0], argv[1]);
+        } else {
+	        printf("Error - failed to set config value.\n");
+        }
+    } else {
+        printf("Error - expected 2 arguments, the name and value of the config parameter.\n");
+        status = FAIL;
+    }
+    return status;
+}
+
+int doRmConfig(FILE* file, int argc, char** argv){
+    int status;
+    if (argc == 1){
+        status = rmConfigValue(argv[0]);
+        if (status == SUCCESS){
+        	printf("Config value '%s' was removed\n", argv[0]);
+        } else {
+	        printf("Error - failed to remove config value.\n");
+        }
+    } else {
+        printf("Error - expected 1 argument, the name of the config parameter to be removed.\n");
+        status = FAIL;
+    }
+    return status;
 }

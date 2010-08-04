@@ -34,13 +34,6 @@
 Contains thread-safe utility functions used by other client modules.
 */
 
-#ifndef MULTI_THREADED_CLIENT
-    static sqlite3_stmt *stmtTsBoundsAll         = NULL;
-    static sqlite3_stmt *stmtTsBoundsHost        = NULL;
-    static sqlite3_stmt *stmtTsBoundsHostAdapter = NULL;
-    static sqlite3_stmt *stmtMaxValues = NULL;
-#endif
-
 #define TS_BOUNDS_SQL_ALL          "SELECT MIN(ts), MAX(ts) FROM data"
 #define TS_BOUNDS_SQL_HOST         "SELECT MIN(ts), MAX(ts) FROM data WHERE hs = ?"
 #define TS_BOUNDS_SQL_HOST_ADAPTER "SELECT MIN(ts), MAX(ts) FROM data WHERE hs = ? AND ad = ?"
@@ -105,95 +98,45 @@ static struct ValueBounds* buildTsBounds(sqlite3_stmt* stmtTsBounds){
 }
 
 static struct ValueBounds* calcTsBoundsAll(char* hs, char* ad){
-   	sqlite3_stmt *stmtTsBounds = NULL;
-
-    #ifdef MULTI_THREADED_CLIENT
-    	prepareSql(&stmtTsBounds, TS_BOUNDS_SQL_ALL);
-    #else
-        if (stmtTsBoundsAll == NULL){
-            prepareSql(&stmtTsBoundsAll, TS_BOUNDS_SQL_ALL);
-        }
-        stmtTsBounds = stmtTsBoundsAll;
-    #endif
+   	sqlite3_stmt *stmtTsBounds = getStmt(TS_BOUNDS_SQL_ALL);
 
     struct ValueBounds* tsBounds = buildTsBounds(stmtTsBounds);
 
-	#ifdef MULTI_THREADED_CLIENT
-    	sqlite3_finalize(stmtTsBounds);
-    #else
-    	sqlite3_reset(stmtTsBounds);
-    #endif
+	finishedStmt(stmtTsBounds);
 
     return tsBounds;
 }
 
 static struct ValueBounds* calcTsBoundsHost(char* hs, char* ad){
-    sqlite3_stmt *stmtTsBounds = NULL;
-
-    #ifdef MULTI_THREADED_CLIENT
-    	prepareSql(&stmtTsBounds, TS_BOUNDS_SQL_HOST);
-    #else
-        if (stmtTsBoundsHost == NULL){
-            prepareSql(&stmtTsBoundsHost, TS_BOUNDS_SQL_HOST);
-        }
-        stmtTsBounds = stmtTsBoundsHost;
-    #endif
+    sqlite3_stmt *stmtTsBounds = getStmt(TS_BOUNDS_SQL_HOST);
 
     sqlite3_bind_text(stmtTsBounds, 1, hs, strlen(hs), SQLITE_TRANSIENT);
     struct ValueBounds* tsBounds = buildTsBounds(stmtTsBounds);
 
-	#ifdef MULTI_THREADED_CLIENT
-    	sqlite3_finalize(stmtTsBounds);
-    #else
-    	sqlite3_reset(stmtTsBounds);
-    #endif
+	finishedStmt(stmtTsBounds);
 
     return tsBounds;
 }
 static struct ValueBounds* calcTsBoundsHostAdapter(char* hs, char* ad){
-    sqlite3_stmt *stmtTsBounds = NULL;
-
-    #ifdef MULTI_THREADED_CLIENT
-    	prepareSql(&stmtTsBounds, TS_BOUNDS_SQL_HOST_ADAPTER);
-    #else
-        if (stmtTsBoundsHostAdapter == NULL){
-            prepareSql(&stmtTsBoundsHostAdapter, TS_BOUNDS_SQL_HOST_ADAPTER);
-        }
-        stmtTsBounds = stmtTsBoundsHostAdapter;
-    #endif
+    sqlite3_stmt *stmtTsBounds = getStmt(TS_BOUNDS_SQL_HOST_ADAPTER);
 
     sqlite3_bind_text(stmtTsBounds, 1, hs, strlen(hs), SQLITE_TRANSIENT);
     sqlite3_bind_text(stmtTsBounds, 2, ad, strlen(ad), SQLITE_TRANSIENT);
 
     struct ValueBounds* tsBounds = buildTsBounds(stmtTsBounds);
 
-	#ifdef MULTI_THREADED_CLIENT
-    	sqlite3_finalize(stmtTsBounds);
-    #else
-    	sqlite3_reset(stmtTsBounds);
-    #endif
+	finishedStmt(stmtTsBounds);
 
     return tsBounds;
 }
 
 struct Data* calcMaxValues(){
  // Calculate the largest ul and dl values that exist in the data table
-    #ifdef MULTI_THREADED_CLIENT
-    	sqlite3_stmt *stmtMaxValues = NULL;
-    	prepareSql(&stmtMaxValues, MAX_VALUES_SQL);
-    #else
-    	if (stmtMaxValues == NULL){
-    		prepareSql(&stmtMaxValues, MAX_VALUES_SQL);
-    	}
-    #endif
+   	sqlite3_stmt *stmtMaxValues= getStmt(MAX_VALUES_SQL);
 
 	struct Data* result = runSelect(stmtMaxValues);
 
-	#ifdef MULTI_THREADED_CLIENT
-    	sqlite3_finalize(stmtMaxValues);
-    #else
-    	sqlite3_reset(stmtMaxValues);
-    #endif
+	finishedStmt(stmtMaxValues);
 
     return result;
 }

@@ -35,7 +35,7 @@ Contains unit tests for the sql module.
 */
 
 void setup();
-static void cbAppendData(struct Data* data);
+static void cbAppendData(int, struct Data* data);
 static int getRowCount();
 static struct Data* storedData;
 static void checkTableContents(CuTest *tc, int rowCount, ...);
@@ -235,7 +235,7 @@ CuSuite* sqlGetSuite() {
     return suite;
 }
 
-static void cbAppendData(struct Data* data){
+static void cbAppendData(int ignored, struct Data* data){
 	appendData(&storedData, data);
 }
 

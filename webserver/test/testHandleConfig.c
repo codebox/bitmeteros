@@ -34,7 +34,7 @@
 Contains unit tests for the handleConfig module.
 */
 
-void testConfig(CuTest *tc) {
+void testConfigWithAdmin(CuTest *tc) {
     emptyDb();
 
     addDbRow(100, 1, "eth0", 1, 1, "");
@@ -56,7 +56,7 @@ void testConfig(CuTest *tc) {
     setTime(now);
 
     int tmpFd = makeTmpFile();
-    processConfigRequest(tmpFd, NULL);
+    processConfigRequest(tmpFd, NULL, TRUE);
 
     char* result = readTmpFile();
 
@@ -66,13 +66,51 @@ void testConfig(CuTest *tc) {
         "Server: BitMeterOS " VERSION " Web Server" HTTP_EOL
         "Date: Sun, 08 Nov 2009 10:00:00 +0000" HTTP_EOL
         "Connection: Close" HTTP_EOL HTTP_EOL
-        "var config = { 'monitorInterval' : 1, 'summaryInterval' : 2, 'historyInterval' : 3, 'serverName' : 'server', 'dlColour' : '#ff0000', 'ulColour' : '#00ff00', 'version' : '" VERSION
+        "var config = { 'monitorInterval' : 1, 'summaryInterval' : 2, 'historyInterval' : 3, 'serverName' : 'server', 'dlColour' : '#ff0000', 'ulColour' : '#00ff00', 'allowAdmin' : 1, 'version' : '" VERSION
+        "', 'adapters' : [{'hs' : 'local','ad' : 'eth0'},{'hs' : 'local','ad' : 'eth1'},{'hs' : 'host1','ad' : 'eth0'},{'hs' : 'host1','ad' : 'eth1'},{'hs' : 'host2','ad' : 'eth0'}] };"
+    , result);
+}
+
+void testConfigWithoutAdmin(CuTest *tc) {
+    emptyDb();
+
+    addDbRow(100, 1, "eth0", 1, 1, "");
+    addDbRow(101, 1, "eth0", 1, 1, "");
+    addDbRow(102, 1, "eth1", 1, 1, "");
+    addDbRow(103, 1, "eth0", 1, 1, "host1");
+    addDbRow(103, 1, "eth0", 1, 1, "host2");
+    addDbRow(103, 1, "eth1", 1, 1, "host1");
+    addDbRow(103, 1, "eth0", 1, 1, "host2");
+
+    addConfigRow(CONFIG_WEB_MONITOR_INTERVAL, "1");
+    addConfigRow(CONFIG_WEB_SUMMARY_INTERVAL, "2");
+    addConfigRow(CONFIG_WEB_HISTORY_INTERVAL, "3");
+    addConfigRow(CONFIG_WEB_SERVER_NAME,      "server");
+    addConfigRow(CONFIG_WEB_COLOUR_DL,        "#ff0000");
+    addConfigRow(CONFIG_WEB_COLOUR_UL,        "#00ff00");
+
+    time_t now = makeTs("2009-11-08 10:00:00");
+    setTime(now);
+
+    int tmpFd = makeTmpFile();
+    processConfigRequest(tmpFd, NULL, FALSE);
+
+    char* result = readTmpFile();
+
+    CuAssertStrEquals(tc,
+        "HTTP/1.0 200 OK" HTTP_EOL
+        "Content-Type: application/x-javascript" HTTP_EOL
+        "Server: BitMeterOS " VERSION " Web Server" HTTP_EOL
+        "Date: Sun, 08 Nov 2009 10:00:00 +0000" HTTP_EOL
+        "Connection: Close" HTTP_EOL HTTP_EOL
+        "var config = { 'monitorInterval' : 1, 'summaryInterval' : 2, 'historyInterval' : 3, 'serverName' : 'server', 'dlColour' : '#ff0000', 'ulColour' : '#00ff00', 'allowAdmin' : 0, 'version' : '" VERSION
         "', 'adapters' : [{'hs' : 'local','ad' : 'eth0'},{'hs' : 'local','ad' : 'eth1'},{'hs' : 'host1','ad' : 'eth0'},{'hs' : 'host1','ad' : 'eth1'},{'hs' : 'host2','ad' : 'eth0'}] };"
     , result);
 }
 
 CuSuite* handleConfigGetSuite() {
     CuSuite* suite = CuSuiteNew();
-    SUITE_ADD_TEST(suite, testConfig);
+    SUITE_ADD_TEST(suite, testConfigWithAdmin);
+    SUITE_ADD_TEST(suite, testConfigWithoutAdmin);
     return suite;
 }

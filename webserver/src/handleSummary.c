@@ -69,24 +69,24 @@ void processSummaryRequest(SOCKET fd, struct Request* req){
 	writeText(fd, ", ");
 
 	if (summary.hostNames != NULL){
-        writeText(fd, "hosts: [");
+        writeText(fd, "\"hosts\": [");
 
         int i;
         for(i=0; i<summary.hostCount; i++){
             if (i>0){
                 writeText(fd, ", ");
             }
-            writeText(fd, "'");
+            writeText(fd, "\"");
             writeText(fd, summary.hostNames[i]);
-            writeText(fd, "'");
+            writeText(fd, "\"");
         }
 
         writeText(fd, "]");
 	} else {
-	    writeText(fd, "hosts: null");
+	    writeText(fd, "\"hosts\": null");
 	}
 
-	writeText(fd, ", since: ");
+	writeText(fd, ", \"since\": ");
 
 	char sinceTs[12];
     unsigned long since = (unsigned long) summary.tsMin;
@@ -104,7 +104,7 @@ void processSummaryRequest(SOCKET fd, struct Request* req){
 static void writeTotal(SOCKET fd, char* totalName, BW_INT dl, BW_INT ul){
  // Helper function, writes out one of the summary totals in the correct JSON format
  	char prefix[32];
- 	sprintf(prefix, "%s: ", totalName);
+ 	sprintf(prefix, "\"%s\": ", totalName);
 	writeText(fd, prefix);
 
 	struct Data* data = allocData();
@@ -115,3 +115,65 @@ static void writeTotal(SOCKET fd, char* totalName, BW_INT dl, BW_INT ul){
 	freeData(data);
 }
 
+static void formatForMobile(BW_INT amt, char* txt){
+	formatAmount(amt, TRUE, UNITS_ABBREV, txt);
+}
+void processMobileSummaryRequest(SOCKET fd, struct Request* req){
+	struct Summary summary = getSummaryValues(NULL, NULL);
+	
+ // Daily amounts
+	char dlDayTxt[32];
+	formatForMobile(summary.today->dl, dlDayTxt);
+	
+	char ulDayTxt[32];
+	formatForMobile(summary.today->ul, ulDayTxt);
+	
+	char cmDayTxt[32];
+	formatForMobile(summary.today->dl + summary.today->ul, cmDayTxt);
+	
+ // Monthly amounts
+	char dlMonthTxt[32];
+	formatForMobile(summary.month->dl, dlMonthTxt);
+	
+	char ulMonthTxt[32];
+	formatForMobile(summary.month->ul, ulMonthTxt);
+	
+	char cmMonthTxt[32];
+	formatForMobile(summary.month->dl + summary.month->ul, cmMonthTxt);
+	
+ // Yearly amounts
+	char dlYearTxt[32];
+	formatForMobile(summary.year->dl, dlYearTxt);
+	
+	char ulYearTxt[32];
+	formatForMobile(summary.year->ul, ulYearTxt);
+	
+	char cmYearTxt[32];
+	formatForMobile(summary.year->dl + summary.year->ul, cmYearTxt);
+	
+ // Total amounts
+	char dlTotalTxt[32];
+	formatForMobile(summary.total->dl, dlTotalTxt);
+	
+	char ulTotalTxt[32];
+	formatForMobile(summary.total->ul, ulTotalTxt);
+	
+	char cmTotalTxt[32];
+	formatForMobile(summary.total->dl + summary.total->ul, cmTotalTxt);
+
+
+	struct NameValuePair pair1  = {"dlDay", dlDayTxt,   NULL};
+	struct NameValuePair pair2  = {"ulDay", ulDayTxt,   &pair1};
+	struct NameValuePair pair3  = {"cmDay", cmDayTxt,   &pair2};
+	struct NameValuePair pair4  = {"dlMonth", dlMonthTxt, &pair3};
+	struct NameValuePair pair5  = {"ulMonth", ulMonthTxt, &pair4};
+	struct NameValuePair pair6  = {"cmMonth", cmMonthTxt, &pair5};
+	struct NameValuePair pair7  = {"dlYear", dlYearTxt,  &pair6};
+	struct NameValuePair pair8  = {"ulYear", ulYearTxt,  &pair7};
+	struct NameValuePair pair9  = {"cmYear", cmYearTxt,  &pair8};
+	struct NameValuePair pair10 = {"dlTotal", dlTotalTxt, &pair9};
+	struct NameValuePair pair11 = {"ulTotal", ulTotalTxt, &pair10};
+	struct NameValuePair pair12 = {"cmTotal", cmTotalTxt, &pair11};
+	
+    processFileRequest(fd, req, &pair12);
+}

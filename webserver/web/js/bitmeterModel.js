@@ -12,6 +12,7 @@ function buildModel(){
 		'monitorUlPeak' : 0, 
 		'monitorShowDl' : 'true', 
 		'monitorShowUl' : 'true',
+		'monitorSpeedInTitle' : 'false',
 		'monitorScale'  : 204800,
 		'historyMinScale'  : 12288000,
 		'historyHourScale' : 737280000,
@@ -95,16 +96,22 @@ function buildModel(){
 	
  // Show/hide the upload and download data on the Monitor page	
 	model.getMonitorShowDl = function(){
-		return get('monitorShowDl') === 'true';// ? true : false;
+		return get('monitorShowDl') === 'true';
 	}
 	model.setMonitorShowDl = function(showFlag){
 		set('monitorShowDl', '' + showFlag, true);
 	}
 	model.getMonitorShowUl = function(){
-		return get('monitorShowUl') === 'true';// ? true : false;
+		return get('monitorShowUl') === 'true';
 	}
 	model.setMonitorShowUl = function(showFlag){
 		set('monitorShowUl', '' + showFlag, true);
+	}
+	model.getMonitorSpeedInTitle = function(){
+		return get('monitorSpeedInTitle') === 'true';
+	}
+	model.setMonitorSpeedInTitle = function(showFlag){
+		set('monitorSpeedInTitle', '' + showFlag, true);
 	}
 	
  // Scales for the Monitor and History graphs

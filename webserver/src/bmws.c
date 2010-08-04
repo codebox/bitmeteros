@@ -43,7 +43,8 @@
 #define LOCAL_ONLY htonl(0x7f000001L)
 
 static void sigHandler();
-static int allowRemoteConnect;
+static int allowRemoteConnect, allowRemoteAdmin;
+static int isLocalConnection(SOCKET socket);
 
 static void web(SOCKET fd){
  // This gets run after we fork() for the client request
@@ -61,8 +62,9 @@ static void web(SOCKET fd){
         logMsg(LOG_ERR, "read() returned %d which is larger than buffer size of %d", rc, BUFSIZE);
         exit(1);
     }
-
-	processRequest(fd, buffer);
+    
+	int allowAdmin = isLocalConnection(fd) || allowRemoteAdmin;
+	processRequest(fd, buffer, allowAdmin);
 
     exit(0);
 }
@@ -128,15 +130,36 @@ void getWebRoot(char* path){
     strcpy(path, webRoot);
 }
 
+static void setCustomLogLevel(){
+ // If a custom logging level for the web server process has been set in the db then use it
+	int dbLogLevel = getConfigInt(CONFIG_WEB_LOG_LEVEL, TRUE);
+	if (dbLogLevel > 0) {
+		setLogLevel(dbLogLevel);
+	}
+}
+
 static void readDbConfig(){
  // Read in some config parameters from the database
 	openDb();
-	prepareDb();
+	setCustomLogLevel();
 	dbVersionCheck();
-	allowRemoteConnect = getConfigInt(CONFIG_WEB_ALLOW_REMOTE, FALSE);
+	int allowRemote = getConfigInt(CONFIG_WEB_ALLOW_REMOTE, 0);
+	allowRemoteConnect = (allowRemote >= ALLOW_REMOTE_CONNECT);
+	allowRemoteAdmin   = (allowRemote == ALLOW_REMOTE_ADMIN);
 	port = getPort();
     getWebRootPath(webRoot);
 	closeDb();
+}
+
+int isLocalConnection(SOCKET socket){
+	struct sockaddr_in sa;
+	int sa_len = sizeof(sa);
+	if (getsockname(socket, &sa, &sa_len) == -1) {
+		logMsg(LOG_ERR, "getsockname() returned an error: %s", strerror(errno));
+		return FALSE;
+	}
+ // Local access means any IP in the 127.x.x.x range
+	return (sa.sin_addr.s_addr & 0xff) == 127;
 }
 
 SOCKET listener;
@@ -162,6 +185,7 @@ int main(){
         length = sizeof(clientAddress);
 
         socketfd = accept(listener, (struct sockaddr *) &clientAddress, &length);
+   		
         if (socketfd < 0){
             logMsg(LOG_ERR, "accept() returned %d, %s", socketfd, strerror(errno));
         } else {

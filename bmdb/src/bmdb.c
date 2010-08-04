@@ -40,8 +40,8 @@ static struct Action* getActionForName(char* name);
 static int doVacuum();
 static int dumpActions();
 static int doWebRemote(FILE* file, int argc, char** argv);
+static int doWebRemoteAdmin(FILE* file, int argc, char** argv);
 static int doWebLocal(FILE* file, int argc, char** argv);
-static int doSetConfig(FILE* file, int argc, char** argv);
 static int doHelp();
 static int doPurge();
 
@@ -54,19 +54,21 @@ struct Action{
 
 // The 'name' values are specified on the command-line by the user
 struct Action actions[] = {
-    {"showconfig", "Displays all configuration values", &doConfig},
-    {"setconfig",  "Adds or updates a configuration value", &doSetConfig},
-    {"vac",        "Vacuums the database, freeing unused space", &doVacuum},
-    {"version",    "Displays version information", &doVersion},
-    {"upgrade",    "Upgrades the database", &doUpgrade},
-    {"webremote",  "Enable remote access to the web interface", &doWebRemote},
-    {"weblocal",   "Disable remote access to the web interface", &doWebLocal},
-    {"webstop",    "Stop the web server process", &doWebStop},
-    {"webstart",   "Start the web server process", &doWebStart},
-    {"capstop",    "Stop the data capture process", &doCapStop},
-    {"capstart",   "Start the data capture process", &doCapStart},
-    {"purge",      "Delete all bandwidth data from the database", &doPurge},
-    {"help",       "Displays full help text", &doHelp},
+    {"showconfig",     "Displays all configuration values", &doListConfig},
+    {"setconfig",      "Adds or updates a configuration value", &doSetConfig},
+    {"rmconfig",       "Removes a configuration value", &doRmConfig},
+    {"vac",            "Vacuums the database, freeing unused space", &doVacuum},
+    {"version",        "Displays version information", &doVersion},
+    {"upgrade",        "Upgrades the database", &doUpgrade},
+    {"weblocal",       "Disable all remote access to the web interface", &doWebLocal},
+    {"webremote",      "Enable non-administrative remote access to the web interface", &doWebRemote},
+    {"webremoteadmin", "Enable administrative remote access to the web interface", &doWebRemoteAdmin},
+    {"webstop",        "Stop the web server process", &doWebStop},
+    {"webstart",       "Start the web server process", &doWebStart},
+    {"capstop",        "Stop the data capture process", &doCapStop},
+    {"capstart",       "Start the data capture process", &doCapStart},
+    {"purge",          "Delete all bandwidth data from the database", &doPurge},
+    {"help",           "Displays full help text", &doHelp},
     {NULL, NULL, NULL}
 };
 
@@ -90,7 +92,6 @@ int main(int argc, char **argv){
         } else {
          // We found a match
             openDb();
-            prepareDb();
             int status = (*action->fn)(stdout, argc-2, argv+2);
             closeDb();
             return status;
@@ -144,47 +145,39 @@ static int doVacuum(){
 	return status;
 }
 
-static int doSetConfig(FILE* file, int argc, char** argv){
+static int setAccessLevel(int level, char* successMsg, char* failMsg){
+    int currentAccessLevel = getConfigInt(CONFIG_WEB_ALLOW_REMOTE, 0);
     int status;
-    if (argc == 2){
-        setConfigTextValue(argv[0], argv[1]);
-        printf("Config value '%s' set to '%s'\n", argv[0], argv[1]);
-        status = SUCCESS;
-    } else {
-        printf("Error - you must specify the name and value of the config parameter.\n");
-        status = FAIL;
-    }
-    return status;
-}
-
-static int doWebRemote(FILE* file, int argc, char** argv){
- // Allow remote access to the web interface
-    int webRemoteValue = getConfigInt(CONFIG_WEB_ALLOW_REMOTE, FALSE);
-    int status;
-    if (webRemoteValue == TRUE){
-        printf("Remote access to the web interface is already enabled\n");
+    if (currentAccessLevel == level){
+        printf(failMsg);
         status = FAIL;
     } else {
-        setConfigIntValue(CONFIG_WEB_ALLOW_REMOTE, TRUE);
-        printf("Remote access to the web interface will be enabled next time the bmws utility is started.");
+        setConfigIntValue(CONFIG_WEB_ALLOW_REMOTE, level);
+        printf(successMsg);
         status = SUCCESS;
     }
     return status;
 }
 
 static int doWebLocal(FILE* file, int argc, char** argv){
- // Disallow remote access to the web interface
-    int webRemoteValue = getConfigInt(CONFIG_WEB_ALLOW_REMOTE, FALSE);
-    int status;
-    if (webRemoteValue == FALSE){
-        printf("Remote access to the web interface is already disabled\n");
-        status = FAIL;
-    } else {
-        setConfigIntValue(CONFIG_WEB_ALLOW_REMOTE, FALSE);
-        printf("Remote access to the web interface will be disabled next time the bmws utility is started.");
-        status = SUCCESS;
-    }
-    return status;
+ // Disallow all remote access to the web interface
+    return setAccessLevel(ALLOW_LOCAL_CONNECT_ONLY,
+	    "Remote access to the web interface will be disabled next time the bmws utility is started.",
+	    "Remote access to the web interface is already disabled\n");
+}
+
+static int doWebRemote(FILE* file, int argc, char** argv){
+ // Allow non-administrative remote access to the web interface
+    return setAccessLevel(ALLOW_REMOTE_CONNECT, 
+	    "Non-administrative remote access to the web interface will be enabled next time the bmws utility is started.",
+	    "Non-administrative remote access to the web interface is already enabled\n");
+}
+
+static int doWebRemoteAdmin(FILE* file, int argc, char** argv){
+ // Allow administrative remote access to the web interface
+    return setAccessLevel(ALLOW_REMOTE_ADMIN,
+    	"Administrative remote access to the web interface will be enabled next time the bmws utility is started.",
+    	"Administrative remote access to the web interface is already enabled\n");
 }
 
 extern char* helpTxt;
@@ -198,7 +191,7 @@ static int dumpActions(){
     printf("The following actions are available:" EOL EOL);
 	struct Action* action = actions;
 	while(action->name != NULL){
-        printf(" %-12s - %s\n", action->name, action->description);
+        printf(" %-14s - %s\n", action->name, action->description);
         action++;
 	}
 

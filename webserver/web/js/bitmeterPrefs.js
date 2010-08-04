@@ -44,7 +44,7 @@ $(document).ready(function(){
 		});
 		
 	$('#colourPickerTxtDiv li').click(function(){
-		colourPickerObj.setColor('#' + this.id);
+		colourPickerObj.setColor('#' + this.id.substr(3));
 	});
 	
 	$('#dlColourPicker').css('background-color', model.getDownloadColour());

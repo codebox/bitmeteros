@@ -148,6 +148,22 @@ static void testUpgradeFrom4To5(CuTest *tc){
     CuAssertTrue(tc, data->next == NULL);
 }
 
+static void testUpgradeFrom5To6(CuTest *tc){
+	executeSql("DROP TABLE alert;", NULL);
+	executeSql("DROP TABLE interval;", NULL);
+	executeSql("DROP TABLE alert_interval;", NULL);
+	
+	CuAssertTrue(tc, tableExists("alert") == FALSE);
+	CuAssertTrue(tc, tableExists("interval") == FALSE);
+	CuAssertTrue(tc, tableExists("alert_interval") == FALSE);
+	
+    int status = doUpgradeTest(6);
+    CuAssertTrue(tc, status == SUCCESS);
+    CuAssertTrue(tc, tableExists("alert") == TRUE);
+	CuAssertTrue(tc, tableExists("interval") == TRUE);
+	CuAssertTrue(tc, tableExists("alert_interval") == TRUE);
+}
+
 static int doUpgradeTest(int level){
     char* txt = malloc(4);
     sprintf(txt, "%d", level);

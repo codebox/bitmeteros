@@ -8,6 +8,7 @@ var refreshTimer;
 var onTabHide;
 
 var errorDialog;
+var floaterVisible = false;
 var WEEKDAYS, MONTHS;
 
 // Prevent AJAX GET requests from being cached on IE
@@ -37,7 +38,7 @@ $.ajaxSetup({
 	dataFilter : function(data, dataType){
 		hideError();
 		return data;
-	}
+		}
 });
 
 // Help dialogs use these config values
@@ -47,15 +48,6 @@ var dialogOpts = {
 	height: 250,
 	width: 400
 };
-
-// Used to parse server responses into JS objects
-function doEval(objTxt){
-	try{
-		return eval('(' + objTxt + ')');
-	} catch (e){
-		return {};
-	}
-}
 
 // Helpful when developing
 var assert = (function(){
@@ -74,6 +66,15 @@ function getTime(){
 	return Math.floor((new Date()).getTime() / 1000);
 }
 
+function makeKeyPressHandler(){
+	var allowed = arguments;
+	return function(evt){
+		if ($.inArray(evt.which, allowed) < 0){
+			evt.preventDefault();
+		}
+	};	
+}
+
 // Add leading zero to values less than 10
 function zeroPad(val){
     if (val === 0){
@@ -85,6 +86,20 @@ function zeroPad(val){
 	}
 }
 
+function arraysEqual(arr1, arr2){
+	if (arr1.length !== arr2.length){
+		return false;	
+	} else {
+		var i;
+		for (i=0; i<arr1.length; i++){
+			if (arr1[i] !== arr2[i]){
+				return false;	
+			}
+		}
+		return true;
+	}
+
+}
 function addAdaptersToRequest(req){
 	if (model.getAdapters()){
 		if (req.indexOf('?') < 0){
@@ -97,25 +112,83 @@ function addAdaptersToRequest(req){
 	return req;
 }
 
+function showConfirm(msg, fnOnYes, fnOnNo){
+	var bg = $("#dialogModalBackground");
+	bg.show();
+	
+	var box = $("#confirmDialog");
+	box.fadeIn("slow");
+	box.css("left", ($(window).width() - box.width() ) / 2 + $(window).scrollLeft() + "px");
+	
+	$('#confirmMsg').html(msg);
+	
+	$('#confirmYes').click(function(){
+		hideDialog();
+		fnOnYes && fnOnYes();
+	});
+	$('#confirmNo').click(function(){
+		hideDialog();
+		fnOnNo && fnOnNo();
+	});
+	
+	function hideDialog(){
+		$('#confirmYes, #confirmNo').unbind('click');
+		bg.hide(); 
+		box.fadeOut();
+	}
+}
 var errDialogVisible = false;
 function showError(msg){
-	var bg = $("#modalBackground");
+	var bg = $("#dialogModalBackground");
 	bg.show();
 	
 	var box = $("#errorDialog");
 	box.fadeIn("slow");
 	box.css("left", ( $(window).width() - box.width() ) / 2 + $(window).scrollLeft() + "px");
 	$("#errorDialog #msg").html(msg);	
-	errDialogVisible = true;
 }
 function hideError(){
-	if (errDialogVisible){
-		errDialogVisible = false;
-		$("#errorDialog").fadeOut("slow");
-		$("#modalBackground").hide();
-	}
+	$("#errorDialog").hide();
+	$("#dialogModalBackground").hide();
 }
-
+var parseAmountValue = (function(){
+    var WHITESPACE_REGEX = /\s/g;
+    var NUM_REGEX        = /^\d[\.\d]*$/;
+    var WITH_UNITS_REGEX = /^\d[\.\d]*[kmgt]b$/;
+    return function(txt){
+    	var bytesPerK = getBytesPerK();
+        var tmpTxt = txt.replace(WHITESPACE_REGEX, '').toLowerCase();
+        if (NUM_REGEX.test(tmpTxt)){
+         // Just numbers, so this is a byte value
+            var num = Number(tmpTxt);
+            return isNaN(num) ? null : num;
+            
+        } else if (WITH_UNITS_REGEX.test(tmpTxt)) {
+            var numPart   = Number(tmpTxt.substring(0, tmpTxt.length-2));
+            if (isNaN(numPart)){
+                return null;    
+            }
+            var unitsPart = tmpTxt.substring(tmpTxt.length-2);
+            
+            var factor;
+            if (unitsPart === 'kb'){
+                factor = bytesPerK;
+            } else if (unitsPart === 'mb'){
+                factor = bytesPerK * bytesPerK;
+            } else if (unitsPart === 'gb'){
+                factor = bytesPerK * bytesPerK * bytesPerK;
+            } else if (unitsPart === 'tb'){
+                factor = bytesPerK * bytesPerK * bytesPerK * bytesPerK;
+            } else {
+                assert(false, 'In parseAmountValue(), value was ' + txt);
+            }
+            return numPart * factor;
+            
+        } else {
+            return null;   
+        }
+    };        
+})();
 function getBytesPerK(){
     return model.getBinaryUnits() ? 1024 : 1000;   
 }
@@ -143,14 +216,11 @@ var formatInterval = (function(){
 
         if (compactness === FORMAT_INTERVAL_TINY){
             return zeroPad(hour) + ':' + zeroPad(min) + ':' + zeroPad(Math.round(sec));
-            
         } else if (compactness === FORMAT_INTERVAL_SHORT){
             if (intervalInSec === 0){
                 return '0 sec';   
-                
             } else if (intervalInSec < 1){
                 return '<1 sec';   
-                
             } else {
                 var result = '';
                 if (day > 0){
@@ -167,7 +237,6 @@ var formatInterval = (function(){
                 }                     
                 return result;           
             }
-            
 		} else if (compactness === FORMAT_INTERVAL_LONG){
             if (intervalInSec === 0){
                 return '0 sec';   
@@ -206,25 +275,26 @@ var formatAmount = (function(){
 	var PB_MIN = TB_MIN * K;
 	var EB_MIN = PB_MIN * K;
 
-	return function (amt){
+	return function (amt, hideDp){
+		var dp = hideDp ? 0 : 2;
 		var numAmt, units;
 		if (amt < KB_MIN){
-			numAmt = amt.toFixed(2);
+			numAmt = amt.toFixed(dp);
 			units = 'B';
 		} else if (amt < MB_MIN){
-			numAmt = (amt/KB_MIN).toFixed(2);
+			numAmt = (amt/KB_MIN).toFixed(dp);
 			units = 'kB';
 		} else if (amt < GB_MIN){
-			numAmt = (amt/MB_MIN).toFixed(2);
+			numAmt = (amt/MB_MIN).toFixed(dp);
 			units = 'MB';
 		} else if (amt < TB_MIN){
-			numAmt = (amt/GB_MIN).toFixed(2);
+			numAmt = (amt/GB_MIN).toFixed(dp);
 			units = 'GB';
 		} else if (amt < PB_MIN){
-			numAmt = (amt/TB_MIN).toFixed(2);
+			numAmt = (amt/TB_MIN).toFixed(dp);
 			units = 'TB';
 		} else {
-			numAmt = (amt/PB_MIN).toFixed(2);
+			numAmt = (amt/PB_MIN).toFixed(dp);
 			units = 'PB';
 		}
 		return numAmt + ' ' + units;
@@ -305,7 +375,6 @@ $(document).ready(function(){
 					 // If there is any code that the current tab should run before it gets hidden then do it now
 						onTabHide && onTabHide();
 						onTabHide = null;
-						
 						var tabIndex = ui.index;
 						if (tabIndex === 0){
 							tabShowMonitor();
@@ -316,8 +385,10 @@ $(document).ready(function(){
 						} else if (tabIndex === 3){
 							tabShowQuery();
 						} else if (tabIndex === 4){
-							tabShowCalc();
+							tabShowAlerts();
 						} else if (tabIndex === 5){
+							tabShowCalc();
+						} else if (tabIndex === 6){
 							tabShowPrefs();
 						}
 					},
@@ -326,6 +397,8 @@ $(document).ready(function(){
 
 	 // Display the app version on the About screen
 		$('#version').html(config.version);
+		
+		setAdminOnlyHandlers();
 		
 	 // If the host serving this page has a name then display it in the appropriate places
 	 	if (config.serverName){
@@ -338,11 +411,29 @@ $(document).ready(function(){
 		$("a[href^='http'], #donateForm").attr('target','_blank');
 
 		$("noscript").hide(); // Needed for IE8
-		$("#errorDialog, #modalBackground").hide();
+		$("#errorDialog, #dialogModalBackground").hide();
+		
+		$("#errorDialog button").click(function(e){
+			$("#errorDialog").fadeOut("slow");
+			$("#dialogModalBackground").hide();
+		});
 		
 		$.getJSON("http://updates.codebox.org.uk/version/bitmeteros/version.js?callback=?", showVersion);
 
 	});
+
+function setAdminOnlyHandlers(){
+ // Disable admin functions if this client is not allowed to perform them (don't worry, they get blocked server-side as well)
+ 	if (!config.allowAdmin){
+ 		$('.adminOnly').addClass('forbidden');
+ 		$('a.adminOnly').unbind('click').click(function(e){
+ 			showError('This feature cannot be used when accessing the web interface remotely.<br><br> ' + 
+ 				'To use this feature you must either access the interface locally (using <em>localhost</em> ' + 
+ 				'as the host name in the url), or change the access permissions to allow remote ' + 
+ 				'administrative access.<br><br>');
+ 		});
+ 	}
+}
 
 function showVersion(data){
 	function isNewVersion(currentVersion, newVersion){

@@ -23,24 +23,37 @@
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <sqlite3.h>
+#include <stdio.h>
 #include "common.h"
+#include "test.h"
+#include "client.h"
+#include "CuTest.h"
+#include "bmws.h"
 
 /*
-Contains a helper function for use by clients that need to retrieve data to be synchronized with another database.
+Contains unit tests for the handleFile module.
 */
 
-#define CLIENT_SYNC_SQL "SELECT ts AS ts, dl AS dl, ul AS ul, dr AS dr, ad AS ad FROM data WHERE ts > ? AND hs = '' ORDER BY ts ASC"
+void testCharSubstitution(CuTest *tc) {
+	FILE* inFile = tmpfile();
+    fprintf(inFile, "val1=<!--[v1]--> val2=<!--[v2]--> val1=<!--[v1]-->");
+    rewind(inFile);
 
-struct Data* getSyncValues(time_t ts){
- // A list of Data structs will be returned, once for each db entry with a timestamp > ts
+	int outFile = makeTmpFile();    
+    
+    struct NameValuePair p1 = {"v1", "1", NULL};
+    struct NameValuePair p2 = {"v2", "2", &p1};
+    
+    doSubs(outFile, inFile, &p2);
+    
+    char* outTxt = readTmpFile();
+    
+    CuAssertStrEquals(tc, "val1=1 val2=2 val1=1", outTxt);
+}
 
-   	sqlite3_stmt *stmt = getStmt(CLIENT_SYNC_SQL);
 
-	sqlite3_bind_int(stmt, 1, ts);
-	struct Data* result = runSelect(stmt);
-
-	finishedStmt(stmt);
-
-	return result;
+CuSuite* handleFileGetSuite() {
+    CuSuite* suite = CuSuiteNew();
+    SUITE_ADD_TEST(suite, testCharSubstitution);
+    return suite;
 }

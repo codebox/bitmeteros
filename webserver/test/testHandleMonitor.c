@@ -80,7 +80,7 @@ void testTsParamOkNoHostAdapter(CuTest *tc) {
         "Server: BitMeterOS " VERSION " Web Server" HTTP_EOL
         "Date: Sun, 08 Nov 2009 10:00:00 +0000" HTTP_EOL
         "Connection: Close" HTTP_EOL HTTP_EOL
-        "{serverTime : 1257674400, data : [{dl: 2,ul: 2,ts: 0,dr: 1},{dl: 4,ul: 4,ts: 60,dr: 1},{dl: 8,ul: 8,ts: 120,dr: 1}]}"
+        "{\"serverTime\" : 1257674400, \"data\" : [{\"dl\": 2,\"ul\": 2,\"ts\": 0,\"dr\": 1},{\"dl\": 4,\"ul\": 4,\"ts\": 60,\"dr\": 1},{\"dl\": 8,\"ul\": 8,\"ts\": 120,\"dr\": 1}]}"
     , result);
 }
 
@@ -111,7 +111,7 @@ void testTsParamOkWithHostAdapter(CuTest *tc) {
         "Server: BitMeterOS " VERSION " Web Server" HTTP_EOL
         "Date: Sun, 08 Nov 2009 10:00:00 +0000" HTTP_EOL
         "Connection: Close" HTTP_EOL HTTP_EOL
-        "{serverTime : 1257674400, data : [{dl: 4,ul: 4,ts: 0,dr: 1}]}"
+        "{\"serverTime\" : 1257674400, \"data\" : [{\"dl\": 4,\"ul\": 4,\"ts\": 0,\"dr\": 1}]}"
     , result);
 }
 

@@ -36,14 +36,7 @@ Contains a helper function for use by clients that need to produce database summ
 #define DATA_SUMMARY_SQL_ALL          "SELECT SUM(dl) AS dl, SUM(ul) AS ul FROM data WHERE ts>=?"
 #define DATA_SUMMARY_SQL_HOST         "SELECT SUM(dl) AS dl, SUM(ul) AS ul FROM data WHERE ts>=? AND hs=?"
 #define DATA_SUMMARY_SQL_HOST_ADAPTER "SELECT SUM(dl) AS dl, SUM(ul) AS ul FROM data WHERE ts>=? AND hs=? AND ad=?"
-#define HOST_SUMMARY_SQL "SELECT DISTINCT(hs) AS hs FROM data WHERE hs != ''"
-
-#ifndef MULTI_THREADED_CLIENT
-	static sqlite3_stmt *stmtAll  = NULL;
-	static sqlite3_stmt *stmtHs   = NULL;
-	static sqlite3_stmt *stmtHsAd = NULL;
-	static sqlite3_stmt *stmtHosts = NULL;
-#endif
+#define HOST_SUMMARY_SQL              "SELECT DISTINCT(hs) AS hs FROM data WHERE hs != ''"
 
 struct Summary getSummaryValues(char* hs, char* ad);
 static void getHosts(char*** hostNames, int* hostCount);
@@ -123,16 +116,7 @@ void freeSummary(struct Summary* summary){
 
 
 static void getHosts(char*** hostNames, int* hostCount){
-    sqlite3_stmt *stmt = NULL;
-
-	#ifdef MULTI_THREADED_CLIENT
-    	prepareSql(&stmt, HOST_SUMMARY_SQL);
-    #else
-    	if (stmtHosts == NULL){
-    		prepareSql(&stmtHosts, HOST_SUMMARY_SQL);
-    	}
-    	stmt = stmtHosts;
-    #endif
+    sqlite3_stmt *stmt = getStmt(HOST_SUMMARY_SQL);
 
     struct Data* data = runSelect(stmt);
     struct Data* thisData;
@@ -152,85 +136,43 @@ static void getHosts(char*** hostNames, int* hostCount){
         (*hostNames)[offset++] = strdup(thisData->hs);
         thisData = thisData->next;
     }
-
-    #ifdef MULTI_THREADED_CLIENT
-    	sqlite3_finalize(stmt);
-    #else
-    	sqlite3_reset(stmt);
-    #endif
+    
+	freeData(data);
+    finishedStmt(stmt);
 }
 
 struct Data* calcTotalsForAllSince(int ts, char* hs, char* ad){
-    sqlite3_stmt *stmt = NULL;
-
-	#ifdef MULTI_THREADED_CLIENT
-    	prepareSql(&stmt, DATA_SUMMARY_SQL_ALL);
-    #else
-    	if (stmtAll == NULL){
-    		prepareSql(&stmtAll, DATA_SUMMARY_SQL_ALL);
-    	}
-    	stmt = stmtAll;
-    #endif
+    sqlite3_stmt *stmt = getStmt(DATA_SUMMARY_SQL_ALL);
 
 	sqlite3_bind_int(stmt, 1, ts);
 	struct Data* result = runSelect(stmt);
 
-	#ifdef MULTI_THREADED_CLIENT
-    	sqlite3_finalize(stmt);
-    #else
-    	sqlite3_reset(stmt);
-    #endif
+	finishedStmt(stmt);
 
 	return result;
 }
 
 struct Data* calcTotalsForHsSince(int ts, char* hs, char* ad){
-    sqlite3_stmt *stmt = NULL;
-
-    #ifdef MULTI_THREADED_CLIENT
-    	prepareSql(&stmt, DATA_SUMMARY_SQL_HOST);
-    #else
-    	if (stmtHs == NULL){
-    		prepareSql(&stmtHs, DATA_SUMMARY_SQL_HOST);
-    	}
-    	stmt = stmtHs;
-    #endif
+    sqlite3_stmt *stmt = getStmt(DATA_SUMMARY_SQL_HOST);
 
 	sqlite3_bind_int(stmt, 1, ts);
     sqlite3_bind_text(stmt, 2, hs, strlen(hs), SQLITE_TRANSIENT);
 	struct Data* data = runSelect(stmt);
 
-	#ifdef MULTI_THREADED_CLIENT
-    	sqlite3_finalize(stmt);
-    #else
-    	sqlite3_reset(stmt);
-    #endif
+	finishedStmt(stmt);
 
 	return data;
 }
 
 struct Data* calcTotalsForHsAdSince(int ts, char* hs, char* ad){
-    sqlite3_stmt *stmt = NULL;
-
-    #ifdef MULTI_THREADED_CLIENT
-    	prepareSql(&stmt, DATA_SUMMARY_SQL_HOST_ADAPTER);
-    #else
-    	if (stmtHsAd == NULL){
-    		prepareSql(&stmtHsAd, DATA_SUMMARY_SQL_HOST_ADAPTER);
-    	}
-    	stmt = stmtHsAd;
-    #endif
+    sqlite3_stmt *stmt = getStmt(DATA_SUMMARY_SQL_HOST_ADAPTER);
 
 	sqlite3_bind_int(stmt, 1, ts);
     sqlite3_bind_text(stmt, 2, hs, strlen(hs), SQLITE_TRANSIENT);
     sqlite3_bind_text(stmt, 3, ad, strlen(ad), SQLITE_TRANSIENT);
 	struct Data* data = runSelect(stmt);
 
-	#ifdef MULTI_THREADED_CLIENT
-    	sqlite3_finalize(stmt);
-    #else
-    	sqlite3_reset(stmt);
-    #endif
+	finishedStmt(stmt);
 
 	return data;
 }

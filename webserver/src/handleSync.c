@@ -42,6 +42,7 @@ void processSyncRequest(SOCKET fd, struct Request* req){
 	time_t ts = (time_t) getValueNumForName("ts", req->params, NO_TS);
 	if (ts == NO_TS){
      // We need a 'ts' parameter
+     	logMsg(LOG_ERR, "processSyncRequest ts param missing/invalid: %s", getValueForName("ts", req->params, NULL));
 	    writeHeaders(fd, HTTP_SERVER_ERROR, NULL, TRUE);
 
 	} else {

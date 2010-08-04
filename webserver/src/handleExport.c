@@ -36,17 +36,17 @@ Handles '/export' requests received by the web server.
 */
 
 extern struct HttpResponse HTTP_OK;
-static void writeRow(struct Data* row, int fd);
-
+static void writeCsvRow(SOCKET fd, struct Data* row);
+	
 void processExportRequest(SOCKET fd, struct Request* req){
     writeHeaders(fd, HTTP_OK, MIME_CSV, FALSE);
     writeHeader(fd, "Content-Disposition", "attachment;filename=bitmeterOsExport.csv");
 	writeEndOfHeaders(fd);
 
-	getDumpValues(&writeRow, fd);
+	getDumpValues(fd, &writeCsvRow);
 }
 
-static void writeRow(struct Data* row, int fd){
+static void writeCsvRow(SOCKET fd, struct Data* row){
 	char date[11];
 	toDate(date, row->ts - row->dr);
 

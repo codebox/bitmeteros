@@ -42,11 +42,11 @@ extern struct HttpResponse HTTP_OK;
 extern struct HttpResponse HTTP_NOT_ALLOWED;
 
 // These are the different operations that we can perform on behalf of the client
-enum OpType{File, Monitor, Summary, Query, Sync, Config, Export};
+enum OpType{File, Monitor, Summary, Query, Sync, Config, Alert, Export, MobileMonitor, MobileSummary, MobileAbout};
 
 void writeHeader(SOCKET fd, char* name, char* value){
  // Helper function, writes out a single HTTP header with the appropriate separator and line terminator
-	char buffer[HEADER_BUFSIZE];
+	char buffer[SMALL_BUFSIZE];
     sprintf(buffer, "%s: %s" HTTP_EOL, name, value);
     writeText(fd, buffer);
 }
@@ -57,7 +57,7 @@ static void writeMimeType(SOCKET fd, char* contentType){
 
 static void writeResponseCode(SOCKET fd, struct HttpResponse response){
  // Writes out the first line of a response, including the HTTP response code and message
-    char buffer[strlen(response.msg) + 16]; // Accomodate code, HTTP prefix, whitespace etc
+    char buffer[SMALL_BUFSIZE];
     sprintf(buffer,"HTTP/1.0 %d %s" HTTP_EOL, response.code, response.msg);
     writeText(fd, buffer);
 }
@@ -101,10 +101,9 @@ void writeHeaders(SOCKET fd, struct HttpResponse response, char* contentType, in
     }
 }
 
-void processRequest(SOCKET fd, char* buffer){
+void processRequest(SOCKET fd, char* buffer, int allowAdmin){
  // Examine the request, and hand it off to the appropriate handler
     struct Request* req = parseRequest(buffer);
-
     if (strcmp(req->method, "GET") == 0) {
         enum OpType op;
 
@@ -126,6 +125,18 @@ void processRequest(SOCKET fd, char* buffer){
 		} else if (strcmp(req->path, "/export") == 0){
             op = Export;
 
+		} else if (strcmp(req->path, "/alert") == 0){
+            op = Alert;
+
+		} else if (strcmp(req->path, "/m/monitor") == 0) {
+			op = MobileMonitor;
+			
+		} else if (strcmp(req->path, "/m/summary") == 0) {
+			op = MobileSummary;
+			
+		} else if (strcmp(req->path, "/m/about") == 0) {
+			op = MobileAbout;
+			
         } else {
             op = File;
         }
@@ -138,7 +149,6 @@ void processRequest(SOCKET fd, char* buffer){
         if (needsDb){
          // The client isn't asking for a file, so we will need a database connection to complete the request
             openDb();
-            prepareDb();
         }
 
      // Call the appropriate request handler
@@ -155,13 +165,26 @@ void processRequest(SOCKET fd, char* buffer){
             processSyncRequest(fd, req);
 
 		} else if (op == Config){
-            processConfigRequest(fd, req);
+            processConfigRequest(fd, req, allowAdmin);
 
 		} else if (op == Export){
             processExportRequest(fd, req);
 
+		} else if (op == Alert){
+            processAlertRequest(fd, req, allowAdmin);
+			
+        } else if (op == MobileMonitor){
+			processMobileMonitorRequest(fd, req);
+			
+        } else if (op == MobileSummary){
+			processMobileSummaryRequest(fd, req);
+			
+        } else if (op == MobileAbout){
+			struct NameValuePair pair = {"version", VERSION, NULL};
+		    processFileRequest(fd, req, &pair);
+
         } else if (op == File){
-            processFileRequest(fd, req);
+            processFileRequest(fd, req, NULL);
 
         } else {
             assert(FALSE);
@@ -186,13 +209,17 @@ void processRequest(SOCKET fd, char* buffer){
 
 void writeText(SOCKET fd, char* txt){
  // Helper function, computes the length of the text for us
+   	writeData(fd, txt, strlen(txt));
+}
+
+void writeData(SOCKET fd, char* data, int len){
     #ifdef TESTING
-        write(fd, txt, strlen(txt));
+        write(fd, data, len);
         #ifndef _WIN32
         	fsync(fd);
         #endif
     #else
-        send(fd, txt, strlen(txt), 0);
+        send(fd, data, len, 0);
     #endif
 }
 
@@ -211,29 +238,63 @@ void writeDataToJson(SOCKET fd, struct Data* data){
 }
 
 void writeSingleDataToJson(SOCKET fd, struct Data* data){
-	char jsonBuffer[64];
+	char jsonBuffer[SMALL_BUFSIZE];
 
 	writeText(fd, "{");
 
 	if (data != NULL){
-		sprintf(jsonBuffer, "dl: %llu,ul: %llu,ts: %d,dr: %d", data->dl, data->ul, (int)data->ts, data->dr);
+		sprintf(jsonBuffer, "\"dl\": %llu,\"ul\": %llu,\"ts\": %d,\"dr\": %d", data->dl, data->ul, (int)data->ts, data->dr);
 		writeText(fd, jsonBuffer);
 	}
 	writeText(fd, "}");
 }
+void writeTextArrayToJson(SOCKET fd, char* key, char** values){
+    if (key != NULL){
+    	writeText(fd, "\"");
+	    writeText(fd, key);
+	    writeText(fd, "\" : ");
+	}
+	writeText(fd, "[");
+	
+	int firstItem = TRUE;
+	while (*values != NULL){
+		if (!firstItem) {
+			writeText(fd, ",");
+		}
+		firstItem = FALSE;
+		
+		writeText(fd, "\"");
+		writeText(fd, *values);
+		writeText(fd, "\"");
+		values++;
+	}
+    
+    writeText(fd, "]");
+
+}
 void writeTextValueToJson(SOCKET fd, char* key, char* value){
-    char jsonBuffer[64];
-	sprintf(jsonBuffer, "%s : '%s'", key, value);
-	writeText(fd, jsonBuffer);
+    char jsonBuffer[SMALL_BUFSIZE];
+    
+    if (strlen(key) + strlen(value) + 8 > SMALL_BUFSIZE){
+		logMsg(LOG_ERR, "Input values too large for buffer, key='%s' value='%s'", key, value);    	
+    } else {
+		sprintf(jsonBuffer, "\"%s\" : \"%s\"", key, value);
+		writeText(fd, jsonBuffer);
+    }
 }
 void writeNumValueToJson(SOCKET fd, char* key, BW_INT value){
-    char jsonBuffer[64];
-	sprintf(jsonBuffer, "%s : %llu", key, value);
-	writeText(fd, jsonBuffer);
+    char jsonBuffer[SMALL_BUFSIZE];
+    
+    if (strlen(key) + 40 > SMALL_BUFSIZE) {
+		logMsg(LOG_ERR, "Input values too large for buffer, key='%s' value=%llu", key, value);    	
+    } else {
+		sprintf(jsonBuffer, "\"%s\" : %llu", key, value);
+		writeText(fd, jsonBuffer);
+	}
 }
 
 void writeSyncData(SOCKET fd, struct Data* data){
-	char row[64];
+	char row[SMALL_BUFSIZE];
 	sprintf(row, "%d,%d,%llu,%llu,%s" HTTP_EOL, (int)data->ts, data->dr, data->dl, data->ul, data->ad);
 	writeText(fd, row);
 }

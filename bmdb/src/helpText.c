@@ -35,6 +35,9 @@ char* helpTxt=
 "setconfig <name> <value>" EOL
 "Updates the named configuration parameter with the specified value. If no parameter currently exists with a matching name then a new one is added." EOL
 " " EOL
+"rmconfig <name>" EOL
+"Removes the configuration parameter with the specified name from the database" EOL
+" " EOL
 "vac" EOL
 "Performs a vacuum operation on the database, freeing any unused space still occupied by the file" EOL
 " " EOL
@@ -44,11 +47,14 @@ char* helpTxt=
 "upgrade <level>" EOL
 "Performs a database upgrade to the specified level. This operation is performed automatically by the BitMeterOS installer during software upgrades, and should not have to be executed manually." EOL
 " " EOL
-"webremote" EOL
-"Enables remote access to the BitMeterOS web interface." EOL
-" " EOL
 "weblocal" EOL
 "Disables remote access to the BitMeterOS web interface." EOL
+" " EOL
+"webremote" EOL
+"Enables non-administrative remote access to the BitMeter web interface. This allows remote users to view the web interface, but blocks access to any features which can alter the contents of the BitMeter database, or start/stop any BitMeter processes." EOL
+" " EOL
+"webremoteadmin" EOL
+"Enables administrative remote access to the BitMeter web interface. Remote users have the same levels of privilege as users accessing the interface locally." EOL
 " " EOL
 "webstop" EOL
 "Stops the BitMeterOS web server process, removing all access to the web interface." EOL
@@ -70,4 +76,5 @@ char* helpTxt=
 " " EOL
 "Email: rob@codebox.org.uk" EOL
 "Web:   http://codebox.org.uk/bitmeteros" EOL
-" " EOL"";
+" " EOL
+;

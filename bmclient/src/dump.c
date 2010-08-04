@@ -36,7 +36,7 @@
 Contains the code that handles database dump requests made via the bmclient utility.
 */
 
-static void printRow(struct Data* row, int handle);
+static void printRow(int handle, struct Data* row);
 extern struct Prefs prefs;
 static struct Data* maxValues = NULL;
 
@@ -65,7 +65,7 @@ void doDump(){
 	}
 
  // Invoke printRow once for each db row
-	getDumpValues(&printRow, 0);
+	getDumpValues(0, &printRow);
 
 	if (computeMaxValues){
 	 // Clean up
@@ -74,7 +74,7 @@ void doDump(){
 	}
 }
 
-static void printRow(struct Data* row, int ignored){
+static void printRow(int ignored, struct Data* row){
  /* We want to print out the date of the beginning of each interval in the dump, so
  	compute this by subtracting the duration (dr) from the timestamp (ts). */
 	char date[11];

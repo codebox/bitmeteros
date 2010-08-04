@@ -41,16 +41,49 @@ static void testConfigDump(CuTest *tc){
     addConfigRow("key2", "value2");
 
     FILE* f = makeTmpFileStream();
-    doConfig(f, "", 0);
+    doListConfig(f, 0, 0);
     char* result = readTmpFile();
 
     CuAssertStrEquals(tc, INFO_DUMPING_CONFIG EOL "key1=value1" EOL "key2=value2" EOL, result);
     populateConfigTable();
 }
 
+static void testConfigUpdate(CuTest *tc){
+    executeSql("delete from config;", NULL);
+    addConfigRow("key1", "value1");
+    addConfigRow("key2", "value2");
+
+	char* args[] = {"key1", "value3"};
+	doSetConfig(NULL, 2, args);
+
+    FILE* f = makeTmpFileStream();
+    doListConfig(f, 0, 0);
+    char* result = readTmpFile();
+
+    CuAssertStrEquals(tc, INFO_DUMPING_CONFIG EOL "key1=value3" EOL "key2=value2" EOL, result);
+    populateConfigTable();
+}
+
+static void testConfigDelete(CuTest *tc){
+    executeSql("delete from config;", NULL);
+    addConfigRow("key1", "value1");
+    addConfigRow("key2", "value2");
+
+	char* args[] = {"key1"};
+	doRmConfig(NULL, 1, args);
+
+    FILE* f = makeTmpFileStream();
+    doListConfig(f, 0, 0);
+    char* result = readTmpFile();
+
+    CuAssertStrEquals(tc, INFO_DUMPING_CONFIG EOL "key2=value2" EOL, result);
+    populateConfigTable();
+}
 
 CuSuite* bmdbConfigGetSuite() {
     CuSuite* suite = CuSuiteNew();
     SUITE_ADD_TEST(suite, testConfigDump);
+    SUITE_ADD_TEST(suite, testConfigUpdate);
+    SUITE_ADD_TEST(suite, testConfigDelete);
     return suite;
 }

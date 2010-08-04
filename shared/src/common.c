@@ -162,6 +162,21 @@ void makeHexString(char* hexString, const char* data, int dataLen){
 	hexString[dataLen * 2] = 0;
 }
 
+BW_INT strToBwInt(char* txt, BW_INT defaultValue){
+    if (txt == NULL){
+        return defaultValue;
+    } else {
+        char *end;
+        BW_INT value = strtoull(txt, &end, 10);
+        errno = 0;
+        if (end == txt || *end != '\0' || errno == ERANGE){
+            return defaultValue;
+        } else {
+            return value;
+        }
+    }
+}
+
 long strToLong(char* txt, long defaultValue){
     if (txt == NULL){
         return defaultValue;

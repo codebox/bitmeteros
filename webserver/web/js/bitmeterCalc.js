@@ -133,14 +133,13 @@ $(document).ready(function(){
              // Just numbers, so this is a byte value
                 var num = Number(tmpTxt);
                 return isNaN(num) ? null : num;
-                
+
             } else if (WITH_UNITS_REGEX.test(tmpTxt)) {
                 var numPart   = Number(tmpTxt.substring(0, tmpTxt.length-2));
                 if (isNaN(numPart)){
                     return null;    
                 }
                 var unitsPart = tmpTxt.substring(tmpTxt.length-2);
-                
                 var factor;
                 if (unitsPart === 'kb'){
                     factor = bytesPerK;
@@ -154,13 +153,11 @@ $(document).ready(function(){
                     assert(false, 'In parseAmountValue(), value was ' + txt);
                 }
                 return numPart * factor;
-                
             } else {
                 return null;   
             }
         };        
     })();
-
     var howLongSpeedInput = $('#calcHowLongSpeedInput');
     var calcHowLongResult = $('#calcHowLongResult');
     var calcHowLongDesc   = $('#calcHowLongDesc');

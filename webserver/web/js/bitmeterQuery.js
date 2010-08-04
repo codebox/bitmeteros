@@ -8,7 +8,6 @@ function tabShowQuery(){
 $(document).ready(function(){
 		function runQuery(){			
 			$('#queryErrBox').hide();
-			$('#queryStatusBox').html('Searching... <img src="css/images/working.gif" alt="search in progress" />');
 			var fromDate = $('#fromDate').val();
 			var toDate   = $('#toDate').val();
 
@@ -33,10 +32,11 @@ $(document).ready(function(){
 			
 			if (errList.length === 0){
 			 // The date values were ok, so continue
+	 			$('#queryStatusBox').html('Searching... <img src="css/images/working.gif" alt="search in progress" />');
+	 			$('#queryExportLink').hide();
 				var reqTxt = addAdaptersToRequest('/query?from=' + fd + '&to=' + td + '&group=' + $('#queryDisplay').val());
-				$.get(reqTxt, function(objQuery){
+				$.get(reqTxt, function(results){
 					 // Store the results, adding in combined totals - we need them elsewhere
-						var results = doEval(objQuery);
 						$.each(results, function(i,o){
 						    o.cm = o.dl + o.ul;    
 						});
@@ -45,6 +45,13 @@ $(document).ready(function(){
 						queryResultsGridObj[0].grid.populate();
 						var resultCount = results.length;
 						$('#queryStatusBox').html('Search found ' + resultCount + ' result' + (resultCount === 1 ? '' : 's') + '.');
+						if (resultCount){
+							$('#queryExportLink').show();	
+							$('#queryExportLink').attr('href', reqTxt + '&csv=1');
+						} else {
+							$('#queryExportLink').attr('href', '');
+							$('#queryExportLink').hide();
+						}
 					});
 			} else {
 			 // There was a problem with the dates, show an error and don't send the query
@@ -56,8 +63,8 @@ $(document).ready(function(){
 			}
 		
 		}
-
-		var datePickerOpts = { showOn: 'button', buttonImage: '/css/images/calendar.gif' };
+		
+		var datePickerOpts = { showOn: 'button', buttonImage: 'css/images/calendar.gif' };
 		$('#fromDate').datepicker(datePickerOpts);
 		$('#toDate').datepicker(datePickerOpts);
 		
@@ -84,6 +91,12 @@ $(document).ready(function(){
 			model.setQueryGrouping($(this).val());
 		});
 
+		$('#queryExportLink').click(function(){
+				//TODO?
+		});
+		
+		$('#queryButton').button();
+		
 	 // Set up the grid, the flexigrid prefs are non-standard because we use a hacked version
 		var queryResultsGridObj = $('#queryResults').flexigrid({
 			preProcess: function(data){
@@ -170,6 +183,10 @@ $(document).ready(function(){
 			],
 			onReload : runQuery
 		});			
+		
+	 // Clear out the grid when the page loads...
+		queryResultsGridObj[0].grid.populate();
+		
 });
 
 

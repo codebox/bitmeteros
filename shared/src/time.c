@@ -137,12 +137,6 @@ time_t getNextMinForTs(time_t ts){
 	}
 }
 
-time_t getYearFromTs(time_t ts){
- // Returns the year in which 'ts' occurs
-	struct tm *t = gmtime(&ts);
-	return 1900 + (t->tm_year);
-}
-
 time_t addToDate(time_t ts, char unit, int num){
  // Returns a timestamp value obtained by adding the specified number of hours/days/months/years to the 'ts' argument
 	if (unit == 'h'){

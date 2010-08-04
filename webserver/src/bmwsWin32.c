@@ -41,7 +41,8 @@
 #define LOCAL_ONLY htonl(0x7f000001L)
 
 static SOCKET listener;
-static int allowRemoteConnect;
+static int allowRemoteConnect, allowRemoteAdmin;
+static int isLocalConnection(SOCKET socket);
 
 static void web(void* fdVoid){
 	SOCKET fd = (SOCKET) fdVoid;
@@ -57,7 +58,8 @@ static void web(void* fdVoid){
     } else if(rc >= BUFSIZE){
         logMsg(LOG_ERR, "read() returned %d which is larger than buffer size of %d", rc, BUFSIZE);
     } else {
-    	processRequest(fd, buffer);	
+    	int allowAdmin = isLocalConnection(fd) || allowRemoteAdmin;
+    	processRequest(fd, buffer, allowAdmin);	
     }
 	
 	closesocket(fd);
@@ -91,12 +93,24 @@ void getWebRoot(char* path){
     strcpy(path, webRoot);
 }
 
+static void setCustomLogLevel(){
+ // If a custom logging level for the web server process has been set in the db then use it
+	int dbLogLevel = getConfigInt(CONFIG_WEB_LOG_LEVEL, TRUE);
+	if (dbLogLevel > 0) {
+		setLogLevel(dbLogLevel);
+	}
+}
+
 static void readDbConfig(){
  // Read in some config parameters from the database
 	openDb();
-	prepareDb();
+	setCustomLogLevel();
 	dbVersionCheck();
-	allowRemoteConnect = getConfigInt(CONFIG_WEB_ALLOW_REMOTE, FALSE);
+	
+	int allowRemote = getConfigInt(CONFIG_WEB_ALLOW_REMOTE, 0);
+	allowRemoteConnect = (allowRemote >= ALLOW_REMOTE_CONNECT);
+	allowRemoteAdmin   = (allowRemote == ALLOW_REMOTE_ADMIN);
+
 	port = getPort();
     getWebRootPath(webRoot);	
 	closeDb();
@@ -152,6 +166,17 @@ void shutdownWeb(){
  // Shut down the listener and stop
 	close(listener);
 	WSACleanup();
+}
+
+int isLocalConnection(SOCKET socket){
+	struct sockaddr_in sa;
+	int sa_len = sizeof(sa);
+	if (getsockname(socket, &sa, &sa_len) == -1) {
+		logWin32ErrMsg("getsockname() returned an error.", WSAGetLastError());
+		return FALSE;
+	}
+ // Local access means any IP in the 127.x.x.x range
+	return (sa.sin_addr.s_addr & 0xff) == 127;
 }
 
 void processWeb(){

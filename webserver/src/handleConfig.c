@@ -40,7 +40,7 @@ static void writeTxtConfigValue(SOCKET fd, char* key, char* value);
 static void writeHostAdapterList(SOCKET fd);
 extern struct HttpResponse HTTP_OK;
 
-void processConfigRequest(SOCKET fd, struct Request* req){
+void processConfigRequest(SOCKET fd, struct Request* req, int allowAdmin){
  // Write the JSON object out to the stream
     writeHeaders(fd, HTTP_OK, MIME_JS, TRUE);
 
@@ -74,6 +74,9 @@ void processConfigRequest(SOCKET fd, struct Request* req){
     writeTxtConfigValue(fd, "ulColour", val);
     free(val);
 
+    writeText(fd, ", ");
+    writeNumConfigValue(fd, "allowAdmin", allowAdmin ? "1" : "0");
+	
     writeText(fd, ", ");
     writeTxtConfigValue(fd, "version", VERSION);
 

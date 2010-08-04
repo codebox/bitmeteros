@@ -2,10 +2,11 @@
 <html>
 	<head>
 		<title>BitMeter OS</title>
-		<link type="text/css" href="css/jquery.css" rel="stylesheet" />
-		<link type="text/css" href="css/bitmeter.css" rel="stylesheet" />
-		<link type="text/css" href="css/flexigrid.css" rel="stylesheet" />
-		<link type="text/css" href="css/farbtastic.css" rel="stylesheet" />
+		<link type="text/css" href="css/jquery.css" rel="stylesheet">
+		<link type="text/css" href="css/bitmeter.css" rel="stylesheet">
+		<link type="text/css" href="css/flexigrid.css" rel="stylesheet">
+		<link type="text/css" href="css/farbtastic.css" rel="stylesheet">
+		<link type="text/css" href="m/css/bitmeter_mobile.css" rel="stylesheet" media="handheld">
 		<!--[if IE]>
 		<link type="text/css" href="css/ie.css" rel="stylesheet" />
 		<![endif]-->
@@ -24,19 +25,30 @@
 		<script type="text/javascript" src="js/bitmeterHistory.js"></script>
 		<script type="text/javascript" src="js/bitmeterSummary.js"></script>
 		<script type="text/javascript" src="js/bitmeterCalc.js"></script>
+		<script type="text/javascript" src="js/bitmeterAlert.js"></script>
 		<script type="text/javascript" src="js/bitmeterPrefs.js"></script>
 		<script type="text/javascript" src="js/bitmeter.js"></script>
 		<script type="text/javascript" src="js/farbtastic.js"></script>
 	</head>
 	<body>
 		<h1>BitMeter OS</h1>
-		<noscript>You must enable JavaScript in your browser to use the BitMeter OS Web Interface.</noscript>
+		<noscript>
+			<p>
+				You must enable JavaScript in your browser to use the BitMeter OS Web Interface.<br>
+			<span id="noscriptMobile">
+				The <a href="m/index.html">Mobile Interface</a> provides limited functionality, 
+				but does not require JavaScript.
+			</span>
+			</p>
+		</noscript>
+		<p id="mobileLink"><a href="m/index.html">Click here to use the Mobile Interface</a></p>
 		<div id="tabs">
 		    <ul>
 		        <li><a href="#monitor"><span>Monitor</span></a></li>
 		        <li><a href="#history"><span>History</span></a></li>
 		        <li><a href="#summary"><span>Summary</span></a></li>
 		        <li><a href="#query"><span>Query</span></a></li>
+		        <li><a href="#alerts"><span>Alerts</span></a></li>
 		        <li><a href="#calculator"><span>Calculator</span></a></li>
 		        <li><a href="#prefs"><span>Preferences</span></a></li>
 				<li><a href="#about"><span>About</span></a></li>
@@ -96,38 +108,46 @@
 		        					<input id="monitorShowUl" type="checkbox" />
 		        				</td>
 		        			</tr>
+		        			<tr class="monitorShowSeries">
+		        				<td class="monitorLabel">
+		        					Show Speeds in Title
+		        				</td>
+		        				<td class="monitorShowSeries">
+		        					<input id="monitorShowSpeedsInTitle" type="checkbox" />
+		        				</td>
+		        			</tr>
 		        			<tr><td colspan="2" class="monitorSeparator"><hr></td></tr>
 		        			<tr>
 		        			    <td class="monitorLabel">Stopwatch</td>
-		        			    <td id="monitorStopwatch"><img id="monitorStopwatchIcon" src="css/images/stopwatch.png"></td>
+		        			    <td id="monitorStopwatch"><img id="monitorStopwatchIcon" src="css/images/stopwatch.png" alt="Stopwatch"></td>
 		        			</tr>
 		        		</table>
 		        	</div>
 		        </div>
 		        <div class="spacer"></div>
-		        <div class="dialog" id="helpDialog" title="Help">
+		        <div class="dialog" title="Help">
 		        	<p>
 		        		The <strong>Monitor</strong> page shows real-time connection usage, updating its display once each second by default.
-		        	</p>
-		        	<p>
-		        		Upload and download rates can be shown simultaneously, or in isolation - use the <em>Show Upload</em> and <em>Show Download</em> checkboxes
-		        		to change what is displayed.
 		        	</p>
 		        	<p>
 		        		To adjust the vertical scale, use the <em>Up</em> and <em>Down</em> arrows on the right of the page.
 		        	</p>
 		        	<p>
-		        		The Stopwatch tool can be displayed by clicking the icon at the bottom right of the page. The Stopwatch allows the measurement of upload and download
-		        		speeds over short intervals of time; automatically calculating totals, together with average, maximum and minimum speeds. The Stopwatch can be paused
-		        		and reset as required using the large buttons in the center of the display.  
+		        		Upload and download rates can be shown simultaneously, or in isolation - use the <em>Show Upload</em> and <em>Show Download</em> checkboxes to change what is displayed.
+		        	</p>
+		        	<p>
+		        		Selecting the <em>Show Speeds in Title</em> option displays the current upload and download speeds in the title of the browser window, allowing connection speeds to be monitored while the browser is minimised, or obscured by other applications.
+		        	</p>
+		        	<p>
+		        		The <em>Stopwatch</em> utility, displayed by clicking the circular icon in the lower right part of the screen, can be used to check total, peak and average speeds over any time interval that you choose.
 		        	</p>
 		        </div>
 		        <div class="dialog" id="swDialog" title="Stopwatch">
 		            <div id="swPanel">
 		                <div id="swReadout">00:00:00</div>
 		                <div id="swButtons">
-		                    <img src="css/images/reset.png" class="swButton" title="Reset" id="swReset" />
-		                    <img src="css/images/play.png"  class="swButton" title="Go"    id="swStopGo" />
+		                    <button id="swReset"></button>
+		                    <button id="swStopGo"></button>
 		                </div> 
 		            </div>
 		            <table id="swValues">
@@ -188,9 +208,9 @@
 		        		</div>
 			        </div>
 			        <div class="spacer"></div>
-					<p>
-					<a href="export">Export data in CSV format</a>
-					</p>
+			        <p>
+			        <a href="export">Export data in CSV format</a>
+			        </p>
 			        <div class="spacer"></div>
 		        </div>
 		        <div class="dialog" title="Help">
@@ -217,23 +237,23 @@
 		        	</p>
 		        	<p>
 		        		In the lower graph, entitled <em>Days</em>, each vertical bar represents 1 day.
-		        	</p>
+		        	</p>	
 		        	<p>
-						This page also provides an <em>Export</em> link, below the graphs, which allows you to download a CSV file containing
-						all the data held in the Bitmeter OS database. The CSV file can be viewed in any spreadsheet application or text-editor,
-						and contains 1 line for each entry in the database. Each line in the file represents a period of time during which your
-						network connection was active, and contains the following 7 values:
-						<ul>
-							<li><strong>Date</strong> - The date on which the row's values were recorded</li>
-							<li><strong>Start Time</strong> - The start of the time interval covered by the row</li>
-							<li><strong>End Time</strong> - The end of the time interval covered by the row</li>
-							<li><strong>Download</strong> - The number of bytes downloaded during this time interval</li>
-							<li><strong>Upload</strong> - The number of bytes uploaded during this time interval</li>
-							<li><strong>Host</strong> - If the row represents data retrieved from BitMeter OS running on another computer (using the synchronisation feature),
-							then the name of the computer will appear here, otherwise this value will be strongpty.</li>
-							<li><strong>Adapter</strong> - The name of the network adapter used to upload/download the data</li>
-						</ul>
-					</p>		        			        	
+		        		This page also provides an <em>Export</em> link, below the graphs, which allows you to download a CSV file containing
+		        		all the data held in the Bitmeter OS database. The CSV file can be viewed in any spreadsheet application or text-editor
+		        		and contains 1 line for each entry in the database. Each line in the file represents a period of time during which your
+		        		network connection was active, and contains the following 7 values:
+		        	</p>
+	        		<ul>
+	        			<li><em>Date</em> - The date on which the row's values were recorded</li>
+	        			<li><em>Start Time</em> - The start of the time interval covered by the row</li>
+	        			<li><em>End Time</em> - The end of the time interval covered by the row</li>
+	        			<li><em>Download</em> - The number of bytes downloaded during this time interval</li>
+	        			<li><em>Upload</em> - The number of bytes uploaded during this time interval</li>
+	        			<li><em>Host</em> - If the row represents data retrieved from BitMeter OS running on another computer (using the synchronisation feature),
+	        			then the name of the computer will appear here, otherwise this value will be empty.</li>
+	        			<li><em>Adapter</em> - The name of the network adapter used to upload/download the data</li>
+	        		</ul>
 		        </div>
 		    </div>
 		    <div id="summary">
@@ -284,10 +304,10 @@
 		        <div class="panelContainer">
 			        <table id="queryFields">
 			        	<tr>
-			        		<td class="name">From Date<br/><span class="dateFormat"></span></td><td class="value"><input name="from" type="text" id="fromDate" /></td>
+			        		<td class="name">From Date<br/><span class="dateFormat">&nbsp;</span></td><td class="value"><input name="from" type="text" id="fromDate" /></td>
 			        	</tr>
 			        	<tr>
-			        		<td class="name">To Date<br/><span class="dateFormat"></span></td><td class="value"><input name="to" type="text" id="toDate" /></td>
+			        		<td class="name">To Date<br/><span class="dateFormat">&nbsp;</span></td><td class="value"><input name="to" type="text" id="toDate" /></td>
 			        	</tr>
 			        	<tr>
 			        		<td class="name">Display</td>
@@ -307,14 +327,14 @@
 				        		<button id="queryButton">Go</button>
 					    		<div id="queryErrBox" class="ui-state-error ui-corner-all">
 					    			<p>
-					    				<span class="ui-icon ui-icon-alert"> </span>
+					    				<span class="ui-icon ui-icon-alert">&nbsp;</span>
 										<strong>Error:</strong> 
-										<ul id="errMsgList">
-										</ul>
 									</p>
+									<ul id="errMsgList"><li>&nbsp;</li></ul>
 					    		</div>
 								<div id="queryStatusBox">
 								</div>
+								<a id="queryExportLink">Export Results</a>
 			        		</td>
 			        	</tr>
 			        </table>
@@ -329,8 +349,10 @@
 							</tr>
 						</thead>
 						<tbody>
+							<tr><td></td><td></td><td></td><td></td></tr>
 						</tbody>
 					</table> 
+					
 
 			    </div>
 		    	<div class="dialog" title="Help">
@@ -349,7 +371,208 @@
 		        		of results are returned then they may be split into pages, you can navigate through the pages of results by using the blue left 
 		        		and right arrows underneath the grid. You can sort the results by date, or by upload or download amounts, by clicking the column 
 		        		headings in the grid. Clicking a column heading a second time will reverse the order of the sort.
-					</p>		        	
+					</p>	
+					<p>
+						When a set of results are displayed in the grid an <em>Export Results</em> link will appear on the left of the page, clicking this link exports the values currently shown in the grid in CSV format, the resulting file can be viewed in any spreadsheet application or text-editor.
+					</p>	        	
+		    	</div>
+		    	<div class="spacer"></div>
+		    </div>
+		    <div id="alerts">
+		        <h2>Alerts</h2><div class="helpLink" id="alertHelpLink"><a title="Help" class="ui-icon ui-icon-newwin"></a></div>
+		        <div class="panelContainer">
+		        	<div id="alertsDisplay">
+				        <table id="alertsTable">
+				        	<thead>
+								<tr>
+									<th id="alertNameCol">Name</th>
+									<th id="alertProgressCol">Progress</th>
+									<th id="alertStatusCol"></th>
+									<th id="alertStatusIconCol"></th>
+									<th id="alertEditCol"></th>	
+									<th id="alertDeleteCol"></th>
+								</tr>
+								<tr>
+									<th id="alertTableSeparator" colspan="6"></th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr><td colspan="6"></td></tr>
+							</tbody>
+				        </table>
+				        <a id="updateAlerts">Update Now</a><br>
+						<a id="createAnotherAlert" class="adminOnly">Create a new Alert</a>
+				    </div>
+			        <p id="noAlerts">
+			        	No Alerts have been defined.<br><br>
+			        	<a id="createFirstAlert">Create an Alert</a> to get notified when your network usage goes above a certain amount.
+			        </p>
+			        <div id="createAlertBox" class="roundedCorners">
+			        	<div id="createAlertHelpText">
+			        		<h3>Alert Editor</h3>
+			        		<p>Create or update an alert. Complete each of the 5 sections below and save your changes. Section headings shown in red indicate missing information.</p>
+			        	</div>
+			        	<div id="createAlertBoxAccordion">
+							<h3 id="dirnHeader"><a href="#">Direction</a></h3>
+							<div class="createAlertBoxAccordionPanel">
+								<p>
+									First, indicate whether you are interested in downloaded data only, uploaded data only, 
+									or a combined total of the two<br><br>
+									<input type="radio" name="createAlertDirn" value="1" id="createAlertDirnDl" /><label for="createAlertDirnDl">Download only</label><br>
+									<input type="radio" name="createAlertDirn" value="2" id="createAlertDirnUl" /><label for="createAlertDirnUl">Upload only</label><br>
+									<input type="radio" name="createAlertDirn" value="3" id="createAlertDirnAll" /><label for="createAlertDirnAll">Combined total</label><br>
+								</p>
+							</div>
+							<h3 id="amtHeader"><a href="#">Amount</a></h3>
+							<div class="createAlertBoxAccordionPanel">
+								<p>
+									Now enter the amount for this alert using one of the standard abbreviations: <strong>kB</strong>, 
+									<strong>MB</strong>, <strong>GB</strong>, <strong>TB</strong><br><br>
+									<input type="text" id="createAlertAmount" maxlength="8"/> <span id="createAlertAmountDesc"></span>
+								</p>
+							</div>
+							<h3 id="startHeader"><a href="#">Interval Start</a></h3>
+							<div class="createAlertBoxAccordionPanel">
+								<p>
+									When should BitMeter start counting your usage from<br><br>
+									<input type="radio" name="createAlertStart" value="1" id="createAlertStartFixed" /><label for="createAlertStartFixed">From a fixed date and time (eg 'everything since 1st January 2010')</label><br>
+									<input type="radio" name="createAlertStart" value="2" id="createAlertStartRepeating" /><label for="createAlertStartRepeating">Using a repeating interval (eg 'everything since the 14th of the month')</label><br>
+									<input type="radio" name="createAlertStart" value="3" id="createAlertStartRolling" /><label for="createAlertStartRolling">Using a rolling interval (eg 'everything in the last 30 days')</label><br>
+								</p>
+								<div class="createAlertStartDetails" id="createAlertStartFixedDetails">
+									<strong>Date</strong> (dd/mm/yyyy): <input type="text" id="createAlertStartFixedDate" maxlength="10" /> <strong>Time</strong>: <select id="createAlertStartFixedTime" class="timeList"><option>&nbsp;</option></select>
+								</div>
+								<div class="createAlertStartDetails" id="createAlertStartRepeatingDetails">
+									<p>Select the type of interval:</p>
+									<input type="radio" name="createAlertStartRepeatingType" value="1" id="createAlertStartRepeatingTypeMonth" /><label for="createAlertStartRepeatingTypeMonth">Monthly intervals</label><br>
+									<input type="radio" name="createAlertStartRepeatingType" value="2" id="createAlertStartRepeatingTypeWeek" /><label for="createAlertStartRepeatingTypeWeek">Weekly intervals</label><br>
+									<input type="radio" name="createAlertStartRepeatingType" value="3" id="createAlertStartRepeatingTypeDay" /><label for="createAlertStartRepeatingTypeDay">Daily intervals</label><br>
+									<div id="createAlertStartRepeatingDateBoxContainer">
+										<div id="createAlertStartRepeatingDateBox">
+											<div class="createAlertStartRepeatingTxt">Pick the day of the month when the alert should begin:</div>
+											<select id="createAlertStartRepeatingDate" class="dateList"><option>&nbsp;</option></select>
+										</div>
+										<div id="createAlertStartRepeatingDayBox">
+											<div class="createAlertStartRepeatingTxt">Pick the day of the week when the alert should begin:</div>
+											<select id="createAlertStartRepeatingDay"  class="dayList"><option>&nbsp;</option></select>
+										</div>
+										<div id="createAlertStartRepeatingTimeBox">
+											<div class="createAlertStartRepeatingTxt">Pick the time of day when the alert should begin:</div>
+											<select id="createAlertStartRepeatingTime" class="timeList"><option>&nbsp;</option></select>
+										</div>
+									</div>
+								</div>
+								<div class="createAlertStartDetails" id="createAlertStartRollingDetails">
+									Rolling interval is
+									<input type="text" id="createAlertStartRollingAmount" maxlength="3" />
+									<select id="createAlertStartRollingUnits">
+										<option value="1">Hours</option>
+										<option value="2">Days</option>
+										<!--<option value="3">Months</option> this is buggy -->
+									</select>
+								</div>
+							</div>
+							<h3 id="timesHeader"><a href="#">Times</a></h3>
+							<div class="createAlertBoxAccordionPanel">
+								<p>
+									Should BitMeter count all usage during this interval, or only count at certain times<br><br>
+									<input type="radio" name="createAlertPeriod" value="1" id="createAlertPeriodAll" /><label for="createAlertPeriodAll">All usage</label><br>
+									<input type="radio" name="createAlertPeriod" value="2" id="createAlertPeriodSome" /><label for="createAlertPeriodSome">Only at certain times</label><br>
+								</p>
+								<div id="createAlertPeriodSomeDetails">
+									Specify the times that BitMeter should count for this alert:
+									<div id="createAlertPeriodDaysBox">
+										<h4>Days</h4>
+										<table id="createAlertWeekdays">
+											<tr id="createAlertWeekdaysLabels"><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+											<tr>
+												<td><input type="checkbox" id="createAlertPeriodWeekday0" value="0" /></td>
+												<td><input type="checkbox" id="createAlertPeriodWeekday1" value="1" /></td>
+												<td><input type="checkbox" id="createAlertPeriodWeekday2" value="2" /></td>
+												<td><input type="checkbox" id="createAlertPeriodWeekday3" value="3" /></td>
+												<td><input type="checkbox" id="createAlertPeriodWeekday4" value="4" /></td>
+												<td><input type="checkbox" id="createAlertPeriodWeekday5" value="5" /></td>
+												<td><input type="checkbox" id="createAlertPeriodWeekday6" value="6" /></td>
+											</tr>
+											<tr>
+												<td colspan="7">
+													<a id="createAlertPeriodDaysAll">All</a>
+													<a id="createAlertPeriodDaysNone">None</a>
+													<a id="createAlertPeriodDaysWeekdays">Weekdays</a>
+													<a id="createAlertPeriodDaysWeekends">Weekends</a>
+												</td>
+											</tr>
+										</table>
+									</div>
+									<div id="createAlertPeriodTimesBox">
+										<h4>Times</h4>
+										<div id="createAlertPeriodTimesTxt"></div>
+										<div id="createAlertPeriodTimes"></div>
+									</div>
+									<div id="createAlertPeriodAdd">
+										<button id="createAlertPeriodAddBtn">Add</button>
+									</div>
+									<div id="createAlertPeriodList">
+										<h4>Added</h4>
+										<table>
+											<thead>
+												<tr><th>Days</th><th>Times</th><th>Remove</th></tr>
+											</thead>
+											<tbody>
+												<tr><td colspan="3">No periods added yet</td></tr>
+											</tbody>
+										</table>
+									</div>
+								</div>
+							</div>
+							<h3 id="nameHeader"><a href="#">Name</a></h3>
+							<div class="createAlertBoxAccordionPanel">
+								<p>
+									Enter a name for this Alert<br><br>
+									<input type="text" id="createAlertName" maxlength="16"/>
+								</p>
+							</div>
+						</div>
+						<div id="createAlertBottomPanel">
+							<span id="createAlertStatusBox">
+								<label>Completion status:</label>
+								<label id="createAlertPercentageComplete"></label>
+							</span>
+							<button id="createAlertCancel">Cancel</button>
+							<button id="createAlertSave">Save</button>
+						</div>
+			        </div>
+			    </div>
+		    	<div class="dialog" title="Help">
+		    		<p>
+		        		The <strong>Alerts</strong> page allows you to create, update, delete and monitor <em>BitMeter Alerts</em>. An Alert notifies you when your connection usage reaches some pre-defined limit, and may be useful if your Internet Service Provider imposes restrictions on how much data you can upload/download within a certain period of time.
+		        	</p>
+		        	<p>
+		        		Any Alerts that have been defined are listed on the page, with a progress bar shown against each one to indicate how close you are to the limit. If the limit for a particular Alert has been exceeded then the bar is shown in red. Hovering the mouse over the <em>info</em> icon (or over the exclamation point icon, if the limit has been exceeded) shows more detailed progress information. The <em>Edit</em> and <em>Delete</em> links allow you to modify or remove an Alert, respectively.
+		        	</p>
+		        	<p>
+		        		To create a new Alert, click the <em>Create</em> link, which will launch the <em>Alert Editor</em>. The Alert Editor dialog is divided into 5 sections, each of which must be completed before a new Alert can be saved:
+		        	</p>
+		        	<p>
+		        		The <em>Direction</em> section prompts you to choose whether the Alert should count uploaded data, downloaded data, or both, towards its total.
+		        	</p>
+		        	<p>
+		        		The <em>Amount</em> section asks you indicate how much data can be transferred before the Alert's limit is reached. Enter an amount using the standard abbreviations <em>kB</em> (kilobytes), <em>MB</em> (megabytes), <em>GB</em> (gigabytes), or <em>TB</em> (terabytes).
+		        	</p>
+		        	<p>
+		        		The <em>Interval Start</em> section lets you specify the date and time from which the Alert will count your connection usage, this can be expressed in one of three ways:
+		        		<ul>
+		        			<li><em>From a fixed Date and Time</em> - this is the simplest type of alert. All your connection usage from the date/time that you specify will count towards the Alert, consequently the total will continue to rise indefinitely and will never be reset.</li>
+		        			<li><em>Using a repeating interval</em> - this type of Alert is suitable for tracking your connection usage if your Internet Service Provider limits your usage over a calendar month, a week, or even a single day. Select the length of interval to be used, and then specify from when, during that interval, the Alert should start. For example, if your usage is limited to a certain amount each month then select <em>Monthly Intervals</em>, and then use the <em>Day of Month</em> and <em>Time of Day</em> lists to specify from when during the month the Alert should start counting towards its total.</li>
+		        			<li><em>Using a rolling interval</em> - this type of Alert is suitable for tracking your connection usage if your Internet Service Provider limits your usage over a rolling/sliding interval, specified as a certain number of hours or days from the current date and time (for example, 'the last 30 days', or 'the last 24 hours').</li>
+		        		</ul>
+		        	</p>
+		        	<p>
+		        		The <em>Times</em> section allows you to specify the times of day, and the days of the week, when your connection usage should count towards the alert. If all usage should be counted then select the <em>All usage</em> option, otherwise select the <em>Only at certain times</em> option, and then use the date/time selectors to add one or more intervals to the list. To add a new interval you must select at least 1 day of the week, as well as indicating the start and end times of the interval on that day using the slider. Multiple intervals can be added, and overlaps between intervals are allowed.
+		        	</p>
+		        	<p>
+		        		The <em>Name</em> section is where you enter a descriptive name for the alert that you have created - this name will be displayed on the alerts list shown on the page after the new alert has been created.
+		        	</p>
 		    	</div>
 		    	<div class="spacer"></div>
 		    </div>
@@ -365,14 +588,14 @@
     				    <table class="calcTable" id="calcHowLongTable">
     				        <tr>
     				            <td class="calcTableName">Amount</td>
-    				            <td class="calcTableInput"><input id="calcHowLongAmountInput" type="text" maxlength="10" /></td>
+    				            <td><input id="calcHowLongAmountInput" type="text" maxlength="10" /></td>
     				            <td id="calcHowLongResult"></td>
     				        </tr>
     				        <tr>
     				            <td class="calcTableName">Speed</td>
-    				            <td class="calcTableInput">
+    				            <td>
     				                <span id="calcHowLongSpeedInputSpan">
-        				                <input id="calcHowLongSpeedInput" type="text" id="calcSpeed" maxlength="10" /> kB/s<br>
+        				                <input id="calcHowLongSpeedInput" type="text" maxlength="10" /> kB/s<br>
         				                <a id="calcHideHowLongSpeedLink">Click here</a> to set speed using the slider
         				            </span>
         				            <span id="calcHowLongSpeedLinkSpan">
@@ -392,12 +615,12 @@
     				    <table class="calcTable" id="calcHowMuchTable">
     				        <tr>
     				            <td class="calcTableName">Time</td>
-    				            <td class="calcTableInput"><input id="calcHowMuchTimeInput" type="text" maxlength="12" /></td>
+    				            <td><input id="calcHowMuchTimeInput" type="text" maxlength="12" /></td>
     				            <td id="calcHowMuchResult"></td>
     				        </tr>
     				        <tr>
     				            <td class="calcTableName">Speed</td>
-    				            <td class="calcTableInput">
+    				            <td>
     				                <span id="calcHowMuchSpeedInputSpan">
         				                <input id="calcHowMuchSpeedInput" type="text" maxlength="10" /> kB/s<br>
         				                <a id="calcHideHowMuchSpeedLink">Click here</a> to set speed using the slider
@@ -439,6 +662,7 @@
 					<p class="compact">If the database contains data from multiple hosts/adapters then use these options to determine what gets displayed. To import
 					data from other hosts use the <a href="http://codebox.org.uk/bitmeteros/bmsync/man">bmsync</a> utility.</p>
 					<table class="prefTable" id="adapterTable">
+						<tr><td></td></tr>
 					</table>
 					<p class="compact">
 					<label for="chkShowFilterWarning">Display a warning when filter is active</label><input type="checkbox" id="chkShowFilterWarning" />
@@ -460,16 +684,16 @@
 					<div class="dialog" title="Colour Picker">
 						<div id="colourPickerDiv"></div>
 						<div id="colourPickerTxtDiv">
-							<h4></h4>
+							<h4>&nbsp;</h4>
 							<p class="compact">Pick a colour using the Colour Wheel, or click one of the links below. Click OK when you have made your choice.</p>
 							<input type="text" id="colourPickerTxt" name="colourPickerTxt" value="" /><br>
 							<ul>
-								<li id="ff0000">Red</li>
-								<li id="00ff00">Green</li>
-								<li id="0000ff">Blue</li>
-								<li id="ffff00">Yellow</li>
-								<li id="ff00ff">Magenta</li>
-								<li id="00ffff">Cyan</li>
+								<li id="colff0000">Red</li>
+								<li id="col00ff00">Green</li>
+								<li id="col0000ff">Blue</li>
+								<li id="colffff00">Yellow</li>
+								<li id="colff00ff">Magenta</li>
+								<li id="col00ffff">Cyan</li>
 							</ul>						
 						</div>
 					</div>					
@@ -480,6 +704,9 @@
 		        <div class="panelContainer">
 					<p>
 					This is the web interface for <a href="http://codebox.org.uk/bitmeterOs">BitMeterOS</a> v<span id="version"></span>
+					</p>
+					<p>
+					This application also has a <a href="m">mobile interface</a> designed for small screens.
 					</p>
 					<p>
 					Copyright &copy; 2010 Rob Dawson
@@ -518,11 +745,23 @@
 				</div>
 			</div>
 		</div>
-		<div id="errorDialog" class="roundedCorners">
+		<div id="errorDialog" class="dialogBox roundedCorners">
 			<h2>Error</h2>
 			<p id="msg">
 			</p>
-		</div>		
+			<p>
+				<button class="roundedCorners">OK</button>
+			</p>
+		</div>	
+		<div id="confirmDialog" class="dialogBox roundedCorners">
+			<h2>Confirm</h2>
+			<p id="confirmMsg">
+			</p>
+			<div id="confirmDialogButtons">
+				<button id="confirmYes" class="roundedCorners">Yes</button>
+				<button id="confirmNo"  class="roundedCorners">No</button>
+			</div>
+		</div>	
 		<div id="newVersion">
 			<h2>Version </h2><br>
 	        <div class="panelContainer">
@@ -537,7 +776,8 @@
 				</p>
 			</div>
 		</div>
-		<div id="floater" class="roundedCorners"></div>
+		<div id="floater"></div>
 		<div id="modalBackground"></div>
+		<div id="dialogModalBackground"></div>
 	</body>
 </html>

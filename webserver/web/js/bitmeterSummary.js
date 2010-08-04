@@ -56,7 +56,7 @@ function tabShowSummary(){
 		var reqTxt = addAdaptersToRequest('summary');
 		$.get(reqTxt, function(objSummary){
 			 // Get the next set of summary data from the server and display it
-				model.setSummary(doEval(objSummary));
+				model.setSummary(objSummary);
 				populateSummary();
 			});
 	}

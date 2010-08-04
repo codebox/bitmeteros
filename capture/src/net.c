@@ -194,8 +194,12 @@ Contains platform-specific code for obtaining the network stats that we need.
 			int i;
 			for (i = 0; i < numEntries; i++) {
 			    pIfRow = (MIB_IFROW *) & pIfTable->table[i];
-			 // Ignore loopback traffic
-			    if (pIfRow->dwType != IF_TYPE_SOFTWARE_LOOPBACK){
+			 /* Ignore loopback traffic. Ignore adapters that are not operational - fixes bug where some
+			    users were seeing a large spike in ul/dl readings when PC wakes up from sleep mode, caused
+			    by network adapters being disabled (and returning dwInOctets/dwOutOctets values of 0) for
+			    a few seconds before the machine enters sleep, causing a large delta when the adapter is
+			    enabled again. */
+			    if ((pIfRow->dwType != IF_TYPE_SOFTWARE_LOOPBACK) && (pIfRow->dwOperStatus == MIB_IF_OPER_STATUS_OPERATIONAL)){
    					thisData = allocData();
 				    thisData->dl = pIfRow->dwInOctets;
 				    thisData->ul = pIfRow->dwOutOctets;

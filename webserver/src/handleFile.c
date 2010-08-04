@@ -23,6 +23,7 @@
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define _GNU_SOURCE
 #include <stdlib.h>
 #ifndef _WIN32
 #include <sys/socket.h>
@@ -53,6 +54,7 @@ struct MimeType{
 struct MimeType MIME_TYPES[] = {
 	{"html", MIME_HTML, FALSE},
 	{"htm",  MIME_HTML, FALSE},
+	{"xml",  MIME_HTML,  FALSE},
 	{"jpeg", MIME_JPEG, TRUE},
 	{"jpg",  MIME_JPEG, TRUE},
 	{"gif",  MIME_GIF,  TRUE},
@@ -170,7 +172,51 @@ static struct MimeType* getMimeTypeForFile(char* fileName){
 	}
 #endif
 
-void processFileRequest(SOCKET fd, struct Request* req){
+void doSubs(SOCKET fd, FILE* fp, struct NameValuePair* substPairs){
+	char bufferIn[SUBST_BUFSIZE];
+	char bufferOut[SUBST_BUFSIZE];
+	int size = fread(bufferIn, 1, sizeof(bufferIn), fp);
+	
+	if (size == SUBST_BUFSIZE){
+		logMsg(LOG_ERR, "doSubs, file too large - exceeded %d bytes", size);
+		
+	} else {
+		bufferIn[size] = 0;
+		char marker[32];
+		while (substPairs != NULL) {
+			sprintf(marker, "<!--[%s]-->", substPairs->name);
+
+			char* match;
+			int matchLen, valueLen, bufferInLen, bufferOutLen, matchOffset;
+			while ((match = strstr(bufferIn, marker)) != NULL){
+				bufferInLen = strlen(bufferIn);
+				matchLen = strlen(marker);
+				valueLen = strlen(substPairs->value);
+				matchOffset = match - bufferIn;
+				
+			 // Copy everything before the start of the marker
+				strncpy(bufferOut, bufferIn, matchOffset);
+				
+			 // Copy the value in place of the marker
+				strncpy(bufferOut + matchOffset, substPairs->value, valueLen);
+				
+			 // Copy the remainder of the string, after the match, including the trailing null byte
+				strncpy(bufferOut + matchOffset + valueLen, bufferIn + matchOffset + matchLen, bufferInLen - matchOffset - matchLen + 1);
+				
+			 // Copy bufferOut into bufferIn and start again
+			 	size = strlen(bufferOut);
+			 	strncpy(bufferIn, bufferOut, size);
+			 	bufferIn[size] = 0;
+			}
+			
+			substPairs = substPairs->next;	
+		}
+
+		writeData(fd, bufferIn, size);
+	}
+}
+
+void processFileRequest(SOCKET fd, struct Request* req, struct NameValuePair* substPairs){
     setupEnv();
 
 	char* path = req->path;
@@ -178,6 +224,17 @@ void processFileRequest(SOCKET fd, struct Request* req){
 	if (strcmp("/", path) == 0){
         //free(req->path);
         path = strdup("/index.html");
+        
+	} else if ((strcmp("/m", path) == 0) || (strcmp("/m/", path) == 0)){
+        //free(req->path);
+        path = strdup("/m/index.xml");
+
+	} else if ((strncmp(path, "/m/", 3) == 0) && (strchr(path, '.') == NULL)){
+		int newPathLen = strlen(path) + 5;
+		char tmp[newPathLen];
+		sprintf(tmp, "%s.xml", path);
+		tmp[newPathLen] = 0;
+        path = strdup(tmp);
 	}
 	errno = 0;
 
@@ -198,12 +255,15 @@ void processFileRequest(SOCKET fd, struct Request* req){
      // We got the file, write out the headers and then send the content
 	    //int size = getFileSize(fp); this was causing problems on Google Chrome so removed, dont think we actually need to send this
         writeHeaders(fd, HTTP_OK, mimeType->contentType, TRUE);
-
-        int rc;
-        char buffer[BUFSIZE];
-        while ( (rc = fread(buffer, 1, BUFSIZE, fp)) > 0 ) {
-            send(fd, buffer, rc, 0);
-        }
+        if (substPairs == NULL){
+	        int rc;
+	        char buffer[BUFSIZE];
+	        while ( (rc = fread(buffer, 1, BUFSIZE, fp)) > 0 ) {
+	           	writeData(fd, buffer, rc);
+	        }
+	    } else {
+	    	doSubs(fd, fp, substPairs);
+	    }
         fclose(fp);
     }
 

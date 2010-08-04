@@ -30,8 +30,9 @@
 #ifndef BMWS_H
 #define BMWS_H
 
+#define SMALL_BUFSIZE 256
 #define BUFSIZE 4096
-#define HEADER_BUFSIZE 256
+#define SUBST_BUFSIZE 20480
 
 #define MIME_JSON "application/json"
 #define MIME_HTML "text/html"
@@ -43,6 +44,7 @@
 #define MIME_JS   "application/x-javascript"
 #define MIME_CSS  "text/css"
 #define MIME_BIN  "application/octet-stream"
+#define MIME_XML  "application/xhtml+xml"
 
 #define SYNC_CONTENT_TYPE   "application/vnd.codebox.bitmeter-sync"
 #define HEADER_CONTENT_TYPE "Content-Type"
@@ -81,21 +83,29 @@ void freeRequest(struct Request* request);
 #endif
 
 void processMonitorRequest(SOCKET fd, struct Request* req);
+void processMobileMonitorPageRequest(SOCKET fd, struct Request* req);
+void processMobileMonitorAjaxRequest(SOCKET fd, struct Request* req);
 void processSummaryRequest(SOCKET fd, struct Request* req);
+void processMobileSummaryRequest(SOCKET fd, struct Request* req);
 void processQueryRequest(SOCKET fd, struct Request* req);
 void processSyncRequest(SOCKET fd, struct Request* req);
-void processConfigRequest(SOCKET fd, struct Request* req);
+void processConfigRequest(SOCKET fd, struct Request* req, int allowAdmin);
 void processExportRequest(SOCKET fd, struct Request* req);
-void processFileRequest(SOCKET fd, struct Request* req);
+void processAlertRequest(SOCKET fd, struct Request* req, int allowAdmin);
+void processFileRequest(SOCKET fd, struct Request* req, struct NameValuePair* substPairs);
 
 void writeText(SOCKET fd, char* txt);
+void writeData(SOCKET fd, char* data, int len);
 void writeDataToJson(SOCKET fd, struct Data* data);
 void writeSingleDataToJson(SOCKET fd, struct Data* data);
+void writeTextValueToJson(SOCKET fd, char* key, char* value);
+void writeTextArrayToJson(SOCKET fd, char* key, char** values);
+void writeNumValueToJson(SOCKET fd, char* key, BW_INT value);
 void writeSyncData(SOCKET fd, struct Data* data);
 void writeHeaders(SOCKET fd, struct HttpResponse response, char* contentType, int endHeaders);
 void writeHeader(SOCKET fd, char* name, char* value);
 void writeEndOfHeaders(SOCKET fd);
-void processRequest(SOCKET fd, char* buffer);
+void processRequest(SOCKET fd, char* buffer, int allowAdmin);
 
 void getWebRoot(char* path);
 

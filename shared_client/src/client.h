@@ -41,6 +41,8 @@
 // ----
 #define LOCAL_HOST "local"
 // ----
+#define ALERT_ID_FAIL -1
+// ----
 struct Summary{
 	struct Data* today;
 	struct Data* month;
@@ -69,9 +71,13 @@ struct ValueBounds* calcTsBounds(char* hs, char* ad);
 struct Data* calcMaxValues();
 struct Data* getQueryValues();
 struct Data* getSyncValues(int ts);
-void getDumpValues(void (*callback)(struct Data*, int), int);
+void getDumpValues(int, void (*callback)(int, struct Data*));
 struct HostAdapter* getHostAdapter(char* hostAndAdapterTxt);
 int freeHostAdapter(struct HostAdapter *hostAdapter);
+int addAlert(struct Alert* alert);
+struct Alert* getAlerts();
+struct Data* getTotalsForAlert(struct Alert* alert);
+int removeAlert(int id);
 struct Data* calcTotalsForAllSince(int ts, char* hs, char* ad);
 struct Data* calcTotalsForHsSince(int ts, char* hs, char* ad);
 struct Data* calcTotalsForHsAdSince(int ts, char* hs, char* ad);

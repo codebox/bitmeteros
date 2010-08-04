@@ -35,10 +35,9 @@
 Contains a helper function for use by clients that need to performs database dumps
 */
 
-void getDumpValues(void (*callback)(struct Data*, int), int handle){
+void getDumpValues(int handle, void (*callback)(int, struct Data*)){
  // The callback function gets invoked once for each row in the 'data' table
- 	sqlite3_stmt *stmt;
-    prepareSql(&stmt, "SELECT ts AS ts, dr AS dr, dl AS dl, ul AS ul, ad AS ad, hs AS hs FROM data ORDER BY ts DESC");
-
+ 	sqlite3_stmt *stmt = getStmt("SELECT ts AS ts, dr AS dr, dl AS dl, ul AS ul, ad AS ad, hs AS hs FROM data ORDER BY ts DESC");
     runSelectAndCallback(stmt, callback, handle);
+    finishedStmt(stmt);
 }

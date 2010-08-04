@@ -59,16 +59,18 @@ Contains the entry-point for the bmsync command-line utility.
 */
 
 static struct SyncPrefs prefs = {0, 0, NULL, 0, DEFAULT_PORT, NULL, NULL};
-static int doConnect(char* host, char* alias, int port);
-static int parseData(int fd, char* alias, int*);
+static SOCKET doConnect(char* host, char* alias, int port);
+static int parseData(SOCKET fd, char* alias, int*);
 static struct Data* parseRow(char* row);
-static int sendRequest(int fd, long ts, char* host, int port);
-static sqlite3_stmt* stmt;
+static int sendRequest(SOCKET fd, long ts, char* host, int port);
 static time_t getMaxTsForHost(char* alias);
 
 int main(int argc, char **argv){
     printf(COPYRIGHT);
     fflush(stdout);
+    setLogLevel(LOG_INFO);
+    setAppName("bmsync");
+    
 	int status = parseSyncArgs(argc, argv, &prefs);
 
 	if (status == FAIL){
@@ -90,10 +92,8 @@ int main(int argc, char **argv){
 
 	} else {
 		openDb();
-		prepareDb();
 		dbVersionCheck();
 		setupDb();
-		prepareSql(&stmt, "SELECT MAX(ts) AS ts FROM data WHERE hs = ?");
 
 		int i;
 		SOCKET sockFd;
@@ -139,17 +139,20 @@ int main(int argc, char **argv){
 
 					} else {
                      // Something was wrong with the response, end the transaction
+                     	logMsg(LOG_ERR, "unable to parse sync response row");
 						rollbackTrans();
 					}
 
 				} else {
                  // Unable to send the request to the remote host, end the transaction
+                 	logMsg(LOG_ERR, "unable to send sync request to %s:%d", host, port);
 					rollbackTrans();
 				}
                 close(sockFd);
 
 			} else {
              // Unable to connect, end the transaction
+             	logMsg(LOG_ERR, "failed to connect to %s:%d", host, port);
 				rollbackTrans();
 			}
 			printf("\n");
@@ -166,9 +169,10 @@ int main(int argc, char **argv){
 
 static time_t getMaxTsForHost(char* alias){
  // Look for rows in the local database for this particular alias, return the ts value of the newest one (or 0)
+ 	sqlite3_stmt* stmt = getStmt("SELECT MAX(ts) AS ts FROM data WHERE hs = ?");
 	sqlite3_bind_text(stmt, 1, alias, -1, SQLITE_TRANSIENT);
     struct Data* result = runSelect(stmt);
-    sqlite3_reset(stmt);
+    finishedStmt(stmt);
 
     time_t ts;
     if (result == NULL){
@@ -183,7 +187,7 @@ static time_t getMaxTsForHost(char* alias){
     return ts;
 }
 
-static int sendRequest(int fd, time_t ts, char* host, int port){
+static int sendRequest(SOCKET fd, time_t ts, char* host, int port){
  // Send an HTTP request to the specified host/port asking for any data newer than 'ts'
 	char buffer[MAX_REQUEST_LEN];
     sprintf(buffer, "GET /sync?ts=%d HTTP/1.1" HTTP_EOL, (int)ts);
@@ -219,7 +223,7 @@ static int startsWith(char* txt, char* start){
     return ptr == txt;
 }
 
-static int readLine(int fd, char* line){
+static int readLine(SOCKET fd, char* line){
     int prevChar = 0, thisChar = 0;
     int lineIndex = 0;
     int rc;
@@ -246,10 +250,11 @@ static int readLine(int fd, char* line){
      // There was a problem reading from the socket
     	statusMsg("ERR %d %d %s\r\n", rc, errno, strerror(errno));
     }
+
 	return FALSE;
 }
 
-static int parseData(int fd, char* alias, int* rowCount){
+static int parseData(SOCKET fd, char* alias, int* rowCount){
  // Handle the response that is returned from the host
 	int result = SUCCESS;
 	char line[MAX_LINE_LEN + 1];
@@ -307,15 +312,14 @@ static int parseData(int fd, char* alias, int* rowCount){
         freeData(data);
         resultCount++;
 	}
-
 	*rowCount = resultCount;
 
 	return result;
 }
 
-static int doConnect(char* host, char* alias, int port){
+static SOCKET doConnect(char* host, char* alias, int port){
 	struct addrinfo hints, *res;
-	int sockfd;
+	SOCKET sockfd;
 
     printf("Synchronising with %s [%s]: ", host, alias);
     statusMsg(MSG_CONNECTING);

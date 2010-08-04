@@ -23,6 +23,9 @@
  * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifdef _WIN32
+	#define __USE_MINGW_ANSI_STDIO 1
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -60,6 +63,8 @@ static int insertDataPartial(int ts, int dr, struct Data* data);
 static int compressDbStage(int secKeepInterval, int oldDr, int newDr, int (*fnRoundUp)(int) );
 
 void setupDb(){
+	logMsg(LOG_DEBUG, "Starting db setup");
+	
  // Initialise things, this must be called first
 	prepareSql(&stmtInsertData,           "INSERT INTO data (ts,dr,ad,dl,ul,hs) VALUES (?,?,?,?,?,?)");
 	prepareSql(&stmtSelectMinTsForDr,     "SELECT MIN(ts) FROM data WHERE dr=?");
@@ -70,6 +75,8 @@ void setupDb(){
 	keepPerSecLimit  = getConfigInt("cap.keep_sec_limit", FALSE);
 	keepPerMinLimit  = getConfigInt("cap.keep_min_limit", FALSE);
 	compressInterval = getConfigInt("cap.compress_interval", FALSE);
+	
+	logMsg(LOG_DEBUG, "db setup complete");
 }
 
 int updateDb(int ts, int dr, struct Data* diffList){
@@ -87,16 +94,20 @@ int updateDb(int ts, int dr, struct Data* diffList){
 }
 
 int compressDb(){
+	logMsg(LOG_DEBUG, "Starting db compression");
+	
     int status;
 
  // Compresses per-second values that are older than 1 minute into per-minute values
 	status = compressDbStage(keepPerSecLimit, POLL_INTERVAL, SECS_PER_MIN, (int(*)(int))getNextMinForTs);
+	logMsg(LOG_DEBUG, "After first stage of db compression, result=%d", status);
     if (status == FAIL){
         return FAIL;
     }
 
  // Compresses per-minute values that are older than 1 day into per-hour values
 	status = compressDbStage(keepPerMinLimit, SECS_PER_MIN, SECS_PER_HOUR, (int(*)(int))getNextHourForTs);
+	logMsg(LOG_DEBUG, "After second stage of db compression, result=%d", status);
 	if (status == FAIL){
         return FAIL;
     } else {
@@ -133,6 +144,7 @@ static int doInsert(int ts, int dr, const char* addr, BW_INT dl, BW_INT ul, cons
   		logMsg(LOG_ERR, "doInsert() failed to insert values %d,%d,%s,%llu,%llu,%s into db rc=%d error=%s", ts, dr, addr, dl, ul, host, rc, getDbError());
   		status = FAIL;
   	} else {
+  		logMsg(LOG_DEBUG, "doInsert() ok: %d,%d,%s,%llu,%llu,%s", ts, dr, addr, dl, ul, host);
         status = SUCCESS;
   	}
   	sqlite3_reset(stmtInsertData);
@@ -172,7 +184,7 @@ static int doDelete(int ts, int dr){
 
 static int doCompress(int ts, int oldDr, int newDr){
  // For each adapter, compresses rows older than 'ts' and with a 'dr' of oldDr, into a single row with 'dr' of newDr.
-	logMsg(LOG_INFO, "doCompress for %d", ts);
+	logMsg(LOG_DEBUG, "doCompress(%d,%d,%d)", ts, oldDr, newDr);
 
 	sqlite3_bind_int(stmtSelectForCompression, 1, ts);
 	sqlite3_bind_int(stmtSelectForCompression, 2, oldDr);
@@ -191,7 +203,7 @@ static int doCompress(int ts, int oldDr, int newDr){
 		dlTotal  = sqlite3_column_int64(stmtSelectForCompression, 2);
 		ulTotal  = sqlite3_column_int64(stmtSelectForCompression, 3);
 
-		logMsg(LOG_INFO, "row dl=%llu ul=%llu", dlTotal, ulTotal);
+		logMsg(LOG_DEBUG, "doCompress loop: dl=%llu ul=%llu addr=%s", dlTotal, ulTotal, addr);
 
 		insertedOk = doInsert(ts, newDr, addr, dlTotal, ulTotal, host);
 		if (insertedOk){
@@ -245,9 +257,14 @@ static int compressDbStage(int secKeepInterval, int oldDr, int newDr, int (*fnRo
     int status = SUCCESS;
     int compressOk;
 
+	logMsg(LOG_DEBUG, "In compressDbStage(%d,%d,%d), keep=%d, minTs=%d, minRounded=%d",
+			secKeepInterval, oldDr, newDr, keepBoundary, minTs, minTsRoundedUp);
+
  // Make sure the compression operation is atomic (this includes the deletion of old rows)
 	beginTrans(FALSE);
     while((minTs != 0) && (minTsRoundedUp <= keepBoundary)){
+    	logMsg(LOG_DEBUG, "compressDbStage loop: keep=%d, minTs=%d, minRounded=%d", keepBoundary, minTs, minTsRoundedUp);
+    	
      // We have rows that need to be compressed, ie that have the correct 'dr' value and are older than the boundary we established earlier
         compressOk = doCompress(minTsRoundedUp, oldDr, newDr);
         if (!compressOk){

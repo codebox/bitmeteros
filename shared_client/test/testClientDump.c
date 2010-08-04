@@ -32,14 +32,14 @@
 Contains unit tests for the clientDump utility.
 */
 
-static void onDumpRow(struct Data* data);
+static void onDumpRow(int ignored, struct Data* data);
 struct Data* dumpResult;
 
 void testDumpEmptyDb(CuTest *tc) {
  // Check that we behave correctly if the data table is empty
     emptyDb();
     dumpResult = NULL;
-    getDumpValues(&onDumpRow, 0);
+    getDumpValues(0, &onDumpRow);
     CuAssertTrue(tc, dumpResult == NULL);
 }
 
@@ -49,7 +49,7 @@ void testDumpOneEntry(CuTest *tc) {
     dumpResult = NULL;
 
     addDbRow(1234, 1, "eth0", 1, 2, "");
-    getDumpValues(&onDumpRow, 0);
+    getDumpValues(0, &onDumpRow);
     checkData(tc, dumpResult, 1234, 1, "eth0", 1, 2, "");
 
     dumpResult = dumpResult->next;
@@ -65,7 +65,7 @@ void testDumpMultipleEntries(CuTest *tc) {
     addDbRow(1234, 2, "eth1", 2, 3, "");
     addDbRow(1235, 3, "eth0", 3, 4, "");
 
-    getDumpValues(&onDumpRow, 0);
+    getDumpValues(0, &onDumpRow);
 
     checkData(tc, dumpResult, 1235, 3, "eth0", 3, 4, "");
 
@@ -79,7 +79,7 @@ void testDumpMultipleEntries(CuTest *tc) {
     CuAssertTrue(tc, dumpResult == NULL);
 }
 
-static void onDumpRow(struct Data* data) {
+static void onDumpRow(int ignored, struct Data* data) {
  // Helper callback function used by tests to record each Data struct that is returned
     appendData(&dumpResult, data);
 }
