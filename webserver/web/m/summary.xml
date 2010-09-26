@@ -1,0 +1,27 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML Basic 1.1//EN" "http://www.w3.org/TR/xhtml-basic/xhtml-basic11.dtd">
+<html>
+	<head>
+		<title>BitMeter OS - Mobile Interface</title>
+		<link type="text/css" href="/m/css/bitmeter_mobile.css" rel="stylesheet" />
+	</head>
+	<body>
+		<h1></h1>
+		<table>
+			<tr>
+				<th>&nbsp;</th><th>Download</th><th>Upload</th><th>Combined</th>
+			</tr>
+        	<tr>
+        		<td class="name">Today</td><td class="value"><!--[dlDay]--></td><td class="value"><!--[ulDay]--></td><td class="value"><!--[cmDay]--></td>
+        	</tr>
+        	<tr>
+        		<td class="name">Month</td><td class="value"><!--[dlMonth]--></td><td class="value"><!--[ulMonth]--></td><td class="value"><!--[cmMonth]--></td>
+        	</tr>
+        	<tr>
+        		<td class="name">Year</td> <td class="value"><!--[dlYear]--></td><td class="value"><!--[ulYear]--></td><td class="value"><!--[cmYear]--></td>
+        	</tr>
+        	<tr>
+        		<td class="name">Total</td><td class="value"><!--[dlTotal]--></td><td class="value"><!--[ulTotal]--></td><td class="value"><!--[cmTotal]--></td>
+        	</tr>
+        </table>
+	</body>
+</html>

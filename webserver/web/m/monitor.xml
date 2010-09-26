@@ -1,0 +1,19 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML Basic 1.1//EN" "http://www.w3.org/TR/xhtml-basic/xhtml-basic11.dtd">
+<html>
+	<head>
+		<title>BitMeter OS - Mobile Interface</title>
+		<link type="text/css" href="/m/css/bitmeter_mobile.css" rel="stylesheet" />
+		<script type="text/javascript" src="/m/js/bitmeter_mobile.js"></script>
+	</head>
+	<body onload="monitorOnLoad()">
+		<h1></h1>
+		<div id="dl">
+			<span class="dl amt" id="dlAmount"><!--[dl]--></span>
+			<span class="dl unit">kb/s</span>
+		</div>
+		<div id="ul">
+			<span class="ul amt" id="ulAmount"><!--[ul]--></span>
+			<span class="ul unit">kb/s</span>
+		</div>
+	</body>
+</html>

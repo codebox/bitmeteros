@@ -1,0 +1,23 @@
+#mobileLink{
+	display: block;	
+}
+body{
+	text-align: center;	
+	font-family: sans-serif;
+}
+li{
+	list-style-type: none;	
+	padding: 0.4em;
+}
+.amt{
+	font-size: 2em;
+}
+.unit{
+	font-size: 0.8em;
+}
+.dl{
+	color: red;
+}
+.ul{
+	color: green;
+}
