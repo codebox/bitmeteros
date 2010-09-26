@@ -73,13 +73,14 @@ struct Data* getQueryValues();
 struct Data* getSyncValues(int ts);
 void getDumpValues(int, void (*callback)(int, struct Data*));
 struct HostAdapter* getHostAdapter(char* hostAndAdapterTxt);
-int freeHostAdapter(struct HostAdapter *hostAdapter);
+void freeHostAdapter(struct HostAdapter *hostAdapter);
 int addAlert(struct Alert* alert);
+int updateAlert(struct Alert* alert);
 struct Alert* getAlerts();
-struct Data* getTotalsForAlert(struct Alert* alert);
+struct Data* getTotalsForAlert(struct Alert* alert, time_t now);
 int removeAlert(int id);
 struct Data* calcTotalsForAllSince(int ts, char* hs, char* ad);
 struct Data* calcTotalsForHsSince(int ts, char* hs, char* ad);
 struct Data* calcTotalsForHsAdSince(int ts, char* hs, char* ad);
-
+void formatAmounts(const BW_INT dl, const BW_INT ul, char* dlTxt, char *ulTxt, int units);
 #endif

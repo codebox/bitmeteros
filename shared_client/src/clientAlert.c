@@ -47,16 +47,17 @@
 #define ALERT_SQL_INSERT_INTERVAL            "INSERT INTO interval (id, yr, mn, dy, wk, hr) VALUES (?,?,?,?,?,?);"
 #define ALERT_SQL_INSERT_ALERT_INTERVAL      "INSERT INTO alert_interval (alert_id, interval_id) VALUES (?,?);"
 #define ALERT_SQL_SELECT_ROWS                "SELECT ts AS ts, dr AS dr, dl AS dl, ul AS ul FROM data WHERE ts >=?;"
+#define ALERT_SQL_TOTAL_BETWEEN              "SELECT SUM(dl) AS dl, SUM(ul) AS ul FROM data WHERE ts>? AND ts <=?"
 
 static int getNextId(char* sql);
 static struct Alert* alertForRow(sqlite3_stmt *stmtSelectAlerts, sqlite3_stmt *stmtSelectInterval, sqlite3_stmt *stmtSelectIntervalIdsForAlert);    
 static struct DateCriteria* getIntervalForId(sqlite3_stmt *stmtSelectInterval, int id);
 static int doAddAlert(struct Alert* alert, int alertId);
 static int doRemoveAlert(int id);
+int isDateCriteriaPartMatch(struct DateCriteriaPart* criteriaPart, int value);
 
 static int addInterval(struct DateCriteria* interval){
  // Inserts a row into the 'interval' table, using the values from the DateCriteria struct
-    int status;
     
  // Convert each part of the struct into a string
     char* yTxt = dateCriteriaPartToText(interval->year);
@@ -115,10 +116,9 @@ static int addAlertInterval(int alertId, int intervalId){
     }
 }
 
-struct Data* getTotalsForAlert(struct Alert* alert){
+struct Data* getTotalsForAlert(struct Alert* alert, time_t now){
  // Calculate how much data has been transferred during the interval specified by the Alert
-    time_t now = getTime();
-    
+
  // Find the most recent time that matches the Alert 'bound' criteria and that is also before 'now'
     time_t ts = findFirstMatchingDate(alert->bound, now);
     
@@ -127,8 +127,13 @@ struct Data* getTotalsForAlert(struct Alert* alert){
         if (alert->periods == NULL){
          /* Special case - the Alert covers all days/times since its beginning. The totals will
             therefore be everything in the database (for all hosts/adapters) with a ts greater 
-            than the 'first matching' ts we found above. */
-            totals = calcTotalsForAllSince(ts + 1, NULL, NULL); 
+            than the 'first matching' ts we found above, and less than 'now'. */
+            sqlite3_stmt *stmt = getStmt(ALERT_SQL_TOTAL_BETWEEN);
+            sqlite3_bind_int(stmt, 1, ts);
+            sqlite3_bind_int(stmt, 2, now);
+            totals = runSelect(stmt);
+			finishedStmt(stmt);            
+			
             if (totals == NULL){
             	totals = allocData();	
             }
@@ -150,7 +155,7 @@ struct Data* getTotalsForAlert(struct Alert* alert){
         	
          // Get all rows from the db after the first matching ts
             sqlite3_stmt *stmt = getStmt(ALERT_SQL_SELECT_ROWS);
-            sqlite3_bind_int(stmt, 1, ts);
+            sqlite3_bind_int(stmt, 1, ts + 1);
             
             struct Data* firstRow = runSelect(stmt);
             struct Data* resultRow = firstRow;
@@ -158,21 +163,23 @@ struct Data* getTotalsForAlert(struct Alert* alert){
             
          // Check each db row in turn
             while(resultRow != NULL){
-                period = alert->periods;
-             // Check each of the alert's periods to see if it matches the ts of the current row
-                while(period != NULL){
-                    if (isDateCriteriaMatch(period, resultRow->ts - resultRow->dr)){
-                     // There is a match - add the rows values to the totals and move on to the next row
-                        if (alert->direction & DL_FLAG){
-                            totals->dl += resultRow->dl;
-                        }
-                        if (alert->direction & UL_FLAG){
-                            totals->ul += resultRow->ul;
-                        }
-                        break;    
-                    }
-                    period = period->next;   
-                }
+            	if (resultRow->ts < now){
+	                period = alert->periods;
+	             // Check each of the alert's periods to see if it matches the ts of the current row
+	                while(period != NULL){
+	                    if (isDateCriteriaMatch(period, resultRow->ts - resultRow->dr)){
+	                     // There is a match - add the rows values to the totals and move on to the next row
+	                        if (alert->direction & DL_FLAG){
+	                            totals->dl += resultRow->dl;
+	                        }
+	                        if (alert->direction & UL_FLAG){
+	                            totals->ul += resultRow->ul;
+	                        }
+	                        break;    
+	                    }
+	                    period = period->next;   
+	                }
+	            }
                 resultRow = resultRow->next;   
             }
             
@@ -184,7 +191,7 @@ struct Data* getTotalsForAlert(struct Alert* alert){
      // No matching time was found (the Alert starts in the future maybe?)
     	totals = allocData();
     }
-        
+
     return totals;
 }
 
@@ -312,11 +319,11 @@ struct Alert* getAlerts(){
     sqlite3_stmt *stmtSelectAlerts              = getStmt(ALERT_SQL_SELECT_ALL);
     sqlite3_stmt *stmtSelectInterval            = getStmt(ALERT_SQL_SELECT_INTERVAL);
     sqlite3_stmt *stmtSelectIntervalIdsForAlert = getStmt(ALERT_SQL_SELECT_INTERVALS_FOR_ALERT);
-
 	struct Alert* result = NULL;
 	struct Alert* thisAlert = NULL;
 
 	int rc;
+
     beginTrans(FALSE);
  // Loop once for each entry in the 'alert' table
 	while ((rc = sqlite3_step(stmtSelectAlerts)) == SQLITE_ROW){
@@ -324,12 +331,12 @@ struct Alert* getAlerts(){
 		appendAlert(&result, thisAlert);
 	}
     commitTrans();
-    
+
  // Tidy up
     finishedStmt(stmtSelectIntervalIdsForAlert);
     finishedStmt(stmtSelectInterval);
     finishedStmt(stmtSelectAlerts);
-    
+
 	if (rc != SQLITE_DONE){
 		logMsg(LOG_ERR, "stmtSelectAlerts failed: %d.", rc);
 	}
@@ -484,15 +491,6 @@ struct DateCriteriaPart* getNonRelativeValue(int value){
     return part;
 }
 
-static void normaliseTm(struct tm* t){
- // Normalise the tm struct, ie adjust any values that have overflowed their normal ranges
-    time_t ts = mktime(t);
-    struct tm* tm = localtime(&ts);
-    t->tm_year = tm->tm_year;
-    t->tm_mon  = tm->tm_mon;
-    t->tm_mday = tm->tm_mday;
-    t->tm_hour = tm->tm_hour;
-}
 static int getYear(struct tm* t){
  // Return the full year value from the struct
     return t->tm_year + 1900;
@@ -765,7 +763,6 @@ time_t findFirstMatchingDate(struct DateCriteria* criteria, time_t now){
         		} else {
         		 // Find the highest year that matches the criteria but that is <= the candidate date's year
         		    int highestMatchingYear = findHighestMatchAtOrBelowLimit(criteria->year, getYear(tmCandidate));
-        		    int yr = getYear(tmCandidate);
         		    if (highestMatchingYear == getYear(tmCandidate)){
         		        // The candidate's year is already the highest match, so leave it alone
         		    } else {
@@ -928,7 +925,6 @@ time_t findFirstMatchingDate(struct DateCriteria* criteria, time_t now){
 
 	if (tmCandidate == NULL){
 	 // No match could be found
-		logMsg(LOG_ERR, "findFirstMatchingDate tmCandidate is null");
 	    return -1;
 	} else {
 	    return mktime(tmCandidate);

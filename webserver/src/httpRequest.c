@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <malloc.h>
 #include "bmws.h"
 #include "common.h"
 
@@ -41,8 +42,7 @@ struct HttpResponse HTTP_FORBIDDEN    = {403, "Forbidden"};
 struct HttpResponse HTTP_NOT_ALLOWED  = {405, "Method not allowed"};
 struct HttpResponse HTTP_SERVER_ERROR = {500, "Bad/missing parameter"};
 
-static void freeNameValuePairs(struct NameValuePair* param);
-static logRequest(struct Request* request);
+static void logRequest(struct Request* request);
 
 char* getValueForName(char* name, struct NameValuePair* pair, char* defaultValue){
  /* Searches the list of name/value pairs for the value that corresponds to the specified name.
@@ -63,7 +63,7 @@ long getValueNumForName(char* name, struct NameValuePair* pair, long defaultValu
 	return strToLong(valueTxt, defaultValue);
 }
 
-static struct NameValuePair* makeNameValuePair(char* name, char* value){
+struct NameValuePair* makeNameValuePair(char* name, char* value){
  // Allocates and populates a NameValuePair struct
     struct NameValuePair* pair = malloc(sizeof(struct NameValuePair));
 
@@ -84,7 +84,7 @@ static struct NameValuePair* makeNameValuePair(char* name, char* value){
     return pair;
 }
 
-static void appendNameValuePair(struct NameValuePair** earlierPair, struct NameValuePair* newPair){
+void appendNameValuePair(struct NameValuePair** earlierPair, struct NameValuePair* newPair){
  /* Add the 'newPair' argument to the end of the NameValuePair struct list that begins with
     'earlierPair - this involves stepping through the list one struct at a time, not
     vey efficient for long lists but ok for all the current usage scenarios. */
@@ -102,6 +102,8 @@ static void appendNameValuePair(struct NameValuePair** earlierPair, struct NameV
 static struct NameValuePair escapeChars[] = {
 	{"%27", "'", NULL},
 	{"%20", " ", NULL},
+	{"%3C", "<", NULL},
+	{"%3E", ">", NULL},
 	{NULL, NULL, NULL}
 };
 static char* unescapeValue(char* value){
@@ -114,7 +116,7 @@ static char* unescapeValue(char* value){
 	while ((thisEscape = escapeChars[escapeIndex++]).name != NULL) {
 		char* nextFromReadPosn = from;
 		char* nextToWritePosn = to;
-		char* match, tmp;
+		char* match;
 		int lenOfPartBeforeMatch, lenOfReplacedTxt, lenOfReplacementTxt;
 		
 		while ((match = strstr(nextFromReadPosn, thisEscape.name)) != NULL){
@@ -152,9 +154,12 @@ struct Request* parseRequest(char* requestTxt){
     struct Request* request = malloc(sizeof(struct Request));
 
     char* path;
+    char* paramPair;
     char* paramName;
     char* paramValue;
+    char* paramEquals;
     char* httpResourceCopy = strdupa(httpResource);
+    int paramNameLen;
 
 	request->method  = strdup(httpMethod);
     request->params  = NULL;
@@ -169,19 +174,43 @@ struct Request* parseRequest(char* requestTxt){
     } else {
         request->path = strdup(path);
 
-     // Split each parameter into a name and a value
+     // Split the path into 'name=value' parts
         while (1) {
-            paramName  = strtok(NULL, "=");
-            paramValue = strtok(NULL, "&");
-
-            if (paramName == NULL || paramValue == NULL){
+            paramPair = strtok(NULL, "&");
+ 
+            if (paramPair == NULL){
              // Reached the end of the parameter list
-                break;
+                break;                                      
+                
             } else {
-            	char* unescapedValue = unescapeValue(paramValue);
+            	paramEquals = strchr(paramPair, '=');
+            	if (paramEquals == NULL){
+            	 // There was no '=' sign in this part, so ignore it
+            		continue;
+            		
+            	} else {
+            	 // Get the part before the '=' character
+            		paramNameLen = paramEquals - paramPair;
+            		paramName = malloc(paramNameLen + 1);
+            		strncpy(paramName, paramPair, paramNameLen + 1);
+            		paramName[paramNameLen] = 0;
+            		
+	            	if (strcmp(paramEquals, "=") == 0){
+	            	 // No value was supplied - this is valid in certain cases (eg RSS hostname update from prefs page)
+	            		paramValue = strdup("");
+	            	} else {
+	            		paramValue = strdup(paramEquals + 1);
+	            	}
+            	}
+            	
+ 	           	char* unescapedValue = unescapeValue(paramValue);
                 struct NameValuePair* param = makeNameValuePair(paramName, unescapedValue);
 				appendNameValuePair(&(request->params), param);
+				
+			 // These are all malloced above, and copied by makeNameValuePair(), so free them here
 				free(unescapedValue);
+				free(paramName);
+				free(paramValue);
             }
         }
     }
@@ -193,7 +222,7 @@ struct Request* parseRequest(char* requestTxt){
     return request;
 }
 
-static logRequest(struct Request* request){
+static void logRequest(struct Request* request){
 	logMsg(LOG_INFO, "Parsed Request to: %s %s", request->method, request->path);
 	struct NameValuePair* param = request->params;
 	while (param != NULL){
@@ -217,7 +246,7 @@ void freeRequest(struct Request* request){
 	}
 }
 
-static void freeNameValuePairs(struct NameValuePair* param){
+void freeNameValuePairs(struct NameValuePair* param){
  // Free up all the memory used by a NameValuePair struct
 	struct NameValuePair* nextParam;
 	while (param != NULL){

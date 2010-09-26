@@ -163,3 +163,18 @@ time_t addToDate(time_t ts, char unit, int num){
 		return mktime(t);
 	}
 }
+
+struct tm getLocalTime(time_t t){
+ // Returns a safe copy of the tm struct returned by localtime
+	return *(localtime(&t));
+}
+
+void normaliseTm(struct tm* t){
+ // Normalise the tm struct, ie adjust any values that have overflowed their normal ranges
+    time_t ts = mktime(t);
+    struct tm* tm = localtime(&ts);
+    t->tm_year = tm->tm_year;
+    t->tm_mon  = tm->tm_mon;
+    t->tm_mday = tm->tm_mday;
+    t->tm_hour = tm->tm_hour;
+}

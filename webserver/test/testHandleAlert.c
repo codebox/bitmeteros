@@ -116,7 +116,61 @@ void testAlertList(CuTest *tc) {
     , result);
 }
 
-void testAlertDelete(CuTest *tc) {
+void testAlertDeleteOk(CuTest *tc) {
+	emptyDb();
+	struct Alert* alert1 = allocAlert();
+    alert1->active    = 1;
+    alert1->direction = 1;
+    alert1->amount    = 100000000000;
+    alert1->bound     = makeDateCriteria("2010", "5", "26", "4", "15");
+    setAlertName(alert1, "alert1");
+    
+    struct DateCriteria* period1 = makeDateCriteria("*", "*", "*", "5,6", "0-6");
+    struct DateCriteria* period2 = makeDateCriteria("*", "*", "*", "0-4", "6-12");
+    period1->next = period2;
+    alert1->periods = period1;
+	addAlert(alert1);
+	
+	struct Alert* alert2 = allocAlert();
+    alert2->active    = 0;
+    alert2->direction = 2;
+    alert2->amount    = 200000000000;
+    alert2->bound     = makeDateCriteria("2010", "5", "26", "4", "15");
+    setAlertName(alert2, "alert2");
+    
+    struct DateCriteria* period3 = makeDateCriteria("*", "*", "*", "2,8", "5");
+    struct DateCriteria* period4 = makeDateCriteria("*", "*", "*", "1", "*");
+    period3->next = period4;
+    alert2->periods = period3;
+    addAlert(alert2);
+
+    struct Alert* alert = getAlerts();
+    CuAssertIntEquals(tc, alert->id, 1);
+    CuAssertIntEquals(tc, alert->next->id, 2);
+    CuAssertTrue(tc, alert->next->next == NULL);
+	 
+ 	struct NameValuePair param1 = {"id", "1", NULL};
+ 	struct NameValuePair param2 = {"action", "delete", &param1};
+    struct Request req = {"GET", "/alert", &param2, NULL};
+
+    int tmpFd = makeTmpFile();
+    processAlertRequest(tmpFd, &req, TRUE);
+
+	char* result = readTmpFile();
+    CuAssertStrEquals(tc,
+		"HTTP/1.0 200 OK" HTTP_EOL
+		"Content-Type: application/json" HTTP_EOL
+        "Server: BitMeterOS " VERSION " Web Server" HTTP_EOL
+        "Date: Sun, 08 Nov 2009 10:00:00 +0000" HTTP_EOL
+        "Connection: Close" HTTP_EOL HTTP_EOL
+    , result);
+    
+    alert = getAlerts();
+    CuAssertIntEquals(tc, alert->id, 2);
+    CuAssertTrue(tc, alert->next == NULL);
+}
+
+void testAlertDeleteForbidden(CuTest *tc) {
 	emptyDb();
 	struct Alert* alert1 = allocAlert();
     alert1->active    = 1;
@@ -156,19 +210,19 @@ void testAlertDelete(CuTest *tc) {
     int tmpFd = makeTmpFile();
     processAlertRequest(tmpFd, &req, FALSE);
 
-    char* result = readTmpFile();
-
+	char* result = readTmpFile();
     CuAssertStrEquals(tc,
-		"HTTP/1.0 200 OK" HTTP_EOL
-		"Content-Type: application/json" HTTP_EOL
+		"HTTP/1.0 403 Forbidden" HTTP_EOL
         "Server: BitMeterOS " VERSION " Web Server" HTTP_EOL
         "Date: Sun, 08 Nov 2009 10:00:00 +0000" HTTP_EOL
         "Connection: Close" HTTP_EOL HTTP_EOL
     , result);
     
     alert = getAlerts();
-    CuAssertIntEquals(tc, alert->id, 2);
-    CuAssertTrue(tc, alert->next == NULL);
+    CuAssertIntEquals(tc, alert->id, 1);
+    CuAssertIntEquals(tc, alert->next->id, 2);
+    CuAssertTrue(tc, alert->next->next == NULL);
+
 }
 
 static void checkAlertUpdateMissingArg(CuTest *tc, struct NameValuePair param){
@@ -176,7 +230,7 @@ static void checkAlertUpdateMissingArg(CuTest *tc, struct NameValuePair param){
 	struct Request req = {"GET", "/alert", &paramAction, NULL};
 	
 	int tmpFd = makeTmpFile();
-    processAlertRequest(tmpFd, &req, FALSE);
+    processAlertRequest(tmpFd, &req, TRUE);
 
     char* result = readTmpFile();
 
@@ -276,10 +330,10 @@ void testAlertUpdateOk(CuTest *tc) {
     struct Request req = {"GET", "/alert", &param8, NULL};
 
     int tmpFd = makeTmpFile();
-    processAlertRequest(tmpFd, &req, FALSE);
+    processAlertRequest(tmpFd, &req, TRUE);
 
     char* result = readTmpFile();
-
+    
     CuAssertStrEquals(tc,
 		"HTTP/1.0 200 OK" HTTP_EOL
 		"Content-Type: application/json" HTTP_EOL
@@ -313,6 +367,68 @@ void testAlertUpdateOk(CuTest *tc) {
 	checkDateCriteriaPart(tc, period->hour,    FALSE, 16, 16, FALSE);
 	
 	CuAssertTrue(tc, period->next == NULL);
+}
+
+void testAlertUpdateForbidden(CuTest *tc) {
+	emptyDb();
+	struct Alert* alert1 = allocAlert();
+    alert1->active    = 1;
+    alert1->direction = 1;
+    alert1->amount    = 100000000000;
+    alert1->bound     = makeDateCriteria("2010", "5", "26", "4", "15");
+    setAlertName(alert1, "alert1");
+    
+    struct DateCriteria* period1 = makeDateCriteria("*", "*", "*", "5,6", "0-6");
+    struct DateCriteria* period2 = makeDateCriteria("*", "*", "*", "0-4", "6-12");
+    period1->next = period2;
+    alert1->periods = period1;
+	addAlert(alert1);
+	
+	struct Alert* alert2 = allocAlert();
+    alert2->active    = 0;
+    alert2->direction = 2;
+    alert2->amount    = 200000000000;
+    alert2->bound     = makeDateCriteria("2010", "5", "26", "4", "15");
+    setAlertName(alert2, "alert2");
+    
+    struct DateCriteria* period3 = makeDateCriteria("*", "*", "*", "2,8", "5");
+    struct DateCriteria* period4 = makeDateCriteria("*", "*", "*", "1", "*");
+    period3->next = period4;
+    alert2->periods = period3;
+    addAlert(alert2);
+
+    struct Alert* alert = getAlerts();
+    CuAssertIntEquals(tc, alert->id, 1);
+    CuAssertIntEquals(tc, alert->next->id, 2);
+    CuAssertTrue(tc, alert->next->next == NULL);
+	 
+ 	struct NameValuePair param1 = {"id", "1", NULL};
+ 	struct NameValuePair param2 = {"name", "newname", &param1};
+ 	struct NameValuePair param3 = {"active", "0", &param2};
+ 	struct NameValuePair param4 = {"direction", "2", &param3};
+ 	struct NameValuePair param5 = {"amount", "200", &param4};
+ 	struct NameValuePair param6 = {"bound", "['2009','4','25','3','14']", &param5};
+ 	struct NameValuePair param7 = {"periods", "[['2011','6','27','5','16']]", &param6};
+ 	struct NameValuePair param8 = {"action", "update", &param7};
+ 	
+    struct Request req = {"GET", "/alert", &param8, NULL};
+
+    int tmpFd = makeTmpFile();
+    processAlertRequest(tmpFd, &req, FALSE);
+
+    char* result = readTmpFile();
+
+    CuAssertStrEquals(tc,
+		"HTTP/1.0 403 Forbidden" HTTP_EOL
+        "Server: BitMeterOS " VERSION " Web Server" HTTP_EOL
+        "Date: Sun, 08 Nov 2009 10:00:00 +0000" HTTP_EOL
+        "Connection: Close" HTTP_EOL HTTP_EOL
+    , result);
+    
+    alert = getAlerts();
+    CuAssertIntEquals(tc, alert->id, 1);
+    CuAssertIntEquals(tc, alert->next->id, 2);
+    CuAssertTrue(tc, alert->next->next == NULL);
 }
 
 void testProcessAlertStatus(CuTest *tc) {
@@ -357,9 +473,11 @@ CuSuite* handleAlertGetSuite() {
     SUITE_ADD_TEST(suite, testAlertNoAction);
     SUITE_ADD_TEST(suite, testAlertListNone);    
     SUITE_ADD_TEST(suite, testAlertList);
-    SUITE_ADD_TEST(suite, testAlertDelete);
+    SUITE_ADD_TEST(suite, testAlertDeleteOk);
+    SUITE_ADD_TEST(suite, testAlertDeleteForbidden);
     SUITE_ADD_TEST(suite, testAlertUpdateMissingArgs);
     SUITE_ADD_TEST(suite, testAlertUpdateOk);
+    SUITE_ADD_TEST(suite, testAlertUpdateForbidden);
     SUITE_ADD_TEST(suite, testProcessAlertStatus);
     
     return suite;

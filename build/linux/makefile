@@ -32,7 +32,7 @@ INCLUDE_DIRS=-I$(SHARED_SRC) -I$(SHARED_CLIENT_SRC) -I$(CLIENT_SRC) -I$(CAPTURE_
 LIBS=-lsqlite3 -lm
 OBJS_BMSYNC=bmsync.o syncHelp.o syncHelpText.o syncOptions.o sql.o common.o data.o db.o log.o platform.o time.o
 OBJS_BMDB=bmdb.o bmdbConfig.o upgrade.o bmdbVersion.o bmdbHelpText.o log.o db.o common.o platform.o data.o admin.o
-OBJS_BMWS=bmws.o handleConfig.o handleFile.o handleMonitor.o handleQuery.o handleSync.o handleAlert.o handleSummary.o handleExport.o http.o httpRequest.o data.o common.o log.o platform.o db.o alert.o clientMonitor.o clientSummary.o clientSync.o clientQuery.o clientDump.o clientAlert.o clientUtil.o time.o 
+OBJS_BMWS=bmws.o handleConfig.o handleFile.o handleMonitor.o handleQuery.o handleSync.o handleAlert.o handleSummary.o handleExport.o handleRss.o http.o httpRequest.o data.o common.o log.o platform.o db.o alert.o clientMonitor.o clientSummary.o clientSync.o clientQuery.o clientDump.o clientAlert.o clientUtil.o time.o 
 OBJS_CAP=captureDaemon.o net.o sql.o time.o process.o common.o db.o log.o platform.o data.o
 OBJS_CLIENT=bmclient.o options.o monitor.o summary.o query.o dump.o help.o helpText.o time.o common.o db.o log.o platform.o clientDump.o clientMonitor.o clientSummary.o clientQuery.o clientUtil.o data.o
 
@@ -137,6 +137,9 @@ testHandleFile.o: $(WEB_TEST)/testHandleFile.c $(SHARED_SRC)/common.h $(TEST)/te
 testHandleMonitor.o: $(WEB_TEST)/testHandleMonitor.c $(SHARED_SRC)/common.h $(TEST)/test.h $(TEST)/CuTest.h $(SHARED_CLIENT_SRC)/client.h $(WEB_SRC)/bmws.h
 	$(CC) -c $(WEB_TEST)/testHandleMonitor.c -o testHandleMonitor.o $(INCLUDE_DIRS)
 
+testHandleRss.o: $(WEB_TEST)/testHandleRss.c $(SHARED_SRC)/common.h $(TEST)/test.h $(TEST)/CuTest.h $(SHARED_CLIENT_SRC)/client.h $(WEB_SRC)/bmws.h
+	$(CC) -c $(WEB_TEST)/testHandleRss.c -o testHandleRss.o $(INCLUDE_DIRS)
+
 testHandleQuery.o: $(WEB_TEST)/testHandleQuery.c $(SHARED_SRC)/common.h $(TEST)/test.h $(TEST)/CuTest.h $(SHARED_CLIENT_SRC)/client.h $(WEB_SRC)/bmws.h
 	$(CC) -c $(WEB_TEST)/testHandleQuery.c -o testHandleQuery.o $(INCLUDE_DIRS)
 
@@ -232,6 +235,9 @@ handleSummary.o: $(WEB_SRC)/handleSummary.c $(WEB_SRC)/bmws.h $(SHARED_SRC)/comm
 
 handleExport.o: $(WEB_SRC)/handleExport.c $(WEB_SRC)/bmws.h $(SHARED_SRC)/common.h $(SHARED_CLIENT_SRC)/client.h
 	$(CC) -c $(WEB_SRC)/handleExport.c -o handleExport.o $(INCLUDE_DIRS)
+
+handleRss.o: $(WEB_SRC)/handleRss.c $(WEB_SRC)/bmws.h $(SHARED_SRC)/common.h $(SHARED_CLIENT_SRC)/client.h
+	$(CC) -c $(WEB_SRC)/handleRss.c -o handleRss.o $(INCLUDE_DIRS)
 
 http.o: $(WEB_SRC)/http.c $(WEB_SRC)/bmws.h $(SHARED_SRC)/common.h
 	$(CC) -c $(WEB_SRC)/http.c -o http.o $(INCLUDE_DIRS)

@@ -30,6 +30,7 @@
 #endif
 #include <stdio.h>
 #include <assert.h>
+#include <malloc.h>
 #include "client.h"
 #include "bmws.h"
 #include "common.h"
@@ -50,15 +51,15 @@ void processAlertDelete(SOCKET fd, struct NameValuePair* params);
 void processAlertUpdate(SOCKET fd, struct NameValuePair* params);
 void processAlertStatus(SOCKET fd, struct NameValuePair* params);
 void processAlertCreate(SOCKET fd, struct NameValuePair* params);
-    
+
 void processAlertRequest(SOCKET fd, struct Request* req, int allowAdmin){
 	struct NameValuePair* params = req->params;
 
 	char* action = getValueForName("action", params, "");
-	
+
 	if (strcmp("list", action) == 0) {
         processAlertList(fd);
-        
+
 	} else if (strcmp("delete", action) == 0) {
 	 // Deleting alerts is only allowed with admin access
 		if (allowAdmin){
@@ -66,7 +67,7 @@ void processAlertRequest(SOCKET fd, struct Request* req, int allowAdmin){
 	    } else {
 	    	writeHeaders(fd, HTTP_FORBIDDEN, NULL, TRUE);
 	    }
-	    
+
 	} else if (strcmp("update", action) == 0) {
 	 // Updating alerts is only allowed with admin access
 		if (allowAdmin){
@@ -74,7 +75,7 @@ void processAlertRequest(SOCKET fd, struct Request* req, int allowAdmin){
 	    } else {
 	    	writeHeaders(fd, HTTP_FORBIDDEN, NULL, TRUE);
 	    }
-	    
+
 	} else if (strcmp("status", action) == 0) {
 	    processAlertStatus(fd, params);
 
@@ -106,7 +107,7 @@ static void freeArray(char* arr[]){
 	int i=0;
 	while(arr[i] != NULL){
 		free(arr[i++]);
-	}	
+	}
 }
 
 static void writeAlertToJson(SOCKET fd, struct Alert* alert){
@@ -121,7 +122,7 @@ static void writeAlertToJson(SOCKET fd, struct Alert* alert){
     writeText(fd, ",");
     writeNumValueToJson(fd,  "amount",    alert->amount);
     writeText(fd, ",");
-    
+
     char *bound[6];
     dateCriteriaToArray(alert->bound, bound);
     writeTextArrayToJson(fd, "bound", bound);
@@ -129,18 +130,18 @@ static void writeAlertToJson(SOCKET fd, struct Alert* alert){
 
     writeText(fd, ",\"periods\" : [");
     struct DateCriteria* period = alert->periods;
-    
+
     int isFirstPeriod = TRUE;
     while (period != NULL){
         if (!isFirstPeriod){
             writeText(fd, ",");
         }
-        
+
         char *periodArray[6];
         dateCriteriaToArray(period, periodArray);
         writeTextArrayToJson(fd, NULL, periodArray);
     	freeArray(periodArray);
-    	
+
         period = period->next;
         isFirstPeriod = FALSE;
     }
@@ -153,9 +154,9 @@ void processAlertList(SOCKET fd){
 
 	struct Alert* firstAlert = getAlerts();
     struct Alert* alert = firstAlert;
-    
+
     int isFirstAlert = TRUE;
-    
+
     while (alert != NULL){
         if (!isFirstAlert){
             writeText(fd, ",");
@@ -170,16 +171,17 @@ void processAlertList(SOCKET fd){
 
 void processAlertDelete(SOCKET fd, struct NameValuePair* params){
     int id = getValueNumForName("id", params, BAD_NUM);
-    
+
     if (id == BAD_NUM){
     	logMsg(LOG_ERR, "Invalid alert id in delete request: %s", getValueForName("id", params, NULL));
         writeHeaders(fd, HTTP_SERVER_ERROR, NULL, TRUE);
     } else {
-        int status = removeAlert(id);    
+        int status = removeAlert(id);
         if (status == SUCCESS){
             // done
             writeHeaders(fd, HTTP_OK, MIME_JSON, TRUE);
-            
+            writeText(fd, "{}");
+
         } else {
             logMsg(LOG_ERR, "removeAlert() failed");
             writeHeaders(fd, HTTP_SERVER_ERROR, NULL, TRUE);
@@ -190,11 +192,11 @@ void processAlertDelete(SOCKET fd, struct NameValuePair* params){
 void processAlertStatus(SOCKET fd, struct NameValuePair* params){
     struct Alert* firstAlert = getAlerts();
     struct Alert* alert = firstAlert;
-    
+
     struct Data* totals = NULL;
-    
+
     writeHeaders(fd, HTTP_OK, MIME_JSON, TRUE);
-    
+
     int first = TRUE;
     writeText(fd, "[");
     while (alert != NULL) {
@@ -202,17 +204,17 @@ void processAlertStatus(SOCKET fd, struct NameValuePair* params){
     		writeText(fd, ",");
     	}
     	first = FALSE;
-    	
-   		totals = getTotalsForAlert(alert);
+
+   		totals = getTotalsForAlert(alert, getTime());
    		BW_INT total = 0;
     	if (alert->direction & DL_FLAG){
-    		total += totals->dl;	
+    		total += totals->dl;
     	}
     	if (alert->direction & UL_FLAG){
-    		total += totals->ul;	
+    		total += totals->ul;
     	}
     	freeData(totals);
-    	
+
    		writeText(fd, "{");
 	    writeNumValueToJson(fd,  "id",      alert->id);
 	    writeText(fd, ",");
@@ -222,12 +224,12 @@ void processAlertStatus(SOCKET fd, struct NameValuePair* params){
 	    writeText(fd, ",");
 	    writeNumValueToJson(fd,  "limit",   alert->amount);
 		writeText(fd, "}");
-    	
-    	alert = alert->next;	
+
+    	alert = alert->next;
     }
     writeText(fd, "]");
 
-	freeAlert(firstAlert);   
+	freeAlert(firstAlert);
 }
 
 static struct DateCriteria* makeSingleDateCriteriaFromTxt(char* txt){
@@ -236,18 +238,18 @@ static struct DateCriteria* makeSingleDateCriteriaFromTxt(char* txt){
 
 	char *yearTxt = strtok(txtCopy, DELIMS);
 	strtok(NULL, DELIMS); // comma
-	
+
 	char *monthTxt = strtok(NULL, DELIMS);
 	strtok(NULL, DELIMS); // comma
-	
+
 	char *dayTxt = strtok(NULL, DELIMS);
 	strtok(NULL, DELIMS); // comma
-	
+
 	char *weekdayTxt = strtok(NULL, DELIMS);
 	strtok(NULL, DELIMS); // comma
-	
+
 	char *hourTxt = strtok(NULL, DELIMS);
-	
+
 	assert(strtok(NULL, DELIMS) == NULL);
 
 	return makeDateCriteria(yearTxt, monthTxt, dayTxt, weekdayTxt, hourTxt);
@@ -258,7 +260,7 @@ static struct DateCriteria* makeMultipleDateCriteriaFromTxt(char* txt){
 	struct DateCriteria* result = NULL;
 	char* txtCopy = strdupa(txt);
 	char* tmp = strtok(txtCopy, "[]");
-	
+
 	while (tmp != NULL) {
 		if (strcmp(tmp, ",") != 0){
 			struct DateCriteria* item = makeSingleDateCriteriaFromTxt(tmp);
@@ -267,7 +269,7 @@ static struct DateCriteria* makeMultipleDateCriteriaFromTxt(char* txt){
 	 // Cant just pass in NULL here because we used strtok in makeSingleDateCriteriaFromTxt
 		tmp = strtok(tmp + strlen(tmp) + 1, "[]");
 	}
-	
+
 	return result;
 }
 
@@ -280,19 +282,19 @@ void processAlertUpdate(SOCKET fd, struct NameValuePair* params){
     char*  boundTxt   = getValueForName(    "bound",     params, NULL);
     char*  periodsTxt = getValueForName(    "periods",   params, NULL);
     BW_INT amount = strToBwInt(amountTxt, BAD_NUM);
-    
+
     if (id == BAD_NUM || name == NULL || active == BAD_NUM || direction == BAD_NUM || amount == BAD_NUM || boundTxt == NULL || periodsTxt == NULL) {
     	logMsg(LOG_ERR, "processAlertUpdate param bad/missing id=%s, name=%s, active=%s, direction=%s, amount=%s, bound=%s, periods=%s",
-    			getValueForName("id", params, NULL), 
+    			getValueForName("id", params, NULL),
     			name,
-    			getValueForName("active", params, NULL), 
-    			getValueForName("direction", params, NULL), 
+    			getValueForName("active", params, NULL),
+    			getValueForName("direction", params, NULL),
     			amountTxt, boundTxt, periodsTxt);
         writeHeaders(fd, HTTP_SERVER_ERROR, NULL, TRUE);
-        
+
     } else {
     	struct Alert* alert = allocAlert();
-    	
+
     	alert->id        = id;
 	    alert->name      = strdup(name);
 	    alert->active    = active;
@@ -300,16 +302,17 @@ void processAlertUpdate(SOCKET fd, struct NameValuePair* params){
 	    alert->periods   = makeMultipleDateCriteriaFromTxt(periodsTxt);
 	    alert->direction = direction;
 	    alert->amount    = amount;
-	    
+
     	int result = updateAlert(alert);
     	freeAlert(alert);
 
     	if (result == SUCCESS){
     		writeHeaders(fd, HTTP_OK, MIME_JSON, TRUE);
-    		
+    		writeText(fd, "{}");
+
     	} else {
     		logMsg(LOG_ERR, "updateAlert() failed");
-    		writeHeaders(fd, HTTP_SERVER_ERROR, NULL, TRUE);	
+    		writeHeaders(fd, HTTP_SERVER_ERROR, NULL, TRUE);
     	}
     }
 }
@@ -321,21 +324,21 @@ void processAlertCreate(SOCKET fd, struct NameValuePair* params){
     char* amountTxt  = getValueForName(    "amount",    params, NULL);
     char* boundTxt   = getValueForName(    "bound",     params, NULL);
     char* periodsTxt = getValueForName(    "periods",   params, NULL);
-    
+
     BW_INT amount = strToBwInt(amountTxt, BAD_NUM);
-    
+
     if (name == NULL || active == BAD_NUM || direction == BAD_NUM || amount == BAD_NUM || boundTxt == NULL || periodsTxt == NULL) {
     	logMsg(LOG_ERR, "processAlertCreate param bad/missing name=%s, active=%s, direction=%s, amount=%s, bound=%s, periods=%s",
     			name,
-    			getValueForName("active", params, NULL), 
-    			getValueForName("direction", params, NULL), 
+    			getValueForName("active", params, NULL),
+    			getValueForName("direction", params, NULL),
     			amountTxt, boundTxt, periodsTxt);
 
         writeHeaders(fd, HTTP_SERVER_ERROR, NULL, TRUE);
-        
+
     } else {
     	struct Alert* alert = allocAlert();
-    	
+
 	    alert->name      = strdup(name);
 	    alert->active    = active;
 	    alert->bound     = makeSingleDateCriteriaFromTxt(boundTxt);
@@ -343,15 +346,16 @@ void processAlertCreate(SOCKET fd, struct NameValuePair* params){
 	    alert->direction = direction;
 	    alert->amount    = amount;
     	int result = addAlert(alert);
-    	
+
     	freeAlert(alert);
-    	
+
     	if (result != ALERT_ID_FAIL){
     		writeHeaders(fd, HTTP_OK, MIME_JSON, TRUE);
-    		
+    		writeText(fd, "{}");
+
     	} else {
     		logMsg(LOG_ERR, "addAlert failed");
-    		writeHeaders(fd, HTTP_SERVER_ERROR, NULL, TRUE);	
+    		writeHeaders(fd, HTTP_SERVER_ERROR, NULL, TRUE);
     	}
     }
 }

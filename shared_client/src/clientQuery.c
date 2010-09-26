@@ -36,7 +36,7 @@ Contains a helper function for use by clients that need to perform database quer
 based on timestamp ranges, with result grouping.
 */
 
-#define CLIENT_QUERY_SQL_ALL           "SELECT SUM(dl) AS dl, SUM(ul) AS ul FROM data WHERE ts>? AND ts<=?"
+#define CLIENT_QUERY_SQL_ALL          "SELECT SUM(dl) AS dl, SUM(ul) AS ul FROM data WHERE ts>? AND ts<=?"
 #define CLIENT_QUERY_SQL_HOST         "SELECT SUM(dl) AS dl, SUM(ul) AS ul FROM data WHERE ts>? AND ts<=? AND hs=?"
 #define CLIENT_QUERY_SQL_HOST_ADAPTER "SELECT SUM(dl) AS dl, SUM(ul) AS ul FROM data WHERE ts>? AND ts<=? AND hs=? AND ad=?"
 
@@ -44,7 +44,6 @@ static struct Data* doQueryForInterval(sqlite3_stmt* stmt, time_t tsFrom, time_t
         char* hs, char* ad, void (*bindQueryParams)(sqlite3_stmt*, time_t, time_t, char*, char*));
 static struct Data* doQuery(sqlite3_stmt *stmt, time_t minFrom, time_t maxTo, time_t (*getNext)(time_t), time_t (*addTo)(time_t),
         char* hs, char* ad, void (*bindQueryParams)(sqlite3_stmt*, time_t, time_t, char*, char*));
-
 
 static time_t addToDateY(time_t ts);
 static time_t addToDateM(time_t ts);

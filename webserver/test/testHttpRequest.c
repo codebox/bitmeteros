@@ -48,20 +48,20 @@ static struct Request* buildRequest(char* path, char* headers){
 void testParseRequest(CuTest *tc) {
 	struct Request* request;
 
- // Minimal path, no parameters or headers
+ // Minimal path, no parameters
 	request = buildRequest("/", NULL);
 	CuAssertStrEquals(tc, "GET", request->method);
 	CuAssertStrEquals(tc, "/", request->path);
 	CuAssertTrue(tc, request->params == NULL);
 	freeRequest(request);
 
- // Non-minimal path, no parameters or headers
+ // Non-minimal path, no parameters
 	request = buildRequest("/pathOnly", NULL);
 	CuAssertStrEquals(tc, "/pathOnly", request->path);
 	CuAssertTrue(tc, request->params == NULL);
 	freeRequest(request);
 
- // Non-minimal path, no parameters or headers
+ // Non-minimal path, no parameters
 	request = buildRequest("/pathOnly?", NULL);
 	CuAssertStrEquals(tc, "/pathOnly", request->path);
 	CuAssertTrue(tc, request->params == NULL);
@@ -73,7 +73,7 @@ void testParseRequest(CuTest *tc) {
 	CuAssertTrue(tc, request->params == NULL);
 	freeRequest(request);
 
- // Multiple parameters, no headers
+ // Multiple parameters
 	request = buildRequest("/path?a=b&c=d", NULL);
 	CuAssertStrEquals(tc, "/path", request->path);
 
@@ -88,48 +88,34 @@ void testParseRequest(CuTest *tc) {
 	CuAssertStrEquals(tc, "d", param->value);
 	CuAssertTrue(tc, param->next == NULL);
 
-	freeRequest(request);
-
- // Multiple parameters and headers
-	/*request = buildRequest("/path?e=f&g=h", "h1: v1" HTTP_EOL "h2: v2");
+ // Multiple parameters, first has empty value
+	request = buildRequest("/path?a=&c=d", NULL);
 	CuAssertStrEquals(tc, "/path", request->path);
 
 	param = request->params;
-	CuAssertStrEquals(tc, "e", param->name);
-	CuAssertStrEquals(tc, "f", param->value);
+	CuAssertStrEquals(tc, "a", param->name);
+	CuAssertStrEquals(tc, "", param->value);
 
 	param = param->next;
-	CuAssertStrEquals(tc, "g", param->name);
-	CuAssertStrEquals(tc, "h", param->value);
+	CuAssertStrEquals(tc, "c", param->name);
+	CuAssertStrEquals(tc, "d", param->value);
 	CuAssertTrue(tc, param->next == NULL);
 
-	struct NameValuePair* header = request->headers;
-	CuAssertStrEquals(tc, "h1", header->name);
-	CuAssertStrEquals(tc, "v1", header->value);
+ // Multiple parameters, last has empty value
+	request = buildRequest("/path?a=b&c=", NULL);
+	CuAssertStrEquals(tc, "/path", request->path);
 
-	header = header->next;
-	CuAssertStrEquals(tc, "h2", header->name);
-	CuAssertStrEquals(tc, "v2", header->value);
-	CuAssertTrue(tc, header->next == NULL);
+	param = request->params;
+	CuAssertStrEquals(tc, "a", param->name);
+	CuAssertStrEquals(tc, "b", param->value);
+
+	param = param->next;
+	CuAssertStrEquals(tc, "c", param->name);
+	CuAssertStrEquals(tc, "", param->value);
+	CuAssertTrue(tc, param->next == NULL);
 
 	freeRequest(request);
 
- // Minimal path, no parameters, multiple headers
-	request = buildRequest("/", "h3: v3" HTTP_EOL "h4: v4");
-	CuAssertStrEquals(tc, "/", request->path);
-
-	CuAssertTrue(tc, request->params == NULL);
-
-	header = request->headers;
-	CuAssertStrEquals(tc, "h3", header->name);
-	CuAssertStrEquals(tc, "v3", header->value);
-
-	header = header->next;
-	CuAssertStrEquals(tc, "h4", header->name);
-	CuAssertStrEquals(tc, "v4", header->value);
-	CuAssertTrue(tc, header->next == NULL);
-
-	freeRequest(request);*/
 }
 
 void testGetValueForName(CuTest *tc) {

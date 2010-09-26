@@ -24,6 +24,7 @@
  */
 
 #include <signal.h>
+#include <stdio.h>
 #include "common.h"
 #include "bmws.h"
 

@@ -171,7 +171,7 @@ void shutdownWeb(){
 int isLocalConnection(SOCKET socket){
 	struct sockaddr_in sa;
 	int sa_len = sizeof(sa);
-	if (getsockname(socket, &sa, &sa_len) == -1) {
+	if (getsockname(socket, (struct sockaddr*)&sa, &sa_len) == -1) {
 		logWin32ErrMsg("getsockname() returned an error.", WSAGetLastError());
 		return FALSE;
 	}

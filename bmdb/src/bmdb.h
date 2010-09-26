@@ -30,7 +30,7 @@
 #define ERR_BAD_UPGRADE_LEVEL "Invalid upgrade level specified"
 #define INFO_DUMPING_CONFIG "Dumping config table..."
 
-#define MAX_UPGRADE_LEVEL 6
+#define MAX_UPGRADE_LEVEL 7
 
 int doVersion();
 int convertAddrValues();

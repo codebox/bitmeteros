@@ -42,7 +42,8 @@ int main(int argc, char **argv){
 	int status = parseArgs(argc, argv, &prefs);
 
     printf(COPYRIGHT);
-
+	setLogLevel(LOG_INFO);
+	
 	if (status == FAIL){
 	 // The command-line was duff...
 		if (prefs.errorMsg != NULL){

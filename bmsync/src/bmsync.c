@@ -25,25 +25,24 @@
 
 #ifdef _WIN32
 	#define __USE_MINGW_ANSI_STDIO 1
+	#define WINVER 0x0501
+	#include <winsock2.h>
+	#include <ws2tcpip.h>
+#else
+	#include <netdb.h>
 #endif
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
+#include <unistd.h>
 #include "common.h"
 #include "capture.h"
 #include "bmsync.h"
 #include "bmws.h"
 #include "sqlite3.h"
-
-#ifdef _WIN32
-#define WINVER 0x0501
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#else
-#include <netdb.h>
-#endif
 
 #define MAX_REQUEST_LEN   1024
 #define DEFAULT_PORT 2605

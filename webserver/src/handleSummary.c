@@ -120,44 +120,44 @@ static void formatForMobile(BW_INT amt, char* txt){
 }
 void processMobileSummaryRequest(SOCKET fd, struct Request* req){
 	struct Summary summary = getSummaryValues(NULL, NULL);
-	
+
  // Daily amounts
 	char dlDayTxt[32];
 	formatForMobile(summary.today->dl, dlDayTxt);
-	
+
 	char ulDayTxt[32];
 	formatForMobile(summary.today->ul, ulDayTxt);
-	
+
 	char cmDayTxt[32];
 	formatForMobile(summary.today->dl + summary.today->ul, cmDayTxt);
-	
+
  // Monthly amounts
 	char dlMonthTxt[32];
 	formatForMobile(summary.month->dl, dlMonthTxt);
-	
+
 	char ulMonthTxt[32];
 	formatForMobile(summary.month->ul, ulMonthTxt);
-	
+
 	char cmMonthTxt[32];
 	formatForMobile(summary.month->dl + summary.month->ul, cmMonthTxt);
-	
+
  // Yearly amounts
 	char dlYearTxt[32];
 	formatForMobile(summary.year->dl, dlYearTxt);
-	
+
 	char ulYearTxt[32];
 	formatForMobile(summary.year->ul, ulYearTxt);
-	
+
 	char cmYearTxt[32];
 	formatForMobile(summary.year->dl + summary.year->ul, cmYearTxt);
-	
+
  // Total amounts
 	char dlTotalTxt[32];
 	formatForMobile(summary.total->dl, dlTotalTxt);
-	
+
 	char ulTotalTxt[32];
 	formatForMobile(summary.total->ul, ulTotalTxt);
-	
+
 	char cmTotalTxt[32];
 	formatForMobile(summary.total->dl + summary.total->ul, cmTotalTxt);
 
@@ -174,6 +174,6 @@ void processMobileSummaryRequest(SOCKET fd, struct Request* req){
 	struct NameValuePair pair10 = {"dlTotal", dlTotalTxt, &pair9};
 	struct NameValuePair pair11 = {"ulTotal", ulTotalTxt, &pair10};
 	struct NameValuePair pair12 = {"cmTotal", cmTotalTxt, &pair11};
-	
+
     processFileRequest(fd, req, &pair12);
 }

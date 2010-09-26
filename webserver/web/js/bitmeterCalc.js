@@ -1,42 +1,32 @@
-function tabShowCalc(){
-	setSliderRange(0, model.getMonitorScale());
-}
+/*global $,BITMETER,window,config*/
+/*jslint onevar: true, undef: true, nomen: true, eqeqeq: true, bitwise: true, regexp: true, newcap: true, immed: true, strict: false */
 
-function setSliderRange(min, max){
-    var value = $('#calcSlider').slider('value');
-    $('#calcSlider').slider('option', 'max', max);
-    $('#calcSliderMax').html('- ' + formatAmount(max) + '/s');
-    $('#calcSliderMin').html('- ' + formatAmount(min) + '/s');
-    $('#calcSlider').slider('value', value); // need to reset the value so that the handle is positioned correctly
-}
-
-$(document).ready(function(){
-    var bytesPerK = getBytesPerK();
-
-    var sliderDiv = $('#calcSlider');
-    sliderDiv.slider({
-	    animate: true,
-	    orientation : 'vertical',
-	    min: 0,
-	    max: model.getMonitorScale(),
-	    change: function(event, ui) {
-	            onSliderChange(ui.value);
-	        },
-	    slide: function(event, ui) {
-	            onSliderChange(ui.value);
-	        }
-    }); 
-    
-    var calcSliderValue = $('#calcSliderValue');
-    function onSliderChange(value){
-        calcSliderValue.html(formatAmount(value) + '/s');
-        useSliderForHowMuch && updateHowMuchResult();
-        useSliderForHowLong && updateHowLongResult();
+BITMETER.tabShowCalc = function(){
+    function setSliderRange(min, max){
+        var value = $('#calcSlider').slider('value');
+        $('#calcSlider').slider('option', 'max', max);
+        $('#calcSliderMax').html('- ' + BITMETER.formatAmount(max) + '/s');
+        $('#calcSliderMin').html('- ' + BITMETER.formatAmount(min) + '/s');
+        $('#calcSlider').slider('value', value); // need to reset the value so that the handle is positioned correctly
     }
-    
-    function getSliderValueInK(){
-        return Math.round(sliderDiv.slider('value')/bytesPerK);
-    }
+    setSliderRange(0, BITMETER.model.getMonitorScale());
+};
+
+$(function(){
+    var bytesPerK         = BITMETER.getBytesPerK(),
+        sliderDiv         = $('#calcSlider'),
+        calcSliderValue   = $('#calcSliderValue'),
+        timeInput         = $('#calcHowMuchTimeInput'),
+        howMuchSpeedInput = $('#calcHowMuchSpeedInput'),
+        calcHowMuchResult = $('#calcHowMuchResult'),
+        calcHowMuchDesc   = $('#calcHowMuchDesc'),
+        amountInput       = $('#calcHowLongAmountInput'),
+        howLongSpeedInput = $('#calcHowLongSpeedInput'),
+        calcHowLongResult = $('#calcHowLongResult'),
+        calcHowLongDesc   = $('#calcHowLongDesc'),
+        parseTimeValue,
+        useSliderForHowMuch = true,
+        useSliderForHowLong = true;
     
     function parseSpeed(txt){
         var num = Number(txt);
@@ -47,23 +37,20 @@ $(document).ready(function(){
         }
     }
 
-    var timeInput = $('#calcHowMuchTimeInput');
-    var parseTimeValue = (function(){
-        var WHITESPACE_REGEX = /\s/g;
-        var DIGIT_REGEX      = /^\d$/;
-        var NUM_REGEX        = /^\d+$/;
+    parseTimeValue = (function(){
+        var WHITESPACE_REGEX = /\s/g,
+            DIGIT_REGEX      = /^\d$/,
+            NUM_REGEX        = /^\d+$/;
         
         return function(txt){
-            var tmpTxt = txt.replace(WHITESPACE_REGEX, '').toLowerCase();
+            var num, totalInSeconds = 0, numBuffer = '', c, i, len, tmpTxt = txt.replace(WHITESPACE_REGEX, '').toLowerCase();
             
             if (NUM_REGEX.test(tmpTxt)){
              // Just numbers, so this is the number of seconds
                 return Number(tmpTxt);
                 
             } else {
-                var c, i, len = tmpTxt.length;
-                var numBuffer = '';
-                var totalInSeconds = 0;
+                len = tmpTxt.length;
                 for (i=0; i<len; i++){
                     c = tmpTxt[i];
                     if (DIGIT_REGEX.test(c)){
@@ -72,7 +59,7 @@ $(document).ready(function(){
                         if (!numBuffer){
                             return null;   
                         } else {
-                            var num = Number(numBuffer);
+                            num = Number(numBuffer);
                             if (c === 'd') {
                                 totalInSeconds += (num * 3600 * 24);
                             } else if (c === 'h') {
@@ -89,31 +76,28 @@ $(document).ready(function(){
                 return totalInSeconds;
             }
         };
-    })();
-
-    var howMuchSpeedInput = $('#calcHowMuchSpeedInput');
-    var calcHowMuchResult = $('#calcHowMuchResult');
-    var calcHowMuchDesc   = $('#calcHowMuchDesc');
+    }());
+    
     function updateHowMuchResult(){
-        var gotTime = !!timeInput.val();
-        var gotSpeed  = useSliderForHowMuch || howMuchSpeedInput.val();
+        var time, speed, result = '', desc = '',
+            gotTime = !!timeInput.val(),
+            gotSpeed  = useSliderForHowMuch || howMuchSpeedInput.val();
         
-        var result = '', desc = '';
         if (gotTime && gotSpeed){
-            var time  = parseTimeValue(timeInput.val());
-            var speed = (useSliderForHowMuch ? sliderDiv.slider('value') : parseSpeed(howMuchSpeedInput.val()));
+            time  = parseTimeValue(timeInput.val());
+            speed = (useSliderForHowMuch ? sliderDiv.slider('value') : parseSpeed(howMuchSpeedInput.val()));
             
             if (time !== null && speed !== null){
-                result = formatAmount(time * speed);
-                desc   = 'Transferred in ' + formatInterval(time, FORMAT_INTERVAL_LONG) + ' at ' + formatAmount(speed) + '/s';
+                result = BITMETER.formatAmount(time * speed);
+                desc   = 'Transferred in ' + BITMETER.formatInterval(time, BITMETER.formatInterval.LONG) + ' at ' + BITMETER.formatAmount(speed) + '/s';
             } else {
                 result = '?';
                 if (time === null){
-                    desc = 'Did not understand the Time value. '
+                    desc = 'Did not understand the Time value. ';
                 }
                 if (speed === null){
                     desc = (desc ? desc + '<br>' : '');
-                    desc += 'Did not understand the Speed value. '
+                    desc += 'Did not understand the Speed value. ';
                 }
             }
         }
@@ -122,70 +106,30 @@ $(document).ready(function(){
         calcHowMuchDesc.html(desc);
     }
     
-    var amountInput = $('#calcHowLongAmountInput');
-    var parseAmountValue = (function(){
-        var WHITESPACE_REGEX = /\s/g;
-        var NUM_REGEX        = /^\d[\.\d]*$/;
-        var WITH_UNITS_REGEX = /^\d[\.\d]*[kmgt]b$/;
-        return function(txt){
-            var tmpTxt = txt.replace(WHITESPACE_REGEX, '').toLowerCase();
-            if (NUM_REGEX.test(tmpTxt)){
-             // Just numbers, so this is a byte value
-                var num = Number(tmpTxt);
-                return isNaN(num) ? null : num;
-
-            } else if (WITH_UNITS_REGEX.test(tmpTxt)) {
-                var numPart   = Number(tmpTxt.substring(0, tmpTxt.length-2));
-                if (isNaN(numPart)){
-                    return null;    
-                }
-                var unitsPart = tmpTxt.substring(tmpTxt.length-2);
-                var factor;
-                if (unitsPart === 'kb'){
-                    factor = bytesPerK;
-                } else if (unitsPart === 'mb'){
-                    factor = bytesPerK * bytesPerK;
-                } else if (unitsPart === 'gb'){
-                    factor = bytesPerK * bytesPerK * bytesPerK;
-                } else if (unitsPart === 'tb'){
-                    factor = bytesPerK * bytesPerK * bytesPerK * bytesPerK;
-                } else {
-                    assert(false, 'In parseAmountValue(), value was ' + txt);
-                }
-                return numPart * factor;
-            } else {
-                return null;   
-            }
-        };        
-    })();
-    var howLongSpeedInput = $('#calcHowLongSpeedInput');
-    var calcHowLongResult = $('#calcHowLongResult');
-    var calcHowLongDesc   = $('#calcHowLongDesc');
     function updateHowLongResult(){
-        var gotAmount = !!amountInput.val();
-        var gotSpeed  = useSliderForHowLong || howLongSpeedInput.val();
+        var amount, speed, result = '', desc = '', gotAmount = !!amountInput.val(),
+            gotSpeed  = useSliderForHowLong || howLongSpeedInput.val();
 
-        var result = '', desc = '';        
         if (gotAmount && gotSpeed){
-            var amount = parseAmountValue(amountInput.val());
-            var speed = (useSliderForHowLong ? sliderDiv.slider('value') : parseSpeed(howLongSpeedInput.val()));
+            amount = BITMETER.parseAmountValue(amountInput.val());
+            speed = (useSliderForHowLong ? sliderDiv.slider('value') : parseSpeed(howLongSpeedInput.val()));
             
             if (amount !== null && speed !== null){
                 if (speed === 0){
                     result = 'Never';    
                     desc   = 'Transfer will never complete when speed is 0';   
                 } else {
-                    result = formatInterval(amount/speed, FORMAT_INTERVAL_SHORT);
-                    desc   = 'To transfer ' + formatAmount(amount) + ' at ' + formatAmount(speed) + '/s';
+                    result = BITMETER.formatInterval(amount/speed, BITMETER.formatInterval.SHORT);
+                    desc   = 'To transfer ' + BITMETER.formatAmount(amount) + ' at ' + BITMETER.formatAmount(speed) + '/s';
                 }    
             } else {
                 result = '?';
                 if (amount === null){
-                    desc = 'Did not understand the Amount value. '
+                    desc = 'Did not understand the Amount value. ';
                 }
                 if (speed === null){
                     desc = (desc ? desc + '<br>' : '');
-                    desc += 'Did not understand the Speed value. '
+                    desc += 'Did not understand the Speed value. ';
                 }
             }
         }
@@ -194,9 +138,33 @@ $(document).ready(function(){
         calcHowLongDesc.html(desc);
     }
     
-    var useSliderForHowMuch = true;
-    var useSliderForHowLong = true;
+    function onSliderChange(value){
+        calcSliderValue.html(BITMETER.formatAmount(value) + '/s');
+        if (useSliderForHowMuch){
+            updateHowMuchResult();
+        }
+        if (useSliderForHowLong){
+            updateHowLongResult();
+        }
+    }
+
+    sliderDiv.slider({
+        animate: true,
+        orientation : 'vertical',
+        min: 0,
+        max: BITMETER.model.getMonitorScale(),
+        change: function(event, ui) {
+                onSliderChange(ui.value);
+            },
+        slide: function(event, ui) {
+                onSliderChange(ui.value);
+            }
+    }); 
     
+    function getSliderValueInK(){
+        return Math.round(sliderDiv.slider('value')/bytesPerK);
+    }
+
     $('a#calcShowHowMuchSpeedLink').click(function(){
         $('span#calcHowMuchSpeedInputSpan').show();
         $('span#calcHowMuchSpeedLinkSpan').hide();
@@ -235,7 +203,5 @@ $(document).ready(function(){
         updateHowMuchResult();
     });
     
-
-    sliderDiv.slider('value', model.getMonitorScale()/2);
-    
+    sliderDiv.slider('value', BITMETER.model.getMonitorScale()/2);
 });

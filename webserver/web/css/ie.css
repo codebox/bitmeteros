@@ -26,6 +26,12 @@ p{
 * html #errorDialog{
 	position: absolute;	
 }
-#floater h4{
+#floater h4, #prefsTabs h4{
 	font-size: 1.2em;	
+}
+.ui-tabs-vertical .ui-tabs-nav li { 
+	width: 12em; 
+}
+#prefRefreshIntervals .prefName{
+	width: 14em;	
 }

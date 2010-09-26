@@ -138,6 +138,7 @@ void testQueryMode(CuTest *tc) {
 	checkQueryRangeOk(tc, "-mq -r2008123123-1970010100", 0, 1230768000);
     
 	checkQueryRangeOk(tc, "-mq -r2008-2001011119", 979239600, 1230768000);
+	//checkQueryRangeOk(tc, "-mq -r200807-20090101", 1214866800, 1230854400);
 	checkQueryRangeOk(tc, "-mq -r200807-20090101", 1214866800, 1230854400);
 }
 

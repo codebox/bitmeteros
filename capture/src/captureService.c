@@ -48,6 +48,7 @@ int main(){
 	ServiceTable[1].lpServiceProc = NULL;
 
 	StartServiceCtrlDispatcher(ServiceTable);  
+	return SUCCESS;
 }
 
 void ServiceMain(int argc, char** argv) { 

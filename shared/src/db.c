@@ -126,7 +126,6 @@ void dbVersionCheck(){
 	}
 	void finishedStmt(sqlite3_stmt* stmt){
 		sqlite3_finalize(stmt);
-		free(stmt);
 	}
 #endif
 
@@ -137,32 +136,32 @@ void dbVersionCheck(){
 		struct StmtList* next;
 	};
 	struct StmtList* stmtList = NULL;
-	
+
 	sqlite3_stmt *getStmt(char* sql){
 		struct StmtList* list = stmtList;
 		struct StmtList* match = NULL;
-		
+
 	 // Check if we have a prepared stmt for this SQL already...
 		while(list != NULL){
 			if (strcmp(list->sql, sql) == 0){
 			 // Found one we made earlier
 				match = list;
-				break;	
+				break;
 			} else {
-				list = list->next;	
+				list = list->next;
 			}
 		}
-		
+
 		if (match == NULL){
 		 // No ready-made stmt was found, so make one and store it for next time
 			match = malloc(sizeof(struct StmtList));
 			match->sql = strdup(sql);
-			
+
 			sqlite3_stmt* stmt;
 			prepareSql(&stmt, sql);
 			match->stmt = stmt;
 			match->next = NULL;
-			     
+
 		 // Attach the new StmtList to the module-level variable
 			if (stmtList == NULL){
 			 // First item in the list
@@ -177,10 +176,10 @@ void dbVersionCheck(){
 				list->next = match;
 			}
 		}
-		
+
 		return match->stmt;
 	}
-	
+
 	void finishedStmt(sqlite3_stmt* stmt){
 		sqlite3_reset(stmt);
 	}
@@ -283,10 +282,10 @@ struct Data* runSelect(sqlite3_stmt *stmt){
 
 int runUpdate(sqlite3_stmt* stmt){
 	assert(dbOpen);
-	
+
 	int rc = sqlite3_step(stmt);
 	if (rc == SQLITE_DONE){
-		return SUCCESS;	
+		return SUCCESS;
 	} else {
 		logMsg(LOG_ERR, "runUpdate() failed, rc=%d", rc);
 		return FAIL;
@@ -340,7 +339,7 @@ void rollbackTrans(){
 
 int getConfigInt(const char* key, int quiet){
    	assert(dbOpen);
- 
+
  // Return the specified value from the 'config' table
  	sqlite3_stmt* stmt = getStmt(SQL_SELECT_CONFIG);
  	sqlite3_bind_text(stmt, 1, key, -1, SQLITE_TRANSIENT);
@@ -390,7 +389,7 @@ int setConfigIntValue(char* key, int value){
     char* currentValue = getConfigText(key, TRUE);
 
     sqlite3_stmt* stmt;
-    
+
     if (currentValue == NULL){
      // Add a new config row
         stmt = getStmt(SQL_INSERT_CONFIG);
@@ -403,18 +402,18 @@ int setConfigIntValue(char* key, int value){
         sqlite3_bind_int(stmt,  2, value);
         sqlite3_bind_text(stmt, 3, key, -1, SQLITE_TRANSIENT);
     }
-    
+
     int status = runUpdate(stmt);
     finishedStmt(stmt);
-    
+
     return status;
 }
 
 int setConfigTextValue(char* key, char* value){
     char* currentValue = getConfigText(key, TRUE);
-    
+
     sqlite3_stmt* stmt;
-    
+
     if (currentValue == NULL){
      // Add a new config row
         stmt = getStmt(SQL_INSERT_CONFIG);
@@ -427,17 +426,21 @@ int setConfigTextValue(char* key, char* value){
         sqlite3_bind_text(stmt, 2, value, -1, SQLITE_TRANSIENT);
         sqlite3_bind_text(stmt, 3, key,   -1, SQLITE_TRANSIENT);
     }
-    
+
     int status = runUpdate(stmt);
     finishedStmt(stmt);
-    
+
     return status;
 }
 
 int rmConfigValue(char* key){
     sqlite3_stmt* stmt = getStmt(SQL_DELETE_CONFIG);
     sqlite3_bind_text(stmt, 1, key, -1, SQLITE_TRANSIENT);
-    return runUpdate(stmt);
+
+    int result = runUpdate(stmt);
+    finishedStmt(stmt);
+
+    return result;
 }
 
 int getDbVersion(){

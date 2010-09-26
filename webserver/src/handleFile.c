@@ -33,6 +33,7 @@
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
+#include <malloc.h>
 #include "bmws.h"
 #include "common.h"
 
@@ -155,20 +156,11 @@ static struct MimeType* getMimeTypeForFile(char* fileName){
 
 	}
 
-	static long getFileSize(FILE* fp){
-		return filelength(fileno(fp));
-	}
 #endif
 
 #ifndef _WIN32
 	static FILE* openFile(char* path, int binary){
 		return fopen(path, binary ? "rb" : "r");
-	}
-	static long getFileSize(FILE* fp){
-		fseek(fp, 0, SEEK_END);
-		long size = ftell(fp);
-		fseek(fp, 0, SEEK_SET);
-		return size;
 	}
 #endif
 
@@ -187,12 +179,17 @@ void doSubs(SOCKET fd, FILE* fp, struct NameValuePair* substPairs){
 			sprintf(marker, "<!--[%s]-->", substPairs->name);
 
 			char* match;
-			int matchLen, valueLen, bufferInLen, bufferOutLen, matchOffset;
+			int matchLen, valueLen, bufferInLen, matchOffset;
 			while ((match = strstr(bufferIn, marker)) != NULL){
 				bufferInLen = strlen(bufferIn);
 				matchLen = strlen(marker);
 				valueLen = strlen(substPairs->value);
 				matchOffset = match - bufferIn;
+				
+				if (bufferInLen - matchLen + valueLen >= SUBST_BUFSIZE){
+					logMsg(LOG_ERR, "doSubs, file too large after substitution of value %s - max is %d bytes", substPairs->value, size);
+					break;
+				}
 				
 			 // Copy everything before the start of the marker
 				strncpy(bufferOut, bufferIn, matchOffset);
@@ -253,7 +250,6 @@ void processFileRequest(SOCKET fd, struct Request* req, struct NameValuePair* su
 
     } else {
      // We got the file, write out the headers and then send the content
-	    //int size = getFileSize(fp); this was causing problems on Google Chrome so removed, dont think we actually need to send this
         writeHeaders(fd, HTTP_OK, mimeType->contentType, TRUE);
         if (substPairs == NULL){
 	        int rc;

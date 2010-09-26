@@ -149,4 +149,3 @@ void doQuery();
 void doSummary();
 void doHelp();
 void doVersion();
-void formatAmounts(const BW_INT dl, const BW_INT ul, char* dlTxt, char *ulTxt, int units);

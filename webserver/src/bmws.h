@@ -34,8 +34,13 @@
 #define BUFSIZE 4096
 #define SUBST_BUFSIZE 20480
 
+#define DEFAULT_PORT 2605
+#define MIN_PORT 1
+#define MAX_PORT 65535
+
 #define MIME_JSON "application/json"
 #define MIME_HTML "text/html"
+#define MIME_TEXT "text/plain"
 #define MIME_CSV  "text/csv"
 #define MIME_JPEG "image/jpeg"
 #define MIME_GIF  "image/gif"
@@ -62,6 +67,9 @@ struct NameValuePair{
 };
 long getValueNumForName(char* name, struct NameValuePair* pair, long defaultValue);
 char* getValueForName(char* name, struct NameValuePair* pair, char* defaultValue);
+void freeNameValuePairs(struct NameValuePair* param);
+void appendNameValuePair(struct NameValuePair** earlierPair, struct NameValuePair* newPair);
+struct NameValuePair* makeNameValuePair(char* name, char* value);
 
 struct Request{
 	char* method;
@@ -83,7 +91,7 @@ void freeRequest(struct Request* request);
 #endif
 
 void processMonitorRequest(SOCKET fd, struct Request* req);
-void processMobileMonitorPageRequest(SOCKET fd, struct Request* req);
+void processMobileMonitorRequest(SOCKET fd, struct Request* req);
 void processMobileMonitorAjaxRequest(SOCKET fd, struct Request* req);
 void processSummaryRequest(SOCKET fd, struct Request* req);
 void processMobileSummaryRequest(SOCKET fd, struct Request* req);
@@ -93,6 +101,8 @@ void processConfigRequest(SOCKET fd, struct Request* req, int allowAdmin);
 void processExportRequest(SOCKET fd, struct Request* req);
 void processAlertRequest(SOCKET fd, struct Request* req, int allowAdmin);
 void processFileRequest(SOCKET fd, struct Request* req, struct NameValuePair* substPairs);
+void processRssRequest(SOCKET fd, struct Request* req);
+struct NameValuePair* makeRssRequestValues();
 
 void writeText(SOCKET fd, char* txt);
 void writeData(SOCKET fd, char* data, int len);

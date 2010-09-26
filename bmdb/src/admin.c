@@ -35,7 +35,7 @@
 	#define BMWS_SERVICE_NAME  "BitMeterWebService"
 	#define BMCAP_SERVICE_NAME "BitMeterCaptureService"
 
-	void runCmd(char* cmd){
+	int runCmd(char* cmd){
 		PROCESS_INFORMATION pi;
 	    STARTUPINFO si;
 	    memset(&si,0,sizeof(si));
@@ -45,26 +45,29 @@
 	    	WaitForSingleObject(pi.hProcess, INFINITE);
 			CloseHandle(pi.hProcess);
 			CloseHandle(pi.hThread);
+			return SUCCESS;
+			
 	    } else {
 	    	printf("Error, failed to execute command: %s\n", cmd );
+	    	return FAIL;
 	    }
 
 	}
 
 	int doWebStop(FILE* file, int argc, char** argv){
-		runCmd("sc stop " BMWS_SERVICE_NAME);
+		return runCmd("sc stop " BMWS_SERVICE_NAME);
 	}
 
 	int doWebStart(FILE* file, int argc, char** argv){
-		runCmd("sc start " BMWS_SERVICE_NAME);
+		return runCmd("sc start " BMWS_SERVICE_NAME);
 	}
 
 	int doCapStop(FILE* file, int argc, char** argv){
-		runCmd("sc stop " BMCAP_SERVICE_NAME);
+		return runCmd("sc stop " BMCAP_SERVICE_NAME);
 	}
 
 	int doCapStart(FILE* file, int argc, char** argv){
-		runCmd("sc start " BMCAP_SERVICE_NAME);
+		return runCmd("sc start " BMCAP_SERVICE_NAME);
 	}
 #endif
 
@@ -77,13 +80,20 @@
 			if (pid == 0){
 				execvp(args[0], args);
 				_exit(1);
+				return SUCCESS; // TODO correct?
+				
 			} else if (pid < 0){
 				fprintf(stderr, "Failed to execute command\n");
+				return FAIL;
+				
 			} else {
 				wait(&status);
+				return SUCCESS; // TODO correct?   
 			}
+			
 		} else {
 			fprintf(stderr, "You need to run this command as root (try using 'sudo')\n");
+			return FAIL;
 		}
 	}
 
@@ -96,22 +106,22 @@
 
 	int doWebStop(FILE* file, int argc, char** argv){
 		const char *args[] = {BMWS_INIT_SCRIPT, "stop", 0};
-		runCmd(args);
+		return runCmd(args);
 	}
 
 	int doWebStart(FILE* file, int argc, char** argv){
 		const char *args[] = {BMWS_INIT_SCRIPT, "start", 0};
-		runCmd(args);
+		return runCmd(args);
 	}
 
 	int doCapStop(FILE* file, int argc, char** argv){
 		const char *args[] = {BMCAP_INIT_SCRIPT, "stop", 0};
-		runCmd(args);
+		return runCmd(args);
 	}
 
 	int doCapStart(FILE* file, int argc, char** argv){
 		const char *args[] = {BMCAP_INIT_SCRIPT, "start", 0};
-		runCmd(args);
+		return runCmd(args);
 	}
 #endif
 
@@ -121,21 +131,21 @@
 
 	int doWebStop(FILE* file, int argc, char** argv){
 		const char *args[] = {"launchctl", "stop", BMWS_UID, 0};
-		runCmd(args);
+		return runCmd(args);
 	}
 
 	int doWebStart(FILE* file, int argc, char** argv){
 		const char *args[] = {"launchctl", "start", BMWS_UID, 0};
-		runCmd(args);
+		return runCmd(args);
 	}
 
 	int doCapStop(FILE* file, int argc, char** argv){
 		const char *args[] = {"launchctl", "stop", BMCAP_UID, 0};
-		runCmd(args);
+		return runCmd(args);
 	}
 
 	int doCapStart(FILE* file, int argc, char** argv){
 		const char *args[] = {"launchctl", "start", BMCAP_UID, 0};
-		runCmd(args);
+		return runCmd(args);
 	}
 #endif

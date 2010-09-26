@@ -31,7 +31,9 @@
 #include <string.h>
 #include <assert.h>
 #include "bmclient.h"
-
+#ifdef WIN32
+#include "timesupport.h"
+#endif
 static int setMode(struct Prefs*, char* mode);
 static int setUnits(struct Prefs*, char* units);
 static int setGroup(struct Prefs*, char* group);
@@ -70,10 +72,10 @@ int parseArgs(int argc, char **argv, struct Prefs *prefs){
 		int opt;
 		while ((opt = getopt(argc, argv, OPT_LIST)) != -1){
 			switch (opt){
-				case OPT_HELP:                 
+				case OPT_HELP:
 					status = setHelp(prefs);
 					break;
-				case OPT_VERSION:                         
+				case OPT_VERSION:
 					status = setVersion(prefs);
 					break;
 				case OPT_MODE:

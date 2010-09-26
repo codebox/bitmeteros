@@ -167,10 +167,12 @@ Contains platform-specific code for obtaining the network stats that we need.
 #endif
 
 #ifdef _WIN32
+	#ifndef __USE_MINGW_ANSI_STDIO
+		#define __USE_MINGW_ANSI_STDIO 1
+	#endif
 	#include <winsock2.h>
 	#include <ws2tcpip.h>
 	#include <iphlpapi.h>
-	static void logErrMsg(char* msg, int rc);
 
 	struct Data* getData(){
 		MIB_IFTABLE* pIfTable = (MIB_IFTABLE *) malloc(sizeof (MIB_IFTABLE));
@@ -194,6 +196,7 @@ Contains platform-specific code for obtaining the network stats that we need.
 			int i;
 			for (i = 0; i < numEntries; i++) {
 			    pIfRow = (MIB_IFROW *) & pIfTable->table[i];
+			    
 			 /* Ignore loopback traffic. Ignore adapters that are not operational - fixes bug where some
 			    users were seeing a large spike in ul/dl readings when PC wakes up from sleep mode, caused
 			    by network adapters being disabled (and returning dwInOctets/dwOutOctets values of 0) for

@@ -52,7 +52,7 @@ input.hasDatepicker{
 	margin-top: 0.5em;
 	padding: 2px 10px 2px 10px !important;
 }
-button, #query input, #query select, #calculator input {
+button, #query input, #query select, #calculator input, .textbox {
 	border: 1px solid #2E6E9E;
 	color: #2E6E9E;
 	background-color: white;
@@ -631,4 +631,47 @@ div.createAlertStartRepeatingTxt{
 }
 .alertStatusIcon{
 	cursor: pointer;	
+}
+.ui-tabs-vertical{ 
+	width: 57em; 
+}
+.ui-tabs-vertical .ui-tabs-nav {
+	padding: .2em .1em .2em .2em; 
+	float: left; 
+}
+.ui-tabs-vertical .ui-tabs-nav li { 
+	clear: left; 
+	width: 100%; 
+	border-bottom-width: 1px !important; 
+	border-right-width: 0 !important; 
+	margin: 0 -1px .2em 0; 
+}
+.ui-tabs-vertical .ui-tabs-nav li a { 
+	display:block; 
+}
+.ui-tabs-vertical .ui-tabs-nav li.ui-tabs-selected { 
+	padding-bottom: 0; 
+	padding-right: .1em; 
+	border-right-width: 1px; 
+	border-right-width: 1px; 
+}
+.ui-tabs-vertical .ui-tabs-panel { 
+	padding: 1em; 
+	float: right; 
+	width: 42em;
+}
+#rssCount{
+	width: 3em;	
+}
+#prefMonitorInterval, #prefHistoryInterval, #prefSummaryInterval{
+	width: 2em;	
+}
+#prefs h4{
+	margin-bottom: 0;	
+}
+#prefRefreshIntervals .prefName{
+	width: 12em;	
+}
+.prefUpdateStatus{
+	line-height: 2em;	
 }

@@ -42,8 +42,8 @@
 #define EOL "\n"
 #endif
 
-#define VERSION "0.6.0"
-#define DB_VERSION 6
+#define VERSION "0.7.0"
+#define DB_VERSION 7
 
 #ifdef _WIN32
 #define COPYRIGHT "BitMeter OS v" VERSION " Copyright (c) 2010 Rob Dawson" EOL "Licenced under the GNU General Public License" EOL EOL
@@ -70,6 +70,9 @@
 #define CONFIG_WEB_COLOUR_DL        "web.colour_dl"
 #define CONFIG_WEB_COLOUR_UL        "web.colour_ul"
 #define CONFIG_WEB_ALLOW_REMOTE     "web.allow_remote"
+#define CONFIG_WEB_RSS_HOST         "web.rss.host"
+#define CONFIG_WEB_RSS_FREQ         "web.rss.freq"
+#define CONFIG_WEB_RSS_ITEMS        "web.rss.items"
 
 #define ALLOW_LOCAL_CONNECT_ONLY 0
 #define ALLOW_REMOTE_CONNECT 1
@@ -179,8 +182,13 @@ void setAddress(struct Data* data, const char* addr);
 void setHost(struct Data* data, const char* host);
 // ----
 struct Alert* allocAlert();
+void freeAlert(struct Alert* alert);
+void appendAlert(struct Alert** earlierAlert, struct Alert* newAlert);
+void setAlertName(struct Alert* alert, const char* name);
 struct DateCriteriaPart* makeDateCriteriaPart(char* txt);
+void freeDateCriteriaPart(struct DateCriteriaPart* criteriaPart);
 char* dateCriteriaPartToText(struct DateCriteriaPart* part);
+void appendDateCriteria(struct DateCriteria** earlierCriteria, struct DateCriteria* newCriteria);
 // ----
 void doSleep(int interval);
 void getDbPath(char* path);
@@ -218,5 +226,7 @@ time_t getNextDayForTs(time_t ts);
 time_t getNextHourForTs(time_t ts);
 time_t getNextMinForTs(time_t ts);
 time_t addToDate(time_t ts, char unit, int num);
+struct tm getLocalTime(time_t t);
+void normaliseTm(struct tm* t);
 
 #endif //#ifndef COMMON_H

@@ -43,7 +43,7 @@ void processExportRequest(SOCKET fd, struct Request* req){
     writeHeader(fd, "Content-Disposition", "attachment;filename=bitmeterOsExport.csv");
 	writeEndOfHeaders(fd);
 
-	getDumpValues(fd, &writeCsvRow);
+	getDumpValues(fd, (void (*)(int, struct Data*))&writeCsvRow);
 }
 
 static void writeCsvRow(SOCKET fd, struct Data* row){

@@ -42,7 +42,7 @@ extern struct HttpResponse HTTP_OK;
 extern struct HttpResponse HTTP_NOT_ALLOWED;
 
 // These are the different operations that we can perform on behalf of the client
-enum OpType{File, Monitor, Summary, Query, Sync, Config, Alert, Export, MobileMonitor, MobileSummary, MobileAbout};
+enum OpType{File, Monitor, Summary, Query, Sync, Config, Alert, Export, RSS, MobileMonitor, MobileSummary, MobileAbout};
 
 void writeHeader(SOCKET fd, char* name, char* value){
  // Helper function, writes out a single HTTP header with the appropriate separator and line terminator
@@ -60,12 +60,6 @@ static void writeResponseCode(SOCKET fd, struct HttpResponse response){
     char buffer[SMALL_BUFSIZE];
     sprintf(buffer,"HTTP/1.0 %d %s" HTTP_EOL, response.code, response.msg);
     writeText(fd, buffer);
-}
-
-static void writeContentLength(SOCKET fd, int length){
-    char lenBuffer[16];
-    sprintf(lenBuffer, "%d", length);
-    writeHeader(fd, "Content-Length", lenBuffer);
 }
 
 static void writeCommonHeaders(SOCKET fd){
@@ -89,7 +83,7 @@ void writeHeaders(SOCKET fd, struct HttpResponse response, char* contentType, in
  // Writes out a full set of headers including the specified HTTP response and, if appropriate, the MIME type
     writeResponseCode(fd, response);
 
-    if (response.code == HTTP_OK.code){
+    if (response.code == HTTP_OK.code && contentType != NULL){
      // Only need this if we are returning some content
         writeMimeType(fd, contentType);
     }
@@ -127,6 +121,9 @@ void processRequest(SOCKET fd, char* buffer, int allowAdmin){
 
 		} else if (strcmp(req->path, "/alert") == 0){
             op = Alert;
+
+		} else if (strcmp(req->path, "/rss.xml") == 0){
+            op = RSS;
 
 		} else if (strcmp(req->path, "/m/monitor") == 0) {
 			op = MobileMonitor;
@@ -173,6 +170,9 @@ void processRequest(SOCKET fd, char* buffer, int allowAdmin){
 		} else if (op == Alert){
             processAlertRequest(fd, req, allowAdmin);
 			
+		} else if (op == RSS){
+            processRssRequest(fd, req);
+
         } else if (op == MobileMonitor){
 			processMobileMonitorRequest(fd, req);
 			

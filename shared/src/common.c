@@ -27,6 +27,8 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <unistd.h>
+#include <string.h>       
+#include <ctype.h>
 #include <time.h>
 #include <math.h>
 #include <errno.h>

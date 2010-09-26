@@ -111,7 +111,7 @@ void checkNoMatchingDates(CuTest *tc, int tsY, int tsM, int tsD, int tsH, char* 
 }
 
 void checkAlertTotals(CuTest *tc, struct Alert* alert, BW_INT dl, BW_INT ul){
-    struct Data* data = getTotalsForAlert(alert);
+    struct Data* data = getTotalsForAlert(alert, getTime());
     CuAssertIntEquals(tc, dl, data->dl);
     CuAssertIntEquals(tc, ul, data->ul);   
 }
@@ -528,9 +528,6 @@ void testFindFirstMatchingDate(CuTest* tc){
     checkFirstMatchingDate(tc, 2010, 5, 10,  3, "*", "*", "*", "-30", "-0", 2010, 4, 10,  3);
     checkFirstMatchingDate(tc, 2010, 5, 31, 23, "*", "*", "*", "-30", "-0", 2010, 5,  1, 23);
     
- // Rolling month
-    //checkFirstMatchingDate(tc, 2010, 7, 31,  0, "*", "-1", "*",  "-0", "-0", 2010, 6,  30,  0); TODO broken, returns 1/6/10
-
  // Since Sunday
     checkFirstMatchingDate(tc, 2010, 5, 11,  0, "*", "*", "0", "*", "*", 2010, 5, 9, 23);
     checkFirstMatchingDate(tc, 2010, 5, 10,  0, "*", "*", "0", "*", "*", 2010, 5, 9, 23);
@@ -549,7 +546,7 @@ void testGetTotalsForAlert(CuTest* tc){
     alert->bound     = makeDateCriteria("2010", "5", "1", "*", "0");
     setAlertName(alert, "alert1");
     checkAlertTotals(tc, alert, 0, 0);
-    
+
     addDbRow(makeTs("2010-04-30 23:00:00"), 1, "eth0", 1, 1, NULL);
     checkAlertTotals(tc, alert, 0, 0);
 

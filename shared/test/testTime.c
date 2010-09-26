@@ -107,8 +107,6 @@ void testAddToDate(CuTest *tc){
 }
 
 CuSuite* timeGetSuite() {
-    setTzToGmt();
-    
     CuSuite* suite = CuSuiteNew();
     SUITE_ADD_TEST(suite, testGetCurrentYearForTs);
     SUITE_ADD_TEST(suite, testGetCurrentMonthForTs);
@@ -119,8 +117,5 @@ CuSuite* timeGetSuite() {
     SUITE_ADD_TEST(suite, testGetNextHourForTs);
     SUITE_ADD_TEST(suite, testGetNextMinForTs);
     SUITE_ADD_TEST(suite, testAddToDate);
-    
-    restoreTz();
-    
     return suite;
 }

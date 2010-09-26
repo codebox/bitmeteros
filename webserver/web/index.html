@@ -29,6 +29,7 @@
 		<script type="text/javascript" src="js/bitmeterPrefs.js"></script>
 		<script type="text/javascript" src="js/bitmeter.js"></script>
 		<script type="text/javascript" src="js/farbtastic.js"></script>
+		<link rel="alternate" type="application/rss+xml" title="BitMeter OS" href="rss.xml">
 	</head>
 	<body>
 		<h1>BitMeter OS</h1>
@@ -561,12 +562,12 @@
 		        	</p>
 		        	<p>
 		        		The <em>Interval Start</em> section lets you specify the date and time from which the Alert will count your connection usage, this can be expressed in one of three ways:
-		        		<ul>
-		        			<li><em>From a fixed Date and Time</em> - this is the simplest type of alert. All your connection usage from the date/time that you specify will count towards the Alert, consequently the total will continue to rise indefinitely and will never be reset.</li>
-		        			<li><em>Using a repeating interval</em> - this type of Alert is suitable for tracking your connection usage if your Internet Service Provider limits your usage over a calendar month, a week, or even a single day. Select the length of interval to be used, and then specify from when, during that interval, the Alert should start. For example, if your usage is limited to a certain amount each month then select <em>Monthly Intervals</em>, and then use the <em>Day of Month</em> and <em>Time of Day</em> lists to specify from when during the month the Alert should start counting towards its total.</li>
-		        			<li><em>Using a rolling interval</em> - this type of Alert is suitable for tracking your connection usage if your Internet Service Provider limits your usage over a rolling/sliding interval, specified as a certain number of hours or days from the current date and time (for example, 'the last 30 days', or 'the last 24 hours').</li>
-		        		</ul>
 		        	</p>
+	        		<ul>
+	        			<li><em>From a fixed Date and Time</em> - this is the simplest type of alert. All your connection usage from the date/time that you specify will count towards the Alert, consequently the total will continue to rise indefinitely and will never be reset.</li>
+	        			<li><em>Using a repeating interval</em> - this type of Alert is suitable for tracking your connection usage if your Internet Service Provider limits your usage over a calendar month, a week, or even a single day. Select the length of interval to be used, and then specify from when, during that interval, the Alert should start. For example, if your usage is limited to a certain amount each month then select <em>Monthly Intervals</em>, and then use the <em>Day of Month</em> and <em>Time of Day</em> lists to specify from when during the month the Alert should start counting towards its total.</li>
+	        			<li><em>Using a rolling interval</em> - this type of Alert is suitable for tracking your connection usage if your Internet Service Provider limits your usage over a rolling/sliding interval, specified as a certain number of hours or days from the current date and time (for example, 'the last 30 days', or 'the last 24 hours').</li>
+	        		</ul>
 		        	<p>
 		        		The <em>Times</em> section allows you to specify the times of day, and the days of the week, when your connection usage should count towards the alert. If all usage should be counted then select the <em>All usage</em> option, otherwise select the <em>Only at certain times</em> option, and then use the date/time selectors to add one or more intervals to the list. To add a new interval you must select at least 1 day of the week, as well as indicating the start and end times of the interval on that day using the slider. Multiple intervals can be added, and overlaps between intervals are allowed.
 		        	</p>
@@ -644,44 +645,135 @@
 				</div>
 			</div>
 		    <div id="prefs">
-				<h2>Preferences</h2><br>
+				<h2>Preferences</h2><div class="helpLink" id="prefsHelpLink"><a title="Help" class="ui-icon ui-icon-newwin"></a></div>
 		        <div class="panelContainer">
-					<p class="compact">Change the appearance and behavior of the Web Interface by adjusting these values. Note that any changes made here will be stored locally using a browser cookie, and therefore will not
-					be visible to other users, and will be reset if you clear your cookies. To make persistent changes, visible to all users, use the <a href="http://codebox.org.uk/bitmeteros/bmdb/man">bmdb</a> utility.</p>
-					
-					<h3>Colours</h3>
-					<p class="compact">Pick the colours to be used to represent Upload and Download data on the graphs.</p>
-					<div class="prefName">Download</div>
-					<div class="prefValue" id="dlColourPicker"></div>
-					<div class="spacer"></div>
-					<div class="prefName">Upload</div>
-					<div class="prefValue" id="ulColourPicker"></div>
-					<div class="spacer"></div>
-					
-					<h3>Data Filter</h3>
-					<p class="compact">If the database contains data from multiple hosts/adapters then use these options to determine what gets displayed. To import
-					data from other hosts use the <a href="http://codebox.org.uk/bitmeteros/bmsync/man">bmsync</a> utility.</p>
-					<table class="prefTable" id="adapterTable">
-						<tr><td></td></tr>
-					</table>
-					<p class="compact">
-					<label for="chkShowFilterWarning">Display a warning when filter is active</label><input type="checkbox" id="chkShowFilterWarning" />
+					<p>
+						Change the appearance and behavior of the Web Interface by adjusting these values. Some values
+						can only be changed by administrative users.
 					</p>
+		        
+			        <div id="prefsTabs">
+					    <ul>
+					        <li><a href="#prefsTabs-1"><span>Colours</span></a></li>
+					        <li><a href="#prefsTabs-2"><span>Data Filter</span></a></li>
+					        <li><a href="#prefsTabs-3"><span>Units</span></a></li>
+					        <li><a href="#prefsTabs-4"><span>RSS</span></a></li>
+					        <li><a href="#prefsTabs-5"><span>Server Name</span></a></li>
+					        <li><a href="#prefsTabs-6"><span>Refresh Intervals</span></a></li>
+					    </ul>
+					    <div id="prefsTabs-1">
+					        <p class="compact">Pick the colours to be used to represent Upload and Download data on the graphs.</p>
+							<div class="prefName">Download</div>
+							<div class="prefValue" id="dlColourPicker"></div>
+							<div class="spacer"></div>
+							<div class="prefName">Upload</div>
+							<div class="prefValue" id="ulColourPicker"></div>
+							<div class="spacer"></div>
+							<p>
+								<button id="prefsColoursLocal">Save in Browser</button> 
+								<button id="prefsColoursRemote" class="adminOnly">Save to Server</button><br>
+							</p>
+							<p class="prefUpdateStatus" id="prefsSaveColoursStatus"></p>
+							<div class="spacer"></div>
+					    </div>
+					    <div id="prefsTabs-2">
+					        <p class="compact">If the database contains data from multiple hosts/adapters then use these options to determine what gets displayed. To import
+							data from other hosts use the <a href="http://codebox.org.uk/bitmeteros/bmsync/man">bmsync</a> utility.</p>
+							<table class="prefTable" id="adapterTable">
+								<tr><td></td></tr>
+							</table>
+							<p class="compact">
+								<label for="chkShowFilterWarning">Display a warning when filter is active</label><input type="checkbox" id="chkShowFilterWarning" />
+							</p>
+							<p>
+								<button id="prefsAdaptersSaveLocal">Save in Browser</button>
+							</p>
+					    </div>
+					    <div id="prefsTabs-3">
+					        <p class="compact">What type of units should be used when displaying data speeds/volumes.</p>
+							<table class="prefTable">
+								<tr>
+									<td><input type="radio" class="prefRadio" id="binaryUnits" name="displayUnits" /></td>
+									<td><label for="binaryUnits">Binary Units (1kB = 1024 bytes)</label></td>
+								</tr>
+								<tr>
+									<td><input type="radio" class="prefRadio"id="decimalUnits" name="displayUnits" /></td>
+									<td><label for="decimalUnits">Decimal/SI Units (1kB = 1000 bytes)</label></td>
+								</tr>
+							</table>
+							<p>
+								<button id="prefsUnitsLocal">Save in Browser</button> 
+							</p>
+					    </div>
+					    <div id="prefsTabs-4">
+					        <p class="compact">Configure the <a class="popup" href="rss.xml">RSS Feed</a></p>
+					        <h4>Number of Items</h4>
+							<table class="prefTable">
+								<tr>
+									<td><label for="rssCount">Number of items to display in the feed (1-20):</label></td>
+									<td><input type="text" id="rssCount" class="textbox" maxlength="2"/></td>
+								</tr>
+							</table>
+							<h4>Publication Frequency</h4>
+							<table class="prefTable">
+								<tr>
+									<td>
+										<input type="radio" class="prefRadio" id="rssFreqDaily" value="1" name="rssFreq" />
+									</td>
+									<td>
+										<label for="rssFreqDaily">Publish daily</label>
+									</td>
+								</tr>
+								<tr>
+									<td>
+										<input type="radio" class="prefRadio" id="rssFreqHourly" value="2" name="rssFreq" />
+									</td>
+									<td>
+										<label for="rssFreqHourly">Publish hourly</label>
+									</td>
+								</tr>
+							</table>
+							<h4>Host Name</h4>
+							<p class="compact">The hostname to be included in the feed, used when generating links that should point back to this server</p>
+								<input type="text" id="rssHostname" class="textbox"  maxlength="32"/>
+							<p>
+								<button id="prefsRssSave" class="adminOnly">Save to Server</button>
+							</p>
+							<p class="prefUpdateStatus" id="prefsRssSaveStatus"></p>
+					    </div>
+					    <div id="prefsTabs-5">
+					        <p class="compact">
+						        <label for="rssCount">Enter the name to use for this server:</label><br><br>
+								<input type="text" id="prefServerName" class="textbox" maxlength="32"/>
+					        </p>
+					        <p>
+					        	<button id="prefsServerNameSave" class="adminOnly">Save to Server</button>
+					        </p>
+							<p class="prefUpdateStatus" id="prefsServerNameSaveStatus"></p>
+					    </div>
+					    <div id="prefsTabs-6">
+					        <p class="compact">
+						        Change how often the Monitor, History and Summary pages are updated.
+					        </p>
+					        <table id="prefRefreshIntervals">
+					        	<tr>
+					        		<td class="prefName"><strong>Monitor</strong> updates every</td><td><input type="text" class="textbox" id="prefMonitorInterval" maxlength="2" /> seconds</td>
+					        	</tr>
+					        	<tr>
+					        		<td class="prefName"><strong>History</strong> updates every</td><td><input type="text" class="textbox" id="prefHistoryInterval" maxlength="2" /> seconds</td>
+					        	</tr>
+					        	<tr>
+					        		<td class="prefName"><strong>Summary</strong> updates every</td><td><input type="text" class="textbox" id="prefSummaryInterval" maxlength="2" /> seconds</td>
+					        	</tr>
+					        </table>
+					        <br>
+					        <button id="prefsRefreshSaveLocal">Save in Browser</button>
+					        <button id="prefsRefreshSaveRemote" class="adminOnly">Save to Server</button>
+							<p class="prefUpdateStatus" id="prefsRefreshSaveStatus"></p>
+					    </div>
+					</div>
 					
-					<h3>Units</h3>
-					<p class="compact">What type of units should be used when displaying data speeds/volumes (<a class="refreshLink">refresh</a> page to apply changes).</p>
-					<table class="prefTable">
-						<tr>
-							<td><input type="radio" class="prefRadio" id="binaryUnits" name="displayUnits" /></td>
-							<td><label for="binaryUnits">Binary Units (1kB = 1024 bytes)</label></td>
-						</tr>
-						<tr>
-							<td><input type="radio" class="prefRadio"id="decimalUnits" name="displayUnits" /></td>
-							<td><label for="decimalUnits">Decimal/SI Units (1kB = 1000 bytes)</label></td>
-						</tr>
-					</table>
-					
-					<div class="dialog" title="Colour Picker">
+					<div class="dialog" id="colourPicker" title="Colour Picker">
 						<div id="colourPickerDiv"></div>
 						<div id="colourPickerTxtDiv">
 							<h4>&nbsp;</h4>
@@ -696,7 +788,27 @@
 								<li id="col00ffff">Cyan</li>
 							</ul>						
 						</div>
-					</div>					
+					</div>	
+				</div>
+				<div id="prefsHelp" class="dialog" title="Help">
+					<p>
+						The <strong>Preferences</strong> page displays various configuration values that can be changed to alter
+						the appearance or behavior of BitMeter OS. 
+					</p>
+					<p>
+						Once a value has been altered it must be saved before the change will take effect. 
+					</p>
+					<p>
+						Buttons labelled <em>Save in Browser</em> will store the selected configuration values in a 
+						browser cookie - such changes will only be visible in the browser that was used while making 
+						the change, and will be lost if cookies are cleared. 
+					</p>
+					<p>
+						Buttons labelled <em>Save to Server</em> will send the selected configuration values back to the 
+						BitMeter server to be stored - values changed in this way will be visible to all users of the server.
+						Only users with administrative access can save values to the server, users without this level of 
+						access will see the Save to Server buttons as disabled.
+					</p>
 				</div>
 			</div>
 		    <div id="about">
@@ -706,7 +818,7 @@
 					This is the web interface for <a href="http://codebox.org.uk/bitmeterOs">BitMeterOS</a> v<span id="version"></span>
 					</p>
 					<p>
-					This application also has a <a href="m">mobile interface</a> designed for small screens.
+					This application also has a <a href="m">mobile interface</a> designed for small screens, and an <a class="popup" href="rss.xml">RSS Feed</a>.
 					</p>
 					<p>
 					Copyright &copy; 2010 Rob Dawson

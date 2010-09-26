@@ -164,6 +164,17 @@ static void testUpgradeFrom5To6(CuTest *tc){
 	CuAssertTrue(tc, tableExists("alert_interval") == TRUE);
 }
 
+static void testUpgradeFrom6To7(CuTest *tc){
+    int status = doUpgradeTest(7);
+    CuAssertTrue(tc, status == SUCCESS);
+    CuAssertIntEquals(tc, 7,  getDbVersion());
+    CuAssertStrEquals(tc, "", getConfigText(CONFIG_WEB_RSS_HOST, FALSE));
+    CuAssertIntEquals(tc, 1,  getConfigInt(CONFIG_WEB_RSS_FREQ,  FALSE));
+    CuAssertIntEquals(tc, 10, getConfigInt(CONFIG_WEB_RSS_ITEMS, FALSE));
+
+    populateConfigTable();
+}
+
 static int doUpgradeTest(int level){
     char* txt = malloc(4);
     sprintf(txt, "%d", level);
@@ -218,6 +229,7 @@ CuSuite* bmdbUpgradeGetSuite() {
     SUITE_ADD_TEST(suite, testUpgradeFrom3To4);
     SUITE_ADD_TEST(suite, testUpgradeFrom4To5);
     SUITE_ADD_TEST(suite, testUpgradeFrom5To6);
+    SUITE_ADD_TEST(suite, testUpgradeFrom6To7);
     SUITE_ADD_TEST(suite, testConvertAddrValues);
     return suite;
 }

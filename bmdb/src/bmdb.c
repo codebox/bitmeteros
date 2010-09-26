@@ -74,6 +74,7 @@ struct Action actions[] = {
 
 int main(int argc, char **argv){
     printf(COPYRIGHT);
+    setLogLevel(LOG_INFO);
 
 	if (argc == 1){
      // If the utility is called without an action argument then display the list of available actions

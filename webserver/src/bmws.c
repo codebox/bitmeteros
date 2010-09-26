@@ -37,9 +37,6 @@
 #include "bmws.h"
 
 #define CONNECTION_BACKLOG 10
-#define DEFAULT_PORT 2605
-#define MIN_PORT 1
-#define MAX_PORT 65535
 #define LOCAL_ONLY htonl(0x7f000001L)
 
 static void sigHandler();

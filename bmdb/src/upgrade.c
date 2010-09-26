@@ -43,6 +43,7 @@ static int upgrade3();
 static int upgrade4();
 static int upgrade5();
 static int upgrade6();
+static int upgrade7();
 
 int doUpgrade(FILE* file, int argc, char** argv){
     int requestLevel;
@@ -115,6 +116,9 @@ static int upgradeTo(int level){
 			break;
 		case 6:
 			status = upgrade6();
+			break;
+		case 7:
+			status = upgrade7();
 			break;
 		default:
 			assert(FALSE);
@@ -331,5 +335,30 @@ static int upgrade6(){
 		return FAIL;
 	}
 	
+    return SUCCESS;
+}
+
+static int upgrade7(){
+ // Upgrade the db from version 6 to version 7
+    int status = setDbVersion(7);
+    if (status == FAIL){
+		return FAIL;
+	}
+
+    status = setConfigTextValue(CONFIG_WEB_RSS_HOST, "");
+    if (status == FAIL){
+		return FAIL;
+	}
+
+    status = setConfigIntValue(CONFIG_WEB_RSS_FREQ, 1);
+    if (status == FAIL){
+		return FAIL;
+	}
+
+    status = setConfigIntValue(CONFIG_WEB_RSS_ITEMS, 10);
+    if (status == FAIL){
+		return FAIL;
+	}
+
     return SUCCESS;
 }
