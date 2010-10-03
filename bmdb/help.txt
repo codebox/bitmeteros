@@ -1,0 +1,52 @@
+bmdb [<action>]
+ 
+Performs various admin and configuration operations on the BitMeterOS database. Running the utility without an 'action' argument will list the available actions. The following actions are defined:
+ 
+showconfig
+Displays all the configuration parameters currently stored in the database
+ 
+setconfig <name> <value>
+Updates the named configuration parameter with the specified value. If no parameter currently exists with a matching name then a new one is added.
+ 
+rmconfig <name>
+Removes the configuration parameter with the specified name from the database
+ 
+vac
+Performs a vacuum operation on the database, freeing any unused space still occupied by the file
+ 
+version
+Displays various pieces of versioning information
+ 
+upgrade <level>
+Performs a database upgrade to the specified level. This operation is performed automatically by the BitMeterOS installer during software upgrades, and should not have to be executed manually.
+ 
+weblocal
+Disables remote access to the BitMeterOS web interface.
+ 
+webremote
+Enables non-administrative remote access to the BitMeter web interface. This allows remote users to view the web interface, but blocks access to any features which can alter the contents of the BitMeter database, or start/stop any BitMeter processes.
+ 
+webremoteadmin
+Enables administrative remote access to the BitMeter web interface. Remote users have the same levels of privilege as users accessing the interface locally.
+ 
+webstop
+Stops the BitMeterOS web server process, removing all access to the web interface.
+ 
+webstart
+Start the BitMeterOS web server process, restoring access to the web interface.
+ 
+capstop
+Stop the BitMeterOS data capture process, so that no bandwidth data will be logged to the database.
+ 
+capstart
+Starts the BitMeterOS data capture process, so that bandwidth data will be logged to the database.
+ 
+purge
+Deletes all BitMeterOS bandwidth data from the database.
+ 
+help
+Displays this help page.
+ 
+Email: rob@codebox.org.uk
+Web:   http://codebox.org.uk/bitmeteros
+ 
