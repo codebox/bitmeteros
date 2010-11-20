@@ -146,7 +146,7 @@ void testConfigUpdateWithoutAdmin(CuTest *tc) {
 
     CuAssertStrEquals(tc,
         "HTTP/1.0 403 Forbidden" HTTP_EOL
-		"Server: BitMeterOS 0.7.0 Web Server" HTTP_EOL
+		"Server: BitMeterOS " VERSION " Web Server" HTTP_EOL
 		"Date: Sun, 08 Nov 2009 10:00:00 +0000" HTTP_EOL
 		"Connection: Close" HTTP_EOL HTTP_EOL
     , result);
@@ -239,11 +239,13 @@ static void testConfigUpdateOkChanged(CuTest *tc, char* name, char* valueIn, cha
 
     CuAssertStrEquals(tc,
         "HTTP/1.0 200 OK" HTTP_EOL
-		"Server: BitMeterOS 0.7.0 Web Server" HTTP_EOL
+        "Content-Type: application/json" HTTP_EOL
+		"Server: BitMeterOS " VERSION " Web Server" HTTP_EOL
 		"Date: Sun, 08 Nov 2009 10:00:00 +0000" HTTP_EOL
 		"Connection: Close" HTTP_EOL HTTP_EOL
+		"{}"
     , result);
-    
+
     CuAssertStrEquals(tc, valueOut, getConfigText(name, FALSE));
 }
 
@@ -264,11 +266,11 @@ static void testConfigUpdateErr(CuTest *tc, char* name, char* value) {
 
     CuAssertStrEquals(tc,
         "HTTP/1.0 500 Bad/missing parameter" HTTP_EOL
-		"Server: BitMeterOS 0.7.0 Web Server" HTTP_EOL
+		"Server: BitMeterOS " VERSION " Web Server" HTTP_EOL
 		"Date: Sun, 08 Nov 2009 10:00:00 +0000" HTTP_EOL
 		"Connection: Close" HTTP_EOL HTTP_EOL
     , result);
-    
+
     CuAssertStrEquals(tc, "", getConfigText(name, FALSE));
 }
 
@@ -283,7 +285,7 @@ CuSuite* handleConfigGetSuite() {
     SUITE_ADD_TEST(suite, testConfigUpdateHistoryInterval);
     SUITE_ADD_TEST(suite, testConfigUpdateSummaryInterval);
     SUITE_ADD_TEST(suite, testConfigUpdateRssFreq);
-    SUITE_ADD_TEST(suite, testConfigUpdateRssItems);            
+    SUITE_ADD_TEST(suite, testConfigUpdateRssItems);
     SUITE_ADD_TEST(suite, testConfigUpdateDlColour);
     SUITE_ADD_TEST(suite, testConfigUpdateUlColour);
     return suite;

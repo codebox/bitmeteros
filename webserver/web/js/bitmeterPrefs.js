@@ -124,7 +124,7 @@ $(function(){
     });
     
     function toggleFilterWarning(show){
-        if (show){
+        if (show && BITMETER.model.getAdapters()){
             $('p.filterWarning').show();
             $('p.filterWarning').html('Data Filter is active, only displaying data from ' + describeHostAdapterCombination(BITMETER.model.getAdapters()));
         } else {

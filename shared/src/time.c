@@ -31,42 +31,51 @@
 Contains code for performing date-based calculations.
 */
 
+#ifdef _WIN32
+	time_t timegm(struct tm* t1TmGmt){
+		time_t t2LocalSecs = mktime(t1TmGmt);
+		struct tm* t2TmGmt = gmtime(&t2LocalSecs);
+		time_t t3LocalSecs = mktime(t2TmGmt);
+		return t2LocalSecs - (t3LocalSecs - t2LocalSecs);
+	}
+#endif
+
 time_t getCurrentYearForTs(time_t ts){
  // Returns a timestamp value representing the start of the year in which 'ts' occurs
-	struct tm *t = localtime(&ts);
+	struct tm *t = gmtime(&ts);
 	t->tm_sec  = 0;
 	t->tm_min  = 0;
 	t->tm_hour = 0;
 	t->tm_mday = 1;
 	t->tm_mon  = 0;
-	t->tm_isdst = -1;
-	return mktime(t);
+
+	return timegm(t);
 }
 
 time_t getCurrentMonthForTs(time_t ts){
  // Returns a timestamp value representing the start of the month in which 'ts' occurs
-	struct tm *t = localtime(&ts);
+	struct tm *t = gmtime(&ts);
 	t->tm_sec  = 0;
 	t->tm_min  = 0;
 	t->tm_hour = 0;
 	t->tm_mday = 1;
-    t->tm_isdst = -1;
-	return mktime(t);
+
+	return timegm(t);
 }
 
 time_t getCurrentDayForTs(time_t ts){
  // Returns a timestamp value representing the start of the day in which 'ts' occurs
-	struct tm *t = localtime(&ts);
+	struct tm *t = gmtime(&ts);
 	t->tm_sec  = 0;
 	t->tm_min  = 0;
 	t->tm_hour = 0;
-    t->tm_isdst = -1;
-	return mktime(t);
+
+	return timegm(t);
 }
 
 time_t getNextYearForTs(time_t ts){
  // Returns a timestamp value representing the start of the year following the one in which 'ts' occurs
-	struct tm *t = localtime(&ts);
+	struct tm *t = gmtime(&ts);
 
 	t->tm_sec  = 0;
 	t->tm_min  = 0;
@@ -74,67 +83,54 @@ time_t getNextYearForTs(time_t ts){
 	t->tm_mday = 1;
 	t->tm_mon  = 0;
 	t->tm_year += 1;
-	t->tm_isdst = -1;
 
-	return mktime(t);
+	return timegm(t);
 }
 
 time_t getNextMonthForTs(time_t ts){
  // Returns a timestamp value representing the start of the month following the one in which 'ts' occurs
-	struct tm *t = localtime(&ts);
+	struct tm *t = gmtime(&ts);
 
 	t->tm_sec  = 0;
 	t->tm_min  = 0;
 	t->tm_hour = 0;
 	t->tm_mday = 1;
 	t->tm_mon  += 1;
-	t->tm_isdst = -1;
 
-	return mktime(t);
+	return timegm(t);
 }
 
 time_t getNextDayForTs(time_t ts){
  // Returns a timestamp value representing the start of the day following the one in which 'ts' occurs
-	struct tm *t = localtime(&ts);
+	struct tm *t = gmtime(&ts);
 
 	t->tm_sec  = 0;
 	t->tm_min  = 0;
 	t->tm_hour = 0;
 	t->tm_mday += 1;
-	t->tm_isdst = -1;
 
-	return mktime(t);
+	return timegm(t);
 }
 
 time_t getNextHourForTs(time_t ts){
  // Returns a timestamp value representing the start of the hour following the one in which 'ts' occurs
-	ts += SECS_PER_HOUR;
-	struct tm *t = localtime(&ts);
+	struct tm *t = gmtime(&ts);
 
-	if (t->tm_sec == 0 && t->tm_min == 0){
-	 // We were exactly on the hour, so return the ts that was passed in
-		return ts;
-	} else {
-		t->tm_sec = 0;
-		t->tm_min = 0;
-        t->tm_isdst = -1;
-		return mktime(t);
-	}
+	t->tm_sec  = 0;
+	t->tm_min  = 0;
+	t->tm_hour += 1;
+
+	return timegm(t);
 }
 
 time_t getNextMinForTs(time_t ts){
  // Returns a timestamp value representing the start of the minute following the one in which 'ts' occurs
-	ts += SECS_PER_MIN;
-	struct tm *t = localtime(&ts);
+	struct tm *t = gmtime(&ts);
 
-	if (t->tm_sec == 0 ){
-	 // We were exactly on the minute, so return the ts that was passed in
-		return ts;
-	} else {
-		t->tm_sec = 0;
-		t->tm_isdst = -1;
-		return mktime(t);
-	}
+	t->tm_sec = 0;
+	t->tm_min += 1;
+
+	return timegm(t);
 }
 
 time_t addToDate(time_t ts, char unit, int num){
@@ -143,8 +139,7 @@ time_t addToDate(time_t ts, char unit, int num){
 		return ts + (3600 * num);
 
 	} else {
-		struct tm *t = localtime(&ts);
-		t->tm_isdst = -1;
+		struct tm *t = gmtime(&ts);
 
 		switch(unit){
 			case 'd':
@@ -160,7 +155,7 @@ time_t addToDate(time_t ts, char unit, int num){
 				break;
 		}
 
-		return mktime(t);
+		return timegm(t);
 	}
 }
 

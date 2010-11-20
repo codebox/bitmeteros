@@ -85,7 +85,7 @@ void testSummaryWithHosts(CuTest *tc) {
         "Date: Sun, 08 Nov 2009 10:00:00 +0000" HTTP_EOL
         "Connection: Close" HTTP_EOL HTTP_EOL
         "{\"today\": {\"dl\": 8,\"ul\": 8,\"ts\": 0,\"dr\": 0}, \"month\": {\"dl\": 12,\"ul\": 12,\"ts\": 0,\"dr\": 0}, \"year\": {\"dl\": 14,\"ul\": 14,\"ts\": 0,\"dr\": 0}, \"total\": {\"dl\": 15,\"ul\": 15,\"ts\": 0,\"dr\": 0}"
-        ", \"hosts\": ['server', 'windowsbox'], \"since\": 1225627200}"
+        ", \"hosts\": [\"server\", \"windowsbox\"], \"since\": 1225627200}"
     , result);
 }
 

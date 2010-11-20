@@ -42,7 +42,7 @@
 #define EOL "\n"
 #endif
 
-#define VERSION "0.7.0"
+#define VERSION "0.7.1"
 #define DB_VERSION 7
 
 #ifdef _WIN32
@@ -121,7 +121,7 @@ struct DateCriteriaPart{
 	struct DateCriteriaPart* next; // used eg 1-2,3,6-10 is 3 separate DateCriteriaParts
 };
 
-struct DateCriteria{ 
+struct DateCriteria{
 	struct DateCriteriaPart* year;
 	struct DateCriteriaPart* month;
 	struct DateCriteriaPart* day;
