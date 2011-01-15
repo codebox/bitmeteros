@@ -2,7 +2,7 @@
  * BitMeterOS
  * http://codebox.org.uk/bitmeterOS
  *
- * Copyright (c) 2010 Rob Dawson
+ * Copyright (c) 2011 Rob Dawson
  *
  * Licensed under the GNU General Public License
  * http://www.gnu.org/licenses/gpl.txt
@@ -66,18 +66,29 @@ void doMonitor(){
  // We are going to loop forever unless we get an interrupt
 	signal(SIGINT, sigIntHandler);
 
-	printf("Monitoring... (Ctrl-C to abort)\n");
+ // Check how often new values get written to the database - this is how often we update the display
+	int dbWriteInterval = getConfigInt(CONFIG_DB_WRITE_INTERVAL, TRUE);
+	if (dbWriteInterval < 1){
+		dbWriteInterval = 1;	
+	}
+
+	if (dbWriteInterval == 1){
+		printf("Monitoring... (Ctrl-C to abort)\n");
+	} else {
+		printf("Monitoring [updating every %d secs]... (Ctrl-C to abort)\n", dbWriteInterval);	
+	}
 	struct Data* values;
 	struct Data* currentValue;
 	int doBars = (prefs.monitorType == PREF_MONITOR_TYPE_BAR);
 	BW_INT dl, ul;
-
+	
+	
 	while(!stopNow){
 		dl = ul = 0;
 
-	 // Get the values for 1 second ago (values for the current second may not be in the d/b yet)
+	 // Get the values for the appropriate time-span
 	 	time_t now = getTime();
-		values = getMonitorValues(now - 1, prefs.host, prefs.adapter);
+		values = getMonitorValues(now - dbWriteInterval, prefs.host, prefs.adapter);
 
 		if (values == NULL){
 		 // We print out zeroes if there is nothing from the db
@@ -85,7 +96,6 @@ void doMonitor(){
 		}
         currentValue = values;
 
-	 // We expect to get only 1 value, but may get more under certain conditions (eg heavily loaded system where query is delayed by blocking)
 		while(currentValue != NULL){
 		 // If system clock gets put back we don't want to include all the values that now lie in the future
 			if (currentValue->ts <= now){
@@ -104,7 +114,7 @@ void doMonitor(){
 		}
 
 		freeData(values);
-	    doSleep(1);
+	    doSleep(dbWriteInterval);
 	}
 	printf("monitoring aborted.\n");
 }

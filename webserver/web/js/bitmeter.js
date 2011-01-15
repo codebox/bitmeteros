@@ -554,6 +554,9 @@ $(function(){
     $("noscript").hide(); // Needed for IE8
     $("#errorDialog, #dialogModalBackground").hide();
     
+    var datePickerFormat = $('#createAlertStartFixedDate').datepicker("option", "dateFormat");
+    $('#createAlertStartDetailsFormat').html("(" + datePickerFormat + ")");
+    
     $.getJSON("http://updates.codebox.org.uk/version/bitmeteros/version2.js?callback=?", BITMETER.showVersion);
 });
 

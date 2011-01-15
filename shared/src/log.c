@@ -2,7 +2,7 @@
  * BitMeterOS
  * http://codebox.org.uk/bitmeterOS
  *
- * Copyright (c) 2010 Rob Dawson
+ * Copyright (c) 2011 Rob Dawson
  *
  * Licensed under the GNU General Public License
  * http://www.gnu.org/licenses/gpl.txt
@@ -58,8 +58,13 @@ void setAppName(const char* thisAppName){
  // Set app name as it will appear in the log entries
 	appName = strdup(thisAppName);
 }
-
 void logMsg(int level, char* msg, ...){
+	va_list argp;
+	va_start(argp, msg);
+	vlogMsg(level, msg, argp);
+	va_end(argp);	
+}
+void vlogMsg(int level, char* msg, va_list argp){
  // Log the specified message, if its level is high enough
 	if (level >= logLevel){
 	 // The level (importance) of this message is sufficiently high that we want to log it
@@ -106,11 +111,8 @@ void logMsg(int level, char* msg, ...){
         }
 
 	 // Write out the message, substituting the optargs for any tokens in the text
-		va_list argp;
-		va_start(argp, msg);
 		vfprintf(logFile, msg, argp);
 		fprintf(logFile, EOL);
-		va_end(argp);
 
 		fflush(logFile);
 

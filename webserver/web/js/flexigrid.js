@@ -4,8 +4,6 @@
  * Copyright (c) 2008 Paulo P. Marinas (webplicity.net/flexigrid)
  * Dual licensed under the MIT (MIT-LICENSE.txt)
  * and GPL (GPL-LICENSE.txt) licenses.
- *
- * $Date: 2010/08/04 17:09:52 $
  */
  
 (function($){

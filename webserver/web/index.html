@@ -406,7 +406,7 @@
 				    </div>
 			        <p id="noAlerts">
 			        	No Alerts have been defined.<br><br>
-			        	<a id="createFirstAlert">Create an Alert</a> to get notified when your network usage goes above a certain amount.
+			        	<a id="createFirstAlert" class="adminOnly">Create an Alert</a> to get notified when your network usage goes above a certain amount.
 			        </p>
 			        <div id="createAlertBox" class="roundedCorners">
 			        	<div id="createAlertHelpText">
@@ -441,7 +441,7 @@
 									<input type="radio" name="createAlertStart" value="3" id="createAlertStartRolling" /><label for="createAlertStartRolling">Using a rolling interval (eg 'everything in the last 30 days')</label><br>
 								</p>
 								<div class="createAlertStartDetails" id="createAlertStartFixedDetails">
-									<strong>Date</strong> (dd/mm/yyyy): <input type="text" id="createAlertStartFixedDate" maxlength="10" /> <strong>Time</strong>: <select id="createAlertStartFixedTime" class="timeList"><option>&nbsp;</option></select>
+									<strong>Date</strong> <span id="createAlertStartDetailsFormat"></span>: <input type="text" id="createAlertStartFixedDate" maxlength="10" /> <strong>Time</strong>: <select id="createAlertStartFixedTime" class="timeList"><option>&nbsp;</option></select>
 								</div>
 								<div class="createAlertStartDetails" id="createAlertStartRepeatingDetails">
 									<p>Select the type of interval:</p>
@@ -821,7 +821,7 @@
 					This application also has a <a href="m">mobile interface</a> designed for small screens, and an <a class="popup" href="rss.xml">RSS Feed</a>.
 					</p>
 					<p>
-					Copyright &copy; 2010 Rob Dawson
+					Copyright &copy; 2011 Rob Dawson
 					</p>
 					<p>
 					Licensed under the <a href="http://www.gnu.org/licenses/gpl.txt">GNU General Public License</a>

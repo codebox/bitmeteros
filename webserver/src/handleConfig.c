@@ -2,7 +2,7 @@
  * BitMeterOS
  * http://codebox.org.uk/bitmeterOS
  *
- * Copyright (c) 2010 Rob Dawson
+ * Copyright (c) 2011 Rob Dawson
  *
  * Licensed under the GNU General Public License
  * http://www.gnu.org/licenses/gpl.txt
@@ -64,10 +64,6 @@ static int updateMonitorInterval(char* value);
 static int updateHistoryInterval(char* value);
 static int updateSummaryInterval(char* value);
 
-extern struct HttpResponse HTTP_OK;
-extern struct HttpResponse HTTP_SERVER_ERROR;
-extern struct HttpResponse HTTP_FORBIDDEN;
-
 void processConfigRequest(SOCKET fd, struct Request* req, int allowAdmin){
 	struct NameValuePair* params = req->params;
 
@@ -126,15 +122,15 @@ void processConfigRequest(SOCKET fd, struct Request* req, int allowAdmin){
 	 		}
 
  			if (status == SUCCESS){
- 				writeHeaders(fd, HTTP_OK, MIME_JSON, TRUE);
+ 				writeHeadersOk(fd, MIME_JSON, TRUE);
  				writeText(fd, "{}");
  			} else {
- 				writeHeaders(fd, HTTP_SERVER_ERROR, NULL, TRUE);
+ 				writeHeadersServerError(fd, "Config update failed %s=%s", params->name, params->value); 
  			}
 
 	 	} else {
 	 	 // Config updates are an administrative operation
-	 		writeHeaders(fd, HTTP_FORBIDDEN, NULL, TRUE);
+	 		writeHeadersForbidden(fd, "config update");
 	 	}
 	}
 }
@@ -277,7 +273,7 @@ static int updateWebServerName(char* value){
 
 static void writeConfig(SOCKET fd, int allowAdmin){
  // Write the JSON object out to the stream
-    writeHeaders(fd, HTTP_OK, MIME_JS, TRUE);
+    writeHeadersOk(fd, MIME_JS, TRUE);
 
 	writeText(fd, "var config = { ");
 	char* val = getConfigText(CONFIG_WEB_MONITOR_INTERVAL, FALSE);

@@ -2,7 +2,7 @@
  * BitMeterOS
  * http://codebox.org.uk/bitmeterOS
  *
- * Copyright (c) 2010 Rob Dawson
+ * Copyright (c) 2011 Rob Dawson
  *
  * Licensed under the GNU General Public License
  * http://www.gnu.org/licenses/gpl.txt
@@ -35,11 +35,10 @@
 Handles '/export' requests received by the web server.
 */
 
-extern struct HttpResponse HTTP_OK;
 static void writeCsvRow(SOCKET fd, struct Data* row);
 	
 void processExportRequest(SOCKET fd, struct Request* req){
-    writeHeaders(fd, HTTP_OK, MIME_CSV, FALSE);
+    writeHeadersOk(fd, MIME_CSV, FALSE);
     writeHeader(fd, "Content-Disposition", "attachment;filename=bitmeterOsExport.csv");
 	writeEndOfHeaders(fd);
 

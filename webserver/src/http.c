@@ -2,7 +2,7 @@
  * BitMeterOS
  * http://codebox.org.uk/bitmeterOS
  *
- * Copyright (c) 2010 Rob Dawson
+ * Copyright (c) 2011 Rob Dawson
  *
  * Licensed under the GNU General Public License
  * http://www.gnu.org/licenses/gpl.txt
@@ -38,9 +38,14 @@
 Contains HTTP-related functions, mostly for reading in requests and writing out responses.
 */
 
-extern struct HttpResponse HTTP_OK;
-extern struct HttpResponse HTTP_NOT_ALLOWED;
+static struct HttpResponse HTTP_OK           = {200, "OK"};
+static struct HttpResponse HTTP_NOT_FOUND    = {404, "Not Found"};
+static struct HttpResponse HTTP_FORBIDDEN    = {403, "Forbidden"};
+static struct HttpResponse HTTP_NOT_ALLOWED  = {405, "Method not allowed"};
+static struct HttpResponse HTTP_SERVER_ERROR = {500, "Bad/missing parameter"};
 
+static void writeHeaders(SOCKET fd, struct HttpResponse response, char* contentType, int endHeaders);
+	
 // These are the different operations that we can perform on behalf of the client
 enum OpType{File, Monitor, Summary, Query, Sync, Config, Alert, Export, RSS, MobileMonitor, MobileSummary, MobileAbout};
 
@@ -79,7 +84,34 @@ void writeEndOfHeaders(SOCKET fd){
     writeText(fd, buffer);
 }
 
-void writeHeaders(SOCKET fd, struct HttpResponse response, char* contentType, int endHeaders){
+void writeHeadersNotFound(SOCKET fd, char* file){
+	logMsg(LOG_ERR, "%s: %s", HTTP_NOT_FOUND.msg, file);
+	writeHeaders(fd, HTTP_NOT_FOUND, NULL, TRUE);
+}
+
+void writeHeadersForbidden(SOCKET fd, char* request){
+	logMsg(LOG_ERR, "%s: %s", HTTP_FORBIDDEN.msg, request);
+	writeHeaders(fd, HTTP_FORBIDDEN, NULL, TRUE);
+}
+
+void writeHeadersNotAllowed(SOCKET fd, char* httpMethod){
+	logMsg(LOG_ERR, "%s: %s", HTTP_NOT_ALLOWED.msg, httpMethod);
+	writeHeaders(fd, HTTP_NOT_ALLOWED, NULL, FALSE);
+}
+
+void writeHeadersServerError(SOCKET fd, char* msg, ...){
+	va_list argp;
+	va_start(argp, msg);
+	vlogMsg(LOG_ERR, msg, argp);
+	va_end(argp);
+	writeHeaders(fd, HTTP_SERVER_ERROR, NULL, TRUE);
+}
+
+void writeHeadersOk(SOCKET fd, char* contentType, int endHeaders){
+	writeHeaders(fd, HTTP_OK, contentType, endHeaders);
+}
+
+static void writeHeaders(SOCKET fd, struct HttpResponse response, char* contentType, int endHeaders){
  // Writes out a full set of headers including the specified HTTP response and, if appropriate, the MIME type
     writeResponseCode(fd, response);
 
@@ -199,7 +231,7 @@ void processRequest(SOCKET fd, char* buffer, int allowAdmin){
 		#endif
     } else {
      // Only GET requests are allowed - send an error
-        writeResponseCode(fd, HTTP_NOT_ALLOWED);
+        writeHeadersNotAllowed(fd, req->method);
         writeHeader(fd, "Allow", "GET");
         writeEndOfHeaders(fd);
     }

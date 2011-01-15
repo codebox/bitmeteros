@@ -2,7 +2,7 @@
  * BitMeterOS
  * http://codebox.org.uk/bitmeterOS
  *
- * Copyright (c) 2010 Rob Dawson
+ * Copyright (c) 2011 Rob Dawson
  *
  * Licensed under the GNU General Public License
  * http://www.gnu.org/licenses/gpl.txt
@@ -59,7 +59,7 @@ static int keepPerMinLimit;
    application is restarted, since a compression is performed when the app is initialised - this does no harm. */
 static int compressInterval;
 
-static int insertDataPartial(int ts, int dr, struct Data* data);
+static int insertDataPartial(int dr, struct Data* data);
 static int compressDbStage(int secKeepInterval, int oldDr, int newDr, int (*fnRoundUp)(int) );
 
 void setupDb(){
@@ -79,12 +79,12 @@ void setupDb(){
 	logMsg(LOG_DEBUG, "db setup complete");
 }
 
-int updateDb(int ts, int dr, struct Data* diffList){
+int updateDb(int dr, struct Data* diffList){
     int status = SUCCESS;
 
  // Insert all the Data structs into the d/b, stopping if there are any failures
 	while (diffList != NULL) {
-		status = insertDataPartial(ts, dr, diffList);
+		status = insertDataPartial(dr, diffList);
 		if (status == FAIL){
             break;
 		}
@@ -144,7 +144,7 @@ static int doInsert(int ts, int dr, const char* addr, BW_INT dl, BW_INT ul, cons
   		logMsg(LOG_ERR, "doInsert() failed to insert values %d,%d,%s,%llu,%llu,%s into db rc=%d error=%s", ts, dr, addr, dl, ul, host, rc, getDbError());
   		status = FAIL;
   	} else {
-  		logMsg(LOG_DEBUG, "doInsert() ok: %d,%d,%s,%llu,%llu,%s", ts, dr, addr, dl, ul, host);
+  		logMsg(LOG_INFO, "doInsert() ok: %d,%d,%s,%llu,%llu,%s", ts, dr, addr, dl, ul, host);//TODO
         status = SUCCESS;
   	}
   	sqlite3_reset(stmtInsertData);
@@ -152,9 +152,9 @@ static int doInsert(int ts, int dr, const char* addr, BW_INT dl, BW_INT ul, cons
   	return status;
 }
 
-static int insertDataPartial(int ts, int dr, struct Data* data){
+static int insertDataPartial(int dr, struct Data* data){
  // Inserts the data for a single Data struct into the 'data' table
-	return doInsert(ts, dr, data->ad, data->dl, data->ul, data->hs);
+	return doInsert(data->ts, dr, data->ad, data->dl, data->ul, data->hs);
 }
 
 int insertData(struct Data* data){

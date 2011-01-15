@@ -2,7 +2,7 @@
  * BitMeterOS
  * http://codebox.org.uk/bitmeterOS
  *
- * Copyright (c) 2010 Rob Dawson
+ * Copyright (c) 2011 Rob Dawson
  *
  * Licensed under the GNU General Public License
  * http://www.gnu.org/licenses/gpl.txt
@@ -33,7 +33,6 @@
 Handles '/rss.xml' requests received by the web server.
 */
 
-extern struct HttpResponse HTTP_OK;
 static void getHourlyItems(char** itemsTxt, int rssItemCount, char* guidBase);
 static void getDailyItems(char** itemsTxt, int rssItemCount, char* guidBase);
 static char* getPubDate(int rssFreq);

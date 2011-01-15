@@ -2,7 +2,7 @@
  * BitMeterOS
  * http://codebox.org.uk/bitmeterOS
  *
- * Copyright (c) 2010 Rob Dawson
+ * Copyright (c) 2011 Rob Dawson
  *
  * Licensed under the GNU General Public License
  * http://www.gnu.org/licenses/gpl.txt
@@ -42,10 +42,6 @@ Handles '/alert' requests received by the web server.
 #define BAD_NUM -1
 #define DELIMS "' []"
 
-extern struct HttpResponse HTTP_OK;
-extern struct HttpResponse HTTP_SERVER_ERROR;
-extern struct HttpResponse HTTP_FORBIDDEN;
-
 void processAlertList(SOCKET fd);
 void processAlertDelete(SOCKET fd, struct NameValuePair* params);
 void processAlertUpdate(SOCKET fd, struct NameValuePair* params);
@@ -65,7 +61,7 @@ void processAlertRequest(SOCKET fd, struct Request* req, int allowAdmin){
 		if (allowAdmin){
 	    	processAlertDelete(fd, params);
 	    } else {
-	    	writeHeaders(fd, HTTP_FORBIDDEN, NULL, TRUE);
+	    	writeHeadersForbidden(fd, "alert delete");
 	    }
 
 	} else if (strcmp("update", action) == 0) {
@@ -73,7 +69,7 @@ void processAlertRequest(SOCKET fd, struct Request* req, int allowAdmin){
 		if (allowAdmin){
 		    processAlertUpdate(fd, params);
 	    } else {
-	    	writeHeaders(fd, HTTP_FORBIDDEN, NULL, TRUE);
+	    	writeHeadersForbidden(fd, "alert update");
 	    }
 
 	} else if (strcmp("status", action) == 0) {
@@ -84,13 +80,12 @@ void processAlertRequest(SOCKET fd, struct Request* req, int allowAdmin){
 		if (allowAdmin){
 		    processAlertCreate(fd, params);
 	    } else {
-	    	writeHeaders(fd, HTTP_FORBIDDEN, NULL, TRUE);
+	    	writeHeadersForbidden(fd, "alert create");
 	    }
 
 	} else {
 	 // Missing/invalid 'action' parameter
-	 	logMsg(LOG_ERR, "Missing/invalid 'action' parameter: '%s'", action);
-	    writeHeaders(fd, HTTP_SERVER_ERROR, NULL, TRUE);
+	 	writeHeadersServerError(fd, "Missing/invalid 'action' parameter: '%s'", action);
 	}
 }
 
@@ -149,7 +144,7 @@ static void writeAlertToJson(SOCKET fd, struct Alert* alert){
 }
 
 void processAlertList(SOCKET fd){
-	writeHeaders(fd, HTTP_OK, MIME_JSON, TRUE);
+	writeHeadersOk(fd, MIME_JSON, TRUE);
     writeText(fd, "[");
 
 	struct Alert* firstAlert = getAlerts();
@@ -173,18 +168,16 @@ void processAlertDelete(SOCKET fd, struct NameValuePair* params){
     int id = getValueNumForName("id", params, BAD_NUM);
 
     if (id == BAD_NUM){
-    	logMsg(LOG_ERR, "Invalid alert id in delete request: %s", getValueForName("id", params, NULL));
-        writeHeaders(fd, HTTP_SERVER_ERROR, NULL, TRUE);
+    	writeHeadersServerError(fd, "Invalid alert id in delete request: %s", getValueForName("id", params, NULL));
     } else {
         int status = removeAlert(id);
         if (status == SUCCESS){
             // done
-            writeHeaders(fd, HTTP_OK, MIME_JSON, TRUE);
+            writeHeadersOk(fd, MIME_JSON, TRUE);
             writeText(fd, "{}");
 
         } else {
-            logMsg(LOG_ERR, "removeAlert() failed");
-            writeHeaders(fd, HTTP_SERVER_ERROR, NULL, TRUE);
+            writeHeadersServerError(fd, "removeAlert() failed");
         }
     }
 }
@@ -195,7 +188,7 @@ void processAlertStatus(SOCKET fd, struct NameValuePair* params){
 
     struct Data* totals = NULL;
 
-    writeHeaders(fd, HTTP_OK, MIME_JSON, TRUE);
+    writeHeadersOk(fd, MIME_JSON, TRUE);
 
     int first = TRUE;
     writeText(fd, "[");
@@ -284,13 +277,12 @@ void processAlertUpdate(SOCKET fd, struct NameValuePair* params){
     BW_INT amount = strToBwInt(amountTxt, BAD_NUM);
 
     if (id == BAD_NUM || name == NULL || active == BAD_NUM || direction == BAD_NUM || amount == BAD_NUM || boundTxt == NULL || periodsTxt == NULL) {
-    	logMsg(LOG_ERR, "processAlertUpdate param bad/missing id=%s, name=%s, active=%s, direction=%s, amount=%s, bound=%s, periods=%s",
+    	writeHeadersServerError(fd, "processAlertUpdate param bad/missing id=%s, name=%s, active=%s, direction=%s, amount=%s, bound=%s, periods=%s",
     			getValueForName("id", params, NULL),
     			name,
     			getValueForName("active", params, NULL),
     			getValueForName("direction", params, NULL),
     			amountTxt, boundTxt, periodsTxt);
-        writeHeaders(fd, HTTP_SERVER_ERROR, NULL, TRUE);
 
     } else {
     	struct Alert* alert = allocAlert();
@@ -307,12 +299,11 @@ void processAlertUpdate(SOCKET fd, struct NameValuePair* params){
     	freeAlert(alert);
 
     	if (result == SUCCESS){
-    		writeHeaders(fd, HTTP_OK, MIME_JSON, TRUE);
+    		writeHeadersOk(fd, MIME_JSON, TRUE);
     		writeText(fd, "{}");
 
     	} else {
-    		logMsg(LOG_ERR, "updateAlert() failed");
-    		writeHeaders(fd, HTTP_SERVER_ERROR, NULL, TRUE);
+    		writeHeadersServerError(fd, "updateAlert() failed");
     	}
     }
 }
@@ -328,13 +319,11 @@ void processAlertCreate(SOCKET fd, struct NameValuePair* params){
     BW_INT amount = strToBwInt(amountTxt, BAD_NUM);
 
     if (name == NULL || active == BAD_NUM || direction == BAD_NUM || amount == BAD_NUM || boundTxt == NULL || periodsTxt == NULL) {
-    	logMsg(LOG_ERR, "processAlertCreate param bad/missing name=%s, active=%s, direction=%s, amount=%s, bound=%s, periods=%s",
+    	writeHeadersServerError(fd, "processAlertCreate param bad/missing name=%s, active=%s, direction=%s, amount=%s, bound=%s, periods=%s",
     			name,
     			getValueForName("active", params, NULL),
     			getValueForName("direction", params, NULL),
     			amountTxt, boundTxt, periodsTxt);
-
-        writeHeaders(fd, HTTP_SERVER_ERROR, NULL, TRUE);
 
     } else {
     	struct Alert* alert = allocAlert();
@@ -350,12 +339,11 @@ void processAlertCreate(SOCKET fd, struct NameValuePair* params){
     	freeAlert(alert);
 
     	if (result != ALERT_ID_FAIL){
-    		writeHeaders(fd, HTTP_OK, MIME_JSON, TRUE);
+    		writeHeadersOk(fd, MIME_JSON, TRUE);
     		writeText(fd, "{}");
 
     	} else {
-    		logMsg(LOG_ERR, "addAlert failed");
-    		writeHeaders(fd, HTTP_SERVER_ERROR, NULL, TRUE);
+    		writeHeadersServerError(fd, "addAlert failed");
     	}
     }
 }

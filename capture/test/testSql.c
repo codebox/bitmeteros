@@ -2,7 +2,7 @@
  * BitMeterOS
  * http://codebox.org.uk/bitmeterOS
  *
- * Copyright (c) 2010 Rob Dawson
+ * Copyright (c) 2011 Rob Dawson
  *
  * Licensed under the GNU General Public License
  * http://www.gnu.org/licenses/gpl.txt
@@ -35,29 +35,27 @@ Contains unit tests for the sql module.
 */
 
 void setup();
-static void cbAppendData(int, struct Data* data);
-static int getRowCount();
-static struct Data* storedData;
-static void checkTableContents(CuTest *tc, int rowCount, ...);
-extern sqlite3_stmt *selectAllStmt;
 
+static int getDataRowCount(){
+	return getRowCount("SELECT * FROM data");	
+}
 void testUpdateDbNull(CuTest *tc) {
  // Check that nothing is added to the d/b if we pass in a NULL list
-    int rowsBefore = getRowCount();
-    updateDb(1, 1, NULL);
-    int rowsAfter = getRowCount();
+    int rowsBefore = getDataRowCount();
+    updateDb(1, NULL);
+    int rowsAfter = getDataRowCount();
     CuAssertIntEquals(tc, rowsBefore, rowsAfter);
 }
 
 void testUpdateDbMultiple(CuTest *tc) {
  // Check that the correct number of rows are added when we pass in multiple structs
-    int rowsBefore = getRowCount();
+    int rowsBefore = getDataRowCount();
     struct Data data3 = { 3, 3, 5, 1, "eth0", "", NULL};
     struct Data data2 = { 2, 2, 5, 1, "eth1", "", &data3};
     struct Data data1 = { 1, 1, 5, 1, "eth2", "", &data2};
 
-    updateDb(1,1,&data1);
-    int rowsAfter = getRowCount();
+    updateDb(1,&data1);
+    int rowsAfter = getDataRowCount();
     CuAssertIntEquals(tc, rowsBefore + 3, rowsAfter);
 }
 
@@ -193,35 +191,6 @@ void testCompressMinMultiAdapters(CuTest *tc){
     checkTableContents(tc, 6, row1, row2, row3, row4, row5, row6);
 }
 
-static void checkTableContents(CuTest *tc, int rowCount, ...){
- // Helper function for checking the contents of the database
-    va_list ap;
-    va_start(ap,rowCount);
-    storedData = NULL;
-    runSelectAndCallback(selectAllStmt, &cbAppendData, 0);
-	sqlite3_reset(selectAllStmt);
-
-    struct Data expected;
-    struct Data* pStored   = storedData;
-
-    int i;
-    for(i=0; i<rowCount; i++){
-        expected = va_arg(ap, struct Data);
-        CuAssertTrue(tc, pStored != NULL);
-        CuAssertIntEquals(tc, expected.ts, pStored->ts);
-        CuAssertIntEquals(tc, expected.dr, pStored->dr);
-        CuAssertIntEquals(tc, expected.dl, pStored->dl);
-        CuAssertIntEquals(tc, expected.ul, pStored->ul);
-        CuAssertStrEquals(tc, expected.ad, pStored->ad);
-        CuAssertStrEquals(tc, expected.hs, pStored->hs);
-
-        pStored   = pStored->next;
-    }
-    va_end(ap);
-
-    CuAssertTrue(tc, pStored == NULL);
-}
-
 CuSuite* sqlGetSuite() {
     CuSuite* suite = CuSuiteNew();
     //SUITE_ADD_TEST(suite, testUpdateDbNull);
@@ -235,17 +204,3 @@ CuSuite* sqlGetSuite() {
     return suite;
 }
 
-static void cbAppendData(int ignored, struct Data* data){
-	appendData(&storedData, data);
-}
-
-static int getRowCount(){
- // Helper method that executes the row-count SQL and returns the result
-    struct Data* data = runSelect(selectAllStmt);
-    int c = 0;
-    while(data != NULL){
-    	c++;
-    	data = data->next;
-    }
-    return c;
-}

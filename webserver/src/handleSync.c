@@ -2,7 +2,7 @@
  * BitMeterOS
  * http://codebox.org.uk/bitmeterOS
  *
- * Copyright (c) 2010 Rob Dawson
+ * Copyright (c) 2011 Rob Dawson
  *
  * Licensed under the GNU General Public License
  * http://www.gnu.org/licenses/gpl.txt
@@ -35,18 +35,14 @@
 Handles '/sync' requests received by the web server.
 */
 
-extern struct HttpResponse HTTP_OK;
-extern struct HttpResponse HTTP_SERVER_ERROR;
-
 void processSyncRequest(SOCKET fd, struct Request* req){
 	time_t ts = (time_t) getValueNumForName("ts", req->params, NO_TS);
 	if (ts == NO_TS){
      // We need a 'ts' parameter
-     	logMsg(LOG_ERR, "processSyncRequest ts param missing/invalid: %s", getValueForName("ts", req->params, NULL));
-	    writeHeaders(fd, HTTP_SERVER_ERROR, NULL, TRUE);
+     	writeHeadersServerError(fd, "processSyncRequest ts param missing/invalid: %s", getValueForName("ts", req->params, NULL));
 
 	} else {
-	    writeHeaders(fd, HTTP_OK, SYNC_CONTENT_TYPE, TRUE);
+	    writeHeadersOk(fd, SYNC_CONTENT_TYPE, TRUE);
 
         struct Data* results = getSyncValues(ts);
         struct Data* thisResult = results;

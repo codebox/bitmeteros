@@ -2,7 +2,7 @@
  * BitMeterOS
  * http://codebox.org.uk/bitmeterOS
  *
- * Copyright (c) 2010 Rob Dawson
+ * Copyright (c) 2011 Rob Dawson
  *
  * Licensed under the GNU General Public License
  * http://www.gnu.org/licenses/gpl.txt
@@ -258,7 +258,7 @@ void runSelectAndCallback(sqlite3_stmt *stmt, void (*callback)(int, struct Data*
 }
 
 struct Data* runSelect(sqlite3_stmt *stmt){
- // Runs the stmt (assumed to be a SQL SELECT) and performs a callback once for each row
+ // Runs the stmt (assumed to be a SQL SELECT) returns a Data struct for each result row
 	assert(dbOpen);
 
 	struct Data* result = NULL;

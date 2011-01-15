@@ -2,7 +2,7 @@
  * BitMeterOS
  * http://codebox.org.uk/bitmeterOS
  *
- * Copyright (c) 2010 Rob Dawson
+ * Copyright (c) 2011 Rob Dawson
  *
  * Licensed under the GNU General Public License
  * http://www.gnu.org/licenses/gpl.txt
@@ -32,7 +32,7 @@
 struct Data* getData();
 
 void setupDb();
-int updateDb(int, int, struct Data*);
+int updateDb(int, struct Data*);
 int insertData(struct Data* data);
 int compressDb();
 
@@ -42,4 +42,7 @@ void setupCapture();
 int processCapture();
 void shutdownCapture();
 void logData(struct Data*);
-struct Data* extractDiffs(struct Data* oldList, struct Data* newList);
+struct Data* extractDiffs(int ts, struct Data* oldList, struct Data* newList);
+#ifdef TESTING
+void setPrevData(struct Data* data);
+#endif

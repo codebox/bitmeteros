@@ -2,7 +2,7 @@
  * BitMeterOS
  * http://codebox.org.uk/bitmeterOS
  *
- * Copyright (c) 2010 Rob Dawson
+ * Copyright (c) 2011 Rob Dawson
  *
  * Licensed under the GNU General Public License
  * http://www.gnu.org/licenses/gpl.txt
@@ -37,6 +37,7 @@
 
 static int now;
 sqlite3_stmt *selectAllStmt;
+static struct Data* storedData;
 
 void getDbPath(char* path){
     strcpy(path, IN_MEMORY_DB);
@@ -149,11 +150,16 @@ int getRowCount(char* sql){
 	}
 	return counter;
 }
-void addConfigRow(char* key, char* value){
+void rmConfigRow(char* key){
     char sql[200];
     sprintf(sql, "DELETE FROM config WHERE key='%s'", key);
     executeSql(sql, NULL);
+}
+
+void addConfigRow(char* key, char* value){
+    rmConfigRow(key);
     
+    char sql[200];
     sprintf(sql, "INSERT INTO config values ('%s', '%s')", key, value);
     executeSql(sql, NULL);
 }
@@ -261,3 +267,46 @@ static void printTmStruct(struct tm tm){
 	printf("%d %d %d (%d) %d:%d:%d\n", tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_wday, 
 			tm.tm_hour, tm.tm_min, tm.tm_sec);
 }
+
+static struct Data* nextData = NULL;
+struct Data* getData(){
+	return nextData;
+}
+void setData(struct Data* data){
+	nextData = data;
+}
+
+static void cbAppendData(int ignored, struct Data* data){
+	appendData(&storedData, data);
+}
+
+void checkTableContents(CuTest *tc, int rowCount, ...){
+ // Helper function for checking the contents of the database
+    va_list ap;
+    va_start(ap,rowCount);
+    storedData = NULL;
+    runSelectAndCallback(selectAllStmt, &cbAppendData, 0);
+	sqlite3_reset(selectAllStmt);
+
+    struct Data expected;
+    struct Data* pStored   = storedData;
+
+    int i;
+    for(i=0; i<rowCount; i++){
+        expected = va_arg(ap, struct Data);
+        CuAssertTrue(tc, pStored != NULL);
+        CuAssertIntEquals(tc, expected.ts, pStored->ts);
+        CuAssertIntEquals(tc, expected.dr, pStored->dr);
+        CuAssertIntEquals(tc, expected.dl, pStored->dl);
+        CuAssertIntEquals(tc, expected.ul, pStored->ul);
+        CuAssertStrEquals(tc, expected.ad, pStored->ad);
+        CuAssertStrEquals(tc, expected.hs, pStored->hs);
+
+        pStored   = pStored->next;
+    }
+    va_end(ap);
+
+    CuAssertTrue(tc, pStored == NULL);
+}
+
+

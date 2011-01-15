@@ -2,7 +2,7 @@
  * BitMeterOS
  * http://codebox.org.uk/bitmeterOS
  *
- * Copyright (c) 2010 Rob Dawson
+ * Copyright (c) 2011 Rob Dawson
  *
  * Licensed under the GNU General Public License
  * http://www.gnu.org/licenses/gpl.txt
@@ -41,8 +41,6 @@
 Handles '/query' requests received by the web server.
 */
 
-extern struct HttpResponse HTTP_OK;
-extern struct HttpResponse HTTP_SERVER_ERROR;
 static void writeCsvRow(SOCKET fd, struct Data* row);
 
 void processQueryRequest(SOCKET fd, struct Request* req){
@@ -56,11 +54,10 @@ void processQueryRequest(SOCKET fd, struct Request* req){
 
     if (from == BAD_PARAM || to == BAD_PARAM || group == BAD_PARAM){
      // We need all 3 parameters
-     	logMsg(LOG_ERR, "processQueryRequest, param bad/missing from=%s, to=%s, group=%d",
+     	writeHeadersServerError(fd, "processQueryRequest, param bad/missing from=%s, to=%s, group=%d",
      		getValueForName("from",  params, NULL),
      		getValueForName("to",    params, NULL),
      		getValueForName("group", params, NULL));
-        writeHeaders(fd, HTTP_SERVER_ERROR, NULL, TRUE);
 
     } else {
         if (from > to){
@@ -96,7 +93,7 @@ void processQueryRequest(SOCKET fd, struct Request* req){
 
 		if (csv){
 		 // Export the query results in CSV format
-		    writeHeaders(fd, HTTP_OK, MIME_CSV, FALSE);
+		    writeHeadersOk(fd, MIME_CSV, FALSE);
 		    writeHeader(fd, "Content-Disposition", "attachment;filename=bitmeterOsQuery.csv");
 		    writeEndOfHeaders(fd);
 		    
@@ -109,7 +106,7 @@ void processQueryRequest(SOCKET fd, struct Request* req){
 		    
 		} else {
 		 // Send results back as JSON
-	        writeHeaders(fd, HTTP_OK, MIME_JSON, TRUE);
+	        writeHeadersOk(fd, MIME_JSON, TRUE);
 			writeDataToJson(fd, result);	
 		}
         

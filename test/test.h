@@ -2,7 +2,7 @@
  * BitMeterOS
  * http://codebox.org.uk/bitmeterOS
  *
- * Copyright (c) 2010 Rob Dawson
+ * Copyright (c) 2011 Rob Dawson
  *
  * Licensed under the GNU General Public License
  * http://www.gnu.org/licenses/gpl.txt
@@ -36,6 +36,7 @@ void emptyDb();
 void addDbRow(time_t ts, int dr, char* ad, int dl, int ul, char* hs);
 void addDbRowBinaryAddress(time_t ts, int dr, int dl, int ul, char* ad, int adLen);
 void addConfigRow(char* key, char* value);
+void rmConfigRow(char* key);
 void setUpDbForTest();
 void populateConfigTable();
 time_t makeTs(const char* dateTxt);

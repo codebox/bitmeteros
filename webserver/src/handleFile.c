@@ -2,7 +2,7 @@
  * BitMeterOS
  * http://codebox.org.uk/bitmeterOS
  *
- * Copyright (c) 2010 Rob Dawson
+ * Copyright (c) 2011 Rob Dawson
  *
  * Licensed under the GNU General Public License
  * http://www.gnu.org/licenses/gpl.txt
@@ -41,11 +41,6 @@
 Handles requests for files received by the web server.
 */
 
-extern struct HttpResponse HTTP_OK;
-extern struct HttpResponse HTTP_NOT_FOUND;
-extern struct HttpResponse HTTP_FORBIDDEN;
-extern struct HttpResponse HTTP_NOT_ALLOWED;
-
 struct MimeType{
 	char* fileExt;
 	char* contentType;
@@ -55,7 +50,7 @@ struct MimeType{
 struct MimeType MIME_TYPES[] = {
 	{"html", MIME_HTML, FALSE},
 	{"htm",  MIME_HTML, FALSE},
-	{"xml",  MIME_HTML,  FALSE},
+	{"xml",  MIME_XML,  FALSE},
 	{"jpeg", MIME_JPEG, TRUE},
 	{"jpg",  MIME_JPEG, TRUE},
 	{"gif",  MIME_GIF,  TRUE},
@@ -242,15 +237,14 @@ void processFileRequest(SOCKET fd, struct Request* req, struct NameValuePair* su
      // We couldn't get the file, find out why not and return an appropriate HTTP error
         struct HttpResponse response;
         if (errno == ENOENT){
-            response = HTTP_NOT_FOUND;
+            writeHeadersNotFound(fd, path);
         } else {
-            response = HTTP_FORBIDDEN;
+            writeHeadersForbidden(fd, "file access");
         }
-        writeHeaders(fd, response, NULL, TRUE);
 
     } else {
      // We got the file, write out the headers and then send the content
-        writeHeaders(fd, HTTP_OK, mimeType->contentType, TRUE);
+        writeHeadersOk(fd, mimeType->contentType, TRUE);
         if (substPairs == NULL){
 	        int rc;
 	        char buffer[BUFSIZE];

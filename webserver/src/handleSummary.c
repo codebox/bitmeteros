@@ -2,7 +2,7 @@
  * BitMeterOS
  * http://codebox.org.uk/bitmeterOS
  *
- * Copyright (c) 2010 Rob Dawson
+ * Copyright (c) 2011 Rob Dawson
  *
  * Licensed under the GNU General Public License
  * http://www.gnu.org/licenses/gpl.txt
@@ -33,13 +33,12 @@ Handles '/summary' requests received by the web server.
 */
 
 static void writeTotal(SOCKET, char*, BW_INT, BW_INT);
-extern struct HttpResponse HTTP_OK;
 
 void processSummaryRequest(SOCKET fd, struct Request* req){
     struct NameValuePair* params = req->params;
     char* ha = getValueForName("ha", params, NULL);
 
-    writeHeaders(fd, HTTP_OK, MIME_JSON, TRUE);
+    writeHeadersOk(fd, MIME_JSON, TRUE);
 
  // Set the host/adapter values if appropriate
     char* hs = NULL;

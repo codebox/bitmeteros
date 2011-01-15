@@ -2,7 +2,7 @@
  * BitMeterOS
  * http://codebox.org.uk/bitmeterOS
  *
- * Copyright (c) 2010 Rob Dawson
+ * Copyright (c) 2011 Rob Dawson
  *
  * Licensed under the GNU General Public License
  * http://www.gnu.org/licenses/gpl.txt
@@ -112,7 +112,11 @@ void writeTextValueToJson(SOCKET fd, char* key, char* value);
 void writeTextArrayToJson(SOCKET fd, char* key, char** values);
 void writeNumValueToJson(SOCKET fd, char* key, BW_INT value);
 void writeSyncData(SOCKET fd, struct Data* data);
-void writeHeaders(SOCKET fd, struct HttpResponse response, char* contentType, int endHeaders);
+void writeHeadersOk(SOCKET fd, char* contentType, int endHeaders);
+void writeHeadersNotFound(SOCKET fd, char* file);
+void writeHeadersForbidden(SOCKET fd, char* request);
+void writeHeadersNotAllowed(SOCKET fd, char* httpMethod);
+void writeHeadersServerError(SOCKET fd, char* msg, ...);
 void writeHeader(SOCKET fd, char* name, char* value);
 void writeEndOfHeaders(SOCKET fd);
 void processRequest(SOCKET fd, char* buffer, int allowAdmin);

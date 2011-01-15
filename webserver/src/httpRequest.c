@@ -2,7 +2,7 @@
  * BitMeterOS
  * http://codebox.org.uk/bitmeterOS
  *
- * Copyright (c) 2010 Rob Dawson
+ * Copyright (c) 2011 Rob Dawson
  *
  * Licensed under the GNU General Public License
  * http://www.gnu.org/licenses/gpl.txt
@@ -36,17 +36,11 @@
 Contains code for creating and processing Request structs.
 */
 
-struct HttpResponse HTTP_OK           = {200, "OK"};
-struct HttpResponse HTTP_NOT_FOUND    = {404, "Not Found"};
-struct HttpResponse HTTP_FORBIDDEN    = {403, "Forbidden"};
-struct HttpResponse HTTP_NOT_ALLOWED  = {405, "Method not allowed"};
-struct HttpResponse HTTP_SERVER_ERROR = {500, "Bad/missing parameter"};
-
 static void logRequest(struct Request* request);
 
 char* getValueForName(char* name, struct NameValuePair* pair, char* defaultValue){
  /* Searches the list of name/value pairs for the value that corresponds to the specified name.
-    This returns a ponter to the value in the struct, not a copy, so don't change it if this will
+    This returns a pointer to the value in the struct, not a copy, so don't change it if this will
     cause problems later. */
 	while(pair != NULL){
 		if (strcmp(pair->name, name) == 0){

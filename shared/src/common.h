@@ -2,7 +2,7 @@
  * BitMeterOS
  * http://codebox.org.uk/bitmeterOS
  *
- * Copyright (c) 2010 Rob Dawson
+ * Copyright (c) 2011 Rob Dawson
  *
  * Licensed under the GNU General Public License
  * http://www.gnu.org/licenses/gpl.txt
@@ -42,13 +42,13 @@
 #define EOL "\n"
 #endif
 
-#define VERSION "0.7.1"
+#define VERSION "0.7.2"
 #define DB_VERSION 7
 
 #ifdef _WIN32
-#define COPYRIGHT "BitMeter OS v" VERSION " Copyright (c) 2010 Rob Dawson" EOL "Licenced under the GNU General Public License" EOL EOL
+#define COPYRIGHT "BitMeter OS v" VERSION " Copyright (c) 2011 Rob Dawson" EOL "Licenced under the GNU General Public License" EOL EOL
 #else
-#define COPYRIGHT "BitMeter OS v" VERSION " Copyright © 2010 Rob Dawson" EOL "Licenced under the GNU General Public License" EOL EOL
+#define COPYRIGHT "BitMeter OS v" VERSION " Copyright © 2011 Rob Dawson" EOL "Licenced under the GNU General Public License" EOL EOL
 #endif
 
 #define DB_NAME      "bitmeter.db"
@@ -73,6 +73,7 @@
 #define CONFIG_WEB_RSS_HOST         "web.rss.host"
 #define CONFIG_WEB_RSS_FREQ         "web.rss.freq"
 #define CONFIG_WEB_RSS_ITEMS        "web.rss.items"
+#define CONFIG_DB_WRITE_INTERVAL    "cap.write_interval"
 
 #define ALLOW_LOCAL_CONNECT_ONLY 0
 #define ALLOW_REMOTE_CONNECT 1
@@ -121,7 +122,7 @@ struct DateCriteriaPart{
 	struct DateCriteriaPart* next; // used eg 1-2,3,6-10 is 3 separate DateCriteriaParts
 };
 
-struct DateCriteria{
+struct DateCriteria{ 
 	struct DateCriteriaPart* year;
 	struct DateCriteriaPart* month;
 	struct DateCriteriaPart* day;
@@ -204,6 +205,7 @@ void setAppName(const char*);
 int isLogDebug();
 int isLogInfo();
 void logMsg(int level, char* msg, ...);
+void vlogMsg(int level, char* msg, va_list argp);
 void statusMsg(const char* msg, ...);
 void resetStatusMsg();
 // ----

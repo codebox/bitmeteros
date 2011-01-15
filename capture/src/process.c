@@ -2,7 +2,7 @@
  * BitMeterOS
  * http://codebox.org.uk/bitmeterOS
  *
- * Copyright (c) 2010 Rob Dawson
+ * Copyright (c) 2011 Rob Dawson
  *
  * Licensed under the GNU General Public License
  * http://www.gnu.org/licenses/gpl.txt
@@ -42,8 +42,11 @@ initialisation, and termination steps.
    current values with previous ones and thereby calculate the differences. */
 static struct Data* prevData;
 
-struct Data* extractDiffs(struct Data*, struct Data*);
+struct Data* extractDiffs(int ts, struct Data*, struct Data*);
 static int tsCompress;
+static int unwrittenDiffCount = 0;
+static int dbWriteInterval;
+static struct Data* unwrittenDiffs = NULL;
 
 static void setCustomLogLevel(){
  // If a custom logging level for the capture process has been set in the db then use it
@@ -52,6 +55,15 @@ static void setCustomLogLevel(){
 		setLogLevel(dbLogLevel);
 	}
 }
+
+#ifdef TESTING
+void setPrevData(struct Data* data){
+	prevData = data;	
+}
+void setDbWriteInterval(int interval){
+	dbWriteInterval = interval;
+}
+#endif
 
 void setupCapture(){
  // Called once when the application starts - setup up the various db related things...
@@ -63,6 +75,21 @@ void setupCapture(){
 
 	prevData = getData();
 	tsCompress = getNextCompressTime();
+	
+ // Check how often we should write captured values to the database - the default is every second
+	dbWriteInterval = getConfigInt(CONFIG_DB_WRITE_INTERVAL, TRUE);
+	if (dbWriteInterval < 1){
+		dbWriteInterval = 1;	
+	}
+}
+static int writeUnwrittenDiffs(){
+	int status = updateDb(POLL_INTERVAL, unwrittenDiffs);
+	
+	logData(unwrittenDiffs);
+	freeData(unwrittenDiffs);
+	unwrittenDiffs = NULL;	
+	
+	return status;
 }
 
 int processCapture(){
@@ -75,29 +102,34 @@ int processCapture(){
 	struct Data* currData = getData();
 
  // Calculate the differences between the current values and the previous ones
-	struct Data* diffList = extractDiffs(prevData, currData);
-
- // Write the changes in values to the database
-	status = updateDb(ts, POLL_INTERVAL, diffList);
-
-	logData(diffList);
-	freeData(diffList);
-
-	if (status == FAIL){
-        return FAIL;
-	}
-
+	struct Data* diffList = extractDiffs(ts, prevData, currData);
+	appendData(&unwrittenDiffs, diffList);
+	
  // Save the current values so we can compare against them next time
 	freeData(prevData);
 	prevData = currData;
 
- // Is it time to compress the database yet?
-	if (ts > tsCompress){
-		status = compressDb();
-		if (status == FAIL){
-            return FAIL;
+ // Is it time to write the values to the database yet?
+	if (++unwrittenDiffCount >= dbWriteInterval) {
+	 // Write the changes in values to the database
+		status = writeUnwrittenDiffs();
+	
+		if (status == FAIL) {
+	        return FAIL;
 		}
-		tsCompress = getNextCompressTime();
+	
+	 // Is it time to compress the database yet?
+		if (ts > tsCompress) {
+			status = compressDb();
+			if (status == FAIL){
+	            return FAIL;
+			}
+			tsCompress = getNextCompressTime();
+		}
+		
+		unwrittenDiffCount = 0;	
+	} else {
+		status = SUCCESS;	
 	}
 
 	return status;
@@ -105,11 +137,13 @@ int processCapture(){
 
 void shutdownCapture(){
  // Called when the application shuts down
+ 	writeUnwrittenDiffs();
+		
 	closeDb();
 }
 
 
-struct Data* extractDiffs(struct Data* oldList, struct Data* newList){
+struct Data* extractDiffs(int ts, struct Data* oldList, struct Data* newList){
  /* Accepts 2 lists of Data structs and iterates through them looking for adapter names that
     match. When a matching pair is found the differences between the dl and ul figures are calculated
     and if they are non-zero the delta is stored in the 'diffData' list which is evetually returned. This
@@ -139,6 +173,7 @@ struct Data* extractDiffs(struct Data* oldList, struct Data* newList){
                         newDiff = allocData();
                         newDiff->dl = dl;
                         newDiff->ul = ul;
+                        newDiff->ts = ts;
                         setAddress(newDiff, oldData->ad);
                         setHost(newDiff, oldData->hs);
 

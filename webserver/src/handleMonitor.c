@@ -2,7 +2,7 @@
  * BitMeterOS
  * http://codebox.org.uk/bitmeterOS
  *
- * Copyright (c) 2010 Rob Dawson
+ * Copyright (c) 2011 Rob Dawson
  *
  * Licensed under the GNU General Public License
  * http://www.gnu.org/licenses/gpl.txt
@@ -38,11 +38,8 @@
 Handles '/monitor' requests received by the web server.
 */
 
-extern struct HttpResponse HTTP_OK;
-extern struct HttpResponse HTTP_SERVER_ERROR;
-
 static void processMonitorAjaxRequest(SOCKET fd, int ts, char* ha){
-	writeHeaders(fd, HTTP_OK, MIME_JSON, TRUE);
+	writeHeadersOk(fd, MIME_JSON, TRUE);
 
  /* The 'ts' parameter is an offset from the current (server) time rather than an actual timestamp, done like this
     because there may be differences in the clocks on the client and server, if the client was a minute
@@ -98,9 +95,8 @@ void processMonitorRequest(SOCKET fd, struct Request* req){
 
 	if (ts == NO_TS){
      // We need a 'ts' parameter
-     	logMsg(LOG_ERR, "processMonitorRequest, ts parameter missing/invalid: %s", 
+     	writeHeadersServerError(fd, "processMonitorRequest, ts parameter missing/invalid: %s", 
      			getValueForName("ts", params, NULL));
-	    writeHeaders(fd, HTTP_SERVER_ERROR, NULL, TRUE);
 
 	} else {
         processMonitorAjaxRequest(fd, ts, ha);
