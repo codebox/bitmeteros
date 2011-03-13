@@ -44,13 +44,13 @@ struct NameValuePair* makeRssRequestValues();
 #define DEFAULT_RSS_ITEM_COUNT 10
 #define FEED_TITLE "BitMeter OS Events"
 #define HTML_LINE_BREAK "&lt;br&gt;"
-                                                       
+
 void processRssRequest(SOCKET fd, struct Request* req){
- /* The skeleton XML returned by the RSS feed is contained in the 'rss.xml' file in 
+ /* The skeleton XML returned by the RSS feed is contained in the 'rss.xml' file in
  	the root of the web folder, the placeholder comments of the form <!--[something]-->
  	are replaced by values that we calculate below. */
 	struct NameValuePair* values = makeRssRequestValues();
-	
+
 	processFileRequest(fd, req, values);
 	freeNameValuePairs(values);
 }
@@ -63,36 +63,45 @@ struct NameValuePair* makeRssRequestValues(){
 		title = malloc(strlen(FEED_TITLE) + 3 + strlen(serverName) + 1);
 		sprintf(title, "%s - %s", FEED_TITLE, serverName);
 	} else {
-		title = strdup(FEED_TITLE);	
+		title = strdup(FEED_TITLE);
+	}
+	if (serverName != NULL){
+		free(serverName);
 	}
 
  /* The feed needs a site url, if the url must work when accessed remotely then the hostname
  	must be specfied in the config table - check if it's there... */
 	char* rssHost = getConfigText(CONFIG_WEB_RSS_HOST, TRUE);
 	if ((rssHost == NULL) || (strlen(rssHost) == 0)){
-		rssHost	= "localhost"; // use 'localhost' as the default host name for the feed
+		if (rssHost != NULL){
+			free(rssHost);
+		}
+		rssHost	= strdup("localhost"); // use 'localhost' as the default host name for the feed
 	}
 	int rssPort = getConfigInt(CONFIG_WEB_PORT, TRUE);
-	if (rssPort < MIN_PORT || rssPort > MAX_PORT){ 
+	if (rssPort < MIN_PORT || rssPort > MAX_PORT){
 		rssPort = DEFAULT_PORT; // No custom port was specified
 	}
-	
+
  // Build a url for the site using the host and port
 	char rssUrl[7 + strlen(rssHost) + 1 + 5 + 1];
 	sprintf(rssUrl, "http://%s:%d", rssHost, rssPort);
-	
+	if (rssHost != NULL){
+		free(rssHost);
+	}
+
  // How often we publish (hourly or daily)
 	int rssFreq = getConfigInt(CONFIG_WEB_RSS_FREQ, TRUE);
 	if ((rssFreq != RSS_FREQ_DAILY) && (rssFreq != RSS_FREQ_HOURLY)){
 		rssFreq	= RSS_FREQ_DAILY;
 	}
-	
+
  // How many items appear in the feed
 	int rssItemCount = getConfigInt(CONFIG_WEB_RSS_ITEMS, TRUE);
 	if (rssItemCount < 1){
 		rssItemCount = DEFAULT_RSS_ITEM_COUNT;
 	}
-	
+
  // Fill this array with the XML <item> elements that we will include in the feed
 	char* items[rssItemCount];
 	if (rssFreq == RSS_FREQ_HOURLY){
@@ -115,18 +124,19 @@ struct NameValuePair* makeRssRequestValues(){
 		itemTxt = items[j];
 		strcpy(itemsTxt + offset, itemTxt);
 		offset += strlen(itemTxt);
+		free(itemTxt);
 	}
 	itemsTxt[size] = 0;
-	
+
  // Publication date for the feed, in the correct format
 	char* pubDate = getPubDate(rssFreq);
-	
+
  // Refresh interval for the feed in minutes
 	char* ttlTxt = (rssFreq == RSS_FREQ_HOURLY) ? "60" : "1440";
-	
+
  // Textual frequency of updates
 	char* freqTxt = (rssFreq == RSS_FREQ_HOURLY) ? "hourly" : "daily";
-	
+
  // These 6 values get substituted into the XML from the static file
 	struct NameValuePair* pair = makeNameValuePair("title", title);
 	appendNameValuePair(&pair, makeNameValuePair("link",    rssUrl));
@@ -134,12 +144,12 @@ struct NameValuePair* makeRssRequestValues(){
 	appendNameValuePair(&pair, makeNameValuePair("items",   itemsTxt));
 	appendNameValuePair(&pair, makeNameValuePair("ttl",     ttlTxt));
 	appendNameValuePair(&pair, makeNameValuePair("freq",    freqTxt));
-    
+
  // We can free these because the values were copied in makeNameValuePair calls above
-    free(title); 
+    free(title);
     free(pubDate);
     free(itemsTxt);
-    
+
     return pair;
 }
 #ifdef _WIN32
@@ -147,10 +157,10 @@ struct NameValuePair* makeRssRequestValues(){
 	static void getRfc822Time(struct tm* time, char* timeTxt){
 		char part1[48];
 		strftime(part1, 47, "%a, %d %b %Y %H:%M:%S", time);
-	
+
 		TIME_ZONE_INFORMATION info;
 		int ret = GetTimeZoneInformation(&info);
-		
+
 		int bias;
 		if (ret == TIME_ZONE_ID_STANDARD || ret == TIME_ZONE_ID_UNKNOWN){
       		bias = -info.StandardBias;
@@ -158,13 +168,13 @@ struct NameValuePair* makeRssRequestValues(){
    			bias = -info.DaylightBias;
    		} else {
    			bias = 0;
-   			//logMsg(LOG_ERR, "Unable to retrieve timezone information, rc=%d", ret);	
+   			//logMsg(LOG_ERR, "Unable to retrieve timezone information, rc=%d", ret);
    		}
    		int hh = bias / 60;
 		int mm = bias % 60;
 		int plus = hh >= 0;
-		
-		sprintf(timeTxt, "%s %c%02d%02d", part1, (plus ? '+' : '-'), abs(hh), mm);	
+
+		sprintf(timeTxt, "%s %c%02d%02d", part1, (plus ? '+' : '-'), abs(hh), mm);
 	}
 #endif
 #ifndef _WIN32
@@ -173,45 +183,46 @@ struct NameValuePair* makeRssRequestValues(){
 	}
 #endif
 
-static char* makeItem(char* title, char* amountDescription, char* alertDescription, struct tm* pubTime, 
+static char* makeItem(char* title, char* amountDescription, char* alertDescription, struct tm* pubTime,
 		char* guid){
  // Build the <item>...</item> XML for a single item in the feed
- 
+
  // Publication time for the item
 	char pubTimeTxt[48];
 	getRfc822Time(pubTime, pubTimeTxt);
-	
+
 	if (alertDescription == NULL){
 		alertDescription = "";
 	}
-	
+
  // XML gets written into here
-	char* itemTxt = malloc(6 + 7 + strlen(title) + 8 + 13 + strlen(amountDescription) + 
-			strlen(HTML_LINE_BREAK) + strlen(alertDescription) + 14 + 9 + strlen(pubTimeTxt) + 
+	char* itemTxt = malloc(6 + 7 + strlen(title) + 8 + 13 + strlen(amountDescription) +
+			strlen(HTML_LINE_BREAK) + strlen(alertDescription) + 14 + 9 + strlen(pubTimeTxt) +
 			10 + 27 + strlen(guid) + 7 + 7 + 1);
 
-	sprintf(itemTxt, 
+	sprintf(itemTxt,
 			"<item>"
 				"<title>%s</title>"
 				"<description>%s%s%s</description>"
 				"<pubDate>%s</pubDate>"
 				"<guid isPermaLink=\"false\">%s</guid>"
-			"</item>", 
-			title, amountDescription, 
-			strlen(alertDescription) > 0 ? HTML_LINE_BREAK : "", 
+			"</item>",
+			title, amountDescription,
+			strlen(alertDescription) > 0 ? HTML_LINE_BREAK : "",
 			alertDescription, pubTimeTxt, guid);
+
 	return itemTxt;
 }
 
 static void getDailyItems(char** itemsTxt, int rssItemCount, char* rssUrl){
- /* Populate the itemsTxt array with the various XML strings, each string contains an 
+ /* Populate the itemsTxt array with the various XML strings, each string contains an
  	item with information about upload/download volumes for a single day. */
 	struct tm toStruct = getLocalTime(getTime());
 
 	toStruct.tm_sec = 0;
 	toStruct.tm_min = 0;
 	toStruct.tm_hour = 0;
-	
+
 	int count=0;
 	time_t from, to;
 	char itemTitle[24]; // The title of the item, which will contain just a date
@@ -219,16 +230,16 @@ static void getDailyItems(char** itemsTxt, int rssItemCount, char* rssUrl){
 	char ulTxt[24];		// Upload amount, formatted
 	char descAmt[264];	// Descriptive text detailing the UL/DL amounts, for the body of the item
 	char descDate[64];	// Publication date for the item, in the correct format
-	
+
 	while (count<rssItemCount){
 	 // Calculate the upper/lower bounds that correspond to the day we are working on
 		to = mktime(&toStruct);
 		toStruct.tm_mday -= 1;
 		from = mktime(&toStruct);
-		
+
 	 // The title of the item will be the day from the start of the query range
 		strftime(itemTitle, 23, "%A %d %B", &toStruct);
-		
+
 	 // Run the query
 		struct Data* totals = getQueryValues(from, to, QUERY_GROUP_TOTAL, NULL, NULL);
 		if (totals == NULL){
@@ -237,19 +248,19 @@ static void getDailyItems(char** itemsTxt, int rssItemCount, char* rssUrl){
 		formatAmount(totals->dl, TRUE, TRUE, dlTxt);
 		formatAmount(totals->ul, TRUE, TRUE, ulTxt);
 		freeData(totals);
-		
+
 	 // The descriptive text also contains the date, in a more verbose format
 		strftime(descDate, 63, "%A %d %B %Y", &toStruct);
-		
-	 /* Construct the descriptive text, its HTML but we must escape the entities so it 
+
+	 /* Construct the descriptive text, its HTML but we must escape the entities so it
 	 	doesn't break the XML structure */
 		sprintf(descAmt, "On %s totals were as follows:%sDownload: %s%sUpload: %s", 
 			descDate, HTML_LINE_BREAK, dlTxt, HTML_LINE_BREAK, ulTxt);
-		
+
 	 // If there are any Alerts defined then get some text describing their status
 		char* descAlerts = getAlertsTxt(to);
-		
-	 /* Build a unique ID (guid) to identify this item, this will be the same for a given 
+
+	 /* Build a unique ID (guid) to identify this item, this will be the same for a given
 	 	day every time the feed is requested, to ensure that aggregators don't display
 	 	duplicates */
 		char guid[strlen(rssUrl) + 32];
@@ -258,19 +269,24 @@ static void getDailyItems(char** itemsTxt, int rssItemCount, char* rssUrl){
 		toStruct.tm_mday += 1;
 		normaliseTm(&toStruct);
 		char* itemTxt = makeItem(itemTitle, descAmt, descAlerts, &toStruct, guid);
+
 		toStruct.tm_mday -= 1;
 		itemsTxt[count++] = itemTxt;
+
+		if (descAlerts != NULL){
+			free(descAlerts);
+		}
 	}
 }
 
 static void getHourlyItems(char** itemsTxt, int rssItemCount, char* rssUrl){
- /* Populate the itemsTxt array with the various XML strings, each string contains an 
+ /* Populate the itemsTxt array with the various XML strings, each string contains an
  	item with information about upload/download volumes for a single hour. */
-	struct tm toStruct = getLocalTime(getTime());	
-	
+	struct tm toStruct = getLocalTime(getTime());
+
 	toStruct.tm_sec = 0;
 	toStruct.tm_min = 0;
-	
+
 	int count=0;
 	time_t from, to;
 	char itemTitle[64];	// The title of the item, which will contain a date, and a time range
@@ -279,45 +295,48 @@ static void getHourlyItems(char** itemsTxt, int rssItemCount, char* rssUrl){
 	char ulTxt[24];		// Upload amount, formatted
 	char descAmt[264];	// Descriptive text detailing the UL/DL amounts, for the body of the item
 	char descDate[64];	// Publication date for the item, in the correct format
-	
+
 	while (count<rssItemCount){
-	 // Calculate the upper/lower bounds that correspond to the hour we are working on		
+	 // Calculate the upper/lower bounds that correspond to the hour we are working on
 		to = mktime(&toStruct);
 		toStruct.tm_hour -= 1;
 		from = mktime(&toStruct);
-		
+
 	 // The title of the item will be the day, followed by the time range coveed by the item
 		strftime(titleDate, 23, "%A, %d %b", &toStruct);
 		sprintf(itemTitle, "%s %d:00-%d:00", titleDate, toStruct.tm_hour, toStruct.tm_hour+1);
-		
+
 	 // Run the query
 		struct Data* totals = getQueryValues(from, to, QUERY_GROUP_TOTAL, NULL, NULL);
 		formatAmount(totals->dl, TRUE, TRUE, dlTxt);
 		formatAmount(totals->ul, TRUE, TRUE, ulTxt);
 		freeData(totals);
-		
+
 	 // The descriptive text also contains the date, in a more verbose format
 		strftime(descDate, 63, "%A %d %B %Y", &toStruct);
-		
-	 /* Construct the descriptive text, its HTML but we must escape the entities so it 
+
+	 /* Construct the descriptive text, its HTML but we must escape the entities so it
 	 	doesn't break the XML structure */
 		sprintf(descAmt, "On %s  between %d:00 and %d:00 totals were as follows:%sDownload: %s%sUpload: %s", 
 				descDate, toStruct.tm_hour, toStruct.tm_hour+1, HTML_LINE_BREAK, dlTxt, HTML_LINE_BREAK, ulTxt);
-		
+
 	 // If there are any Alerts defined then get some text describing their status
 		char* descAlerts = getAlertsTxt(to);
-		
-	 /* Build a unique ID (guid) to identify this item, this will be the same for a given 
+
+	 /* Build a unique ID (guid) to identify this item, this will be the same for a given
 	 	time/day every time the feed is requested, to ensure that aggregators don't display
 	 	duplicates */
 		char guid[strlen(rssUrl) + 32];
 		sprintf(guid, "%s/#hourly.%d.%d", rssUrl, (int)from, (int)to);
-		
+
 		toStruct.tm_hour += 1;
 		char* itemTxt = makeItem(itemTitle, descAmt, descAlerts, &toStruct, guid);
 		toStruct.tm_hour -= 1;
-		
+
 		itemsTxt[count++] = itemTxt;
+		if (descAlerts != NULL){
+			free(descAlerts);
+		}
 	}
 }
 
@@ -329,17 +348,17 @@ static char* getPubDate(int rssFreq){
 	if (rssFreq == RSS_FREQ_DAILY){
 		now.tm_hour = 0;
 	}
-	
+
 	char pubDateTxt[48];
 	getRfc822Time(&now, pubDateTxt);
-	
+
 	return strdup(pubDateTxt);
 }
 
 static char* getAlertsTxt(time_t now){
  // Builds text describing the status of any alerts that have been defined, as they were at	specified date/time
 	struct Data* totals;
-	
+
 	struct Alert* firstAlert = getAlerts();
 	struct Alert* alert = firstAlert;
 
@@ -360,14 +379,14 @@ static char* getAlertsTxt(time_t now){
 		sprintf(alertTextPart1, "The Alert '%s'", alert->name);
 
 	 // The second part of the text contains the status of the Alert
-		double progress = (double)100 * total / alert->amount;		
+		double progress = (double)100 * total / alert->amount;
 		char alertTextPart2[64];
     	if (total > alert->amount){
     		sprintf(alertTextPart2, "has exceeded its limit, total is now %1.2f%% of maximum", progress);
     	} else {
     		sprintf(alertTextPart2, "has reached %1.2f%% of maximum", progress);
     	}
-		
+
 	 // The third part of the text contains the current/maximum amounts
 		char limitAmt[16];
 		formatAmount(alert->amount, TRUE, TRUE, limitAmt);
@@ -376,15 +395,15 @@ static char* getAlertsTxt(time_t now){
 		char alertTextPart3[64];
 		sprintf(alertTextPart3, "[current: %s, limit: %s].", currentAmt, limitAmt);
 
-	 // Join the parts together into a single string		
+	 // Join the parts together into a single string
 		int alertTextLen = strlen(alertTextPart1) + 1 + strlen(alertTextPart2) + 1 + strlen(alertTextPart3);
 		char alertText[alertTextLen + 1];
 		sprintf(alertText, "%s %s %s", alertTextPart1, alertTextPart2, alertTextPart3);
-		
+
 	 // Add the new string into the 'alertsText' value that will be returned
 		if (alertsText==NULL){
 			alertsText = strdup(alertText); // This is the first Alert, so alertsText is NULL
-			
+
 		} else {
 		 // This is not the first Alert, so append the new text onto the existing text
 			char* newAlertsTxt = malloc(strlen(alertsText) + strlen(HTML_LINE_BREAK) + alertTextLen + 1);
@@ -393,10 +412,10 @@ static char* getAlertsTxt(time_t now){
 			strcat(newAlertsTxt, alertText);
 			free(alertsText);
 
-			alertsText = newAlertsTxt;			
+			alertsText = newAlertsTxt;
 		}
-		
-		alert = alert->next;	
+
+		alert = alert->next;
 	}
 	freeAlert(firstAlert);
 

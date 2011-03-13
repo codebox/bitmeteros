@@ -195,8 +195,10 @@ int convertAddrValues(){
 	sqlite3_finalize(stmtSelect);
 
     struct BinaryAddress* curr = addrList;
+    struct BinaryAddress* next;
  // Go through each of the BinaryAddress structs we populated earlier and run some SQL to convert the ad values to hex strings
     while(curr != NULL){
+    	next = curr->next;
         sqlite3_bind_text(stmtUpdate, 1, curr->txtData, -1, SQLITE_TRANSIENT);
         sqlite3_bind_blob(stmtUpdate, 2, curr->binData, curr->binDataLength,   SQLITE_TRANSIENT);
 
@@ -207,7 +209,10 @@ int convertAddrValues(){
         }
 
         sqlite3_reset(stmtUpdate);
-        curr = curr->next;
+        free(curr->binData);
+        free(curr->txtData);
+        free(curr);
+        curr = next;
     }
     sqlite3_finalize(stmtUpdate);
 
@@ -362,3 +367,4 @@ static int upgrade7(){
 
     return SUCCESS;
 }
+

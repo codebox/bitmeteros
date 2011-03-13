@@ -39,14 +39,14 @@ struct Alert* allocAlert(){
  // Create an Alert struct on the heap
 	struct Alert* alert = (struct Alert*) malloc( sizeof( struct Alert ) );
 
-	alert->id        = 0;
-    alert->name      = NULL;
-    alert->active    = 0;
-    alert->bound     = NULL;
-    alert->periods   = NULL;
+	alert->id      = 0;
+    alert->name    = NULL;
+    alert->active  = 0;
+    alert->bound   = NULL;
+    alert->periods = NULL;
     alert->direction = 0;
-    alert->amount    = 0;
-    alert->next      = NULL;
+    alert->amount  = 0;
+    alert->next    = NULL;
 
 	return alert;
 }
@@ -187,6 +187,7 @@ struct DateCriteriaPart* makeDateCriteriaPart(char* txt){
     		
     		return result;
     	} else {
+    		free(result);
     	    logMsg(LOG_ERR, "makeDateCriteriaPart argument was invalid relative part: %s", txt);
     	    return NULL;   
     	}
@@ -214,7 +215,11 @@ struct DateCriteriaPart* makeDateCriteriaPart(char* txt){
 			}
 			
 			if (thisPart->val1 == BAD_NUM || thisPart->val2 == BAD_NUM || thisPart->val1 > thisPart->val2){
+				if (firstResult != NULL){
+					freeDateCriteriaPart(firstResult);
+				}
 			    firstResult = NULL;
+			    freeDateCriteriaPart(thisPart);
 			    break;
 			}
 			

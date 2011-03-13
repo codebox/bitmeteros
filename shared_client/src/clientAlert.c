@@ -465,13 +465,13 @@ static struct DateCriteria* getIntervalForId(sqlite3_stmt *stmtSelectInterval, i
     
     if (rc == SQLITE_ROW) {
      // We found the requested interval, read out the values
-        yearTxt    = strdup(sqlite3_column_text(stmtSelectInterval, 0));
-        monthTxt   = strdup(sqlite3_column_text(stmtSelectInterval, 1));
-        dayTxt     = strdup(sqlite3_column_text(stmtSelectInterval, 2));
-        weekdayTxt = strdup(sqlite3_column_text(stmtSelectInterval, 3));
-        hourTxt    = strdup(sqlite3_column_text(stmtSelectInterval, 4));
+        yearTxt    = sqlite3_column_text(stmtSelectInterval, 0);
+        monthTxt   = sqlite3_column_text(stmtSelectInterval, 1);
+        dayTxt     = sqlite3_column_text(stmtSelectInterval, 2);
+        weekdayTxt = sqlite3_column_text(stmtSelectInterval, 3);
+        hourTxt    = sqlite3_column_text(stmtSelectInterval, 4);
         
-        result = makeDateCriteria(yearTxt, monthTxt, dayTxt, weekdayTxt, hourTxt);
+        result = makeDateCriteria(yearTxt, monthTxt, dayTxt, weekdayTxt, hourTxt);  
         
     } else if (rc != SQLITE_DONE) {
 		logMsg(LOG_ERR, "stmtSelectInterval failed: %d", rc);

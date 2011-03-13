@@ -82,6 +82,8 @@ void setupDb(){
 int updateDb(int dr, struct Data* diffList){
     int status = SUCCESS;
 
+    beginTrans(FALSE);
+
  // Insert all the Data structs into the d/b, stopping if there are any failures
 	while (diffList != NULL) {
 		status = insertDataPartial(dr, diffList);
@@ -89,6 +91,12 @@ int updateDb(int dr, struct Data* diffList){
             break;
 		}
 		diffList = diffList->next;
+	}
+	
+	if (status == SUCCESS){
+		commitTrans();
+	} else {
+		rollbackTrans();
 	}
 	return status;
 }

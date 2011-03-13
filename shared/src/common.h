@@ -42,7 +42,7 @@
 #define EOL "\n"
 #endif
 
-#define VERSION "0.7.2"
+#define VERSION "0.7.3"
 #define DB_VERSION 7
 
 #ifdef _WIN32
@@ -223,8 +223,11 @@ time_t getCurrentYearForTs(time_t ts);
 time_t getCurrentMonthForTs(time_t ts);
 time_t getCurrentDayForTs(time_t ts);
 time_t getNextYearForTs(time_t ts);
+time_t getNextLocalYearForTs(time_t ts);
 time_t getNextMonthForTs(time_t ts);
+time_t getNextLocalMonthForTs(time_t ts);
 time_t getNextDayForTs(time_t ts);
+time_t getNextLocalDayForTs(time_t ts);
 time_t getNextHourForTs(time_t ts);
 time_t getNextMinForTs(time_t ts);
 time_t addToDate(time_t ts, char unit, int num);

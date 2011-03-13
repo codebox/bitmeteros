@@ -102,15 +102,15 @@ struct Data* getQueryValues(time_t tsFrom, time_t tsTo, int group, char* hs, cha
                 break;
 
             case QUERY_GROUP_DAYS:
-                result = doQuery(stmt, minFrom, maxTo, &getNextDayForTs, &addToDateD, hs, ad, bindQueryParams);
+                result = doQuery(stmt, minFrom, maxTo, &getNextLocalDayForTs, &addToDateD, hs, ad, bindQueryParams);
                 break;
 
             case QUERY_GROUP_MONTHS:
-                result = doQuery(stmt, minFrom, maxTo, &getNextMonthForTs, &addToDateM, hs, ad, bindQueryParams);
+                result = doQuery(stmt, minFrom, maxTo, &getNextLocalMonthForTs, &addToDateM, hs, ad, bindQueryParams);
                 break;
 
             case QUERY_GROUP_YEARS:
-                result = doQuery(stmt, minFrom, maxTo, &getNextYearForTs, &addToDateY, hs, ad, bindQueryParams);
+                result = doQuery(stmt, minFrom, maxTo, &getNextLocalYearForTs, &addToDateY, hs, ad, bindQueryParams);
                 break;
 
             case QUERY_GROUP_TOTAL:
@@ -145,6 +145,7 @@ static struct Data* doQuery(sqlite3_stmt *stmt, time_t minFrom, time_t maxTo, ti
     struct Data* current;
 
 	while(TRUE){
+	    
 	    current = doQueryForInterval(stmt, from, to, hs, ad, bindQueryParams);
 	    if (current->dl > 0 || current->ul > 0){
 	     // Only return the struct if it contains some data

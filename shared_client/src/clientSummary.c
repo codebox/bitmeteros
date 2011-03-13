@@ -108,10 +108,13 @@ void freeSummary(struct Summary* summary){
 	freeData(summary->year);
 	freeData(summary->total);
 
-    int i;
-    for(i=0; i<summary->hostCount; i++){
-        free(summary->hostNames[i]);
-    }
+    if (summary->hostNames != NULL){
+	    int i;
+	    for(i=0; i<summary->hostCount; i++){
+	        free(summary->hostNames[i]);
+	    }
+	    free(summary->hostNames);
+	}
 }
 
 

@@ -32,10 +32,10 @@
 #include "common.h"
 
 #define BUSY_WAIT_INTERVAL 30000
-#define SQL_SELECT_CONFIG "SELECT value FROM config WHERE key=?"
-#define SQL_INSERT_CONFIG "INSERT INTO config (key, value) VALUES (?, ?)"
-#define SQL_UPDATE_CONFIG "UPDATE config SET key=?, value=? WHERE key=?"
-#define SQL_DELETE_CONFIG "DELETE FROM config WHERE key=?"
+#define SQL_SELECT_CONFIG  "SELECT value FROM config WHERE key=?"
+#define SQL_INSERT_CONFIG  "INSERT INTO config (key, value) VALUES (?, ?)"
+#define SQL_UPDATE_CONFIG  "UPDATE config SET key=?, value=? WHERE key=?"
+#define SQL_DELETE_CONFIG  "DELETE FROM config WHERE key=?"
 
 /*
 Contains common database-handling routines.
@@ -54,6 +54,15 @@ void prepareSql(sqlite3_stmt **stmt, const char *sql){
 		exit(1);
 	}
 }
+
+#ifndef MULTI_THREADED_CLIENT
+	struct StmtList{
+		char* sql;
+		sqlite3_stmt* stmt;
+		struct StmtList* next;
+	};
+	struct StmtList* stmtList = NULL;
+#endif
 
 sqlite3* openDb(){
  // Open the database file, exit if there is a problem
@@ -88,7 +97,11 @@ sqlite3* openDb(){
 
 	dbOpen = TRUE;
 	setBusyWait(BUSY_WAIT_INTERVAL);
-
+	
+    #ifndef MULTI_THREADED_CLIENT
+	    stmtList = NULL;
+    #endif
+	
 	return db;
 }
 
@@ -130,55 +143,48 @@ void dbVersionCheck(){
 #endif
 
 #ifndef MULTI_THREADED_CLIENT
-	struct StmtList{
-		char* sql;
-		sqlite3_stmt* stmt;
-		struct StmtList* next;
-	};
-	struct StmtList* stmtList = NULL;
-
 	sqlite3_stmt *getStmt(char* sql){
-		struct StmtList* list = stmtList;
-		struct StmtList* match = NULL;
+	struct StmtList* list = stmtList;
+	struct StmtList* match = NULL;
 
-	 // Check if we have a prepared stmt for this SQL already...
-		while(list != NULL){
-			if (strcmp(list->sql, sql) == 0){
-			 // Found one we made earlier
-				match = list;
-				break;
-			} else {
+ // Check if we have a prepared stmt for this SQL already...
+	while(list != NULL){
+		if (strcmp(list->sql, sql) == 0){
+		 // Found one we made earlier
+			match = list;
+			break;
+		} else {
+			list = list->next;
+		}
+	}
+
+	if (match == NULL){
+	 // No ready-made stmt was found, so make one and store it for next time
+		match = malloc(sizeof(struct StmtList));
+		match->sql = strdup(sql);
+		
+		sqlite3_stmt* stmt;
+		prepareSql(&stmt, sql);
+		match->stmt = stmt;
+		match->next = NULL;
+
+	 // Attach the new StmtList to the module-level variable
+		if (stmtList == NULL){
+		 // First item in the list
+			stmtList = match;
+		} else {
+		 // Move to the end of the list...
+			list = stmtList;
+			while(list->next != NULL){
 				list = list->next;
 			}
+		 // ...and then add the new struct
+			list->next = match;
 		}
-
-		if (match == NULL){
-		 // No ready-made stmt was found, so make one and store it for next time
-			match = malloc(sizeof(struct StmtList));
-			match->sql = strdup(sql);
-
-			sqlite3_stmt* stmt;
-			prepareSql(&stmt, sql);
-			match->stmt = stmt;
-			match->next = NULL;
-
-		 // Attach the new StmtList to the module-level variable
-			if (stmtList == NULL){
-			 // First item in the list
-				stmtList = match;
-			} else {
-			 // Move to the end of the list...
-				list = stmtList;
-				while(list->next != NULL){
-					list = list->next;
-				}
-			 // ...and then add the new struct
-				list->next = match;
-			}
-		}
-
-		return match->stmt;
 	}
+
+	return match->stmt;	
+}
 
 	void finishedStmt(sqlite3_stmt* stmt){
 		sqlite3_reset(stmt);
@@ -396,6 +402,7 @@ int setConfigIntValue(char* key, int value){
         sqlite3_bind_text(stmt, 1, key, -1, SQLITE_TRANSIENT);
         sqlite3_bind_int(stmt,  2, value);
     } else {
+    	free(currentValue);
      // Update the existing config row
         stmt = getStmt(SQL_UPDATE_CONFIG);
         sqlite3_bind_text(stmt, 1, key, -1, SQLITE_TRANSIENT);
@@ -420,6 +427,7 @@ int setConfigTextValue(char* key, char* value){
         sqlite3_bind_text(stmt, 1, key,   -1, SQLITE_TRANSIENT);
         sqlite3_bind_text(stmt, 2, value, -1, SQLITE_TRANSIENT);
     } else {
+    	free(currentValue);
      // Update the existing config row
         stmt = getStmt(SQL_UPDATE_CONFIG);
         sqlite3_bind_text(stmt, 1, key,   -1, SQLITE_TRANSIENT);
@@ -472,3 +480,4 @@ void closeDb(){
 	sqlite3_close(db);
 	dbOpen = FALSE;
 }
+

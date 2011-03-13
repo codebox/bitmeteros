@@ -74,7 +74,7 @@ time_t getCurrentDayForTs(time_t ts){
 }
 
 time_t getNextYearForTs(time_t ts){
- // Returns a timestamp value representing the start of the year following the one in which 'ts' occurs
+ // Returns a timestamp value representing the start of the year following the one in which 'ts' occurs, calculated for the GMT timezone
 	struct tm *t = gmtime(&ts);
 
 	t->tm_sec  = 0;
@@ -87,8 +87,21 @@ time_t getNextYearForTs(time_t ts){
 	return timegm(t);
 }
 
+time_t getNextLocalYearForTs(time_t ts){
+ // Returns a timestamp value representing the start of the year following the one in which 'ts' occurs, calculated for the local timezone
+	struct tm *t = localtime(&ts);
+
+	t->tm_sec  = 0;
+	t->tm_min  = 0;
+	t->tm_hour = 0;
+	t->tm_mday = 1;
+	t->tm_mon  = 0;
+	t->tm_year += 1;
+
+	return mktime(t);
+}
 time_t getNextMonthForTs(time_t ts){
- // Returns a timestamp value representing the start of the month following the one in which 'ts' occurs
+ // Returns a timestamp value representing the start of the month following the one in which 'ts' occurs, calculated for the GMT timezone
 	struct tm *t = gmtime(&ts);
 
 	t->tm_sec  = 0;
@@ -100,8 +113,20 @@ time_t getNextMonthForTs(time_t ts){
 	return timegm(t);
 }
 
+time_t getNextLocalMonthForTs(time_t ts){
+ // Returns a timestamp value representing the start of the month following the one in which 'ts' occurs, calculated for the local timezone
+	struct tm *t = localtime(&ts);
+
+	t->tm_sec  = 0;
+	t->tm_min  = 0;
+	t->tm_hour = 0;
+	t->tm_mday = 1;
+	t->tm_mon  += 1;
+
+	return mktime(t);
+}
 time_t getNextDayForTs(time_t ts){
- // Returns a timestamp value representing the start of the day following the one in which 'ts' occurs
+ // Returns a timestamp value representing the start of the day following the one in which 'ts' occurs, calculated for the GMT timezone
 	struct tm *t = gmtime(&ts);
 
 	t->tm_sec  = 0;
@@ -110,6 +135,18 @@ time_t getNextDayForTs(time_t ts){
 	t->tm_mday += 1;
 
 	return timegm(t);
+}
+
+time_t getNextLocalDayForTs(time_t ts){
+ // Returns a timestamp value representing the start of the day following the one in which 'ts' occurs, calculated for the local timezone
+	struct tm *t = localtime(&ts);
+
+	t->tm_sec  = 0;
+	t->tm_min  = 0;
+	t->tm_hour = 0;
+	t->tm_mday += 1;
+
+	return mktime(t);
 }
 
 time_t getNextHourForTs(time_t ts){
