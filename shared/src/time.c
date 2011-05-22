@@ -40,37 +40,37 @@ Contains code for performing date-based calculations.
 	}
 #endif
 
-time_t getCurrentYearForTs(time_t ts){
+time_t getCurrentLocalYearForTs(time_t ts){
  // Returns a timestamp value representing the start of the year in which 'ts' occurs
-	struct tm *t = gmtime(&ts);
+	struct tm *t = localtime(&ts);
 	t->tm_sec  = 0;
 	t->tm_min  = 0;
 	t->tm_hour = 0;
 	t->tm_mday = 1;
 	t->tm_mon  = 0;
 
-	return timegm(t);
+	return mktime(t);
 }
 
-time_t getCurrentMonthForTs(time_t ts){
+time_t getCurrentLocalMonthForTs(time_t ts){
  // Returns a timestamp value representing the start of the month in which 'ts' occurs
-	struct tm *t = gmtime(&ts);
+	struct tm *t = localtime(&ts);
 	t->tm_sec  = 0;
 	t->tm_min  = 0;
 	t->tm_hour = 0;
 	t->tm_mday = 1;
 
-	return timegm(t);
+	return mktime(t);
 }
 
-time_t getCurrentDayForTs(time_t ts){
+time_t getCurrentLocalDayForTs(time_t ts){
  // Returns a timestamp value representing the start of the day in which 'ts' occurs
-	struct tm *t = gmtime(&ts);
+	struct tm *t = localtime(&ts);
 	t->tm_sec  = 0;
 	t->tm_min  = 0;
 	t->tm_hour = 0;
 
-	return timegm(t);
+	return mktime(t);
 }
 
 time_t getNextYearForTs(time_t ts){

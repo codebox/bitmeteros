@@ -13,7 +13,7 @@
 		<script type="text/javascript" src="js/jquery.js"></script>
 		<script type="text/javascript" src="js/jquery-ui.js"></script>
 		<script type="text/javascript" src="js/jquery.cookie.js"></script>
-		<!--[if IE]>
+		<!--[if lte IE 8]>
 		<script language="javascript" type="text/javascript" src="js/excanvas.min.js"></script>
 		<![endif]-->
 		<script type="text/javascript" src="js/jquery.flot.min.js"></script>
@@ -856,6 +856,21 @@
 					</p>
 				</div>
 			</div>
+            <div id="newVersion">
+                <h2>Version </h2><br>
+                <div class="panelContainer">
+                    <p>
+                        A new version of BitMeter OS is available! This release includes the following changes:
+                    </p>
+                    <p id="newVersionInfo">
+                    </p>
+                    <p>
+                        <br>
+                        <a id="newVersionDownload">Download</a>
+                    </p>
+                    <div class="spacer"></div>
+                </div>
+            </div>
 		</div>
 		<div id="errorDialog" class="dialogBox roundedCorners">
 			<h2>Error</h2>
@@ -874,20 +889,6 @@
 				<button id="confirmNo"  class="roundedCorners">No</button>
 			</div>
 		</div>	
-		<div id="newVersion">
-			<h2>Version </h2><br>
-	        <div class="panelContainer">
-				<p>
-				A new version of BitMeter OS is available! This release includes the following changes:
-				</p>
-				<p id="newVersionInfo">
-				</p>
-				<p>
-				<br>
-				<a id="newVersionDownload">Download</a>
-				</p>
-			</div>
-		</div>
 		<div id="floater"></div>
 		<div id="modalBackground"></div>
 		<div id="dialogModalBackground"></div>

@@ -134,7 +134,7 @@ time_t getTime(){
         if ((isDbOpen() == FALSE) || (configValue = getConfigText(CONFIG_LOG_PATH, TRUE)) == NULL){
          /* If an alternative path has not been specified in the db config table, or if the
             database isn't open yet, then we write the log out to the /var/log/bitmeter directory. */
-            strcpy(path, "/var/log/bitmeter/error.log");
+            strcpy(path, "/var/log/bitmeter/" LOG_NAME);
         } else {
          // A value was supplied in the config table, so use that location instead.
             strcpy(path, configValue);
@@ -178,7 +178,7 @@ time_t getTime(){
         if ((isDbOpen() == FALSE) || (configValue = getConfigText(CONFIG_LOG_PATH, TRUE)) == NULL){
          /* If an alternative path has not been specified in the db config table, or if the
             database isn't open yet, then we write the log out to the /Library/Logs directory. */
-            strcpy(path, "/Library/Logs/bitmeter.log");
+            strcpy(path, "/Library/Logs/" LOG_NAME);
         } else {
          // A value was supplied in the config table, so use that location instead.
             strcpy(path, configValue);

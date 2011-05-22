@@ -42,7 +42,7 @@
 #define EOL "\n"
 #endif
 
-#define VERSION "0.7.3"
+#define VERSION "0.7.4"
 #define DB_VERSION 7
 
 #ifdef _WIN32
@@ -219,9 +219,9 @@ int strToInt(char* txt, int defaultValue);
 char *trim(char *str);
 // ----
 time_t getTime();
-time_t getCurrentYearForTs(time_t ts);
-time_t getCurrentMonthForTs(time_t ts);
-time_t getCurrentDayForTs(time_t ts);
+time_t getCurrentLocalYearForTs(time_t ts);
+time_t getCurrentLocalMonthForTs(time_t ts);
+time_t getCurrentLocalDayForTs(time_t ts);
 time_t getNextYearForTs(time_t ts);
 time_t getNextLocalYearForTs(time_t ts);
 time_t getNextMonthForTs(time_t ts);

@@ -57,26 +57,26 @@ void testTimeGm(CuTest *tc){
 
 void testGetCurrentYearForTs(CuTest *tc){
  // Check that the 'getCurrentYearForTs' function correctly calculates the start of the current year for various timestamps
-    CuAssertIntEquals(tc, makeTsUtc("1970-01-01 00:00:00"), getCurrentYearForTs(makeTsUtc("1970-05-26 10:01:00")));
-    CuAssertIntEquals(tc, makeTsUtc("2009-01-01 00:00:00"), getCurrentYearForTs(makeTsUtc("2009-01-01 00:00:00")));
-    CuAssertIntEquals(tc, makeTsUtc("2009-01-01 00:00:00"), getCurrentYearForTs(makeTsUtc("2009-03-24 19:12:01")));
-    CuAssertIntEquals(tc, makeTsUtc("2009-01-01 00:00:00"), getCurrentYearForTs(makeTsUtc("2009-12-31 23:59:59")));
+    CuAssertIntEquals(tc, makeTs("1970-01-01 00:00:00"), getCurrentLocalYearForTs(makeTs("1970-05-26 10:01:00")));
+    CuAssertIntEquals(tc, makeTs("2009-01-01 00:00:00"), getCurrentLocalYearForTs(makeTs("2009-01-01 00:00:00")));
+    CuAssertIntEquals(tc, makeTs("2009-01-01 00:00:00"), getCurrentLocalYearForTs(makeTs("2009-03-24 19:12:01")));
+    CuAssertIntEquals(tc, makeTs("2009-01-01 00:00:00"), getCurrentLocalYearForTs(makeTs("2009-12-31 23:59:59")));
 }
 
 void testGetCurrentMonthForTs(CuTest *tc){
  // Check that the 'getCurrentMonthForTs' function correctly calculates the start of the current month for various timestamps
-    CuAssertIntEquals(tc, makeTsUtc("1970-05-01 00:00:00"), getCurrentMonthForTs(makeTsUtc("1970-05-26 10:01:00")));
-    CuAssertIntEquals(tc, makeTsUtc("2009-01-01 00:00:00"), getCurrentMonthForTs(makeTsUtc("2009-01-01 00:00:00")));
-    CuAssertIntEquals(tc, makeTsUtc("2009-03-01 00:00:00"), getCurrentMonthForTs(makeTsUtc("2009-03-24 19:12:01")));
-    CuAssertIntEquals(tc, makeTsUtc("2009-12-01 00:00:00"), getCurrentMonthForTs(makeTsUtc("2009-12-31 23:59:59")));
+    CuAssertIntEquals(tc, makeTs("1970-05-01 00:00:00"), getCurrentLocalMonthForTs(makeTs("1970-05-26 10:01:00")));
+    CuAssertIntEquals(tc, makeTs("2009-01-01 00:00:00"), getCurrentLocalMonthForTs(makeTs("2009-01-01 00:00:00")));
+    CuAssertIntEquals(tc, makeTs("2009-03-01 00:00:00"), getCurrentLocalMonthForTs(makeTs("2009-03-24 19:12:01")));
+    CuAssertIntEquals(tc, makeTs("2009-12-01 00:00:00"), getCurrentLocalMonthForTs(makeTs("2009-12-31 23:59:59")));
 }
 
 void testGetCurrentDayForTs(CuTest *tc){
  // Check that the 'getCurrentDayForTs' function correctly calculates the start of the current day for various timestamps
-    CuAssertIntEquals(tc, makeTsUtc("1970-05-26 00:00:00"), getCurrentDayForTs(makeTsUtc("1970-05-26 10:01:00")));
-    CuAssertIntEquals(tc, makeTsUtc("2009-01-01 00:00:00"), getCurrentDayForTs(makeTsUtc("2009-01-01 00:00:00")));
-    CuAssertIntEquals(tc, makeTsUtc("2009-03-24 00:00:00"), getCurrentDayForTs(makeTsUtc("2009-03-24 19:12:01")));
-    CuAssertIntEquals(tc, makeTsUtc("2009-12-31 00:00:00"), getCurrentDayForTs(makeTsUtc("2009-12-31 23:59:59")));
+    CuAssertIntEquals(tc, makeTs("1970-05-26 00:00:00"), getCurrentLocalDayForTs(makeTs("1970-05-26 10:01:00")));
+    CuAssertIntEquals(tc, makeTs("2009-01-01 00:00:00"), getCurrentLocalDayForTs(makeTs("2009-01-01 00:00:00")));
+    CuAssertIntEquals(tc, makeTs("2009-03-24 00:00:00"), getCurrentLocalDayForTs(makeTs("2009-03-24 19:12:01")));
+    CuAssertIntEquals(tc, makeTs("2009-12-31 00:00:00"), getCurrentLocalDayForTs(makeTs("2009-12-31 23:59:59")));
 }
 
 void testGetNextYearForTs(CuTest *tc){

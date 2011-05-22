@@ -49,9 +49,9 @@ struct Summary getSummaryValues(char* hs, char* ad){
 	struct Summary summary;
 	int now = getTime();
 
-	int tsForStartOfToday = getCurrentDayForTs(now);
-	int tsForStartOfMonth = getCurrentMonthForTs(now);
-	int tsForStartOfYear = getCurrentYearForTs(now);
+	int tsForStartOfToday = getCurrentLocalDayForTs(now);
+	int tsForStartOfMonth = getCurrentLocalMonthForTs(now);
+	int tsForStartOfYear  = getCurrentLocalYearForTs(now);
 
     struct Data* (*calcTotals)(int, char*, char*);
 

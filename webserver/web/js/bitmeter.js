@@ -25,7 +25,7 @@ $.ajaxSetup({
             BITMETER.errorDialog.show(msg);
         },
     dataFilter : function (data, dataType) {
-        if (!data){
+        if (dataType !== 'script' && !data){
          // If the server goes down we get an empty 'data' parameter
             throw "No data returned";	
         }
@@ -444,7 +444,7 @@ BITMETER.applyScale = (function(){
     var MIN_SCALE = 4;
     return function(graph, newScale){
         if (newScale >= MIN_SCALE) {
-            graph.getOptions().yaxis.max = newScale;
+            graph.getAxes().yaxis.options.max = newScale;
             graph.setupGrid();
             graph.draw();
             return true;
@@ -557,7 +557,10 @@ $(function(){
     var datePickerFormat = $('#createAlertStartFixedDate').datepicker("option", "dateFormat");
     $('#createAlertStartDetailsFormat').html("(" + datePickerFormat + ")");
     
-    $.getJSON("http://updates.codebox.org.uk/version/bitmeteros/version2.js?callback=?", BITMETER.showVersion);
+    $.ajax({
+        url : "http://updates.codebox.org.uk/version/bitmeteros/version2.js", 
+        dataType : 'script'
+    });
 });
 
 BITMETER.showVersion = function(data){
