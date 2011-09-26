@@ -1,28 +1,3 @@
-/*
- * BitMeterOS
- * http://codebox.org.uk/bitmeterOS
- *
- * Copyright (c) 2011 Rob Dawson
- *
- * Licensed under the GNU General Public License
- * http://www.gnu.org/licenses/gpl.txt
- *
- * This file is part of BitMeterOS.
- *
- * BitMeterOS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * BitMeterOS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- */
-
 #ifndef CLIENT_H
 #define CLIENT_H
 
@@ -64,23 +39,22 @@ struct HostAdapter{
     char* adapter;
 };
 
-struct Data* getMonitorValues(int ts, char* hs, char* ad);
+struct Data* getMonitorValues(int ts, int fl);
 struct Summary getSummaryValues();
 void freeSummary(struct Summary* summary);
-struct ValueBounds* calcTsBounds(char* hs, char* ad);
-struct Data* calcMaxValues();
+struct ValueBounds* calcTsBounds(int fl);
+struct Data* calcMaxValue();
 struct Data* getQueryValues();
+BW_INT getValueForFilterId(struct Data* data, int filterId);
 struct Data* getSyncValues(int ts);
 void getDumpValues(int, void (*callback)(int, struct Data*));
-struct HostAdapter* getHostAdapter(char* hostAndAdapterTxt);
-void freeHostAdapter(struct HostAdapter *hostAdapter);
 int addAlert(struct Alert* alert);
 int updateAlert(struct Alert* alert);
 struct Alert* getAlerts();
 struct Data* getTotalsForAlert(struct Alert* alert, time_t now);
 int removeAlert(int id);
-struct Data* calcTotalsForAllSince(int ts, char* hs, char* ad);
-struct Data* calcTotalsForHsSince(int ts, char* hs, char* ad);
-struct Data* calcTotalsForHsAdSince(int ts, char* hs, char* ad);
-void formatAmounts(const BW_INT dl, const BW_INT ul, char* dlTxt, char *ulTxt, int units);
+struct Data* calcTotalsForAllSince(int ts, char* hs);
+struct Data* calcTotalsForHsSince(int ts, char* hs);
+struct Data* calcTotalsForHsAdSince(int ts, char* hs);
+void formatAmountByUnits(const BW_INT vl, char* vlTxt, int units);
 #endif

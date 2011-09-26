@@ -1,28 +1,6 @@
-/*
- * BitMeterOS
- * http://codebox.org.uk/bitmeterOS
- *
- * Copyright (c) 2011 Rob Dawson
- *
- * Licensed under the GNU General Public License
- * http://www.gnu.org/licenses/gpl.txt
- *
- * This file is part of BitMeterOS.
- *
- * BitMeterOS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * BitMeterOS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- */
-
+#ifdef UNIT_TESTING 
+	#include "test.h"
+#endif
 #ifdef _WIN32
 	#define __USE_MINGW_ANSI_STDIO 1
 #endif
@@ -275,7 +253,7 @@ void writeSingleDataToJson(SOCKET fd, struct Data* data){
 	writeText(fd, "{");
 
 	if (data != NULL){
-		sprintf(jsonBuffer, "\"dl\": %llu,\"ul\": %llu,\"ts\": %d,\"dr\": %d", data->dl, data->ul, (int)data->ts, data->dr);
+		sprintf(jsonBuffer, "\"vl\": %llu,\"ts\": %d,\"dr\": %d,\"fl\": %d", data->vl, (int)data->ts, data->dr, data->fl);
 		writeText(fd, jsonBuffer);
 	}
 	writeText(fd, "}");
@@ -327,7 +305,7 @@ void writeNumValueToJson(SOCKET fd, char* key, BW_INT value){
 
 void writeSyncData(SOCKET fd, struct Data* data){
 	char row[SMALL_BUFSIZE];
-	sprintf(row, "%d,%d,%llu,%llu,%s" HTTP_EOL, (int)data->ts, data->dr, data->dl, data->ul, data->ad);
+	sprintf(row, "%d,%d,%llu,%d" HTTP_EOL, (int)data->ts, data->dr, data->vl, data->fl);
 	writeText(fd, row);
 }
 

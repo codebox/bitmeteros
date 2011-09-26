@@ -1,30 +1,8 @@
-/*
- * BitMeterOS
- * http://codebox.org.uk/bitmeterOS
- *
- * Copyright (c) 2011 Rob Dawson
- *
- * Licensed under the GNU General Public License
- * http://www.gnu.org/licenses/gpl.txt
- *
- * This file is part of BitMeterOS.
- *
- * BitMeterOS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * BitMeterOS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- */
-
 #define _GNU_SOURCE
 #include <string.h>
+#ifdef UNIT_TESTING
+	#include "test.h"
+#endif
 #ifdef _WIN32
 	#define __USE_MINGW_ANSI_STDIO 1
 #endif
@@ -48,6 +26,18 @@ void processAlertUpdate(SOCKET fd, struct NameValuePair* params);
 void processAlertStatus(SOCKET fd, struct NameValuePair* params);
 void processAlertCreate(SOCKET fd, struct NameValuePair* params);
 
+
+static struct HandleAlertCalls calls = {&writeHeadersServerError, &writeHeadersForbidden, &writeHeadersOk, 
+	&writeText, &writeNumValueToJson, &writeTextValueToJson, &writeTextArrayToJson};
+                                         
+static struct HandleAlertCalls getCalls(){
+	#ifdef UNIT_TESTING	
+		return mockHandleAlertCalls;
+	#else
+		return calls;
+	#endif
+}
+
 void processAlertRequest(SOCKET fd, struct Request* req, int allowAdmin){
 	struct NameValuePair* params = req->params;
 
@@ -61,7 +51,7 @@ void processAlertRequest(SOCKET fd, struct Request* req, int allowAdmin){
 		if (allowAdmin){
 	    	processAlertDelete(fd, params);
 	    } else {
-	    	writeHeadersForbidden(fd, "alert delete");
+	    	getCalls().writeHeadersForbidden(fd, "alert delete");
 	    }
 
 	} else if (strcmp("update", action) == 0) {
@@ -69,7 +59,7 @@ void processAlertRequest(SOCKET fd, struct Request* req, int allowAdmin){
 		if (allowAdmin){
 		    processAlertUpdate(fd, params);
 	    } else {
-	    	writeHeadersForbidden(fd, "alert update");
+	    	getCalls().writeHeadersForbidden(fd, "alert update");
 	    }
 
 	} else if (strcmp("status", action) == 0) {
@@ -80,12 +70,12 @@ void processAlertRequest(SOCKET fd, struct Request* req, int allowAdmin){
 		if (allowAdmin){
 		    processAlertCreate(fd, params);
 	    } else {
-	    	writeHeadersForbidden(fd, "alert create");
+	    	getCalls().writeHeadersForbidden(fd, "alert create");
 	    }
 
 	} else {
 	 // Missing/invalid 'action' parameter
-	 	writeHeadersServerError(fd, "Missing/invalid 'action' parameter: '%s'", action);
+	 	getCalls().writeHeadersServerError(fd, "Missing/invalid 'action' parameter: '%s'", action);
 	}
 }
 
@@ -106,46 +96,46 @@ static void freeArray(char* arr[]){
 }
 
 static void writeAlertToJson(SOCKET fd, struct Alert* alert){
-	writeText(fd, "{");
-    writeNumValueToJson(fd,  "id",         alert->id);
-    writeText(fd, ",");
-    writeTextValueToJson(fd, "name",      alert->name);
-    writeText(fd, ",");
-    writeNumValueToJson(fd,  "active",    alert->active);
-    writeText(fd, ",");
-    writeNumValueToJson(fd,  "direction", alert->direction);
-    writeText(fd, ",");
-    writeNumValueToJson(fd,  "amount",    alert->amount);
-    writeText(fd, ",");
+	getCalls().writeText(fd, "{");
+    getCalls().writeNumValueToJson(fd,  "id",     alert->id);
+    getCalls().writeText(fd, ",");
+    getCalls().writeTextValueToJson(fd, "name",   alert->name);
+    getCalls().writeText(fd, ",");
+    getCalls().writeNumValueToJson(fd,  "active", alert->active);
+    getCalls().writeText(fd, ",");
+    getCalls().writeNumValueToJson(fd,  "filter", alert->filter);
+    getCalls().writeText(fd, ",");
+    getCalls().writeNumValueToJson(fd,  "amount", alert->amount);
+    getCalls().writeText(fd, ",");
 
     char *bound[6];
     dateCriteriaToArray(alert->bound, bound);
-    writeTextArrayToJson(fd, "bound", bound);
+    getCalls().writeTextArrayToJson(fd, "bound", bound);
     freeArray(bound);
 
-    writeText(fd, ",\"periods\" : [");
+    getCalls().writeText(fd, ",\"periods\" : [");
     struct DateCriteria* period = alert->periods;
 
     int isFirstPeriod = TRUE;
     while (period != NULL){
         if (!isFirstPeriod){
-            writeText(fd, ",");
+            getCalls().writeText(fd, ",");
         }
 
         char *periodArray[6];
         dateCriteriaToArray(period, periodArray);
-        writeTextArrayToJson(fd, NULL, periodArray);
+        getCalls().writeTextArrayToJson(fd, NULL, periodArray);
     	freeArray(periodArray);
 
         period = period->next;
         isFirstPeriod = FALSE;
     }
-    writeText(fd, "]}");
+    getCalls().writeText(fd, "]}");
 }
 
 void processAlertList(SOCKET fd){
-	writeHeadersOk(fd, MIME_JSON, TRUE);
-    writeText(fd, "[");
+	getCalls().writeHeadersOk(fd, MIME_JSON, TRUE);
+    getCalls().writeText(fd, "[");
 
 	struct Alert* firstAlert = getAlerts();
     struct Alert* alert = firstAlert;
@@ -154,13 +144,13 @@ void processAlertList(SOCKET fd){
 
     while (alert != NULL){
         if (!isFirstAlert){
-            writeText(fd, ",");
+            getCalls().writeText(fd, ",");
         }
         writeAlertToJson(fd, alert);
         alert = alert->next;
         isFirstAlert = FALSE;
     }
-    writeText(fd, "]");
+    getCalls().writeText(fd, "]");
     freeAlert(firstAlert);
 }
 
@@ -168,16 +158,16 @@ void processAlertDelete(SOCKET fd, struct NameValuePair* params){
     int id = getValueNumForName("id", params, BAD_NUM);
 
     if (id == BAD_NUM){
-    	writeHeadersServerError(fd, "Invalid alert id in delete request: %s", getValueForName("id", params, NULL));
+    	getCalls().writeHeadersServerError(fd, "Invalid alert id in delete request: %s", getValueForName("id", params, NULL));
     } else {
         int status = removeAlert(id);
         if (status == SUCCESS){
             // done
-            writeHeadersOk(fd, MIME_JSON, TRUE);
-            writeText(fd, "{}");
+            getCalls().writeHeadersOk(fd, MIME_JSON, TRUE);
+            getCalls().writeText(fd, "{}");
 
         } else {
-            writeHeadersServerError(fd, "removeAlert() failed");
+            getCalls().writeHeadersServerError(fd, "removeAlert() failed");
         }
     }
 }
@@ -188,39 +178,33 @@ void processAlertStatus(SOCKET fd, struct NameValuePair* params){
 
     struct Data* totals = NULL;
 
-    writeHeadersOk(fd, MIME_JSON, TRUE);
+    getCalls().writeHeadersOk(fd, MIME_JSON, TRUE);
 
     int first = TRUE;
-    writeText(fd, "[");
+    getCalls().writeText(fd, "[");
     while (alert != NULL) {
     	if (!first){
-    		writeText(fd, ",");
+    		getCalls().writeText(fd, ",");
     	}
     	first = FALSE;
 
    		totals = getTotalsForAlert(alert, getTime());
-   		BW_INT total = 0;
-    	if (alert->direction & DL_FLAG){
-    		total += totals->dl;
-    	}
-    	if (alert->direction & UL_FLAG){
-    		total += totals->ul;
-    	}
+   		BW_INT total = totals->vl;
     	freeData(totals);
 
-   		writeText(fd, "{");
-	    writeNumValueToJson(fd,  "id",      alert->id);
-	    writeText(fd, ",");
-	    writeTextValueToJson(fd, "name",    alert->name);
-	    writeText(fd, ",");
-	    writeNumValueToJson(fd,  "current", total);
-	    writeText(fd, ",");
-	    writeNumValueToJson(fd,  "limit",   alert->amount);
-		writeText(fd, "}");
+   		getCalls().writeText(fd, "{");
+	    getCalls().writeNumValueToJson(fd,  "id",      alert->id);
+	    getCalls().writeText(fd, ",");
+	    getCalls().writeTextValueToJson(fd, "name",    alert->name);
+	    getCalls().writeText(fd, ",");
+	    getCalls().writeNumValueToJson(fd,  "current", total);
+	    getCalls().writeText(fd, ",");
+	    getCalls().writeNumValueToJson(fd,  "limit",   alert->amount);
+		getCalls().writeText(fd, "}");
 
     	alert = alert->next;
     }
-    writeText(fd, "]");
+    getCalls().writeText(fd, "]");
 
 	freeAlert(firstAlert);
 }
@@ -270,18 +254,18 @@ void processAlertUpdate(SOCKET fd, struct NameValuePair* params){
     int    id         = getValueNumForName( "id",        params, BAD_NUM);
     char*  name       = getValueForName(    "name",      params, NULL);
     int    active     = getValueNumForName( "active",    params, BAD_NUM);
-    int    direction  = getValueNumForName( "direction", params, BAD_NUM);
+    int    fl         = getValueNumForName( "filter",    params, BAD_NUM);
     char*  amountTxt  = getValueForName(    "amount",    params, NULL);
     char*  boundTxt   = getValueForName(    "bound",     params, NULL);
     char*  periodsTxt = getValueForName(    "periods",   params, NULL);
     BW_INT amount = strToBwInt(amountTxt, BAD_NUM);
 
-    if (id == BAD_NUM || name == NULL || active == BAD_NUM || direction == BAD_NUM || amount == BAD_NUM || boundTxt == NULL || periodsTxt == NULL) {
-    	writeHeadersServerError(fd, "processAlertUpdate param bad/missing id=%s, name=%s, active=%s, direction=%s, amount=%s, bound=%s, periods=%s",
+    if (id == BAD_NUM || name == NULL || active == BAD_NUM || fl == BAD_NUM || amount == BAD_NUM || boundTxt == NULL || periodsTxt == NULL) {
+    	getCalls().writeHeadersServerError(fd, "processAlertUpdate param bad/missing id=%s, name=%s, active=%s, filter=%s, amount=%s, bound=%s, periods=%s",
     			getValueForName("id", params, NULL),
     			name,
     			getValueForName("active", params, NULL),
-    			getValueForName("direction", params, NULL),
+    			getValueForName("filter", params, NULL),
     			amountTxt, boundTxt, periodsTxt);
 
     } else {
@@ -292,18 +276,18 @@ void processAlertUpdate(SOCKET fd, struct NameValuePair* params){
 	    alert->active    = active;
 	    alert->bound     = makeSingleDateCriteriaFromTxt(boundTxt);
 	    alert->periods   = makeMultipleDateCriteriaFromTxt(periodsTxt);
-	    alert->direction = direction;
+	    alert->filter    = fl;
 	    alert->amount    = amount;
 
     	int result = updateAlert(alert);
     	freeAlert(alert);
 
     	if (result == SUCCESS){
-    		writeHeadersOk(fd, MIME_JSON, TRUE);
-    		writeText(fd, "{}");
+    		getCalls().writeHeadersOk(fd, MIME_JSON, TRUE);
+    		getCalls().writeText(fd, "{}");
 
     	} else {
-    		writeHeadersServerError(fd, "updateAlert() failed");
+    		getCalls().writeHeadersServerError(fd, "updateAlert() failed");
     	}
     }
 }
@@ -311,18 +295,18 @@ void processAlertUpdate(SOCKET fd, struct NameValuePair* params){
 void processAlertCreate(SOCKET fd, struct NameValuePair* params){
     char* name       = getValueForName(    "name",      params, NULL);
     int   active     = getValueNumForName( "active",    params, BAD_NUM);
-    int   direction  = getValueNumForName( "direction", params, BAD_NUM);
+    int   fl         = getValueNumForName( "filter",    params, BAD_NUM);
     char* amountTxt  = getValueForName(    "amount",    params, NULL);
     char* boundTxt   = getValueForName(    "bound",     params, NULL);
     char* periodsTxt = getValueForName(    "periods",   params, NULL);
 
     BW_INT amount = strToBwInt(amountTxt, BAD_NUM);
 
-    if (name == NULL || active == BAD_NUM || direction == BAD_NUM || amount == BAD_NUM || boundTxt == NULL || periodsTxt == NULL) {
-    	writeHeadersServerError(fd, "processAlertCreate param bad/missing name=%s, active=%s, direction=%s, amount=%s, bound=%s, periods=%s",
+    if (name == NULL || active == BAD_NUM || fl == BAD_NUM || amount == BAD_NUM || boundTxt == NULL || periodsTxt == NULL) {
+    	getCalls().writeHeadersServerError(fd, "processAlertCreate param bad/missing name=%s, active=%s, filter=%s, amount=%s, bound=%s, periods=%s",
     			name,
     			getValueForName("active", params, NULL),
-    			getValueForName("direction", params, NULL),
+    			getValueForName("filter", params, NULL),
     			amountTxt, boundTxt, periodsTxt);
 
     } else {
@@ -332,18 +316,18 @@ void processAlertCreate(SOCKET fd, struct NameValuePair* params){
 	    alert->active    = active;
 	    alert->bound     = makeSingleDateCriteriaFromTxt(boundTxt);
 	    alert->periods   = makeMultipleDateCriteriaFromTxt(periodsTxt);
-	    alert->direction = direction;
+	    alert->filter    = fl;
 	    alert->amount    = amount;
     	int result = addAlert(alert);
 
     	freeAlert(alert);
 
     	if (result != ALERT_ID_FAIL){
-    		writeHeadersOk(fd, MIME_JSON, TRUE);
-    		writeText(fd, "{}");
+    		getCalls().writeHeadersOk(fd, MIME_JSON, TRUE);
+    		getCalls().writeText(fd, "{}");
 
     	} else {
-    		writeHeadersServerError(fd, "addAlert failed");
+    		getCalls().writeHeadersServerError(fd, "addAlert failed");
     	}
     }
 }

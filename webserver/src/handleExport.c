@@ -1,28 +1,3 @@
-/*
- * BitMeterOS
- * http://codebox.org.uk/bitmeterOS
- *
- * Copyright (c) 2011 Rob Dawson
- *
- * Licensed under the GNU General Public License
- * http://www.gnu.org/licenses/gpl.txt
- *
- * This file is part of BitMeterOS.
- *
- * BitMeterOS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * BitMeterOS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- */
-
 #ifdef _WIN32
 	#define __USE_MINGW_ANSI_STDIO 1
 #endif
@@ -57,8 +32,8 @@ static void writeCsvRow(SOCKET fd, struct Data* row){
 	char timeTo[9];
 	toTime(timeTo, row->ts);
 
-	char rowTxt[256];
-	sprintf(rowTxt, "%s,%s,%s,%llu,%llu,%s,%s\n", date, timeFrom, timeTo, row->dl, row->ul, (row->hs == NULL) ? "" : row->hs, row->ad);	
+	char rowTxt[256]; //TODO make this more useful, include filter name? and host
+	sprintf(rowTxt, "%s,%s,%s,%llu,%d\n", date, timeFrom, timeTo, row->vl, row->fl);	
 	writeText(fd, rowTxt);
 	
 	freeData(row);

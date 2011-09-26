@@ -1,28 +1,6 @@
-/*
- * BitMeterOS
- * http://codebox.org.uk/bitmeterOS
- *
- * Copyright (c) 2011 Rob Dawson
- *
- * Licensed under the GNU General Public License
- * http://www.gnu.org/licenses/gpl.txt
- *
- * This file is part of BitMeterOS.
- *
- * BitMeterOS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * BitMeterOS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- */
-
+#ifdef UNIT_TESTING
+	#include "test.h"
+#endif
 #include <stdio.h>
 #include <time.h>
 #include "bmws.h"
@@ -214,6 +192,55 @@ static char* makeItem(char* title, char* amountDescription, char* alertDescripti
 	return itemTxt;
 }
 
+static char* getAmountDesc(struct Filter* filters, time_t from, time_t to) {
+	struct Filter* thisFilter;
+	struct Filter* filter = filters;
+	int filterCount = 0;
+
+	while(filter != NULL){
+		filter = filter->next;
+		filterCount++;
+	}
+
+ // Allocate space for the string pointers
+	char** amountTxt = malloc(filterCount * sizeof(char*));
+	int i=0;
+
+ // Run the query for each filter
+ 	filter = filters;
+	while(filter != NULL){
+		struct Data* totals = getQueryValues(from, to, QUERY_GROUP_TOTAL, filter->id);
+		if (totals == NULL){
+			totals = allocData();
+		}
+		char* amtAndFilter = malloc(strlen(HTML_LINE_BREAK) + 24 + 2 + strlen(filter->desc) + 1);
+		char amt[24];
+		formatAmount(totals->vl, TRUE, TRUE, amt);
+		sprintf(amtAndFilter, "%s%s: %s", (i==0 ? "" : HTML_LINE_BREAK), filter->desc, amt);
+		freeData(totals);
+
+		amountTxt[i++] = amtAndFilter;
+		filter = filter->next;
+	}
+
+	char* descAmt = malloc(24 * filterCount + 64 + 64);
+	int offset=0, amtLen;
+
+	for (i=0; i<filterCount; i++) {
+		amtLen = strlen(amountTxt[i]);
+		strcpy(descAmt + offset, amountTxt[i]);
+
+		free(amountTxt[i]);
+		offset += amtLen;
+
+	}
+	descAmt[offset] = 0;
+
+	free(amountTxt);
+
+	return descAmt;
+}
+
 static void getDailyItems(char** itemsTxt, int rssItemCount, char* rssUrl){
  /* Populate the itemsTxt array with the various XML strings, each string contains an
  	item with information about upload/download volumes for a single day. */
@@ -226,10 +253,9 @@ static void getDailyItems(char** itemsTxt, int rssItemCount, char* rssUrl){
 	int count=0;
 	time_t from, to;
 	char itemTitle[24]; // The title of the item, which will contain just a date
-	char dlTxt[24];		// Download amount, formatted
-	char ulTxt[24];		// Upload amount, formatted
-	char descAmt[264];	// Descriptive text detailing the UL/DL amounts, for the body of the item
 	char descDate[64];	// Publication date for the item, in the correct format
+
+	struct Filter* filters = readFilters();
 
 	while (count<rssItemCount){
 	 // Calculate the upper/lower bounds that correspond to the day we are working on
@@ -240,22 +266,15 @@ static void getDailyItems(char** itemsTxt, int rssItemCount, char* rssUrl){
 	 // The title of the item will be the day from the start of the query range
 		strftime(itemTitle, 23, "%A %d %B", &toStruct);
 
-	 // Run the query
-		struct Data* totals = getQueryValues(from, to, QUERY_GROUP_TOTAL, NULL, NULL);
-		if (totals == NULL){
-			totals = allocData();
-		}
-		formatAmount(totals->dl, TRUE, TRUE, dlTxt);
-		formatAmount(totals->ul, TRUE, TRUE, ulTxt);
-		freeData(totals);
+		char* amounts = getAmountDesc(filters, from, to);
 
 	 // The descriptive text also contains the date, in a more verbose format
 		strftime(descDate, 63, "%A %d %B %Y", &toStruct);
 
 	 /* Construct the descriptive text, its HTML but we must escape the entities so it
 	 	doesn't break the XML structure */
-		sprintf(descAmt, "On %s totals were as follows:%sDownload: %s%sUpload: %s", 
-			descDate, HTML_LINE_BREAK, dlTxt, HTML_LINE_BREAK, ulTxt);
+	 	char descAmt[strlen(amounts) + 128];
+		sprintf(descAmt, "On %s totals were as follows: %s%s", descDate, HTML_LINE_BREAK, amounts);
 
 	 // If there are any Alerts defined then get some text describing their status
 		char* descAlerts = getAlertsTxt(to);
@@ -276,7 +295,10 @@ static void getDailyItems(char** itemsTxt, int rssItemCount, char* rssUrl){
 		if (descAlerts != NULL){
 			free(descAlerts);
 		}
+		free(amounts);
 	}
+	
+	freeFilters(filters);
 }
 
 static void getHourlyItems(char** itemsTxt, int rssItemCount, char* rssUrl){
@@ -291,10 +313,9 @@ static void getHourlyItems(char** itemsTxt, int rssItemCount, char* rssUrl){
 	time_t from, to;
 	char itemTitle[64];	// The title of the item, which will contain a date, and a time range
 	char titleDate[24];	// The date, as it appears in the item title
-	char dlTxt[24];		// Download amount, formatted
-	char ulTxt[24];		// Upload amount, formatted
-	char descAmt[264];	// Descriptive text detailing the UL/DL amounts, for the body of the item
 	char descDate[64];	// Publication date for the item, in the correct format
+
+	struct Filter* filters = readFilters();
 
 	while (count<rssItemCount){
 	 // Calculate the upper/lower bounds that correspond to the hour we are working on
@@ -306,19 +327,17 @@ static void getHourlyItems(char** itemsTxt, int rssItemCount, char* rssUrl){
 		strftime(titleDate, 23, "%A, %d %b", &toStruct);
 		sprintf(itemTitle, "%s %d:00-%d:00", titleDate, toStruct.tm_hour, toStruct.tm_hour+1);
 
-	 // Run the query
-		struct Data* totals = getQueryValues(from, to, QUERY_GROUP_TOTAL, NULL, NULL);
-		formatAmount(totals->dl, TRUE, TRUE, dlTxt);
-		formatAmount(totals->ul, TRUE, TRUE, ulTxt);
-		freeData(totals);
+	 // Run the querys
+		char* amounts = getAmountDesc(filters, from, to);
 
 	 // The descriptive text also contains the date, in a more verbose format
 		strftime(descDate, 63, "%A %d %B %Y", &toStruct);
 
 	 /* Construct the descriptive text, its HTML but we must escape the entities so it
 	 	doesn't break the XML structure */
-		sprintf(descAmt, "On %s  between %d:00 and %d:00 totals were as follows:%sDownload: %s%sUpload: %s", 
-				descDate, toStruct.tm_hour, toStruct.tm_hour+1, HTML_LINE_BREAK, dlTxt, HTML_LINE_BREAK, ulTxt);
+	 	char descAmt[strlen(amounts) + 128];
+		sprintf(descAmt, "On %s between %d:00 and %d:00 totals were as follows:%s%s",
+				descDate, toStruct.tm_hour, toStruct.tm_hour+1, HTML_LINE_BREAK, amounts);
 
 	 // If there are any Alerts defined then get some text describing their status
 		char* descAlerts = getAlertsTxt(to);
@@ -337,7 +356,10 @@ static void getHourlyItems(char** itemsTxt, int rssItemCount, char* rssUrl){
 		if (descAlerts != NULL){
 			free(descAlerts);
 		}
+		free(amounts);
 	}
+	
+	freeFilters(filters);
 }
 
 static char* getPubDate(int rssFreq){
@@ -365,13 +387,7 @@ static char* getAlertsTxt(time_t now){
 	char* alertsText = NULL; // This is where the text goes
 	while(alert != NULL) {
 		totals = getTotalsForAlert(alert, now);
-		BW_INT total = 0;
-    	if (alert->direction & DL_FLAG){
-    		total += totals->dl;	
-    	}
-    	if (alert->direction & UL_FLAG){
-    		total += totals->ul;	
-    	}
+		BW_INT total = totals->vl;
     	freeData(totals);
 
 	 // The first part of the text for an Alert contains the name

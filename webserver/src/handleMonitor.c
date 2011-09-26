@@ -1,28 +1,6 @@
-/*
- * BitMeterOS
- * http://codebox.org.uk/bitmeterOS
- *
- * Copyright (c) 2011 Rob Dawson
- *
- * Licensed under the GNU General Public License
- * http://www.gnu.org/licenses/gpl.txt
- *
- * This file is part of BitMeterOS.
- *
- * BitMeterOS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * BitMeterOS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- */
-
+#ifdef UNIT_TESTING
+	#include "test.h"
+#endif
 #ifdef _WIN32
 	#define __USE_MINGW_ANSI_STDIO 1
 #endif
@@ -31,15 +9,25 @@
 #include "bmws.h"
 #include "common.h"
 
-#define NO_TS -1
+#define NO_VAL -1
 #define MOBILE_MONITOR_DEFAULT_TS 5
 
 /*
 Handles '/monitor' requests received by the web server.
 */
 
-static void processMonitorAjaxRequest(SOCKET fd, int ts, char* ha){
-	writeHeadersOk(fd, MIME_JSON, TRUE);
+static struct HandleMonitorCalls calls = {&writeHeadersServerError, &writeHeadersOk, &writeDataToJson, &writeText};
+                                         
+static struct HandleMonitorCalls getCalls(){
+	#ifdef UNIT_TESTING	
+		return mockHandleMonitorCalls;
+	#else
+		return calls;
+	#endif
+}
+
+static void processMonitorAjaxRequest(SOCKET fd, int ts, int* fl){
+	getCalls().writeHeadersOk(fd, MIME_JSON, TRUE);
 
  /* The 'ts' parameter is an offset from the current (server) time rather than an actual timestamp, done like this
     because there may be differences in the clocks on the client and server, if the client was a minute
@@ -47,21 +35,12 @@ static void processMonitorAjaxRequest(SOCKET fd, int ts, char* ha){
     int now = getTime();
     int queryTs = now - ts;
 
-    char* hs = NULL;
-    char* ad = NULL;
-    struct HostAdapter* hostAdapter = NULL;
-
-    if (ha != NULL) {
-        hostAdapter = getHostAdapter(ha);
-        hs = hostAdapter->host;
-        ad = hostAdapter->adapter;
+    struct Data* result = NULL;
+    while(*fl>0){
+    	appendData(&result, getMonitorValues(queryTs, *fl));
+    	fl++;
     }
-
-    struct Data* result = getMonitorValues(queryTs, hs, ad);
-
-    if (ha != NULL) {
-        freeHostAdapter(hostAdapter);
-    }
+    //struct Data* result = getMonitorValues(queryTs, fl);
 
  /* The database may contain values with timestamps that lie in the future, relative to the current system time. This
     can happen as a result of changes to/from GMT, or if the system clock is altered manually or accidentally. We don't
@@ -81,51 +60,54 @@ static void processMonitorAjaxRequest(SOCKET fd, int ts, char* ha){
 
     char jsonBuffer[64];
     sprintf(jsonBuffer, "{\"serverTime\" : %d, \"data\" : ", now);
-    writeText(fd, jsonBuffer);
-    writeDataToJson(fd, resultsFromNow);
-    writeText(fd, "}");
+    getCalls().writeText(fd, jsonBuffer);
+    getCalls().writeDataToJson(fd, resultsFromNow);
+    getCalls().writeText(fd, "}");
     freeData(result);
 }
 
-void processMonitorRequest(SOCKET fd, struct Request* req){
+void processMonitorRequest(SOCKET fd, struct Request* req) {
 	struct NameValuePair* params = req->params;
 
-	int   ts = getValueNumForName("ts", params, NO_TS);
-	char* ha = getValueForName("ha", params, NULL);
+	int  ts = getValueNumForName("ts", params, NO_VAL);
+	int* fl = getNumListForName("fl", params);
 
-	if (ts == NO_TS){
+	if (ts == NO_VAL) {
      // We need a 'ts' parameter
-     	writeHeadersServerError(fd, "processMonitorRequest, ts parameter missing/invalid: %s", 
+     	getCalls().writeHeadersServerError(fd, "processMonitorRequest, ts parameter missing/invalid: %s", 
      			getValueForName("ts", params, NULL));
-
-	} else {
-        processMonitorAjaxRequest(fd, ts, ha);
+     			
+     } else if (fl == NULL){
+     // We need a 'fl' parameter
+     	getCalls().writeHeadersServerError(fd, "processMonitorRequest, fl parameter missing");
+     	
+     } else {
+		processMonitorAjaxRequest(fd, ts, fl);
+		free(fl);
         
 	}
 }
 
 void processMobileMonitorRequest(SOCKET fd, struct Request* req){
-	int ts = getValueNumForName("ts", req->params, NO_TS);
-	if (ts == NO_TS){
+	int ts = getValueNumForName("ts", req->params, NO_VAL);
+	int fl = getValueNumForName("fl", req->params, NO_VAL);
+	//TODO if no fl then error
+	if (ts == NO_VAL){
 	 // No 'ts' param means that this was a full page request
-		struct Data* result = getMonitorValues(getTime() - MOBILE_MONITOR_DEFAULT_TS, NULL, NULL);
+		struct Data* result = getMonitorValues(getTime() - MOBILE_MONITOR_DEFAULT_TS, fl);
 	
-		BW_INT dlTotal = 0;
-		BW_INT ulTotal = 0;
+		BW_INT total = 0;
 		
 		while (result != NULL) {
-			dlTotal += result->dl;	
-			ulTotal += result->ul;
+			total += result->vl;
 			result = result->next;
 		}
 	
-		char dlTxt[32];
-		char ulTxt[32];
-		formatAmounts(dlTotal/MOBILE_MONITOR_DEFAULT_TS, ulTotal/MOBILE_MONITOR_DEFAULT_TS, dlTxt, ulTxt, UNITS_ABBREV);
+		char txt[32];
+		formatAmount(total/MOBILE_MONITOR_DEFAULT_TS, TRUE, TRUE, txt);
 		
-	    struct NameValuePair pair1 = {"dl", dlTxt, NULL};
-		struct NameValuePair pair2 = {"ul", ulTxt, &pair1};
-	    processFileRequest(fd, req, &pair2);
+	    struct NameValuePair pair = {"vl", txt, NULL};
+	    processFileRequest(fd, req, &pair);
 	    
 	} else {
 	 // A 'ts' param means that this was an AJAX request

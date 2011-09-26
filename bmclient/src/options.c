@@ -1,29 +1,7 @@
-/*
- * BitMeterOS
- * http://codebox.org.uk/bitmeterOS
- *
- * Copyright (c) 2011 Rob Dawson
- *
- * Licensed under the GNU General Public License
- * http://www.gnu.org/licenses/gpl.txt
- *
- * This file is part of BitMeterOS.
- *
- * BitMeterOS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * BitMeterOS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- */
-
 #define _GNU_SOURCE
+#ifdef UNIT_TESTING 
+	#include "test.h"
+#endif
 #include <unistd.h>
 #include <time.h>
 #include <stdio.h>
@@ -45,7 +23,6 @@ static int setDirection(struct Prefs*, char* );
 static int setBarChars(struct Prefs*, char*);
 static int setMaxAmount(struct Prefs*, char* );
 static int setMonitorType(struct Prefs*, char* );
-static int setAdapterDetails(struct Prefs*, char* );
 static time_t makeTsFromRange(char* rangePart);
 static time_t adjustForEndOfRange(time_t, int );
 static void setErrMsg(struct Prefs *, char*);
@@ -58,10 +35,10 @@ Parse the bmclient command-line, and populate a Prefs structure to indicate what
 
 int parseArgs(int argc, char **argv, struct Prefs *prefs){
 	char OPT_LIST[28];
-	sprintf(OPT_LIST, "%c:%c:%c:%c%c%c:%c:%c:%c:%c:%c:%c:",
+	sprintf(OPT_LIST, "%c:%c:%c:%c%c%c:%c:%c:%c:%c:%c:",
 			OPT_MODE, OPT_DUMP_FORMAT, OPT_UNITS, OPT_HELP, OPT_VERSION,
-			OPT_RANGE, OPT_GROUP, OPT_DIRECTION, OPT_BAR_CHARS, OPT_MAX_AMOUNT,
-			OPT_MONITOR_TYPE, OPT_ADAPTER);
+			OPT_RANGE, OPT_GROUP, OPT_BAR_CHARS, OPT_MAX_AMOUNT,
+			OPT_MONITOR_TYPE, OPT_FILTER);
 
 	int status = FAIL;
 
@@ -93,9 +70,6 @@ int parseArgs(int argc, char **argv, struct Prefs *prefs){
 				case OPT_GROUP:
 					status = setGroup(prefs, optarg);
 					break;
-				case OPT_DIRECTION:
-					status = setDirection(prefs, optarg);
-					break;
 				case OPT_BAR_CHARS:
 					status = setBarChars(prefs, optarg);
 					break;
@@ -105,8 +79,8 @@ int parseArgs(int argc, char **argv, struct Prefs *prefs){
 				case OPT_MONITOR_TYPE:
 					status = setMonitorType(prefs, optarg);
 					break;
-                case OPT_ADAPTER:
-                    status = setAdapterDetails(prefs, optarg);
+                case OPT_FILTER:
+                    status = setFilter(prefs, optarg);
                     break;
 				default:
 					status = FAIL;
@@ -146,26 +120,6 @@ static int setMonitorType(struct Prefs *prefs, char* monitorType){
 
 	} else {
 		setErrMsg(prefs, ERR_OPT_BAD_MONITOR_TYPE);
-	}
-
-	return status;
-}
-
-static int setDirection(struct Prefs *prefs, char* dirTxt){
- // The user has specified the traffic direction (upload/download) they they want to monitor
-
-	int status = FAIL;
-
-	if (strcmp(dirTxt, ARG_DIRECTION_DL) == 0) {
-		prefs->direction = PREF_DIRECTION_DL;
-		status = SUCCESS;
-
-	} else if (strcmp(dirTxt, ARG_DIRECTION_UL) == 0) {
-		prefs->direction = PREF_DIRECTION_UL;
-		status = SUCCESS;
-
-	} else {
-		setErrMsg(prefs, ERR_OPT_BAD_DIRECTION);
 	}
 
 	return status;
@@ -422,6 +376,13 @@ static int setUnits(struct Prefs *prefs, char* units){
 	return status;
 }
 
+static int setFilter(struct Prefs *prefs, char* filter){
+ // The user has specified the name of the filter for which data is required
+	prefs->filter = strdup(filter);
+	
+	return SUCCESS;
+}
+
 static int setDumpFormat(struct Prefs *prefs, char* dumpFormat){
  // The user has specified the format to be used when dumping the database contents
 
@@ -470,37 +431,3 @@ static int setMode(struct Prefs *prefs, char* mode){
 	return status;
 }
 
-static int setAdapterDetails(struct Prefs *prefs, char* hostAndAdapterTxt){
-    int status;
-    struct HostAdapter *hostAdapter = getHostAdapter(hostAndAdapterTxt);
-
-    if (hostAdapter != NULL) {
-     // Copy the 'host' value from the HostAdapter struct into the Prefs struct
-        if (prefs->host != NULL){
-            free(prefs->host);
-        }
-        if (hostAdapter->host != NULL){
-            prefs->host = strdup(hostAdapter->host);
-        } else {
-            prefs->host = NULL;
-        }
-
-     // Copy the 'adapter' value from the HostAdapter struct into the Prefs struct
-        if (prefs->adapter != NULL){
-            free(prefs->adapter);
-        }
-        if (hostAdapter->adapter != NULL){
-            prefs->adapter = strdup(hostAdapter->adapter);
-        } else {
-            prefs->adapter = NULL;
-        }
-
-        status = SUCCESS;
-
-    } else {
-        status = FAIL;
-    }
-
-    freeHostAdapter(hostAdapter);
-    return status;
-}

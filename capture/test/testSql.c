@@ -1,34 +1,9 @@
-/*
- * BitMeterOS
- * http://codebox.org.uk/bitmeterOS
- *
- * Copyright (c) 2011 Rob Dawson
- *
- * Licensed under the GNU General Public License
- * http://www.gnu.org/licenses/gpl.txt
- *
- * This file is part of BitMeterOS.
- *
- * BitMeterOS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * BitMeterOS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-#include "test.h"
-#include "common.h"
-#include <string.h>
-#include <stdarg.h>
+#include <test.h> 
+#include <stdarg.h> 
+#include <stddef.h> 
+#include <setjmp.h> 
+#include <cmockery.h> 
 #include "capture.h"
-#include "CuTest.h"
 
 /*
 Contains unit tests for the sql module.
@@ -37,170 +12,162 @@ Contains unit tests for the sql module.
 void setup();
 
 static int getDataRowCount(){
-	return getRowCount("SELECT * FROM data");	
+	return getRowCount("SELECT * FROM data2");	
 }
-void testUpdateDbNull(CuTest *tc) {
+void testUpdateDbNull(void** state) {
  // Check that nothing is added to the d/b if we pass in a NULL list
     int rowsBefore = getDataRowCount();
     updateDb(1, NULL);
     int rowsAfter = getDataRowCount();
-    CuAssertIntEquals(tc, rowsBefore, rowsAfter);
+    assert_int_equal(rowsBefore, rowsAfter);
 }
 
-void testUpdateDbMultiple(CuTest *tc) {
+void testUpdateDbMultiple(void** state) {
  // Check that the correct number of rows are added when we pass in multiple structs
     int rowsBefore = getDataRowCount();
-    struct Data data3 = { 3, 3, 5, 1, "eth0", "", NULL};
-    struct Data data2 = { 2, 2, 5, 1, "eth1", "", &data3};
-    struct Data data1 = { 1, 1, 5, 1, "eth2", "", &data2};
-
+    struct Data data3 = { 3, 3, 5, 1, NULL};
+    struct Data data2 = { 2, 2, 5, 1, &data3};
+    struct Data data1 = { 1, 1, 5, 1, &data2};
+    
     updateDb(1,&data1);
     int rowsAfter = getDataRowCount();
-    CuAssertIntEquals(tc, rowsBefore + 3, rowsAfter);
+    assert_int_equal(rowsBefore + 3, rowsAfter);
+    freeStmtList();
 }
 
-void testGetNextCompressTime(CuTest *tc){
+void testGetNextCompressTime(void** state){
  // Check that the next d/b compress interval is calculated correctly, based on the current time
     int now = 1234;
     setTime(now);
-    CuAssertIntEquals(tc, now + 3600, getNextCompressTime());
+    assert_int_equal(now + 3600, getNextCompressTime());
 }
 
-void testCompressSec1Adapter(CuTest *tc){
- // Check that database second->minute compression is performed correctly for a single adapter
+void testCompressSec1Filter(void** state){
+ // Check that database second->minute compression is performed correctly for a single filter
+    int now = 7200;
+    setTime(now);
+    addDbRow(3601, 1,  1, 1);
+    addDbRow(3600, 1,  2, 1);
+    addDbRow(3599, 1,  4, 1);
+    addDbRow(3598, 1,  8, 1);
+    addDbRow(3597, 1, 16, 1);
+
+    compressDb();
+
+    struct Data row2 = {3600, 60, 30, 1, NULL};
+    struct Data row1 = {3601, 1,   1, 1, &row2};
+    
+    checkTableContents(&row1);
+    freeStmtList();
+}
+
+void testCompressSecMultiFilters(void** state){
+ // Check that database second->minute compression is performed correctly for multiple filter
     int now = 7200;
     setTime(now);
     emptyDb();
-    addDbRow(3601, 1, "eth0",  1,  1, "");
-    addDbRow(3600, 1, "eth0",  2,  2, "");
-    addDbRow(3599, 1, "eth0",  4,  4, "");
-    addDbRow(3598, 1, "eth0",  8,  8, "");
-    addDbRow(3597, 1, "eth0", 16, 16, "");
+    addDbRow(3601, 1,   1, 1);
+    addDbRow(3601, 1,   2, 2);
+    addDbRow(3601, 1,   4, 3);
+    addDbRow(3600, 1,   8, 1);
+    addDbRow(3600, 1,  16, 2);
+    addDbRow(3600, 1,  32, 3);
+    addDbRow(3599, 1,  64, 1);
+    addDbRow(3598, 1, 128, 2);
+    addDbRow(3597, 1, 256, 3);
     compressDb();
 
-    struct Data row1 = {3601, 1,   1,  1, "eth0", "", NULL};
-    struct Data row2 = {3600, 60, 30, 30, "eth0", "", NULL};
-
-    checkTableContents(tc, 2, row1, row2);
+    struct Data row6 = {3600, 60,  288, 3, NULL};
+    struct Data row5 = {3600, 60,  144, 2, &row6};
+    struct Data row4 = {3600, 60,   72, 1, &row5};
+    struct Data row3 = {3601, 1,     4, 3, &row4};
+    struct Data row2 = {3601, 1,     2, 2, &row3};
+	struct Data row1 = {3601, 1,     1, 1, &row2};        
+	
+    checkTableContents(&row1);
+    freeStmtList();
 }
 
-void testCompressSecMultiAdapters(CuTest *tc){
- // Check that database second->minute compression is performed correctly for multiple adapters
-    int now = 7200;
-    setTime(now);
-    emptyDb();
-    addDbRow(3601, 1, "eth0",  1,  1, "");
-    addDbRow(3601, 1, "eth1",  2,  2, "");
-    addDbRow(3601, 1, "eth2",  4,  4, "");
-    addDbRow(3600, 1, "eth0",  8,  8, "");
-    addDbRow(3600, 1, "eth1", 16, 16, "");
-    addDbRow(3600, 1, "eth2", 32, 32, "");
-    addDbRow(3599, 1, "eth0", 64, 64, "");
-    addDbRow(3598, 1, "eth1",128,128, "");
-    addDbRow(3597, 1, "eth2",256,256, "");
-    compressDb();
-
-    struct Data row1 = {3601, 1,    1,   1, "eth0", "", NULL};
-    struct Data row2 = {3601, 1,    2,   2, "eth1", "", NULL};
-    struct Data row3 = {3601, 1,    4,   4, "eth2", "", NULL};
-    struct Data row4 = {3600, 60,  72,  72, "eth0", "", NULL};
-    struct Data row5 = {3600, 60, 144, 144, "eth1", "", NULL};
-    struct Data row6 = {3600, 60, 288, 288, "eth2", "", NULL};
-
-    checkTableContents(tc, 6, row1, row2, row3, row4, row5, row6);
-}
-
-void testCompressSecMultiIterations(CuTest *tc){
- /* Check that database second->minute compression is performed correctly for multiple adapters where
+void testCompressSecMultiIterations(void** state){
+ /* Check that database second->minute compression is performed correctly for multiple filters where
     the data is spread out over time such that multiple compressed rows for each
-    adapter will result. */
+    filter will result. */
     int now = 7200;
     setTime(now);
     emptyDb();
-    addDbRow(3601, 1, "eth0",    1,    1, "");
-    addDbRow(3601, 1, "eth1",    2,    2, "");
-    addDbRow(3601, 1, "eth2",    4,    4, "");
-    addDbRow(3600, 1, "eth0",    8,    8, "");
-    addDbRow(3600, 1, "eth1",   16,   16, "");
-    addDbRow(3600, 1, "eth2",   32,   32, "");
-    addDbRow(3599, 1, "eth0",   64,   64, "");
-    addDbRow(3598, 1, "eth1",  128,  128, "");
-    addDbRow(3597, 1, "eth2",  256,  256, "");
-    addDbRow(3540, 1, "eth0",  512,  512, "");
-    addDbRow(3540, 1, "eth1", 1024, 1024, "");
-    addDbRow(3540, 1, "eth2", 2048, 2048, "");
-    addDbRow(3539, 1, "eth0", 4096, 4096, "");
-    addDbRow(3538, 1, "eth1", 8192, 8192, "");
-    addDbRow(3537, 1, "eth2",16384,16384, "");
+    addDbRow(3601, 1,     1, 0);
+    addDbRow(3601, 1,     2, 1);
+    addDbRow(3601, 1,     4, 2);
+    addDbRow(3600, 1,     8, 0);
+    addDbRow(3600, 1,    16, 1);
+    addDbRow(3600, 1,    32, 2);
+    addDbRow(3599, 1,    64, 0);
+    addDbRow(3598, 1,   128, 1);
+    addDbRow(3597, 1,   256, 2);
+    addDbRow(3540, 1,   512, 0);
+    addDbRow(3540, 1,  1024, 1);
+    addDbRow(3540, 1,  2048, 2);
+    addDbRow(3539, 1,  4096, 0);
+    addDbRow(3538, 1,  8192, 1);
+    addDbRow(3537, 1, 16384, 2);
     compressDb();
-
-    struct Data row1 = {3601, 1,     1,    1, "eth0", "", NULL};
-    struct Data row2 = {3601, 1,     2,    2, "eth1", "", NULL};
-    struct Data row3 = {3601, 1,     4,    4, "eth2", "", NULL};
-    struct Data row4 = {3600, 60,   72,   72, "eth0", "", NULL};
-    struct Data row5 = {3600, 60,  144,  144, "eth1", "", NULL};
-    struct Data row6 = {3600, 60,  288,  288, "eth2", "", NULL};
-    struct Data row7 = {3540, 60, 4608, 4608, "eth0", "", NULL};
-    struct Data row8 = {3540, 60, 9216, 9216, "eth1", "", NULL};
-    struct Data row9 = {3540, 60,18432,18432, "eth2", "", NULL};
-
-    checkTableContents(tc, 9, row1, row2, row3, row4, row5, row6, row7, row8, row9);
+    
+    struct Data row9 = {3540, 60,18432, 2, NULL};
+    struct Data row8 = {3540, 60, 9216, 1, &row9};
+    struct Data row7 = {3540, 60, 4608, 0, &row8};
+    struct Data row6 = {3600, 60,  288, 2, &row7};
+    struct Data row5 = {3600, 60,  144, 1, &row6};
+    struct Data row4 = {3600, 60,   72, 0, &row5};
+    struct Data row3 = {3601, 1,     4, 2, &row4};
+    struct Data row2 = {3601, 1,     2, 1, &row3};
+    struct Data row1 = {3601, 1,     1, 0, &row2};
+    
+    checkTableContents(&row1);
+    freeStmtList();
 }
 
-void testCompressMin1Adapter(CuTest *tc){
- // Check that database minute->hour compression is performed correctly for a single adapter
+void testCompressMin1Filter(void** state){
+ // Check that database minute->hour compression is performed correctly for a single filter
     int now = 86400 + 3600;
     setTime(now);
     emptyDb();
-    addDbRow(3601, 60, "eth0",  1,  1, "");
-    addDbRow(3600, 60, "eth0",  2,  2, "");
-    addDbRow(3599, 60, "eth0",  4,  4, "");
-    addDbRow(3598, 60, "eth0",  8,  8, "");
-    addDbRow(3597, 60, "eth0", 16, 16, "");
+    addDbRow(3601, 60,  1, 1);
+    addDbRow(3600, 60,  2, 1);
+    addDbRow(3599, 60,  4, 1);
+    addDbRow(3598, 60,  8, 1);
+    addDbRow(3597, 60, 16, 1);
     compressDb();
+    
+    struct Data row2 = {3600, 3600, 30, 1, NULL};
+    struct Data row1 = {3601,   60,  1, 1, &row2};
 
-    struct Data row1 = {3601,   60,   1,  1, "eth0", "", NULL};
-    struct Data row2 = {3600, 3600,  30, 30, "eth0", "", NULL};
-
-    checkTableContents(tc, 2, row1, row2);
+    checkTableContents(&row1);
+    freeStmtList();
 }
 
-void testCompressMinMultiAdapters(CuTest *tc){
+void testCompressMinMultiFilters(void** state){
  // Check that database minute->hour compression is performed correctly for multiple adapters
     int now = 86400 + 3600;
     setTime(now);
     emptyDb();
-    addDbRow(3601, 60, "eth0",  1,  1, "");
-    addDbRow(3601, 60, "eth1",  2,  2, "");
-    addDbRow(3601, 60, "eth2",  4,  4, "");
-    addDbRow(3600, 60, "eth0",  8,  8, "");
-    addDbRow(3600, 60, "eth1", 16, 16, "");
-    addDbRow(3600, 60, "eth2", 32, 32, "");
-    addDbRow(3599, 60, "eth0", 64, 64, "");
-    addDbRow(3598, 60, "eth1",128,128, "");
-    addDbRow(3597, 60, "eth2",256,256, "");
+    addDbRow(3601, 60,   1, 0);
+    addDbRow(3601, 60,   2, 1);
+    addDbRow(3601, 60,   4, 2);
+    addDbRow(3600, 60,   8, 0);
+    addDbRow(3600, 60,  16, 1);
+    addDbRow(3600, 60,  32, 2);
+    addDbRow(3599, 60,  64, 0);
+    addDbRow(3598, 60, 128, 1);
+    addDbRow(3597, 60, 256, 2);
     compressDb();
-
-    struct Data row1 = {3601,   60,   1,   1, "eth0", "", NULL};
-    struct Data row2 = {3601,   60,   2,   2, "eth1", "", NULL};
-    struct Data row3 = {3601,   60,   4,   4, "eth2", "", NULL};
-    struct Data row4 = {3600, 3600,  72,  72, "eth0", "", NULL};
-    struct Data row5 = {3600, 3600, 144, 144, "eth1", "", NULL};
-    struct Data row6 = {3600, 3600, 288, 288, "eth2", "", NULL};
-
-    checkTableContents(tc, 6, row1, row2, row3, row4, row5, row6);
+    
+    struct Data row6 = {3600, 3600, 288, 2, NULL};
+    struct Data row5 = {3600, 3600, 144, 1, &row6};
+    struct Data row4 = {3600, 3600,  72, 0, &row5};
+    struct Data row3 = {3601,   60,   4, 2, &row4};
+    struct Data row2 = {3601,   60,   2, 1, &row3};
+    struct Data row1 = {3601,   60,   1, 0, &row2};
+    
+    checkTableContents(&row1); 
+    freeStmtList();
 }
-
-CuSuite* sqlGetSuite() {
-    CuSuite* suite = CuSuiteNew();
-    //SUITE_ADD_TEST(suite, testUpdateDbNull);
-    SUITE_ADD_TEST(suite, testUpdateDbMultiple);
-    SUITE_ADD_TEST(suite, testCompressSec1Adapter);
-    SUITE_ADD_TEST(suite, testCompressSecMultiAdapters);
-    SUITE_ADD_TEST(suite, testCompressSecMultiIterations);
-    SUITE_ADD_TEST(suite, testCompressMin1Adapter);
-    SUITE_ADD_TEST(suite, testCompressMinMultiAdapters);
-    SUITE_ADD_TEST(suite, testGetNextCompressTime);
-    return suite;
-}
-

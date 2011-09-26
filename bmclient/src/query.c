@@ -1,28 +1,3 @@
-/*
- * BitMeterOS
- * http://codebox.org.uk/bitmeterOS
- *
- * Copyright (c) 2011 Rob Dawson
- *
- * Licensed under the GNU General Public License
- * http://www.gnu.org/licenses/gpl.txt
- *
- * This file is part of BitMeterOS.
- *
- * BitMeterOS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * BitMeterOS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- */
-
 #include <stdio.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -60,53 +35,66 @@ void doQuery(){
 	 // Can't do a query without a range...
 		printf("No range has been specified. Use '-r' to specify a range, use '-h' to display help.\n");
 
+	} else if (prefs.filter == NULL) {
+	 // Need a valid filter name
+	 	printf("No filter name has been specfied.\n"); //TODO put proper msg in #define
+
 	} else {
-	 // First, print out the date/time range covered by the query
-		char date1[11];
-		char time1[9];
-		char date2[11];
-		char time2[9];
-
-		toDate(date1, prefs.rangeFrom);
-		toTime(time1, prefs.rangeFrom);
-		toDate(date2, prefs.rangeTo);
-		toTime(time2, prefs.rangeTo);
-
-		printf("From: %s %s\n", date1, time1);
-		printf("To:   %s %s\n", date2, time2);
-
-	 // Run the query here
-        struct Data* data = getQueryValues(prefs.rangeFrom, prefs.rangeTo, prefs.group, prefs.host, prefs.adapter);
-        struct Data* initData = data;
-
-	 // How we display the results depends on how they are grouped...
-		switch(prefs.group){
-			case PREF_GROUP_HOURS:
-				printGroupHours(data);
-				break;
-
-			case PREF_GROUP_DAYS:
-				printGroupDays(data);
-				break;
-
-			case PREF_GROUP_MONTHS:
-				printGroupMonths(data);
-				break;
-
-			case PREF_GROUP_YEARS:
-				printGroupYears(data);
-				break;
-
-			case PREF_GROUP_TOTAL:
-				printResultsForInterval(data, "Total:");
-				break;
-
-			default:
-				assert(FALSE); // Should have caught invalid/missing group values already
-				break;
+		struct Filter* filters = readFilters();
+		struct Filter* filter = getFilterFromName(filters, prefs.filter);
+		
+		if (filter == NULL){
+			printf("No filter named '%s' could be found.\n", prefs.filter); //TODO put proper msg in #define
+			
+		} else {
+		 // First, print out the date/time range covered by the query
+			char date1[11];
+			char time1[9];
+			char date2[11];
+			char time2[9];
+	
+			toDate(date1, prefs.rangeFrom);
+			toTime(time1, prefs.rangeFrom);
+			toDate(date2, prefs.rangeTo);
+			toTime(time2, prefs.rangeTo);
+	
+			printf("From: %s %s\n", date1, time1);
+			printf("To:   %s %s\n", date2, time2);
+	
+		 // Run the query here
+	        struct Data* data = getQueryValues(prefs.rangeFrom, prefs.rangeTo, prefs.group, filter->id);
+	        struct Data* initData = data;
+	
+		 // How we display the results depends on how they are grouped...
+			switch(prefs.group){
+				case PREF_GROUP_HOURS:
+					printGroupHours(data);
+					break;
+	
+				case PREF_GROUP_DAYS:
+					printGroupDays(data);
+					break;
+	
+				case PREF_GROUP_MONTHS:
+					printGroupMonths(data);
+					break;
+	
+				case PREF_GROUP_YEARS:
+					printGroupYears(data);
+					break;
+	
+				case PREF_GROUP_TOTAL:
+					printResultsForInterval(data, "Total:");
+					break;
+	
+				default:
+					assert(FALSE); // Should have caught invalid/missing group values already
+					break;
+			}
+	
+			freeData(initData);
 		}
-
-		freeData(initData);
+		freeFilters(filters);
 	}
 }
 
@@ -192,13 +180,12 @@ static void printGroupHours(struct Data* result){
 
 static void printResultsForInterval(struct Data* result, char* rangeTxt){
  // Print the date/time range for this interval, followed by the formatted ul/dl values
-	char dlTxt[20];
-	char ulTxt[20];
+	char vlTxt[20];
 
 	if (result != NULL){
-        formatAmounts(result->dl, result->ul, dlTxt, ulTxt, prefs.units);
+        formatAmount(result->vl, TRUE, (prefs.units == UNITS_ABBREV), vlTxt);
 	} else {
-	    formatAmounts(0, 0, dlTxt, ulTxt, prefs.units);
+	    formatAmount(0, TRUE, (prefs.units == UNITS_ABBREV), vlTxt);
 	}
-	printf("%s DL=%s UL=%s\n", rangeTxt, dlTxt, ulTxt);
+	printf("%s %s\n", rangeTxt, vlTxt);
 }

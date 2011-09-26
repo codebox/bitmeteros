@@ -10,7 +10,7 @@
 		<h1></h1>
 		<table>
 			<tr>
-				<th> </th><th>Download</th><th>Upload</th><th>Combined</th>
+				<th>&nbsp;</th><th>Download</th><th>Upload</th><th>Combined</th>
 			</tr>
         	<tr>
         		<td class="name">Today</td><td class="value"><!--[dlDay]--></td><td class="value"><!--[ulDay]--></td><td class="value"><!--[cmDay]--></td>

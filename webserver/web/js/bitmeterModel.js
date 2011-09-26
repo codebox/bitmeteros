@@ -12,10 +12,10 @@ BITMETER.model = (function(){
     
  // We use these defaults when there is nothing else in memory or in the cookie
     defaults = {
-        'monitorDlPeak' : 0, 
-        'monitorUlPeak' : 0, 
-        'monitorShowDl' : 'true', 
-        'monitorShowUl' : 'true',
+    	'colour_dl'  : '#aa0000',
+    	'colour_ul'  : '#00aa00',
+    	'colour_idl' : '#ffaa00',
+    	'colour_iul' : '#00aaff',
         'monitorSpeedInTitle' : 'false',
         'monitorScale'  : 204800,
         'historyMinScale'  : 12288000,
@@ -24,9 +24,7 @@ BITMETER.model = (function(){
         'queryGrouping'    : 2,
         'queryResultsPerPage' : 20,
         'queryResults' : [],
-        'dlColour' : config.dlColour,
-        'ulColour' : config.ulColour,
-        'adapters' : '',
+        'filters' : '1,2,3,4',
         'binaryUnits' : 'true',
         'showFilterWarning' : 'true',
         'monitorRefresh' : config.monitorInterval,
@@ -88,32 +86,14 @@ BITMETER.model = (function(){
  
 
  // Monitor peak values
-    model.getMonitorDlPeak = function(){
-        return Number(get('monitorDlPeak'));
+    model.getMonitorPeak = function(filter){
+    	return get('monitorPeak_' + filter) || 0;
     };
-    model.setMonitorDlPeak = function(peakValue){
-        set('monitorDlPeak', '' + peakValue, false);
-    };
-    model.getMonitorUlPeak = function(){
-        return Number(get('monitorUlPeak'));
-    };
-    model.setMonitorUlPeak = function(peakValue){
-        set('monitorUlPeak', '' + peakValue, false);
+    model.setMonitorPeak = function(filter, peakValue){
+        set('monitorPeak_' + filter, peakValue, false);
     };
     
- // Show/hide the upload and download data on the Monitor page  
-    model.getMonitorShowDl = function(){
-        return get('monitorShowDl') === 'true';
-    };
-    model.setMonitorShowDl = function(showFlag){
-        set('monitorShowDl', '' + showFlag, true);
-    };
-    model.getMonitorShowUl = function(){
-        return get('monitorShowUl') === 'true';
-    };
-    model.setMonitorShowUl = function(showFlag){
-        set('monitorShowUl', '' + showFlag, true);
-    };
+ // Show/hide speeds in title bar on the Monitor page  
     model.getMonitorSpeedInTitle = function(){
         return get('monitorSpeedInTitle') === 'true';
     };
@@ -157,27 +137,20 @@ BITMETER.model = (function(){
         set('queryResultsPerPage', '' + resultsPerPage, true);
     };
     
- // Colours for Upload/Download plots on graphs
-    model.getDownloadColour = function(){
-        return get('dlColour');
+ // Colours for the plots on graphs
+    model.getColour = function(filter){
+        return get('colour_' + filter);
     };
-    model.setDownloadColour = function(dlColour){
-        set('dlColour', dlColour, true);
-    };
-
-    model.getUploadColour = function(){
-        return get('ulColour');
-    };
-    model.setUploadColour = function(ulColour){
-        set('ulColour', ulColour, true);
+    model.setColour = function(filter, colour){
+        set('colour_' + filter, colour, true);
     };
     
- // Value determines which adapters we display data for 
-    model.getAdapters = function(){
-        return get('adapters');
+ // Value determines which filters we display data for 
+    model.getFilters = function(){
+        return get('filters');
     };
-    model.setAdapters = function(adapters){
-        set('adapters', adapters, true);
+    model.setFilters = function(filters){
+        set('filters', filters, true);
     };
 
  // Determines if a warning is shown when a data filter is active

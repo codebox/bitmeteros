@@ -1,28 +1,6 @@
-/*
- * BitMeterOS
- * http://codebox.org.uk/bitmeterOS
- *
- * Copyright (c) 2011 Rob Dawson
- *
- * Licensed under the GNU General Public License
- * http://www.gnu.org/licenses/gpl.txt
- *
- * This file is part of BitMeterOS.
- *
- * BitMeterOS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * BitMeterOS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- */
-
+#ifdef UNIT_TESTING
+	#import "test.h"
+#endif
 #ifdef _WIN32
 	#define __USE_MINGW_ANSI_STDIO 1
 #endif
@@ -35,7 +13,7 @@
 #include "common.h"
 #include "client.h"
 
-#define ALERT_SQL_SELECT_ALL                 "SELECT id, name, active, bound, direction, amount FROM alert;"
+#define ALERT_SQL_SELECT_ALL                 "SELECT id, name, active, bound, filter, amount FROM alert;"
 #define ALERT_SQL_SELECT_INTERVAL            "SELECT yr, mn, dy, wk, hr FROM interval WHERE id=?;"
 #define ALERT_SQL_SELECT_INTERVALS_FOR_ALERT "SELECT interval_id FROM alert_interval WHERE alert_id=?"
 #define ALERT_SQL_DELETE_ALERT               "DELETE FROM alert WHERE id=?;"
@@ -43,11 +21,11 @@
 #define ALERT_SQL_DELETE_ALERT_INTERVAL      "DELETE FROM alert_interval WHERE alert_id=?;"
 #define ALERT_SQL_SELECT_MAX_ALERT_ID        "SELECT max(id) FROM alert;"
 #define ALERT_SQL_SELECT_MAX_INTERVAL_ID     "SELECT max(id) FROM interval;"
-#define ALERT_SQL_INSERT_ALERT               "INSERT INTO alert (id, name, active, bound, direction, amount) VALUES (?,?,?,?,?,?);"
+#define ALERT_SQL_INSERT_ALERT               "INSERT INTO alert (id, name, active, bound, filter, amount) VALUES (?,?,?,?,?,?);"
 #define ALERT_SQL_INSERT_INTERVAL            "INSERT INTO interval (id, yr, mn, dy, wk, hr) VALUES (?,?,?,?,?,?);"
 #define ALERT_SQL_INSERT_ALERT_INTERVAL      "INSERT INTO alert_interval (alert_id, interval_id) VALUES (?,?);"
-#define ALERT_SQL_SELECT_ROWS                "SELECT ts AS ts, dr AS dr, dl AS dl, ul AS ul FROM data WHERE ts >=?;"
-#define ALERT_SQL_TOTAL_BETWEEN              "SELECT SUM(dl) AS dl, SUM(ul) AS ul FROM data WHERE ts>? AND ts <=?"
+#define ALERT_SQL_SELECT_ROWS                "SELECT ts AS ts, dr AS dr, vl AS vl FROM data2 WHERE ts >=? AND fl=?;"
+#define ALERT_SQL_TOTAL_BETWEEN              "SELECT SUM(vl) AS vl FROM data2 WHERE ts>? AND ts <=? AND fl=?"
 
 static int getNextId(char* sql);
 static struct Alert* alertForRow(sqlite3_stmt *stmtSelectAlerts, sqlite3_stmt *stmtSelectInterval, sqlite3_stmt *stmtSelectIntervalIdsForAlert);    
@@ -126,24 +104,17 @@ struct Data* getTotalsForAlert(struct Alert* alert, time_t now){
     if (ts >= 0){
         if (alert->periods == NULL){
          /* Special case - the Alert covers all days/times since its beginning. The totals will
-            therefore be everything in the database (for all hosts/adapters) with a ts greater 
+            therefore be everything matching the filter with a ts greater 
             than the 'first matching' ts we found above, and less than 'now'. */
             sqlite3_stmt *stmt = getStmt(ALERT_SQL_TOTAL_BETWEEN);
             sqlite3_bind_int(stmt, 1, ts);
             sqlite3_bind_int(stmt, 2, now);
+            sqlite3_bind_int(stmt, 3, alert->filter);
             totals = runSelect(stmt);
 			finishedStmt(stmt);            
 			
             if (totals == NULL){
             	totals = allocData();	
-            }
-            
-         // Empty out the values we aren't interested in
-            if (!(alert->direction & DL_FLAG)){
-                totals->dl = 0;    
-            }
-            if (!(alert->direction & UL_FLAG)){
-                totals->ul = 0;    
             }
             
         } else {
@@ -156,6 +127,7 @@ struct Data* getTotalsForAlert(struct Alert* alert, time_t now){
          // Get all rows from the db after the first matching ts
             sqlite3_stmt *stmt = getStmt(ALERT_SQL_SELECT_ROWS);
             sqlite3_bind_int(stmt, 1, ts + 1);
+            sqlite3_bind_int(stmt, 2, alert->filter);
             
             struct Data* firstRow = runSelect(stmt);
             struct Data* resultRow = firstRow;
@@ -169,12 +141,7 @@ struct Data* getTotalsForAlert(struct Alert* alert, time_t now){
 	                while(period != NULL){
 	                    if (isDateCriteriaMatch(period, resultRow->ts - resultRow->dr)){
 	                     // There is a match - add the rows values to the totals and move on to the next row
-	                        if (alert->direction & DL_FLAG){
-	                            totals->dl += resultRow->dl;
-	                        }
-	                        if (alert->direction & UL_FLAG){
-	                            totals->ul += resultRow->ul;
-	                        }
+                            totals->vl += resultRow->vl;
 	                        break;    
 	                    }
 	                    period = period->next;   
@@ -252,7 +219,7 @@ static int doAddAlert(struct Alert* alert, int alertId){
         sqlite3_bind_text(stmtInsertAlert,  2, alert->name, strlen(alert->name), SQLITE_TRANSIENT);
         sqlite3_bind_int(stmtInsertAlert,   3, alert->active);
         sqlite3_bind_int(stmtInsertAlert,   4, boundId); // this is the unique id we remembered previously
-        sqlite3_bind_int(stmtInsertAlert,   5, alert->direction);
+        sqlite3_bind_int(stmtInsertAlert,   5, alert->filter);
         sqlite3_bind_int64(stmtInsertAlert, 6, alert->amount);
         
         int rc = sqlite3_step(stmtInsertAlert);
@@ -426,7 +393,7 @@ static struct Alert* alertForRow(sqlite3_stmt *stmtSelectAlerts,
  // Create the DateCriteria struct for the alerts 'bound' (ie. when it starts)
     alert->bound = getIntervalForId(stmtSelectInterval, boundId);
     
-    alert->direction = sqlite3_column_int(stmtSelectAlerts, 4);
+    alert->filter = sqlite3_column_int(stmtSelectAlerts, 4);
     alert->amount = sqlite3_column_int64(stmtSelectAlerts, 5);
     
  // Create DateCriteria structs for each of the periods of the alert (ie the times/days when it is active)

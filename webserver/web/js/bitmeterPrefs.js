@@ -5,19 +5,18 @@
 Contains the code for the Preferences page.
 */
 BITMETER.tabShowPrefs = function(){
-    // Nothing to do
+	// nothing to do
 };
 
 $(function(){
     var colourPickerDialogObj = $('#colourPicker'),
-        adapterTableBody      = $('#adapterTable'),
+        filterList            = $('#filterList'),
         colourPickerObj       = $.farbtastic('#colourPickerDiv', function(col){
             $('#colourPickerTxt').val(col);
         }),
         rowIndex=0,
-        hosts = {},
+        filters = {},
         adapterCount = 0,
-        HEX_COL = "hexcol",
         prefsDialog,
         dialogOpts = {
             autoOpen : false,
@@ -42,28 +41,40 @@ $(function(){
         colourPickerDialogObj.dialog("open");
     }
     
+    $.each(config.filters, function(i,o){
+	    $('#prefsFilterColours').append('<div class="filterNameContainer">' + o.desc + '</div>');
+	    
+	    var filterBox = $('<div class="prefValue filterColourBox"></div>');
+	    
+	    var currentColour = BITMETER.model.getColour(o.name);
+	    filterBox.css('background-color', currentColour);
+	    
+	    var HEX_COL = "hexcol";
+	    filterBox.data(HEX_COL, currentColour)
+	    
+	    filterBox.click(function(){
+            showColourPicker(o.desc, filterBox.data(HEX_COL), function(value){
+                    filterBox.css('background-color', value).data(HEX_COL, value);
+                    BITMETER.model.setColour(o.name, value);
+                });
+        });
+	    $('#prefsFilterColours').append(filterBox);
+	    
+		$('#prefsFilterColours').append('<div class="spacer"></div>');
+	});
+	
     $('#colourPickerTxt').keyup(function(){
         colourPickerObj.setColor($('#colourPickerTxt').val());
     });
     
     colourPickerDialogObj.dialog(dialogOpts);
-    $('#dlColourPicker').click(function(){
-            showColourPicker('Download', $('#dlColourPicker').data(HEX_COL), function(value){
-                    $('#dlColourPicker').css('background-color', value).data(HEX_COL, value);
-                });
-        });
-    $('#ulColourPicker').click(function(){
-            showColourPicker('Upload', $('#ulColourPicker').data(HEX_COL), function(value){
-                    $('#ulColourPicker').css('background-color', value).data(HEX_COL, value);
-                });
-        });
         
     $('#colourPickerTxtDiv li').click(function(){
         colourPickerObj.setColor('#' + this.id.substr(3));
     });
     
-    $('#dlColourPicker').css('background-color', BITMETER.model.getDownloadColour()).data(HEX_COL, BITMETER.model.getDownloadColour());
-    $('#ulColourPicker').css('background-color', BITMETER.model.getUploadColour()).data(HEX_COL, BITMETER.model.getUploadColour());
+    //$('#dlColourPicker').css('background-color', BITMETER.model.getDownloadColour()).data(HEX_COL, BITMETER.model.getDownloadColour());
+    //$('#ulColourPicker').css('background-color', BITMETER.model.getUploadColour()).data(HEX_COL, BITMETER.model.getUploadColour());
     
     $('#rssCount').val(config.rssItems);
     $('#rssCount').keypress(BITMETER.makeKeyPressHandler(0,8,'0-9'));
@@ -83,90 +94,47 @@ $(function(){
     $('#prefHistoryInterval').keypress(BITMETER.makeKeyPressHandler(0,8,45,46,'0-9'));
     $('#prefSummaryInterval').keypress(BITMETER.makeKeyPressHandler(0,8,45,46,'0-9'));
     
- // Populate the Adapters table from the list of adapter data held in the config object
-    adapterTableBody.html('');
-    
-    function describeHostAdapterCombination(val){
-        BITMETER.assert(val);
-        function describeHost(hs){
-            return (hs === 'local') ? 'this host': ('the host <b>' + hs + '</b>.');
-        }
-        var parts = val.split(':', 2);
-        if (parts.length === 1){
-            return describeHost(val);
-        } else {
-            BITMETER.assert(parts.length === 2);
-            return 'the adapter <b>' + parts[1] + '</b> on ' + describeHost(parts[0]);
-        }       
-    }
-    function addRow(value, desc){
-        var html;
-        html =  '<tr><td><input type="radio" class="prefRadio" name="adapter" id="a' + rowIndex + '" value="' + value + '" /></td>';
-        html += '<td><label for="a' + rowIndex + '">';
-        if (desc){
-            html += desc;
-        } else {
-            html += 'Display only data from ' + describeHostAdapterCombination(value);
-        }
-        html += '</label></td></tr>';
-        adapterTableBody.append(html);
-        rowIndex++;
-    }
-    
-    $.each(config.adapters, function(i,o){
-        var hostName = o.hs;
-        if (hosts[hostName]){
-            hosts[hostName]++;
-        } else {
-            hosts[hostName] = 1;
-        }
-        adapterCount++;
-    });
-    
-    function toggleFilterWarning(show){
-        if (show && BITMETER.model.getAdapters()){
-            $('p.filterWarning').show();
-            $('p.filterWarning').html('Data Filter is active, only displaying data from ' + describeHostAdapterCombination(BITMETER.model.getAdapters()));
-        } else {
-            $('p.filterWarning').hide();
-        }
-    }
-    
-    if (adapterCount > 1){
-        addRow('', 'Display all data in the database.');
+ // Populate the Filters table from the list of filter data held in the config object
+    filterList.html('');
 
-        $.each(hosts, function(hs, ad){
-            addRow(hs);
-        });
-    
-        $.each(config.adapters, function(i,o){
-            if (hosts[o.hs] > 1){
-                addRow(o.hs + ':' + o.ad);
-            }
-        });
-    
-        $('#adapterTable tbody input[value="' + BITMETER.model.getAdapters() + '"]').click();
+	var filterIdArray = BITMETER.model.getFilters().split(',');
+	
+	$.each(config.filters, function(i,o){
+		var filterIsActive = BITMETER.isFilterActive(o.id);
+		var chkBoxId = "prefFilterChk" + o.id;
+		var chkBox = $('<input id="' + chkBoxId + '" name="' + o.id + '" type="checkbox"></input>');
+        var filterLabel = $('<label for="' + chkBoxId + '">' + o.desc + '</label>');
         
-    } else {
-        adapterTableBody.append('<tr><td>Data from only 1 adapter was found in the database</td></tr>');
-    }
+        function setCheckboxLabelColour(){
+	    	if (chkBox.attr('checked')){
+	    		filterLabel.css('color', BITMETER.model.getColour(o.name));
+	    	} else {
+	    		filterLabel.css('color', 'grey');
+	    	}
+		}
+        chkBox.attr('checked', filterIsActive ? 'checked' : null);
+        chkBox.click(function(){
+        	setCheckboxLabelColour();
+        });
+        
+        filterList.append(chkBox);
+        filterList.append(filterLabel);
+        filterList.append('<br>');
+		
+		setCheckboxLabelColour();
+	});    
     
     $('#chkShowFilterWarning').attr('checked', BITMETER.model.getShowFilterWarning());
     
-    $('#prefsAdaptersSaveLocal').button();
-    $('#prefsAdaptersSaveLocal').click(function(){
-        var selectedAdapter = $('#adapterTable tbody input:checked'),
-            showFilter      = $('#chkShowFilterWarning').attr('checked');
+    $('#prefsFiltersSaveLocal').button();
+    $('#prefsFiltersSaveLocal').click(function(){
+    	var filters = [];
+        $('#filterList input:checked').each(function(){
+        	filters.push(this.name);
+        });
         
-        if (selectedAdapter){
-            BITMETER.model.setAdapters(selectedAdapter.val());
-        }
-        
-        BITMETER.model.setShowFilterWarning(showFilter);
-        
-        toggleFilterWarning(selectedAdapter && showFilter);
+		BITMETER.model.setFilters(filters.join(','));
     });
-    
     
  // Set the correct display units type, and attach click handlers
     if (BITMETER.model.getBinaryUnits()){
@@ -196,23 +164,23 @@ $(function(){
     $('#prefsColoursRemote').click(function(){
         setColoursOnModel();
         $('#prefsSaveColoursStatus').html('Saving colour choices to the server... <img src="css/images/working.gif" /> ');
-        var dlCol = BITMETER.model.getDownloadColour().substr(1),
-            ulCol = BITMETER.model.getUploadColour().substr(1);
-        $.ajax({
-            url : 'config?web.colour_dl=' + dlCol + '&web.colour_ul=' + ulCol, 
-            success : function(){
-                $('#prefsSaveColoursStatus').html('Colour choices saved.');
-                window.setTimeout(function(){
-                        $('#prefsSaveColoursStatus').html('');
-                    }, 3000);
-            },
-            error : function(){
-                $('#prefsSaveColoursStatus').html('Failed to save colour choices.');
-                window.setTimeout(function(){
-                        $('#prefsSaveColoursStatus').html('');
-                    }, 3000);
-            }
-        });
+        //var dlCol = BITMETER.model.getDownloadColour().substr(1),
+        //    ulCol = BITMETER.model.getUploadColour().substr(1);
+        //$.ajax({
+        //    url : 'config?web.colour_dl=' + dlCol + '&web.colour_ul=' + ulCol, 
+        //    success : function(){
+        //        $('#prefsSaveColoursStatus').html('Colour choices saved.');
+        //        window.setTimeout(function(){
+        //                $('#prefsSaveColoursStatus').html('');
+        //            }, 3000);
+        //    },
+        //    error : function(){
+        //        $('#prefsSaveColoursStatus').html('Failed to save colour choices.');
+        //        window.setTimeout(function(){
+        //                $('#prefsSaveColoursStatus').html('');
+        //            }, 3000);
+        //    }
+        //});
     });
     $('#prefsColoursLocal').click(function(){
         setColoursOnModel();

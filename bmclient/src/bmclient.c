@@ -1,28 +1,6 @@
-/*
- * BitMeterOS
- * http://codebox.org.uk/bitmeterOS
- *
- * Copyright (c) 2011 Rob Dawson
- *
- * Licensed under the GNU General Public License
- * http://www.gnu.org/licenses/gpl.txt
- *
- * This file is part of BitMeterOS.
- *
- * BitMeterOS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * BitMeterOS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- */
-
+#ifdef UNIT_TESTING 
+	#include "test.h"
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -35,14 +13,31 @@ Contains the entry-point for the bmclient command-line utility.
 */
 
 // This struct get populated by the various flags/options read from the command-line
-struct Prefs prefs = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL};
+struct Prefs prefs = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL};
 
-int main(int argc, char **argv){
+static struct BmClientCalls calls = {&doHelp, &doVersion, &doDump, &doMonitor, 
+		&doSummary, &doQuery, &setLogLevel, &parseArgs, &openDb, &closeDb, &dbVersionCheck};	
+
+static struct BmClientCalls getCalls(){
+	#ifdef UNIT_TESTING	
+		return mockBmClientCalls;
+	#else
+		return calls;
+	#endif
+}
+
+#ifndef UNIT_TESTING	
+	int main(int argc, char **argv){
+		return _main(argc, argv);	
+	}
+#endif
+
+int _main(int argc, char **argv){
  // Interpret the command-lin arguments and decide if they make sense
-	int status = parseArgs(argc, argv, &prefs);
+	int status = getCalls().parseArgs(argc, argv, &prefs);
 
     printf(COPYRIGHT);
-	setLogLevel(LOG_INFO);
+	getCalls().setLogLevel(LOG_INFO);
 	
 	if (status == FAIL){
 	 // The command-line was duff...
@@ -51,42 +46,42 @@ int main(int argc, char **argv){
 			printf("Error: %s\n", prefs.errorMsg);
 		} else {
 		 // ...and we have no specific error message, so show a vague one
-			printf("BitMeter did not understand. ");
+			printf(ERR_WTF);
 		}
-		printf("Use the '-h' option to display help.\n");
+		printf(SHOW_HELP);
 
 	} else if (prefs.help){
 	 // Dump the help info and stop
-		doHelp();
+		getCalls().doHelp();
 
 	} else if (prefs.version){
 	 // Show the version and stop
-		doVersion();
+		getCalls().doVersion();
 
 	} else {
 	 // We will need to go to the database if we end up here
-		openDb();
-        dbVersionCheck();
+		getCalls().openDb();
+        getCalls().dbVersionCheck();
 
 		switch(prefs.mode){
 			case PREF_MODE_DUMP:
-				doDump();
+				getCalls().doDump();
 				break;
 			case PREF_MODE_SUMMARY:
-				doSummary();
+				getCalls().doSummary();
 				break;
 			case PREF_MODE_MONITOR:
-				doMonitor();
+				getCalls().doMonitor();
 				break;
 			case PREF_MODE_QUERY:
-				doQuery();
+				getCalls().doQuery();
 				break;
 			default:
 				assert(FALSE); // Any other mode value should cause parseArgs to fail
 				break;
 		}
 
-		closeDb();
+		getCalls().closeDb();
 	}
 
 	return 0;

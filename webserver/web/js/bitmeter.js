@@ -25,7 +25,7 @@ $.ajaxSetup({
             BITMETER.errorDialog.show(msg);
         },
     dataFilter : function (data, dataType) {
-        if (dataType !== 'script' && !data){
+        if (!data){
          // If the server goes down we get an empty 'data' parameter
             throw "No data returned";	
         }
@@ -205,16 +205,28 @@ BITMETER.arraysEqual = function(arr1, arr2) {
     }
 };
 
-BITMETER.addAdaptersToRequest = function(req){
-    if (BITMETER.model.getAdapters()) {
+BITMETER.addFiltersToRequest = function(req){
+    if (BITMETER.model.getFilters()) {
         if (req.indexOf('?') < 0){
             req += '?';
         } else {
             req += '&';
         }
-        req += ('ha=' + BITMETER.model.getAdapters());
+        req += ('fl=' + BITMETER.model.getFilters());
     }
     return req;
+};
+
+BITMETER.isFilterActive = function(id){
+	return ($.inArray('' + id, BITMETER.model.getFilters().split(',')) >= 0);
+};
+
+BITMETER.forEachFilter = function(fn, activeOnly) {
+	$.each(config.filters, function(i, filterObj){
+		if (!activeOnly || BITMETER.isFilterActive(filterObj.id)){
+			return fn(filterObj);	
+		}
+	});
 };
 
 BITMETER.confirmDialog = (function(){
@@ -444,7 +456,7 @@ BITMETER.applyScale = (function(){
     var MIN_SCALE = 4;
     return function(graph, newScale){
         if (newScale >= MIN_SCALE) {
-            graph.getAxes().yaxis.options.max = newScale;
+            graph.getOptions().yaxis.max = newScale;
             graph.setupGrid();
             graph.draw();
             return true;
@@ -557,10 +569,7 @@ $(function(){
     var datePickerFormat = $('#createAlertStartFixedDate').datepicker("option", "dateFormat");
     $('#createAlertStartDetailsFormat').html("(" + datePickerFormat + ")");
     
-    $.ajax({
-        url : "http://updates.codebox.org.uk/version/bitmeteros/version2.js", 
-        dataType : 'script'
-    });
+    //$.getJSON("http://updates.codebox.org.uk/version/bitmeteros/version2.js?callback=?", BITMETER.showVersion);
 });
 
 BITMETER.showVersion = function(data){

@@ -11,6 +11,34 @@ BITMETER.tabShowQuery = function(){
 $(function(){
     var queryResultsGridObj, dateFormat, queryDialog, datePickerOpts = { showOn: 'button', buttonImage: '/css/images/calendar.gif' };
 
+	var TS_TRIMMERS = {
+		'fnHour' : function(ts){
+			var dt = new Date(ts);
+			dt.setMilliseconds(0);
+			dt.setSeconds(0);
+			dt.setMinutes(0);
+			return dt.getTime();
+		},
+		'fnDay' : function(ts){
+			var dt = new Date(TS_TRIMMERS.fnHour(ts));
+			dt.setHours(0);
+			return dt.getTime();
+		},
+		'fnMonth' : function(ts){
+			var dt = new Date(TS_TRIMMERS.fnDay(ts));
+			dt.setDate(1);
+			return dt.getTime();
+		},
+		'fnYear' : function(ts){
+			var dt = new Date(TS_TRIMMERS.fnMonth(ts));
+			dt.setMonth(0);
+			return dt.getTime();
+		},
+		'fnTotal' : function(ts){
+			return 0;
+		}
+	};
+
     function runQuery(){
         var fd, td, errList=[], df, reqTxt;
         $('#queryErrBox').hide();
@@ -37,25 +65,48 @@ $(function(){
          // The date values were ok, so continue
             $('#queryStatusBox').html('Searching... <img src="css/images/working.gif" alt="search in progress" />');
             $('#queryExportLink').hide();
-            reqTxt = BITMETER.addAdaptersToRequest('query?from=' + fd + '&to=' + td + '&group=' + $('#queryDisplay').val());
+            reqTxt = BITMETER.addFiltersToRequest('query?from=' + fd + '&to=' + td + '&group=' + $('#queryDisplay').val());
             $.get(reqTxt, function(results){
-                 // Store the results, adding in combined totals - we need them elsewhere
-                    $.each(results, function(i,o){
-                        o.cm = o.dl + o.ul;
-                    });
-                    BITMETER.model.setQueryResults(results);
-                    BITMETER.model.setQueryGrouping($('#queryDisplay').val());
-                    queryResultsGridObj[0].grid.populate();
-                    var resultCount = results.length;
-                    $('#queryStatusBox').html('Search found ' + resultCount + ' result' + (resultCount === 1 ? '' : 's') + '.');
-                    if (resultCount){
-                        $('#queryExportLink').show();
-                        $('#queryExportLink').attr('href', reqTxt + '&csv=1');
-                    } else {
-                        $('#queryExportLink').attr('href', '');
-                        $('#queryExportLink').hide();
-                    }
-                });
+             // Store the results for later
+            	var tsBuckets = {};
+	            var currentGrouping = BITMETER.model.getQueryGrouping();
+	            var TRIM_FN_NAMES = ['fnHour', 'fnDay', 'fnMonth', 'fnYear', 'fnTotal'];
+          		var fnTsAdjuster = TS_TRIMMERS[TRIM_FN_NAMES[currentGrouping-1]];
+          		
+            	$.each(results, function(i,o){
+					var ts = fnTsAdjuster((o.ts - o.dr) * 1000) / 1000;
+					
+            	    if (!tsBuckets[ts]){
+            	     // First entry for this ts, so set up the initial values
+            	    	tsBuckets[ts] = {dr : o.dr}; 
+	        			BITMETER.forEachFilter(function(f){
+	        				tsBuckets[ts][f.id] = 0;
+						}, false);
+            	    }
+            	    tsBuckets[ts][o.fl] += o.vl;
+            	});
+            	
+            	var resultArray = [];
+            	$.each(tsBuckets, function(k,v){
+            		v.ts = k;
+            		resultArray.push(v);
+            	});
+            	
+            	BITMETER.model.setQueryResults(resultArray);
+            	BITMETER.model.setQueryGrouping($('#queryDisplay').val());
+            	queryResultsGridObj[0].grid.populate();
+            	
+            	var resultCount = resultArray.length;
+            	$('#queryStatusBox').html('Search found ' + resultCount + ' result' + (resultCount === 1 ? '' : 's') + '.');
+            	
+            	if (resultCount){
+            	    $('#queryExportLink').show();
+            	    $('#queryExportLink').attr('href', reqTxt + '&csv=1');
+            	} else {
+            	    $('#queryExportLink').attr('href', '');
+            	    $('#queryExportLink').hide();
+            	}
+            });
         } else {
          // There was a problem with the dates, show an error and don't send the query
             $('#errMsgList').html('');
@@ -95,25 +146,78 @@ $(function(){
 
     $('#queryButton').button();
 
+	var colModelArray = [{display: 'Date', name : 'ts', width : 180, sortable : true, align: 'center'}];
+	BITMETER.forEachFilter(function(o){
+			colModelArray.push(
+				{display: o.desc, name : o.id, width : 120, sortable : true, align: 'center'}
+			);
+		}, true);
+
+
+	var formattersArray = [
+        function(ts){
+        	ts = Number(ts);
+            var formatTxt, mod, roundedTs, startOfRange, endOfRange;
+
+            if (BITMETER.model.getQueryGrouping() !== 1){
+             // Date values displayed in the grid are formatted according to how the results are grouped
+                switch (BITMETER.model.getQueryGrouping()) {
+                    case 2: formatTxt = 'dd M yy'; break;
+                    case 3: formatTxt = 'MM yy'; break;
+                    case 4: formatTxt = 'yy'; break;
+                    case 5: formatTxt = ''; break;
+                }
+
+                return $.datepicker.formatDate(formatTxt, new Date(ts * 1000));
+
+            } else {
+             // We are displaying both Dates and Times in the grid because the results are grouped per-hour, so do things slightly differently
+                mod = (ts % 3600);
+                if (mod){
+                 /* This should only happen if the range includes the current date/time - this value probably won't be exactly a full hour, but
+                    instead will cover however long it is between the last hour boundary and now. Round up to the next full hour. */
+                    roundedTs = ts - mod + 3600;
+                } else {
+                    roundedTs = ts;
+                }
+
+                startOfRange = new Date(roundedTs * 1000);
+             // ts value has been adjusted to mark the start of the interval, so add 1 hour to get the end
+                endOfRange   = new Date((roundedTs + 3600) * 1000);
+
+                return BITMETER.zeroPad(startOfRange.getHours()) + ':00-' + BITMETER.zeroPad(endOfRange.getHours()) + ':00 ' + $.datepicker.formatDate('dd M yy', startOfRange);
+            }
+        }
+    ];
+        
+	BITMETER.forEachFilter(function(){
+		formattersArray.push(BITMETER.formatAmount);
+	}, false);
+
  // Set up the grid, the flexigrid prefs are non-standard because we use a hacked version
     queryResultsGridObj = $('#queryResults').flexigrid({
         preProcess: function(data){
          // The grid needs our data in this format...
             var rows = [];
-            $.each(data, function(i,o){
-             // Subtract the duration from the timestamp so the new value represents the start of the interval
-                rows.push({id: o.ts, cell: [o.ts - o.dr, o.dl, o.ul, o.dl + o.ul]});
-            });
+
+            $.each(data, function(i,o) {
+		     	var cellData = [o.ts];
+		     	BITMETER.forEachFilter(function(f){
+			     		var valueForThisFilter = o[f.id];
+			     		if (valueForThisFilter){
+				     		cellData.push(valueForThisFilter);
+				     	} else {
+				     		cellData.push(0);
+				     	}
+			     	}, true);
+		     	
+		        rows.push({id: o.ts, cell: cellData});
+		 	});
 
             return {total : BITMETER.model.getQueryResults().length, page : BITMETER.model.getQueryResultsPage(), rows: rows};
         },
         dataType : 'json',
-        colModel : [
-            {display: 'Date',     name : 'ts', width : 180, sortable : true, align: 'center'},
-            {display: 'Download', name : 'dl', width : 120, sortable : true, align: 'center'},
-            {display: 'Upload',   name : 'ul', width : 120, sortable : true, align: 'center'},
-            {display: 'Combined', name : 'cm', width : 120, sortable : true, align: 'center'}
-        ],
+        colModel : colModelArray,
         sortname: "ts",
         sortorder: "desc",
         usepager: true,
@@ -141,46 +245,11 @@ $(function(){
 
             return BITMETER.model.getQueryResults();
         },
-        formatters : [
-            function(ts){
-                var formatTxt, mod, roundedTs, startOfRange, endOfRange;
-
-                if (BITMETER.model.getQueryGrouping() !== 1){
-                 // Date values displayed in the grid are formatted according to how the results are grouped
-                    switch (BITMETER.model.getQueryGrouping()) {
-                        case 2: formatTxt = 'dd M yy'; break;
-                        case 3: formatTxt = 'MM yy'; break;
-                        case 4: formatTxt = 'yy'; break;
-                        case 5: formatTxt = ''; break;
-                    }
-
-                    return $.datepicker.formatDate(formatTxt, new Date(ts * 1000));
-
-                } else {
-                 // We are displaying both Dates and Times in the grid because the results are grouped per-hour, so do things slightly differently
-                    mod = (ts % 3600);
-                    if (mod){
-                     /* This should only happen if the range includes the current date/time - this value probably won't be exactly a full hour, but
-                        instead will cover however long it is between the last hour boundary and now. Round up to the next full hour. */
-                        roundedTs = ts - mod + 3600;
-                    } else {
-                        roundedTs = ts;
-                    }
-
-                    startOfRange = new Date(roundedTs * 1000);
-                 // ts value has been adjusted to mark the start of the interval, so add 1 hour to get the end
-                    endOfRange   = new Date((roundedTs + 3600) * 1000);
-
-                    return BITMETER.zeroPad(startOfRange.getHours()) + ':00-' + BITMETER.zeroPad(endOfRange.getHours()) + ':00 ' + $.datepicker.formatDate('dd M yy', startOfRange);
-                }
-            },
-            BITMETER.formatAmount,
-            BITMETER.formatAmount,
-            BITMETER.formatAmount
-        ],
+        formatters : formattersArray,
         onReload : runQuery
     });
 
+	
  // Clear out the grid when the page loads...
     queryResultsGridObj[0].grid.populate();
 

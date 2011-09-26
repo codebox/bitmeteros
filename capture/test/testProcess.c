@@ -1,235 +1,226 @@
-/*
- * BitMeterOS
- * http://codebox.org.uk/bitmeterOS
- *
- * Copyright (c) 2011 Rob Dawson
- *
- * Licensed under the GNU General Public License
- * http://www.gnu.org/licenses/gpl.txt
- *
- * This file is part of BitMeterOS.
- *
- * BitMeterOS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * BitMeterOS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-#include "test.h"
+#ifdef _WIN32
+	#define __USE_MINGW_ANSI_STDIO 1
+#endif
+#define HAVE_REMOTE
+#include <stdlib.h>
+#include <test.h> 
+#include <stdarg.h> 
+#include <stddef.h> 
+#include <setjmp.h> 
+#include <cmockery.h> 
 #include "common.h"
 #include <string.h>
 #include "capture.h"
-#include "CuTest.h"
+#include "pcap.h"
 
 /*
 Contains unit tests for the process module.
 */
 
-void testExtractDiffsNull(CuTest *tc){
- // Check that the extractDiffs function handles NULLs correctly
-    struct Data* diffs;
+static int _compressDb(int dummy){
+	//check_expected(dummy);
+}
+static int _getNextCompressTime(){
+	return 100;
+}
+static int _pcap_findalldevs_ex(char *source, struct pcap_rmtauth *auth, pcap_if_t **alldevs, char *errbuf){
+	pcap_if_t* device1 = malloc(sizeof(pcap_if_t));
+	pcap_if_t* device2 = malloc(sizeof(pcap_if_t));
+
+	struct sockaddr* ip1 = malloc(sizeof(struct sockaddr));
+	struct sockaddr _ip1 = {1, "001234"}; // IP 49.50.51.52
+	*ip1 = _ip1;
 	
-    diffs = extractDiffs(0, NULL, NULL);
-    CuAssertPtrEquals(tc, NULL, diffs);
-
-    struct Data dataOk = {0, 5, 1, 2, "eth0", NULL, NULL};
-    diffs = extractDiffs(0, &dataOk, NULL);
-    CuAssertPtrEquals(tc, NULL, diffs);
-
-    diffs = extractDiffs(0, NULL, &dataOk);
-    CuAssertPtrEquals(tc, NULL, diffs);
-}
-
-void testExtractDiffsNoMatches(CuTest *tc){
- // Check that extractDiffs returns NULL when there are no matching addresses in the 2 structs
-    struct Data data1 = {0, 5, 1, 2, "eth0", NULL, NULL};
-    struct Data data2 = {0, 5, 2, 3, "eth1", NULL, NULL};
-
-    struct Data* diffs;
-    diffs = extractDiffs(100, &data1, &data2);
-    CuAssertPtrEquals(tc, NULL, diffs);
-
-    diffs = extractDiffs(100, &data2, &data1);
-    CuAssertPtrEquals(tc, NULL, diffs);
-
-    struct Data data3 = {0, 5, 3, 4, "eth2", NULL, &data1};
-    struct Data data4 = {0, 5, 4, 5, "eth3", NULL, &data2};
-
-    diffs = extractDiffs(101, &data3, &data4);
-    CuAssertPtrEquals(tc, NULL, diffs);
-
-    diffs = extractDiffs(101, &data4, &data3);
-    CuAssertPtrEquals(tc, NULL, diffs);
-}
-
-void testExtractDiffsNoChange(CuTest *tc){
- /* Check that extractDiffs returns NULL when there are matching addresses, but there has been no
-    change in their dl/ul values */
-    struct Data data1c = {0, 5, 2, 3, "eth2", NULL, NULL};
-    struct Data data1b = {0, 5, 2, 3, "eth1", NULL, &data1c};
-    struct Data data1a = {0, 5, 1, 2, "eth0", NULL, &data1b};
-
-    struct Data data2c = {0, 5, 1, 2, "eth0", NULL, NULL};
-    struct Data data2b = {0, 5, 2, 3, "eth1", NULL, &data2c};
-    struct Data data2a = {0, 5, 1, 2, "eth3", NULL, &data2b};
-
-    struct Data* diffs;
-    diffs = extractDiffs(0, &data1a, &data2a);
-    CuAssertPtrEquals(tc, NULL, diffs);
-
-    diffs = extractDiffs(0, &data2a, &data1a);
-    CuAssertPtrEquals(tc, NULL, diffs);
-}
-
-void testExtractDiffs1Match(CuTest *tc){
- /* Check that extractDiffs returns the correct values when there is a single match
-    in the 2 struct lists */
-    struct Data data1c = {0, 5, 2, 3, "eth2", NULL, NULL};
-    struct Data data1b = {0, 5, 2, 3, "eth1", NULL, &data1c};
-    struct Data data1a = {0, 5, 1, 2, "eth0", NULL, &data1b};
-
-    struct Data data2c = {0, 5, 2, 4, "eth0", NULL, NULL};
-    struct Data data2b = {0, 5, 2, 3, "eth3", NULL, &data2c};
-    struct Data data2a = {0, 5, 1, 2, "eth4", NULL, &data2b};
-
-	int ts = 100;
-    struct Data* diffs;
-    diffs = extractDiffs(ts, &data1a, &data2a);
-    checkData(tc, diffs, ts, 0, "eth0", 1, 2, NULL);
-}
-
-void testExtractDiffsValuesWrap(CuTest *tc){
- /* Check that extractDiffs returns NULL when there is a match in the 2 lists, but
-    the values have wrapped around */
-    struct Data data1 = {0, 5, 100, 200, "eth0", NULL, NULL};
-    struct Data data2 = {0, 5, 1,   2,   "eth0", NULL, NULL};
-
-    struct Data* diffs = extractDiffs(100, &data1, &data2);
-    CuAssertPtrEquals(tc, NULL, diffs);
-}
-
-void testExtractDiffsMultiMatch(CuTest *tc){
- /* Check that extractDiffs returns the correct values when there are multiple matches
-    in the 2 struct lists */
-    struct Data data1d = {0, 5, 2, 4, "eth4", NULL, NULL};
-    struct Data data1c = {0, 5, 2, 3, "eth2", NULL, &data1d};
-    struct Data data1b = {0, 5, 1, 2, "eth1", NULL, &data1c};
-    struct Data data1a = {0, 5, 0, 0, "eth0", NULL, &data1b};
-
-    struct Data data2d = {0, 5, 2, 3, "eth3", NULL, NULL};
-    struct Data data2c = {0, 5, 2, 4, "eth2", NULL, &data2d};
-    struct Data data2b = {0, 5, 2, 5, "eth1", NULL, &data2c};
-    struct Data data2a = {0, 5, 5, 7, "eth0", NULL, &data2b};
-
-	int ts = 100;
-    struct Data* diffs;
-    diffs = extractDiffs(ts, &data1a, &data2a);
-    checkData(tc, diffs, ts, 0, "eth0", 5, 7, NULL);
-
-    diffs = diffs->next;
-    checkData(tc, diffs, ts, 0, "eth1", 1, 3, NULL);
-
-    diffs = diffs->next;
-    checkData(tc, diffs, ts, 0, "eth2", 0, 1, NULL);
-
-    CuAssertPtrEquals(tc, NULL, diffs->next);
-}
-
-void testNoDelayedWrite(CuTest *tc){
-	setDbWriteInterval(1);
-	emptyDb();
+	struct pcap_addr* addr1 = malloc(sizeof(struct pcap_addr));
+	struct pcap_addr _addr1 = {NULL, ip1, NULL, NULL, NULL};
+	*addr1 = _addr1;
 	
- /* Check that extractDiffs returns the correct values when there is a single match
-    in the 2 struct lists */
-    setTime(1000);
-    struct Data data1 = {0, 1, 0, 0, "eth0", NULL, NULL};
-	setPrevData(&data1);
-
-    struct Data data2 = {0, 1, 1, 2, "eth0", NULL, NULL};
-	setData(&data2);
-
-	int rows;
+	device1->next = device2;
+	device1->name = strdup("dev1");
+	device1->description = NULL;
+	device1->addresses = addr1;
+	device1->flags = 0;
 	
- // One row should have been written
-	processCapture();	
-	struct Data row1 = {1000, 1, 1, 2, "eth0", NULL, NULL};
-    checkTableContents(tc, 1, row1);
-    
-    setTime(1001);
-    struct Data data3 = {0, 1, 2, 4, "eth0", NULL, NULL};
-	setData(&data3);
+	struct sockaddr* ip2 = malloc(sizeof(struct sockaddr));
+	struct sockaddr _ip2 = {1, "001234"}; // IP 49.50.51.52
+	*ip2 = _ip2;
+	
+	struct pcap_addr* addr2 = malloc(sizeof(struct pcap_addr));
+	struct pcap_addr _addr2 = {NULL, ip2, NULL, NULL, NULL};
+	*addr2 = _addr2;
+	
+	device2->next = NULL;
+	device2->name = strdup("dev2");
+	device2->description = NULL;
+	device2->addresses = addr2;
+	device2->flags = 0;
 
- // Two rows should have been written
-	processCapture();	
-	struct Data row2 = {1001, 1, 1, 2, "eth0", NULL, NULL};
-    checkTableContents(tc, 2, row2, row1);
+	*alldevs = device1;
+}
+static pcap_t* _pcap_open(const char *source, int snaplen, int flags, int read_timeout, struct pcap_rmtauth *auth, char *errbuf){
+	return (pcap_t*)mock();
+}
+static int _pcap_setnonblock(pcap_t* h, int i, char * c){
+	check_expected(h);
+	return 0;
+}
+static int _pcap_compile(pcap_t *h, struct bpf_program *p, const char *c, int i, bpf_u_int32 b){
+	check_expected(h);
+	check_expected(c);
+	return 0;
+}
+static int _pcap_setfilter(pcap_t *h, struct bpf_program *p){
+	check_expected(h);
+	return 0;
+}
+static void _pcap_freecode(struct bpf_program *p){
 
-    setTime(1002);
-    struct Data data4 = {0, 1, 3, 6, "eth0", NULL, NULL};
-	setData(&data4);
-
- // Three rows should have been written
-	processCapture();	
-	struct Data row3 = {1002, 1, 1, 2, "eth0", NULL, NULL};
-    checkTableContents(tc, 3, row3, row2, row1);
+}
+#ifdef STATS_MODE	
+	static int _pcap_setmode(pcap_t *h, int mode){
+		check_expected(h);
+		return 0;
+	}
+#endif
+static int _pcap_close(pcap_t *h){
+	check_expected(h);
+	return 0;
+}
+static int _pcap_dispatch(pcap_t *h, int i, pcap_handler fn, u_char *u){
+	check_expected(h);
+	
+#ifdef STATS_MODE
+	int VAL = 12;
+	BW_INT v = VAL;
+	u_char* p = malloc(sizeof(BW_INT) * 2);
+	memcpy(p+8, &v, sizeof(BW_INT));
+	
+	struct Total* t = allocTotal(NULL);
+	(*fn)(t,0,p);
+	free(p);
+	assert_int_equal(VAL, t->count);
+	freeTotals(t);
+#else
+	int VAL = 12;
+	struct pcap_pkthdr header;
+	header.len = VAL;
+	struct Total* t = allocTotal(NULL);
+	(*fn)(t,&header,0);
+	assert_int_equal(VAL, t->count);
+	freeTotals(t);
+#endif
+	return 0;
 }
 
-void testDelayedWrite(CuTest *tc){
-	setDbWriteInterval(3);
-	emptyDb();
-	
- /* Check that extractDiffs returns the correct values when there is a single match
-    in the 2 struct lists */
-    setTime(1000);
-    struct Data data1 = {0, 1, 0, 0, "eth0", NULL, NULL};
-	setPrevData(&data1);
-
-    struct Data data2 = {0, 1, 1, 2, "eth0", NULL, NULL};
-	setData(&data2);
-
-	int rows;
-	
- // No rows should have been written yet
-	processCapture();	
-	CuAssertIntEquals(tc, 0, getRowCount("select * from data"));
-	
-    setTime(1001);
-    struct Data data3 = {0, 1, 2, 4, "eth0", NULL, NULL};
-	setData(&data3);
-
- // No rows should have been written yet
-	processCapture();	
-	CuAssertIntEquals(tc, 0, getRowCount("select * from data"));
-
-	setTime(1002);
-    struct Data data4 = {0, 1, 3, 6, "eth0", NULL, NULL};
-	setData(&data4);
-	
- // Three rows should have been written
-	processCapture();	
-	struct Data row1 = {1000, 1, 1, 2, "eth0", NULL, NULL};
-	struct Data row2 = {1001, 1, 1, 2, "eth0", NULL, NULL};
-	struct Data row3 = {1002, 1, 1, 2, "eth0", NULL, NULL};
-    checkTableContents(tc, 3, row3, row2, row1);
+static void _pcap_freealldevs(pcap_if_t *device){
+	pcap_if_t* nextDev;
+	while (device != NULL) {
+		nextDev = device->next;
+		free(device->name);
+		struct pcap_addr* addr = device->addresses;
+		free(addr->addr);
+		free(addr);
+		free(device);
+		device = nextDev;
+	}
+}
+sqlite3* _openDb(int dummy){
+	check_expected(dummy);
+}
+void _closeDb(int dummy){
+	//check_expected(dummy);	
 }
 
-CuSuite* processGetSuite() {
-    CuSuite* suite = CuSuiteNew();
-    SUITE_ADD_TEST(suite, testExtractDiffsNull);
-    SUITE_ADD_TEST(suite, testExtractDiffsNoMatches);
-    SUITE_ADD_TEST(suite, testExtractDiffsNoChange);
-    SUITE_ADD_TEST(suite, testExtractDiffs1Match);
-    SUITE_ADD_TEST(suite, testExtractDiffsValuesWrap);
-    SUITE_ADD_TEST(suite, testExtractDiffsMultiMatch);
-    SUITE_ADD_TEST(suite, testNoDelayedWrite);
-    SUITE_ADD_TEST(suite, testDelayedWrite);
-    return suite;
+static void setupMocks(){
+	#ifdef STATS_MODE
+		struct ProcessCalls processCalls = {&_openDb, &_closeDb, &_compressDb, &_getNextCompressTime, &_pcap_findalldevs_ex,
+				&_pcap_open, &_pcap_setnonblock, &_pcap_compile, &_pcap_setfilter, &_pcap_freecode, 
+				&_pcap_setmode, &_pcap_dispatch, &_pcap_freealldevs};
+	#else
+		struct ProcessCalls processCalls = {&_openDb, &_closeDb, &_compressDb, &_getNextCompressTime, &_pcap_findalldevs_ex,
+				&_pcap_open, &_pcap_setnonblock, &_pcap_compile, &_pcap_setfilter, &_pcap_freecode, 
+				&_pcap_dispatch, &_pcap_freealldevs};
+	#endif
+	mockProcessCalls = processCalls;
+	
+	struct TotalCalls _totalCalls = {&_pcap_close};
+	mockTotalCalls = _totalCalls;
 }
+
+void setupForProcessTest(void** state){
+	setupTestDb(state);
+	setConfigIntValue(CONFIG_DB_VERSION, DB_VERSION);
+	setConfigIntValue(CONFIG_CAP_KEEP_SEC_LIMIT, 3600);   
+	setConfigIntValue(CONFIG_CAP_KEEP_MIN_LIMIT, 86400);   
+	setConfigIntValue(CONFIG_CAP_COMPRESS_INTERVAL, 3600);
+
+	setupMocks();
+}
+
+void teardownForProcessTest(void** state){
+	tearDownTestDb(state);
+}
+
+void testProcess(void** state){
+	setupForProcessTest(0);            
+	char* filter1 = "port 80";
+	char* filter2 = "port 90";
+	addFilterRow(1, "Filter 1", "f1", filter1, NULL);
+	addFilterRow(2, "Filter 2", "f2", filter2, NULL);
+	
+	int pcapOpenHandle1 = 100;
+	int pcapOpenHandle2 = 101;
+	int pcapOpenHandle3 = 102;
+	int pcapOpenHandle4 = 103;
+	
+	will_return(_pcap_open, pcapOpenHandle1);
+	will_return(_pcap_open, pcapOpenHandle2);
+	will_return(_pcap_open, pcapOpenHandle3);
+	will_return(_pcap_open, pcapOpenHandle4);
+	expect_call(_openDb);
+	//expect_call(_compressDb);
+	
+	expect_value(_pcap_setnonblock, h, pcapOpenHandle1);
+	expect_value(_pcap_setnonblock, h, pcapOpenHandle2);
+	expect_value(_pcap_setnonblock, h, pcapOpenHandle3);
+	expect_value(_pcap_setnonblock, h, pcapOpenHandle4);
+	
+	expect_value(_pcap_compile, h, pcapOpenHandle1);
+	expect_value(_pcap_compile, h, pcapOpenHandle2);
+	expect_value(_pcap_compile, h, pcapOpenHandle3);
+	expect_value(_pcap_compile, h, pcapOpenHandle4);
+	
+	expect_string(_pcap_compile, c, filter1);
+	expect_string(_pcap_compile, c, filter2);
+	expect_string(_pcap_compile, c, filter1);
+	expect_string(_pcap_compile, c, filter2);
+                                      
+	expect_value(_pcap_setfilter, h, pcapOpenHandle1);
+	expect_value(_pcap_setfilter, h, pcapOpenHandle2);
+	expect_value(_pcap_setfilter, h, pcapOpenHandle3);
+	expect_value(_pcap_setfilter, h, pcapOpenHandle4);
+
+#ifdef STATS_MODE
+	expect_value(_pcap_setmode, h, pcapOpenHandle1);
+	expect_value(_pcap_setmode, h, pcapOpenHandle2);
+	expect_value(_pcap_setmode, h, pcapOpenHandle3);
+	expect_value(_pcap_setmode, h, pcapOpenHandle4);
+#endif
+
+	expect_value(_pcap_close, h, pcapOpenHandle1);
+	expect_value(_pcap_close, h, pcapOpenHandle2);
+	expect_value(_pcap_close, h, pcapOpenHandle3);
+	expect_value(_pcap_close, h, pcapOpenHandle4);
+
+	expect_value(_pcap_dispatch, h, pcapOpenHandle1);
+	expect_value(_pcap_dispatch, h, pcapOpenHandle2);
+	expect_value(_pcap_dispatch, h, pcapOpenHandle3);
+	expect_value(_pcap_dispatch, h, pcapOpenHandle4);
+
+	setupCapture();
+	processCapture();
+	shutdownCapture();
+	freeStmtList();
+	tearDownTestDb(0);
+}
+

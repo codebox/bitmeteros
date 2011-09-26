@@ -1,28 +1,6 @@
-/*
- * BitMeterOS
- * http://codebox.org.uk/bitmeterOS
- *
- * Copyright (c) 2011 Rob Dawson
- *
- * Licensed under the GNU General Public License
- * http://www.gnu.org/licenses/gpl.txt
- *
- * This file is part of BitMeterOS.
- *
- * BitMeterOS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * BitMeterOS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- */
-
+#ifdef UNIT_TESTING 
+	#include "test.h"
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -129,7 +107,8 @@ void formatAmount(const BW_INT amount, const int binary, const int abbrev, char*
 }
 
 void toTime(char* timeText, time_t ts){
- // Populates the 'timeText' string with the time component of the specified timestamp, in the format HH:MM:SS
+ /* Populates the 'timeText' string with the time component of the specified timestamp, when 
+ 	expressed as local time, in the format HH:MM:SS */
 	struct tm* cal = localtime(&ts);
 
 	int h = cal->tm_hour;
@@ -140,7 +119,8 @@ void toTime(char* timeText, time_t ts){
 }
 
 void toDate(char* dateText, time_t ts){
- // Populates the 'dateText' string with the time component of the specified timestamp, in the format yyyy-mm-dd
+ /* Populates the 'dateText' string with the time component of the specified timestamp,  when
+ 	expressed as local time, in the format yyyy-mm-dd */
 	struct tm* cal = localtime(&ts);
 
 	int y = 1900 + cal->tm_year;
@@ -216,4 +196,28 @@ char *trim(char *str){
     *(end+1) = 0;
 
     return str;
+}
+
+char* replace(char* src, char* target, char* replace){
+	if (src == NULL) {
+		return NULL;	
+	} else if (target == NULL) {
+		return strdup(src);
+	} else {
+		if (replace == NULL){
+			replace = "";	
+		}
+		char* match;
+		char* result = strdup(src);
+		while ((match = strstr(result, target)) != NULL) {
+			int matchPosn = match - result;
+			char* tmp = calloc(strlen(result) + strlen(replace) - strlen(target) + 1, 1);
+			strncpy(tmp, result, matchPosn);
+			strcat(tmp, replace);
+			strcat(tmp, result + matchPosn + strlen(target));
+			free(result);	
+			result = tmp;
+		}
+		return result;
+	}
 }

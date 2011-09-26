@@ -1,30 +1,5 @@
-/*
- * BitMeterOS
- * http://codebox.org.uk/bitmeterOS
- *
- * Copyright (c) 2011 Rob Dawson
- *
- * Licensed under the GNU General Public License
- * http://www.gnu.org/licenses/gpl.txt
- *
- * This file is part of BitMeterOS.
- *
- * BitMeterOS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * BitMeterOS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-#include "common.h"
-char* helpTxt=
+#include "common.h" 
+char* helpTxt= 
 "bmdb [<action>]" EOL
 " " EOL
 "Performs various admin and configuration operations on the BitMeterOS database. Running the utility without an 'action' argument will list the available actions. The following actions are defined:" EOL
@@ -71,10 +46,24 @@ char* helpTxt=
 "purge" EOL
 "Deletes all BitMeterOS bandwidth data from the database." EOL
 " " EOL
+"showfilters" EOL
+"Lists the names, and filter expressions, of all the current packet filters." EOL
+" " EOL
+"addfilter <name> <description> <filter expression>" EOL
+"Adds a new packet filter, with the specified name. The filter expression argument must be valid TcpDump filter, but may include one or more of the following BitMeter-specific values:" EOL
+"    {lan}     expands to an expression that specifies the IP address ranges reserved for private networks" EOL
+"    {adapter} replaced with an expression containing the IP address/es of the network adapter to which the filter is applied" EOL
+" " EOL
+"for example:" EOL
+"    bmdb addfilter webdl \"Web Downloads\" \"dst host {adapter} and src port 80\"" EOL
+" " EOL
+"rmfilter <filter name>" EOL
+"Deletes the named packet filter, and also removes all data captured using that filter from the main data table." EOL
+" " EOL
 "help" EOL
 "Displays this help page." EOL
 " " EOL
 "Email: rob@codebox.org.uk" EOL
 "Web:   http://codebox.org.uk/bitmeteros" EOL
 " " EOL
-;
+; 

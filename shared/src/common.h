@@ -1,34 +1,10 @@
-/*
- * BitMeterOS
- * http://codebox.org.uk/bitmeterOS
- *
- * Copyright (c) 2011 Rob Dawson
- *
- * Licensed under the GNU General Public License
- * http://www.gnu.org/licenses/gpl.txt
- *
- * This file is part of BitMeterOS.
- *
- * BitMeterOS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * BitMeterOS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- */
-
 #ifndef COMMON_H
 #define COMMON_H
 
 #include <sqlite3.h>
 #include <stddef.h>
 #include <time.h>
+#include <pcap.h>
 
 #ifdef _WIN32
 #define EOL "\r\n"
@@ -42,8 +18,8 @@
 #define EOL "\n"
 #endif
 
-#define VERSION "0.7.4"
-#define DB_VERSION 7
+#define VERSION "0.8.0"
+#define DB_VERSION 8
 
 #ifdef _WIN32
 #define COPYRIGHT "BitMeter OS v" VERSION " Copyright (c) 2011 Rob Dawson" EOL "Licenced under the GNU General Public License" EOL EOL
@@ -57,9 +33,13 @@
 #define IN_MEMORY_DB ":memory:"
 #define ENV_DB       "BITMETER_DB"
 
-#define CONFIG_DB_VERSION           "db.version"
-#define CONFIG_LOG_PATH             "cap.logpath"
-#define CONFIG_CAP_LOG_LEVEL        "cap.loglevel"
+#define CONFIG_DB_VERSION            "db.version"
+#define CONFIG_LOG_PATH              "cap.logpath"
+#define CONFIG_CAP_LOG_LEVEL         "cap.loglevel"
+#define CONFIG_CAP_KEEP_SEC_LIMIT    "cap.keep_sec_limit"
+#define CONFIG_CAP_KEEP_MIN_LIMIT    "cap.keep_min_limit"
+#define CONFIG_CAP_COMPRESS_INTERVAL "cap.compress_interval"
+
 #define CONFIG_WEB_LOG_LEVEL        "web.loglevel"
 #define CONFIG_WEB_PORT             "web.port"
 #define CONFIG_WEB_DIR              "web.dir"
@@ -108,10 +88,8 @@ typedef unsigned long long BW_INT;
 struct Data{
 	time_t ts;
 	int    dr;
-	BW_INT dl;
-	BW_INT ul;
-	char*  ad;
-	char*  hs;
+	BW_INT vl;
+	int    fl;
 	struct Data* next;
 };
 
@@ -131,15 +109,38 @@ struct DateCriteria{
 	struct DateCriteria* next;
 };
 
-struct Alert{
+struct Alert {
     int id;
     char* name;
     int active;
     struct DateCriteria* bound;
     struct DateCriteria* periods;
-    int direction;
+    int filter;
     BW_INT amount;
     struct Alert* next;
+};
+
+struct Filter {
+	int   id;
+	char* desc;
+	char* name;
+	char* expr;
+	char* host;
+	struct Filter* next;
+};
+
+struct Total {
+	int count;
+	struct Filter* filter;
+	pcap_t *handle;
+	struct Total* next;
+};
+
+struct Adapter {
+	char* name;
+	char* ips;
+	struct Total* total;
+	struct Adapter* next;
 };
 
 #ifndef _WIN32
@@ -157,6 +158,7 @@ void runSelectAndCallback(sqlite3_stmt *stmt, void (*callback)(int, struct Data*
 int executeSql(const char* sql, int (*callback)(void*, int, char**, char**) );
 sqlite3_stmt* getStmt(char*);
 void finishedStmt(sqlite3_stmt*);
+void freeStmtList();
 void beginTrans(int immediate);
 void commitTrans();
 void rollbackTrans();
@@ -191,6 +193,22 @@ void freeDateCriteriaPart(struct DateCriteriaPart* criteriaPart);
 char* dateCriteriaPartToText(struct DateCriteriaPart* part);
 void appendDateCriteria(struct DateCriteria** earlierCriteria, struct DateCriteria* newCriteria);
 // ----
+#define ADAPTER_IPS "{adapter}"
+#define LAN_IPS     "{lan}"
+
+struct Adapter* allocAdapter(pcap_if_t *device);
+void appendAdapter(struct Adapter** earlierAdapter, struct Adapter* newAdapter);
+
+struct Total* allocTotal(struct Filter* filter);
+void appendTotal(struct Total** earlierTotal, struct Total* newTotal);
+
+struct Filter* allocFilter(int id, char* desc, char* name, char* filter, char* host);
+void appendFilter(struct Filter** earlierFilter, struct Filter* newFilter);
+struct Filter* readFilters();
+struct Filter* getFilterFromId(struct Filter* filters, int id);
+int getMaxFilterDescWidth(struct Filter* filter);
+int getMaxFilterNameWidth(struct Filter* filter);
+// ----
 void doSleep(int interval);
 void getDbPath(char* path);
 void getLogPath(char* path);
@@ -217,21 +235,29 @@ BW_INT strToBwInt(char* txt, BW_INT defaultValue);
 long strToLong(char* txt, long defaultValue);
 int strToInt(char* txt, int defaultValue);
 char *trim(char *str);
+char* replace(char* src, char* target, char* replace);
 // ----
 time_t getTime();
-time_t getCurrentLocalYearForTs(time_t ts);
-time_t getCurrentLocalMonthForTs(time_t ts);
-time_t getCurrentLocalDayForTs(time_t ts);
+time_t getCurrentYearForTs(time_t ts);
+time_t getCurrentMonthForTs(time_t ts);
+time_t getCurrentDayForTs(time_t ts);
 time_t getNextYearForTs(time_t ts);
-time_t getNextLocalYearForTs(time_t ts);
 time_t getNextMonthForTs(time_t ts);
-time_t getNextLocalMonthForTs(time_t ts);
 time_t getNextDayForTs(time_t ts);
-time_t getNextLocalDayForTs(time_t ts);
 time_t getNextHourForTs(time_t ts);
 time_t getNextMinForTs(time_t ts);
 time_t addToDate(time_t ts, char unit, int num);
 struct tm getLocalTime(time_t t);
 void normaliseTm(struct tm* t);
-
+// ----
+struct StmtList{
+	char* sql;
+	sqlite3_stmt* stmt;
+	struct StmtList* next;
+} *stmtList;
+// -----
+struct TotalCalls {
+	void (*pcap_close)(pcap_t *);
+};
+struct TotalCalls mockTotalCalls;
 #endif //#ifndef COMMON_H

@@ -1,29 +1,7 @@
-/*
- * BitMeterOS
- * http://codebox.org.uk/bitmeterOS
- *
- * Copyright (c) 2011 Rob Dawson
- *
- * Licensed under the GNU General Public License
- * http://www.gnu.org/licenses/gpl.txt
- *
- * This file is part of BitMeterOS.
- *
- * BitMeterOS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * BitMeterOS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- */
-
 #define _GNU_SOURCE
+#ifdef UNIT_TESTING 
+	#include "test.h"
+#endif
 #include "common.h"
 #include <stdlib.h>
 #include <string.h>
@@ -39,11 +17,9 @@ struct Data* allocData(){
 	struct Data* data = (struct Data*) malloc( sizeof( struct Data ) );
 
 	data->ts = 0;
-	data->dl = 0;
-	data->ul = 0;
+	data->vl = 0;
+	data->fl = 0;
 	data->dr = 0;
-	data->ad = NULL;
-	data->hs = NULL;
 	data->next = NULL;
 
 	return data;
@@ -54,39 +30,12 @@ struct Data makeData(){
 	struct Data data;
 
 	data.ts = 0;
-	data.dl = 0;
-	data.ul = 0;
+	data.vl = 0;
+	data.fl = 0;
 	data.dr = 0;
-	data.ad = NULL;
-	data.hs = NULL;
 	data.next = NULL;
 
 	return data;
-}
-
-void setAddress(struct Data* data, const char* addr){
-    if (addr == NULL){
-        data->ad = NULL;
-    } else {
-     // Remove any leading/trailing whitespace
-        char* addrTrimmed = trim(strdupa(addr));
-
-     // Copy the specified address string onto the heap, and associate the Data struct with it
-        data->ad = malloc(strlen(addrTrimmed)+1);
-        strcpy(data->ad, addrTrimmed);
-    }
-}
-
-void setHost(struct Data* data, const char* host){
-    if (host == NULL){
-        data->hs = NULL;
-    } else {
-     // Copy the specified host name onto the heap, and associate the Data struct with it
-        char* hostTrimmed = trim(strdupa(host));
-
-        data->hs = malloc(strlen(hostTrimmed)+1);
-        strcpy(data->hs, hostTrimmed);
-    }
 }
 
 void freeData(struct Data* data){
@@ -94,12 +43,6 @@ void freeData(struct Data* data){
 	struct Data* next;
 	while(data != NULL){
 		next = data->next;
-		if (data->ad != NULL){
-			free(data->ad);
-		}
-		if (data->hs != NULL){
-			free(data->hs);
-		}
 		free(data);
 		data = next;
 	}

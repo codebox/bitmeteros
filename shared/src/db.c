@@ -1,28 +1,6 @@
-/*
- * BitMeterOS
- * http://codebox.org.uk/bitmeterOS
- *
- * Copyright (c) 2011 Rob Dawson
- *
- * Licensed under the GNU General Public License
- * http://www.gnu.org/licenses/gpl.txt
- *
- * This file is part of BitMeterOS.
- *
- * BitMeterOS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * BitMeterOS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- */
-
+#ifdef UNIT_TESTING 
+	#include "test.h"
+#endif
 #include <unistd.h>
 #include <sqlite3.h>
 #include <stdlib.h>
@@ -36,6 +14,7 @@
 #define SQL_INSERT_CONFIG  "INSERT INTO config (key, value) VALUES (?, ?)"
 #define SQL_UPDATE_CONFIG  "UPDATE config SET key=?, value=? WHERE key=?"
 #define SQL_DELETE_CONFIG  "DELETE FROM config WHERE key=?"
+#define SQL_SELECT_FILTERS "SELECT id,desc,name,expr,host FROM filter"
 
 /*
 Contains common database-handling routines.
@@ -54,15 +33,6 @@ void prepareSql(sqlite3_stmt **stmt, const char *sql){
 		exit(1);
 	}
 }
-
-#ifndef MULTI_THREADED_CLIENT
-	struct StmtList{
-		char* sql;
-		sqlite3_stmt* stmt;
-		struct StmtList* next;
-	};
-	struct StmtList* stmtList = NULL;
-#endif
 
 sqlite3* openDb(){
  // Open the database file, exit if there is a problem
@@ -97,10 +67,7 @@ sqlite3* openDb(){
 
 	dbOpen = TRUE;
 	setBusyWait(BUSY_WAIT_INTERVAL);
-	
-    #ifndef MULTI_THREADED_CLIENT
-	    stmtList = NULL;
-    #endif
+	stmtList = NULL;
 	
 	return db;
 }
@@ -137,13 +104,15 @@ void dbVersionCheck(){
 		prepareSql(&stmt, sql);
 		return stmt;
 	}
+	void freeStmtList(){
+		// do nothing
+	}
 	void finishedStmt(sqlite3_stmt* stmt){
 		sqlite3_finalize(stmt);
 	}
 #endif
 
-#ifndef MULTI_THREADED_CLIENT
-	sqlite3_stmt *getStmt(char* sql){
+sqlite3_stmt *getStmtSingleThreaded(char* sql){
 	struct StmtList* list = stmtList;
 	struct StmtList* match = NULL;
 
@@ -186,6 +155,30 @@ void dbVersionCheck(){
 	return match->stmt;	
 }
 
+void freeStmtListSingleThreaded(){
+	struct StmtList* curr = stmtList;
+	struct StmtList* next;
+	while(curr != NULL){
+		next = curr->next;
+		
+		free(curr->sql);
+		finishedStmt(curr->stmt);
+		free(curr);
+
+		curr = next;
+	}
+	stmtList = NULL;
+}
+
+#ifndef MULTI_THREADED_CLIENT
+	sqlite3_stmt *getStmt(char* sql){
+		return getStmtSingleThreaded(sql);
+	}
+
+	void freeStmtList(){
+		freeStmtListSingleThreaded();
+	}
+
 	void finishedStmt(sqlite3_stmt* stmt){
 		sqlite3_reset(stmt);
 	}
@@ -217,22 +210,14 @@ static struct Data* dataForRow(int colCount, sqlite3_stmt *stmt){
 		if (strcmp(colName, "ts") == 0){
 			data->ts = sqlite3_column_int(stmt, col);
 
-		} else if (strcmp(colName, "dl") == 0){
-			data->dl = sqlite3_column_int64(stmt, col);
+		} else if (strcmp(colName, "vl") == 0){
+			data->vl = sqlite3_column_int64(stmt, col);
 
-		} else if (strcmp(colName, "ul") == 0){
-			data->ul = sqlite3_column_int64(stmt, col);
+		} else if (strcmp(colName, "fl") == 0){
+			data->fl = sqlite3_column_int(stmt, col);
 
 		} else if (strcmp(colName, "dr") == 0){
 			data->dr = sqlite3_column_int(stmt, col);
-
-		} else if (strcmp(colName, "ad") == 0){
-            const unsigned char* addr = sqlite3_column_text(stmt, col);
-            setAddress(data, addr);
-
-		} else if (strcmp(colName, "hs") == 0){
-            const unsigned char* host = sqlite3_column_text(stmt, col);
-            setHost(data, host);
 
 		} else {
 			// ignore
@@ -470,7 +455,9 @@ void closeDb(){
  // Close the database
 	assert(dbOpen);
 
-	#ifdef _WIN32
+	#ifndef MULTI_THREADED_CLIENT
+		freeStmtList();
+	#else
         sqlite3_stmt *pStmt;
 		while((pStmt = sqlite3_next_stmt(db, 0))!=0 ){
 		    sqlite3_finalize(pStmt);
@@ -481,3 +468,29 @@ void closeDb(){
 	dbOpen = FALSE;
 }
 
+struct Filter* readFilters(){
+	int rc;
+	int id;
+	char* name;
+	char* desc;
+	char* expr;
+	char* host;
+	
+	struct Filter* filters = NULL;
+	sqlite3_stmt* stmtReadFilters = getStmt(SQL_SELECT_FILTERS);
+	
+	while ((rc=sqlite3_step(stmtReadFilters)) == SQLITE_ROW) {
+		id   = sqlite3_column_int(stmtReadFilters,   0);
+		desc = sqlite3_column_text(stmtReadFilters,  1);
+		name = sqlite3_column_text(stmtReadFilters,  2);
+		expr = sqlite3_column_text(stmtReadFilters,  3);
+		host = sqlite3_column_text(stmtReadFilters,  4);
+
+		struct Filter* filter = allocFilter(id, desc, name, expr, host);    
+		
+		appendFilter(&filters, filter);
+	}
+  	sqlite3_reset(stmtReadFilters);
+  	
+	return filters;
+}

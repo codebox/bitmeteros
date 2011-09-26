@@ -1,28 +1,3 @@
-/*
- * BitMeterOS
- * http://codebox.org.uk/bitmeterOS
- *
- * Copyright (c) 2011 Rob Dawson
- *
- * Licensed under the GNU General Public License
- * http://www.gnu.org/licenses/gpl.txt
- *
- * This file is part of BitMeterOS.
- *
- * BitMeterOS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * BitMeterOS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- */
-
 #include "common.h"
 #ifdef _WIN32
 	#include <winsock2.h>
@@ -80,6 +55,12 @@ struct Request{
 struct Request* parseRequest(char* requestTxt);
 void freeRequest(struct Request* request);
 
+struct MimeType{
+	char* fileExt;
+	char* contentType;
+	int binary;
+};
+
 #ifdef _WIN32
 	void initMutex();
 	void waitForMutex();
@@ -123,4 +104,53 @@ void processRequest(SOCKET fd, char* buffer, int allowAdmin);
 
 void getWebRoot(char* path);
 
+struct HandleConfigCalls {
+	void (*writeHeadersOk)(SOCKET fd, char* contentType, int endHeaders);
+	void (*writeText)(SOCKET fd, char* txt);
+	void (*writeHeadersServerError)(SOCKET fd, char* msg, ...);
+	void (*writeHeadersForbidden)(SOCKET fd, char* request);
+};
+struct HandleConfigCalls mockHandleConfigCalls;
+
+struct HandleSummaryCalls {
+	void (*writeHeadersOk)(SOCKET fd, char* contentType, int endHeaders);
+	void (*writeText)(SOCKET fd, char* txt);
+	void (*writeNumValueToJson)(SOCKET fd, char* key, BW_INT value);
+};
+struct HandleSummaryCalls mockHandleSummaryCalls;
+
+struct HandleFileCalls {
+	int (*fread)(void*, size_t, size_t, FILE*);
+	void (*writeData)(SOCKET fd, char* data, int len);
+};
+struct HandleFileCalls mockHandleFileCalls;
+
+struct HandleQueryCalls {
+	void (*writeHeadersServerError)(SOCKET fd, char* msg, ...);
+	void (*writeHeadersOk)(SOCKET fd, char* contentType, int endHeaders);
+	void (*writeHeader)(SOCKET fd, char* name, char* value);
+	void (*writeEndOfHeaders)(SOCKET fd);
+	void (*writeDataToJson)(SOCKET fd, struct Data* data);
+	void (*writeText)(SOCKET fd, char* txt);
+};
+struct HandleQueryCalls mockHandleQueryCalls;
+
+struct HandleMonitorCalls {
+	void (*writeHeadersServerError)(SOCKET fd, char* msg, ...);
+	void (*writeHeadersOk)(SOCKET fd, char* contentType, int endHeaders);
+	void (*writeDataToJson)(SOCKET fd, struct Data* data);
+	void (*writeText)(SOCKET fd, char* txt);
+};
+struct HandleMonitorCalls mockHandleMonitorCalls;
+
+struct HandleAlertCalls {
+	void (*writeHeadersServerError)(SOCKET fd, char* msg, ...);
+	void (*writeHeadersForbidden)(SOCKET fd, char* request);
+	void (*writeHeadersOk)(SOCKET fd, char* contentType, int endHeaders);
+	void (*writeText)(SOCKET fd, char* txt);
+	void (*writeNumValueToJson)(SOCKET fd, char* key, BW_INT value);
+	void (*writeTextValueToJson)(SOCKET fd, char* key, char* value);
+	void (*writeTextArrayToJson)(SOCKET fd, char* key, char** values);
+};
+struct HandleAlertCalls mockHandleAlertCalls;
 #endif

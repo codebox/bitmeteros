@@ -1,35 +1,13 @@
-/*
- * BitMeterOS
- * http://codebox.org.uk/bitmeterOS
- *
- * Copyright (c) 2011 Rob Dawson
- *
- * Licensed under the GNU General Public License
- * http://www.gnu.org/licenses/gpl.txt
- *
- * This file is part of BitMeterOS.
- *
- * BitMeterOS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * BitMeterOS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- */
-
+#ifdef UNIT_TESTING 
+	#include "test.h"
+#endif
 #include <stdlib.h>
 #include <stdio.h>
 #include "bmws.h"
 #include "client.h"
 #include "common.h"
 
-#define HOST_ADAPTER_SQL "SELECT hs AS hs, ad AS ad FROM data GROUP BY hs, ad"
+#define HOST_SQL "SELECT DISTINCT(host) FROM filter WHERE host IS NOT NULL"
 #define WEB_SERVER_NAME_MAX_LEN 32
 #define RSS_HOST_NAME_MAX_LEN   32
 #define BAD_NUM -1
@@ -45,6 +23,17 @@
 #define SUMMARY_INTERVAL_MIN 1000
 #define SUMMARY_INTERVAL_MAX 60000
 
+static struct HandleConfigCalls calls = {&writeHeadersOk, &writeText, &writeHeadersServerError, 
+		&writeHeadersForbidden};
+
+static struct HandleConfigCalls getCalls(){
+	#ifdef UNIT_TESTING	
+		return mockHandleConfigCalls;
+	#else
+		return calls;
+	#endif
+}
+
 /*
 Handles '/config' requests received by the web server.
 */
@@ -53,7 +42,8 @@ static void writeConfig(SOCKET fd, int allowAdmin);
 static void writeNumConfigValue(SOCKET fd, char* key, char* value);
 static void writeNumConfigNumValue(SOCKET fd, char* key, int value);
 static void writeTxtConfigValue(SOCKET fd, char* key, char* value);
-static void writeHostAdapterList(SOCKET fd);
+static void writeHostList(SOCKET fd);
+static void writeFilterList(SOCKET fd);
 static int updateWebServerName(char* value);
 static int updateRssHostName(char* value);
 static int updateRssFreq(char* value);
@@ -122,15 +112,15 @@ void processConfigRequest(SOCKET fd, struct Request* req, int allowAdmin){
 	 		}
 
  			if (status == SUCCESS){
- 				writeHeadersOk(fd, MIME_JSON, TRUE);
- 				writeText(fd, "{}");
+ 				getCalls().writeHeadersOk(fd, MIME_JSON, TRUE);
+ 				getCalls().writeText(fd, "{}");
  			} else {
- 				writeHeadersServerError(fd, "Config update failed %s=%s", params->name, params->value); 
+ 				getCalls().writeHeadersServerError(fd, "Config update failed %s=%s", params->name, params->value); 
  			}
 
 	 	} else {
 	 	 // Config updates are an administrative operation
-	 		writeHeadersForbidden(fd, "config update");
+	 		getCalls().writeHeadersForbidden(fd, "config update");
 	 	}
 	}
 }
@@ -273,125 +263,154 @@ static int updateWebServerName(char* value){
 
 static void writeConfig(SOCKET fd, int allowAdmin){
  // Write the JSON object out to the stream
-    writeHeadersOk(fd, MIME_JS, TRUE);
+    getCalls().writeHeadersOk(fd, MIME_JS, TRUE);
 
-	writeText(fd, "var config = { ");
+	getCalls().writeText(fd, "var config = { ");
 	char* val = getConfigText(CONFIG_WEB_MONITOR_INTERVAL, FALSE);
     writeNumConfigValue(fd, "monitorInterval", val);
     free(val);
 
-    writeText(fd, ", ");
+    getCalls().writeText(fd, ", ");
     val = getConfigText(CONFIG_WEB_SUMMARY_INTERVAL, FALSE);
     writeNumConfigValue(fd, "summaryInterval", val);
     free(val);
 
-    writeText(fd, ", ");
+    getCalls().writeText(fd, ", ");
     val = getConfigText(CONFIG_WEB_HISTORY_INTERVAL, FALSE);
     writeNumConfigValue(fd, "historyInterval", val);
     free(val);
 
-    writeText(fd, ", ");
+    getCalls().writeText(fd, ", ");
     writeNumConfigNumValue(fd, "monitorIntervalMin", MONITOR_INTERVAL_MIN);
-    writeText(fd, ", ");
+    getCalls().writeText(fd, ", ");
     writeNumConfigNumValue(fd, "monitorIntervalMax", MONITOR_INTERVAL_MAX);
-    writeText(fd, ", ");
+    getCalls().writeText(fd, ", ");
     writeNumConfigNumValue(fd, "historyIntervalMin", HISTORY_INTERVAL_MIN);
-    writeText(fd, ", ");
+    getCalls().writeText(fd, ", ");
     writeNumConfigNumValue(fd, "historyIntervalMax", HISTORY_INTERVAL_MAX);
-    writeText(fd, ", ");
+    getCalls().writeText(fd, ", ");
     writeNumConfigNumValue(fd, "summaryIntervalMin", SUMMARY_INTERVAL_MIN);
-    writeText(fd, ", ");
+    getCalls().writeText(fd, ", ");
     writeNumConfigNumValue(fd, "summaryIntervalMax", SUMMARY_INTERVAL_MAX);
 
-    writeText(fd, ", ");
+    getCalls().writeText(fd, ", ");
     val = getConfigText(CONFIG_WEB_SERVER_NAME, FALSE);
     writeTxtConfigValue(fd, "serverName", val);
     free(val);
 
-    writeText(fd, ", ");
+    getCalls().writeText(fd, ", ");
     val = getConfigText(CONFIG_WEB_COLOUR_DL, FALSE);
     writeTxtConfigValue(fd, "dlColour", val);
     free(val);
 
-    writeText(fd, ", ");
+    getCalls().writeText(fd, ", ");
     val = getConfigText(CONFIG_WEB_COLOUR_UL, FALSE);
     writeTxtConfigValue(fd, "ulColour", val);
     free(val);
 
-    writeText(fd, ", ");
+    getCalls().writeText(fd, ", ");
     writeNumConfigValue(fd, "allowAdmin", allowAdmin ? "1" : "0");
 
-    writeText(fd, ", ");
+    getCalls().writeText(fd, ", ");
     writeTxtConfigValue(fd, "version", VERSION);
 
-    writeText(fd, ", ");
+    getCalls().writeText(fd, ", ");
     val = getConfigText(CONFIG_WEB_RSS_ITEMS, FALSE);
     writeNumConfigValue(fd, "rssItems", val);
+	free(val);
 
-    writeText(fd, ", ");
+    getCalls().writeText(fd, ", ");
     val = getConfigText(CONFIG_WEB_RSS_FREQ, FALSE);
     writeNumConfigValue(fd, "rssFreq", val);
+	free(val);
 
-    writeText(fd, ", ");
+    getCalls().writeText(fd, ", ");
     val = getConfigText(CONFIG_WEB_RSS_HOST, FALSE);
     writeTxtConfigValue(fd, "rssHost", val);
+	free(val);
+	
+    getCalls().writeText(fd, ", ");
+    writeHostList(fd);
 
-    writeText(fd, ", ");
-    writeHostAdapterList(fd);
+    getCalls().writeText(fd, ", ");
+    writeFilterList(fd);
 
-	writeText(fd, " };");
+	getCalls().writeText(fd, " };");
 }
 
 static void writeNumConfigValue(SOCKET fd, char* key, char* value){
  // Helper function, writes a key/value pair to the stream
     char txt[64];
     sprintf(txt, "\"%s\" : %s", key, value);
-    writeText(fd, txt);
+    getCalls().writeText(fd, txt);
 }
 
 static void writeNumConfigNumValue(SOCKET fd, char* key, int value){
  // Helper function, writes a key/value pair to the stream
     char txt[64];
     sprintf(txt, "\"%s\" : %d", key, value);
-    writeText(fd, txt);
+    getCalls().writeText(fd, txt);
 }
 
 static void writeTxtConfigValue(SOCKET fd, char* key, char* value){
  // Helper function, writes a key/value pair to the stream surrounding the value with quotes
     char txt[64];
     sprintf(txt, "\"%s\" : \"%s\"", key, value);
-    writeText(fd, txt);
+    getCalls().writeText(fd, txt);
 }
 
-static void writeHostAdapterList(SOCKET fd){
-    sqlite3_stmt* stmt;
+static void writeHostList(SOCKET fd){
+    sqlite3_stmt* stmt = getStmt(HOST_SQL);
+	int rc;
 
-    prepareSql(&stmt, HOST_ADAPTER_SQL);
-    struct Data* result = runSelect(stmt);
-    struct Data* currentResult = result;
-
-    writeText(fd, "\"adapters\" : [");
-    int firstResult = TRUE;
-    while(currentResult != NULL){
+    getCalls().writeText(fd, "\"hosts\" : [");
+	
+	int firstResult = TRUE;
+	while ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
         if (firstResult == FALSE){
-            writeText(fd, ",");
+            getCalls().writeText(fd, ",");
         }
 
-        writeText(fd, "{");
-        if (currentResult->hs == NULL || strcmp("", currentResult->hs) == 0){
-            writeTxtConfigValue(fd, "hs", "local");
-        } else {
-            writeTxtConfigValue(fd, "hs", currentResult->hs);
-        }
-        writeText(fd, ",");
-        writeTxtConfigValue(fd, "ad", currentResult->ad);
-        writeText(fd, "}");
+		getCalls().writeText(fd, "\"");
+		getCalls().writeText(fd, sqlite3_column_text(stmt, 0));
+		getCalls().writeText(fd, "\"");
 
         firstResult = FALSE;
-        currentResult = currentResult->next;
-    }
-    writeText(fd, "]");
+	}
+    
+    getCalls().writeText(fd, "]");
 
-    sqlite3_finalize(stmt);
-    freeData(result);
+    finishedStmt(stmt);
+}
+
+static void writeFilter(SOCKET fd, struct Filter* filter){
+	getCalls().writeText(fd, "{");
+	writeNumConfigNumValue(fd, "id",   filter->id);
+	getCalls().writeText(fd, ", ");
+	writeTxtConfigValue(fd, "name", filter->name);
+	getCalls().writeText(fd, ", ");
+	writeTxtConfigValue(fd, "desc", filter->desc);
+	
+	getCalls().writeText(fd, "}");
+}
+
+static void writeFilterList(SOCKET fd){
+	struct Filter* filters = readFilters();
+	
+	getCalls().writeText(fd, "\"filters\" : [");
+	
+	struct Filter* filter = filters;
+	int first = TRUE;
+	
+	while (filter != NULL) {
+		if (first == FALSE){
+            getCalls().writeText(fd, ",");
+        }
+		writeFilter(fd, filter);
+		
+		first = FALSE;
+		filter = filter->next;
+	}
+	getCalls().writeText(fd, "]");
+	freeFilters(filters);
 }

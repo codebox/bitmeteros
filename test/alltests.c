@@ -1,72 +1,201 @@
-/*
- * BitMeterOS
- * http://codebox.org.uk/bitmeterOS
- *
- * Copyright (c) 2011 Rob Dawson
- *
- * Licensed under the GNU General Public License
- * http://www.gnu.org/licenses/gpl.txt
- *
- * This file is part of BitMeterOS.
- *
- * BitMeterOS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * BitMeterOS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-#include "CuTest.h"
+#include <stdlib.h> 
+#include <stdarg.h> 
+#include <stddef.h> 
+#include <setjmp.h> 
+#include <cmockery.h> 
 #include "test.h"
-#include <stdio.h>
 
-void RunAllTests(void) {
-    CuString *output = CuStringNew();
-    CuSuite* suite   = CuSuiteNew();
-
-    CuSuiteAddSuite(suite, sqlGetSuite());
-    CuSuiteAddSuite(suite, processGetSuite());
-    CuSuiteAddSuite(suite, commonGetSuite());
-    CuSuiteAddSuite(suite, timeGetSuite());
-    CuSuiteAddSuite(suite, dbGetSuite());
-    CuSuiteAddSuite(suite, dataGetSuite());
-    CuSuiteAddSuite(suite, alertGetSuite());
-    CuSuiteAddSuite(suite, clientSummaryGetSuite());
-    CuSuiteAddSuite(suite, clientMonitorGetSuite());
-    CuSuiteAddSuite(suite, clientDumpGetSuite());
-    CuSuiteAddSuite(suite, clientQueryGetSuite());
-    CuSuiteAddSuite(suite, clientSyncSuite());
-    CuSuiteAddSuite(suite, clientAlertSuite());
-    CuSuiteAddSuite(suite, clientUtilSuite());
-    CuSuiteAddSuite(suite, httpRequestGetSuite());
-    CuSuiteAddSuite(suite, handleConfigGetSuite());
-    CuSuiteAddSuite(suite, handleFileGetSuite());
-    CuSuiteAddSuite(suite, handleMonitorGetSuite());
-    CuSuiteAddSuite(suite, handleQueryGetSuite());
-    CuSuiteAddSuite(suite, handleSummaryGetSuite());
-    CuSuiteAddSuite(suite, handleSyncGetSuite());
-    CuSuiteAddSuite(suite, handleAlertGetSuite());
-    CuSuiteAddSuite(suite, handleRssGetSuite());
-    CuSuiteAddSuite(suite, optionsGetSuite());
-    CuSuiteAddSuite(suite, bmdbConfigGetSuite());
-    CuSuiteAddSuite(suite, bmdbUpgradeGetSuite());
-    CuSuiteAddSuite(suite, syncOptionsGetSuite());
-
-    CuSuiteRun(suite);
-    CuSuiteSummary(suite, output);
-    CuSuiteDetails(suite, output);
-    printf("%s\n", output->buffer);
+int main(int argc, char* argv[]) { 
+	const UnitTest tests[] = { 
+		unit_test(testAllocFilter),
+		unit_test(testAllocFilterWithNulls),
+		unit_test(testFreeFilter),
+		unit_test(testGetFilterFromId),
+		unit_test(testGetFilterFromName),
+		unit_test(testAppendFilter),
+		unit_test(testGetTotalForFilter),
+		unit_test(testGetMaxFilterDescWidth),
+		unit_test(testGetMaxFilterNameWidth),
+		unit_test(testAllocAdapter),
+		unit_test(testFreeAdapters),
+		unit_test(testAppendAdapter),
+		unit_test(testAllocAlert),
+		unit_test(testSetAlertName),
+		unit_test(testAppendAlert),
+		unit_test(testMakeDateCriteriaPart),
+		unit_test(testDateCriteriaPartToText),
+		unit_test(testMakeDateCriteria),
+		unit_test(testAppendDateCriteria),
+		unit_test(testFormatAmounts),
+		unit_test(testToTime),
+		unit_test(testToDate),
+		unit_test(testMakeHexString),
+		unit_test(testStrToLong),
+		unit_test_setup_teardown(testClientDumpEmptyDb, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testClientDumpOneEntry, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testClientDumpMultipleEntries, setupTestDb, tearDownTestDb),
+		unit_test(testMainHelp),
+		unit_test(testMainVersion),
+		unit_test(testMainFailWithError),
+		unit_test(testMainFailNoError),
+		unit_test(testMainDoDump),
+		unit_test(testMainDoSummary),
+		unit_test(testMainDoQuery),
+		unit_test(testMainDoMonitor),
+		unit_test_setup_teardown(testDumpAbbrevUnits,  setUpTestDbForDump, tearDownTestDb),
+		unit_test_setup_teardown(testDumpAsCsv,        setUpTestDbForDump, tearDownTestDb),
+		unit_test_setup_teardown(testDumpWithDefaults, setUpTestDbForDump, tearDownTestDb),
+		unit_test_setup_teardown(testDumpFullUnits,    setUpTestDbForDump, tearDownTestDb),
+		unit_test(testAllocData),
+		unit_test(testMakeData),
+		unit_test(testFreeData),
+		unit_test(testAppendData),
+		unit_test_setup_teardown(testRemoveAlertsDb, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testAddGetRemoveAlerts, setupTestDb, tearDownTestDb),
+		unit_test(testIsDateCriteriaPartMatch),
+		unit_test(testIsDateCriteriaMatch),
+		unit_test(testFindLowestMatch),
+		unit_test(testFindHighestMatchAtOrBelowLimit),
+		unit_test(testFindHighestMatch),
+		unit_test(testGetNonRelativeValue),
+		unit_test(testReplaceRelativeValues),
+		unit_test(testFindFirstMatchingDate),
+		unit_test_setup_teardown(testGetTotalsForAlert, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testMonitorEmptyDb, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testMonitorNoDataAfterTs, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testMonitorDataOnTs, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testMonitorDataOnAndAfterTs, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testMonitorDataOnAndLongAfterTs, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testMonitorDataForFilter, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testMonitorDataForAllFilters, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testQueryEmptyDb, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testQueryNoDataInRange, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testQueryNoDataForHost, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testQueryDataInRangeHours, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testQueryDataInRangeDays, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testQueryDataInRangeMonths, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testQueryDataInRangeYears, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testQueryDataNarrowValueRangeSingleResult, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testQueryDataNarrowValueRangeMultiResults, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testQueryLargeQueryRange, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testSummaryEmptyDb, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testSummaryOneEntry, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testSummaryTwoEntriesSameTime, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testSummaryTwoEntriesDifferentTimes, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testSummaryEntriesSpanningDayBoundary, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testSummaryEntriesSpanningMonthBoundary, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testSummaryEntriesSpanningYearBoundary, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testSummaryMultipleEntries, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testSummaryOneOtherHost, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testSummaryMultipleOtherHosts, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testSyncEmptyDb, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testSyncNoMatchingData, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testSyncDataOnAndAfterTs, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testCalcTsBoundsEmptyDb, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testCalcTsBoundsNoMatches, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testCalcTsBoundsWithMatches, setupTestDb, tearDownTestDb),
+		unit_test(testGetValueForFilterIdNull),
+		unit_test(testGetValueForFilterIdNoMatch),
+		unit_test(testGetValueForFilterIdWithMatch),
+		unit_test_setup_teardown(testCalcMaxValueEmptyDb, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testCalcMaxValueWithData, setupTestDb, tearDownTestDb),
+		unit_test(testFormatAmountByUnits),
+		unit_test_setup_teardown(testConfigDump, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testConfigUpdate, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testConfigDelete, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testGetConfigInt, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testGetConfigText, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testSetConfigInt, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testSetConfigText, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testRmConfigBadValue, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testRmConfigOkValue, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testReadFiltersEmpty, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testReadFiltersOk, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testGetStmtSingleThreaded, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testConfigWithAdmin, setupTestForHandleConfig, teardownTestForHandleConfig),
+		unit_test_setup_teardown(testConfigWithoutAdmin, setupTestForHandleConfig, teardownTestForHandleConfig),
+		unit_test_setup_teardown(testConfigUpdateWithoutAdmin, setupTestForHandleConfig, teardownTestForHandleConfig),
+		unit_test_setup_teardown(testConfigUpdateDisallowedParam, setupTestForHandleConfig, teardownTestForHandleConfig),
+		unit_test_setup_teardown(testConfigUpdateServerName, setupTestForHandleConfig, teardownTestForHandleConfig),
+		unit_test_setup_teardown(testConfigUpdateMonitorInterval, setupTestForHandleConfig, teardownTestForHandleConfig),
+		unit_test_setup_teardown(testConfigUpdateHistoryInterval, setupTestForHandleConfig, teardownTestForHandleConfig),
+		unit_test_setup_teardown(testConfigUpdateSummaryInterval, setupTestForHandleConfig, teardownTestForHandleConfig),
+		unit_test_setup_teardown(testConfigUpdateRssFreq, setupTestForHandleConfig, teardownTestForHandleConfig),
+		unit_test_setup_teardown(testConfigUpdateRssItems, setupTestForHandleConfig, teardownTestForHandleConfig),
+		unit_test_setup_teardown(testConfigUpdateDlColour, setupTestForHandleConfig, teardownTestForHandleConfig),
+		unit_test_setup_teardown(testConfigUpdateUlColour, setupTestForHandleConfig, teardownTestForHandleConfig),
+		unit_test(testTimeGm),
+		unit_test(testGetCurrentYearForTs),
+		unit_test(testGetCurrentMonthForTs),
+		unit_test(testGetCurrentDayForTs),
+		unit_test(testGetNextYearForTs),
+		unit_test(testGetNextMonthForTs),
+		unit_test(testGetNextDayForTs),
+		unit_test(testGetNextHourForTs),
+		unit_test(testGetNextMinForTs),
+		unit_test(testAddToDate),
+		unit_test(testNormaliseTm),
+		unit_test(testProcess),
+		unit_test_setup_teardown(testUpdateDbNull, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testUpdateDbMultiple, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testCompressSec1Filter, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testCompressSecMultiFilters, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testCompressSecMultiIterations, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testCompressMin1Filter, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testCompressMinMultiFilters, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testGetNextCompressTime, setupTestDb, tearDownTestDb),
+		unit_test(testQueryMode),
+		unit_test(testSummaryMode),
+		unit_test(testDumpMode),
+		unit_test(testMonitorMode),
+		unit_test(testNoMode),
+		unit_test(testEmptyCmdLine),
+		unit_test(testPort),
+		unit_test(testVersion),
+		unit_test(testHelp),
+		unit_test(testHost),
+		unit_test(testAlias),
+		unit_test(testVariousValid),
+		unit_test_setup_teardown(testUpgradeToCurrentLevel, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testUpgradeToEarlierLevel, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testUpgradeAboveMaxLevel, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testUpgradeFrom1To2, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testUpgradeFrom2To3, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testUpgradeFrom3To4, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testUpgradeFrom4To5, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testUpgradeFrom5To6, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testUpgradeFrom6To7, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testConvertAddrValues, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testHandleSummary, setupTestForHandleSummary, tearDownTestForHandleSummary),
+		unit_test_setup_teardown(testCharSubstitution, setupTestForHandleFile, tearDownTestForHandleFile),
+		unit_test(testGetMimeTypeForFile),
+		unit_test(testParseRequest),
+		unit_test(testGetValueForName),
+		unit_test(testGetValueNumForName),
+		unit_test_setup_teardown(testMissingParam, setupTestForHandleQuery, tearDownTestForHandleQuery),
+		unit_test_setup_teardown(testParamsOkOneFilter, setupTestForHandleQuery, tearDownTestForHandleQuery),
+		unit_test_setup_teardown(testParamsOkMultiFilter, setupTestForHandleQuery, tearDownTestForHandleQuery),
+		unit_test_setup_teardown(testGroupByDay, setupTestForHandleQuery, tearDownTestForHandleQuery),
+		unit_test_setup_teardown(testParamsOkReversed, setupTestForHandleQuery, tearDownTestForHandleQuery),
+		unit_test_setup_teardown(testGroupByDayCsv, setupTestForHandleQuery, tearDownTestForHandleQuery),
+		unit_test_setup_teardown(testNoTsParam, setupTestForHandleMonitor, tearDownTestForHandleMonitor),
+		unit_test_setup_teardown(testNoTgParam, setupTestForHandleMonitor, tearDownTestForHandleMonitor),
+		unit_test_setup_teardown(testMonitorParamsOkOneFilter, setupTestForHandleMonitor, tearDownTestForHandleMonitor),
+		unit_test_setup_teardown(testMonitorParamsOkMultiFilter, setupTestForHandleMonitor, tearDownTestForHandleMonitor),
+		unit_test_setup_teardown(testAlertNoAction, setupTestForHandleAlert, tearDownTestForHandleAlert),
+		unit_test_setup_teardown(testAlertListNone, setupTestForHandleAlert, tearDownTestForHandleAlert),
+		unit_test_setup_teardown(testAlertList, setupTestForHandleAlert, tearDownTestForHandleAlert),
+		unit_test_setup_teardown(testAlertDeleteOk, setupTestForHandleAlert, tearDownTestForHandleAlert),
+		unit_test_setup_teardown(testAlertDeleteForbidden, setupTestForHandleAlert, tearDownTestForHandleAlert),
+		unit_test_setup_teardown(testAlertUpdateMissingArgs, setupTestForHandleAlert, tearDownTestForHandleAlert),
+		unit_test_setup_teardown(testAlertUpdateOk, setupTestForHandleAlert, tearDownTestForHandleAlert),
+		unit_test_setup_teardown(testAlertUpdateForbidden, setupTestForHandleAlert, tearDownTestForHandleAlert),
+		unit_test_setup_teardown(testProcessAlertStatus, setupTestForHandleAlert, tearDownTestForHandleAlert),
+		unit_test_setup_teardown(testRssHourlyNoAlerts, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testRssWithAlertOk, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testRssWithAlertExpired, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testRssDailyNoAlerts, setupTestDb, tearDownTestDb)
+	}; 
+	return run_tests(tests); 
 }
 
-int main(void) {
-    setup();
-    RunAllTests();
-    return 0;
-}

@@ -1,29 +1,7 @@
-/*
- * BitMeterOS
- * http://codebox.org.uk/bitmeterOS
- *
- * Copyright (c) 2011 Rob Dawson
- *
- * Licensed under the GNU General Public License
- * http://www.gnu.org/licenses/gpl.txt
- *
- * This file is part of BitMeterOS.
- *
- * BitMeterOS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * BitMeterOS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- */
-
 #define _GNU_SOURCE
+#ifdef UNIT_TESTING 
+	#include "test.h"
+#endif
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -44,6 +22,7 @@ static int upgrade4();
 static int upgrade5();
 static int upgrade6();
 static int upgrade7();
+static int upgrade8();
 
 int doUpgrade(FILE* file, int argc, char** argv){
     int requestLevel;
@@ -59,22 +38,22 @@ int doUpgrade(FILE* file, int argc, char** argv){
 
     if (requestLevel == BAD_LEVEL){
      // We don't know what level to upgrade to
-        logMsg(LOG_INFO, "Please specify a valid database level for the upgrade, the database is currently at level %d.", currentLevel);
+        printf("Please specify a valid database level for the upgrade, the database is currently at level %d.", currentLevel);
 		status = FAIL;
 
 	} else if (requestLevel < currentLevel){
      // We were asked to 'upgrade' to an older version
-		logMsg(LOG_INFO, "Cannot upgrade database to level %d, the database is already at level %d.", requestLevel, currentLevel);
+		printf("Cannot upgrade database to level %d, the database is already at level %d.", requestLevel, currentLevel);
 		status = FAIL;
 
 	} else if (requestLevel == currentLevel){
      // We were asked to 'upgrade' to the current version
-		logMsg(LOG_INFO, "Database is already at level %d, nothing to do.", requestLevel);
+		printf("Database is already at level %d, nothing to do.", requestLevel);
 		status = FAIL;
 
 	} else if (requestLevel > MAX_UPGRADE_LEVEL){
      // We were asked to upgrade to a version that is unknown to this version of the utility
-		logMsg(LOG_INFO, "Cannot upgrade database to level %d, the maximum available upgrade level is %d.", requestLevel, MAX_UPGRADE_LEVEL);
+		printf("Cannot upgrade database to level %d, the maximum available upgrade level is %d.", requestLevel, MAX_UPGRADE_LEVEL);
 		status = FAIL;
 
 	} else {
@@ -120,13 +99,16 @@ static int upgradeTo(int level){
 		case 7:
 			status = upgrade7();
 			break;
+		case 8:
+			status = upgrade8();
+			break;
 		default:
 			assert(FALSE);
 	}
 
 	if (status == SUCCESS){
 		commitTrans();
-		logMsg(LOG_INFO, "Database level upgraded to %d.", level);
+		printf("Database level upgraded to %d.", level);
 
 	} else {
 		rollbackTrans();
@@ -160,8 +142,8 @@ int convertAddrValues(){
  // Convert all 'ad' values to strings
     sqlite3_stmt* stmtSelect;
     sqlite3_stmt* stmtUpdate;
-    prepareSql(&stmtSelect, "SELECT DISTINCT ad FROM data");
-    prepareSql(&stmtUpdate, "UPDATE data SET ad=? WHERE ad=?");
+    prepareSql(&stmtSelect, "SELECT DISTINCT ad FROM data2");
+    prepareSql(&stmtUpdate, "UPDATE data2 SET ad=? WHERE ad=?");
 
     const char* adBytes;
     char adTxt[MAC_ADDR_LEN * 2 + 1];
@@ -263,7 +245,7 @@ static int upgrade3(){
 	}
 
     sqlite3_stmt* stmtAddColumn;
-    prepareSql(&stmtAddColumn, "ALTER TABLE data ADD COLUMN hs;");
+    prepareSql(&stmtAddColumn, "ALTER TABLE data2 ADD COLUMN hs;");
     status = sqlite3_step(stmtAddColumn);
     if (status != SQLITE_DONE){
         logMsg(LOG_ERR, "add column failed rc=%d error=%s", status, getDbError());
@@ -305,7 +287,7 @@ static int upgrade5(){
 		return FAIL;
 	}
 
-    status = executeSql("UPDATE data SET hs = '' WHERE hs IS NULL", NULL);
+    status = executeSql("UPDATE data2 SET hs = '' WHERE hs IS NULL", NULL);
     if (status == FAIL){
 		return FAIL;
 	}
@@ -335,7 +317,7 @@ static int upgrade6(){
 		return FAIL;
 	}
 
-	status = executeSql("CREATE INDEX idxDataTs ON data(ts)", NULL);
+	status = executeSql("CREATE INDEX idxDataTs ON data2(ts)", NULL);
     if (status == FAIL){
 		return FAIL;
 	}
@@ -368,3 +350,40 @@ static int upgrade7(){
     return SUCCESS;
 }
 
+static int upgrade8(){
+ // Upgrade the db from version 7 to version 8
+    int status = setDbVersion(8);
+    if (status == FAIL){
+		return FAIL;
+	}
+
+    status = executeSql("CREATE TABLE filter (id INTEGER PRIMARY KEY AUTOINCREMENT, desc, name, filter, host)", NULL);
+    if (status == FAIL){
+		return FAIL;
+	}
+
+    status = executeSql("INSERT INTO filter (id,desc,name,filter) VALUES (1, 'All Downloads', 'dl', 'dst host {adapter}')", NULL);
+    if (status == FAIL){
+		return FAIL;
+	}
+
+    status = executeSql("INSERT INTO filter (id,desc,name,filter) VALUES (2, 'All Uploads', 'ul', 'src host {adapter}')", NULL);
+    if (status == FAIL){
+		return FAIL;
+	}
+
+    status = executeSql("INSERT INTO filter (desc,name,filter) VALUES ('Internet Downloads', 'idl', 'dst host {adapter} and not (src net {lan})')", NULL);
+    if (status == FAIL){
+		return FAIL;
+	}
+
+    status = executeSql("INSERT INTO filter (desc,name,filter) VALUES ('Internet Uploads', 'iul', 'src host {adapter} and not (dst net {lan})')", NULL);
+    if (status == FAIL){
+		return FAIL;
+	}
+
+//insert into data2 (ts,dr,vl,fl,hs) select ts,dr,dl,1,hs from data;
+//insert into data2 (ts,dr,vl,fl,hs) select ts,dr,ul,2,hs from data;
+
+    return SUCCESS;
+}

@@ -1,28 +1,3 @@
-/*
- * BitMeterOS
- * http://codebox.org.uk/bitmeterOS
- *
- * Copyright (c) 2011 Rob Dawson
- *
- * Licensed under the GNU General Public License
- * http://www.gnu.org/licenses/gpl.txt
- *
- * This file is part of BitMeterOS.
- *
- * BitMeterOS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * BitMeterOS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- */
-
 #include "common.h"
 #include "client.h"
 
@@ -51,7 +26,7 @@
 #define ARG_MODE_QUERY_SHORT   "q"
 #define ARG_MODE_QUERY_LONG    "query"
 // ----
-#define OPT_DUMP_FORMAT 'f'
+#define OPT_DUMP_FORMAT 'o'
 
 #define PREF_DUMP_FORMAT_CSV         1
 #define PREF_DUMP_FORMAT_FIXED_WIDTH 2
@@ -71,6 +46,8 @@
 #define ARG_UNITS_ABBREV "a"
 #define ARG_UNITS_FULL   "f"
 // ----
+#define OPT_FILTER 'f'
+// ----
 #define OPT_RANGE 'r'
 // ----
 #define OPT_GROUP 'g'
@@ -86,14 +63,6 @@
 #define ARG_GROUP_MONTHS "m"
 #define ARG_GROUP_YEARS  "y"
 #define ARG_GROUP_TOTAL  "t"
-// ----
-#define OPT_DIRECTION 'd'
-
-#define PREF_DIRECTION_DL 1
-#define PREF_DIRECTION_UL 2
-
-#define ARG_DIRECTION_DL "d"
-#define ARG_DIRECTION_UL "u"
 // ----
 #define OPT_BAR_CHARS  'w'
 // ----
@@ -121,8 +90,11 @@
 #define ERR_OPT_BAD_DUMP_FORMAT  "Unrecognised dump format"
 #define ERR_OPT_BAD_MODE         "Unrecognised mode"
 #define ERR_OPT_BAD_ADAPTER      "Bad adapter value"
+#define ERR_WTF                  "BitMeter did not understand. "
 // ----
-#define OPT_ADAPTER 'a'
+#define SHOW_HELP "Use the '-h' option to display help.\n"
+// ----
+#define OPT_HOST 'a'
 // ----
 struct Prefs{
 	unsigned int mode;
@@ -133,14 +105,37 @@ struct Prefs{
 	unsigned int rangeFrom;
 	unsigned int rangeTo;
 	unsigned int group;
-	unsigned int direction;
 	unsigned int barChars;
 	unsigned int maxAmount;
 	unsigned int monitorType;
-	char* host;
-	char* adapter;
+	char* filter;
     char* errorMsg;
 };
+// ----
+struct BmClientCalls{
+	void (*doHelp)();
+	void (*doVersion)();
+	void (*doDump)();
+	void (*doMonitor)();
+	void (*doSummary)();
+	void (*doQuery)();
+	void (*setLogLevel)(int);
+	int (*parseArgs)(int, char **, struct Prefs*);
+	sqlite3* (*openDb)();
+	void (*closeDb)();
+	void (*dbVersionCheck)();
+};
+struct BmClientCalls mockBmClientCalls;
+// ----
+struct DumpCalls{
+	struct Data* (*calcMaxValue)();
+	struct Filter* (*readFilters)();
+	void (*toTime)(char*, time_t);
+	void (*toDate)(char*, time_t);
+	void (*formatAmountByUnits)(const BW_INT, char*, int);
+	struct Filter* (*getFilterFromId)(struct Filter*, int);
+};
+struct DumpCalls mockDumpCalls;
 // ----
 int parseArgs(int argc, char **argv, struct Prefs*);
 void doDump();

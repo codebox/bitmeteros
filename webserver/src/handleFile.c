@@ -1,32 +1,10 @@
-/*
- * BitMeterOS
- * http://codebox.org.uk/bitmeterOS
- *
- * Copyright (c) 2011 Rob Dawson
- *
- * Licensed under the GNU General Public License
- * http://www.gnu.org/licenses/gpl.txt
- *
- * This file is part of BitMeterOS.
- *
- * BitMeterOS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * BitMeterOS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- */
-
 #define _GNU_SOURCE
+#ifdef UNIT_TESTING 
+	#include "test.h"
+#endif
 #include <stdlib.h>
 #ifndef _WIN32
-#include <sys/socket.h>
+	#include <sys/socket.h>
 #endif
 #include <stdio.h>
 #include <fcntl.h>
@@ -40,12 +18,6 @@
 /*
 Handles requests for files received by the web server.
 */
-
-struct MimeType{
-	char* fileExt;
-	char* contentType;
-	int binary;
-};
 
 struct MimeType MIME_TYPES[] = {
 	{"html", MIME_HTML, FALSE},
@@ -62,7 +34,17 @@ struct MimeType MIME_TYPES[] = {
 };
 struct MimeType DEFAULT_MIME_TYPE = {"bin", MIME_BIN, TRUE};
 
-static struct MimeType* getMimeTypeForFile(char* fileName){
+static struct HandleFileCalls calls = {&fread, &writeData};
+
+static struct HandleFileCalls getCalls(){
+	#ifdef UNIT_TESTING	
+		return mockHandleFileCalls;
+	#else
+		return calls;
+	#endif
+}
+
+struct MimeType* getMimeTypeForFile(char* fileName){
  // Work out which MIME type we should use, based on the name of the file
     char* dotPosn = strrchr(fileName,  '.');
     if (dotPosn != NULL){
@@ -162,7 +144,7 @@ static struct MimeType* getMimeTypeForFile(char* fileName){
 void doSubs(SOCKET fd, FILE* fp, struct NameValuePair* substPairs){
 	char bufferIn[SUBST_BUFSIZE];
 	char bufferOut[SUBST_BUFSIZE];
-	int size = fread(bufferIn, 1, sizeof(bufferIn), fp);
+	int size = getCalls().fread(bufferIn, 1, sizeof(bufferIn), fp);
 	
 	if (size == SUBST_BUFSIZE){
 		logMsg(LOG_ERR, "doSubs, file too large - exceeded %d bytes", size);
@@ -204,7 +186,7 @@ void doSubs(SOCKET fd, FILE* fp, struct NameValuePair* substPairs){
 			substPairs = substPairs->next;	
 		}
 
-		writeData(fd, bufferIn, size);
+		getCalls().writeData(fd, bufferIn, size);
 	}
 }
 
@@ -248,8 +230,8 @@ void processFileRequest(SOCKET fd, struct Request* req, struct NameValuePair* su
         if (substPairs == NULL){
 	        int rc;
 	        char buffer[BUFSIZE];
-	        while ( (rc = fread(buffer, 1, BUFSIZE, fp)) > 0 ) {
-	           	writeData(fd, buffer, rc);
+	        while ( (rc = getCalls().fread(buffer, 1, BUFSIZE, fp)) > 0 ) {
+	           	getCalls().writeData(fd, buffer, rc);
 	        }
 	    } else {
 	    	doSubs(fd, fp, substPairs);

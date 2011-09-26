@@ -1,4 +1,4 @@
-.TH bmclient 1 "31st August 2009"
+.TH bmclient 1 "15th April 2010"
 .SH NAME
 bmclient - Provides command-line access to the BitMeterOS database
 .SH SYNOPSIS
@@ -8,14 +8,14 @@ Provides command-line access to the BitMeterOS database which contains network u
 .SS Dump all data
 Dump all data using '-md' or '-m dump':
 .br
-    bmclient -m dump [-u <units>] [-f <format>]
+    bmclient -m dump [-u <units>] [-o <output format>]
 
 Values allowed for 'units' are:
     b - all values displayed in bytes (default)
     a - values displayed with abbreviated units
     f - values displayed with full units
 
-Values allowed for 'format' are:
+Values allowed for 'output format' are:
     c - CSV format, suitable for import into a spreadsheet
     f - fixed width format, easier to read
 
@@ -25,25 +25,25 @@ Display a database summary using '-ms' or '-m summary':
 
 .SS Monitor current usage
 Monitor current usage using '-mm' or '-m monitor'. This produces a continuously updating display of the current network usage:
-    bmclient -m monitor [-t <display type>] [-d <direction>] [-w <max bar width>] [-x <max bar value>]
+    bmclient -m monitor -f <filter name> [-t <display type>] [-w <max bar width>] [-x <max bar value>]
 
+    The 'filter name' argument is mandatory, and must match the name of an existing packet filter (use the command 'bmdb showfilters' to display a list of the available filters)
+ 
 Values allowed for 'display type' are:
-    n - numeric, both upload and download values are displayed numerically (default)
-    b - bar graph, either upload or download values are displayed as bars of varying width (see subsequent arguments)
-
-The 'direction' argument is ignored unless a display type of 'b' (bar graph) is selected. Permitted values are:
-    d - download, the length of the bars vary according to the current download speed (default)
-    u - upload, the length of the bars vary according to the current upload speed
+    n - numeric, values are displayed numerically (default)
+    b - bar graph, values are displayed as bars of varying width (see subsequent arguments)
 
 The 'max bar width' argument is ignored unless a display type of 'b' (bar graph) is selected.
     A numeric value must be supplied with this option, to indicate the width (in characters) of the longest bar that will be displayed (default is 69 to allow each line, including the numeric output, to fit on an 80 character display)
 
 The 'max bar value' argument is ignored unless a display type of 'b' (bar graph) is selected.
-    A numeric value must be supplied with this option, to indicate the maximum upload/download value (in bytes) that can be displayed before the bar reaches the maximum width specified by the 'max bar width' argument (default value is 100000)
+    A numeric value must be supplied with this option, to indicate the maximum value (in bytes) that can be displayed before the bar reaches the maximum width specified by the 'max bar width' argument (default value is 100000)
 
 .SS Query the database
 Query the database using '-mq' or '-m query':
-    bmclient -m query -r <range> [-g <grouping>] [-u <units>]
+    bmclient -m query -f <filter name> -r <range> [-g <grouping>] [-u <units>]
+
+The 'filter name' argument is mandatory, and must match the name of an existing packet filter (use the command 'bmdb showfilters' to display a list of the available filters)
 
 The 'range' argument specifies the date/time range for which you want to see information. The range can consist of either 1 or 2 date components, if 2 date components are present then they must be separated by a hyphen. Each date component can be in 1 of 4 different formats, shown below:
     yyyy        - a 4 digit year
@@ -53,13 +53,13 @@ The 'range' argument specifies the date/time range for which you want to see inf
 
 Some examples:
     Show all data recorded during the year 2009:
-        bmclient -m query -r2009
+        bmclient -m query -f dl -r2009
     Show all data recorded between April 2008 and June 2008, inclusive
-        bmclient -m query -r200804-200806
+        bmclient -m query -f dl -r200804-200806
     Show all data recorded between 4AM and 5AM on 1st January 2002
-        bmclient -m query -r2002010104
+        bmclient -m query -f dl -r2002010104
             OR
-        bmclient -m query -r2002010104-2002010105
+        bmclient -m query -f dl -r2002010104-2002010105
 
 The 'grouping' argument specifies if/how the results of the query should be grouped when they are displayed:
     t - do not group results, display overall total only (default)
@@ -68,7 +68,7 @@ The 'grouping' argument specifies if/how the results of the query should be grou
     m - group results by month
     y - group results by year
 
-The 'units' argument is explained above, in the 'dump' section.
+The 'units' argument is explained above, in the Dump section.
 
 .SS Display version
 Display version information
@@ -81,4 +81,4 @@ Display this help
 .SH AUTHOR 
 Email: rob@codebox.org.uk
 .br
-Web:   http://codebox.org.uk/bitmeterOs
+Web:   http://codebox.org.uk/bitmeteros

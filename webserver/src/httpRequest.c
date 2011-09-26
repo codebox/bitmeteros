@@ -1,32 +1,11 @@
-/*
- * BitMeterOS
- * http://codebox.org.uk/bitmeterOS
- *
- * Copyright (c) 2011 Rob Dawson
- *
- * Licensed under the GNU General Public License
- * http://www.gnu.org/licenses/gpl.txt
- *
- * This file is part of BitMeterOS.
- *
- * BitMeterOS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * BitMeterOS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- */
-
 #define _GNU_SOURCE
+#ifdef UNIT_TESTING 
+	#include "test.h"
+#endif
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 #include <errno.h>
 #include <malloc.h>
 #include "bmws.h"
@@ -55,6 +34,43 @@ long getValueNumForName(char* name, struct NameValuePair* pair, long defaultValu
  // Searches the list of name/value pairs for the value that corresponds to the specified name, and converts it to an integer
 	char* valueTxt = getValueForName(name, pair, NULL);
 	return strToLong(valueTxt, defaultValue);
+}
+
+int countChars(char *txt, char c){
+	int i;
+	for (i=0; txt[i]; txt[i]==c ? i++ : txt++);	
+	return i;
+}
+
+int* getNumListForName(char* name, struct NameValuePair* pair){
+ // Searches the list of name/value pairs for the value that corresponds to the specified name, and converts it to an integer
+	char* valueTxt = getValueForName(name, pair, NULL);
+	
+	if (valueTxt == NULL){
+		return NULL;
+			
+	} else {
+		int valCount = countChars(valueTxt, ',') + 1;
+		int* result = malloc(sizeof(int) * (valCount + 1));
+		
+		valueTxt = strdupa(valueTxt);
+		char *val = strtok(valueTxt, ",");
+		int i = 0, v;
+		while (val != NULL) {
+			v = strToInt(val, 0);
+			if (v>0) {
+				result[i] = v;
+			} else {
+				logMsg(LOG_ERR, "Bad value found by getNumListForName in %s param: %s", name, valueTxt);	
+			}
+			i++;
+			val = strtok(NULL, ",");
+		}
+		assert(i==valCount);		
+		result[valCount] = 0;
+		
+		return result;
+	}
 }
 
 struct NameValuePair* makeNameValuePair(char* name, char* value){

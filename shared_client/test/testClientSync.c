@@ -1,79 +1,62 @@
-/*
- * BitMeterOS
- * http://codebox.org.uk/bitmeterOS
- *
- * Copyright (c) 2011 Rob Dawson
- *
- * Licensed under the GNU General Public License
- * http://www.gnu.org/licenses/gpl.txt
- *
- * This file is part of BitMeterOS.
- *
- * BitMeterOS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * BitMeterOS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-#include "test.h"
+#include <test.h> 
+#include <stdarg.h> 
+#include <stddef.h> 
+#include <setjmp.h> 
+#include <cmockery.h> 
 #include "common.h"
 #include "client.h"
-#include "CuTest.h"
 
 /*
 Contains unit tests for the clientSync module.
 */
 
-void testSyncEmptyDb(CuTest *tc) {
+void testSyncEmptyDb(void** state) {
  // Check that we behave correctly when the data table is empty
-    emptyDb();
-    CuAssertTrue(tc, getSyncValues(1) == NULL);
+    assert_true(getSyncValues(1) == NULL);
+    freeStmtList();
 }
 
-void testSyncNoMatchingData(CuTest *tc) {
+void testSyncNoMatchingData(void** state) {
+ // Set up filters for other hosts
+    addFilterRow(FILTER,  "1", "1", "", NULL);
+    addFilterRow(FILTER2, "2", "2", "", NULL);
+    addFilterRow(FILTER3, "3", "3", "", "host");
+	
  // Check that we behave correctly when the data table contains rows but none meet our criterion
-    emptyDb();
-    addDbRow(0, 1, "eth0", 123, 456, "other host");
-    addDbRow(1, 1, "eth0", 123, 456, "");
-    addDbRow(3, 1, "eth0", 123, 456, "other host");
+    addDbRow(0, 1, 123, FILTER);
+    addDbRow(1, 1, 123, FILTER2);
+    addDbRow(3, 1, 123, FILTER3);
 
-    CuAssertTrue(tc, getSyncValues(1) == NULL);
+    assert_true(getSyncValues(1) == NULL);
+    freeStmtList();
 }
 
-void testSyncDataOnAndAfterTs(CuTest *tc) {
+void testSyncDataOnAndAfterTs(void** state) {
  /* Check that we behave correctly when the data table contains rows that meet our
     criterion, and have differing timestamps */
-    emptyDb();
-    addDbRow(9,  1, "eth0", 1, 10, "");
-    addDbRow(10, 1, "eth0", 1, 10, "");
-    addDbRow(10, 1, "eth0", 2, 11, "");
-    addDbRow(11, 1, "eth1", 3, 12, "");
-    addDbRow(11, 1, "eth1", 4, 13, "other host");
+    addDbRow(9,  1, 1, FILTER);
+    addDbRow(10, 1, 1, FILTER2);
+    addDbRow(10, 1, 2, FILTER);
+    addDbRow(10, 1, 2, FILTER3);
+    addDbRow(11, 1, 3, FILTER);
+    addDbRow(11, 1, 4, FILTER3);
 
-    struct Data* data = getSyncValues(9);
-    checkData(tc, data, 10, 1, "eth0", 1, 10, NULL);
+ // Set up filters for other hosts
+    addFilterRow(FILTER,  "1", "1", "", NULL);
+    addFilterRow(FILTER2, "2", "2", "", NULL);
+    addFilterRow(FILTER3, "3", "3", "", "host");
+
+	struct Data* first;
+    struct Data* data = first = getSyncValues(9);
+    checkData(data, 10, 1, 1, FILTER2);
 
     data = data->next;
-    checkData(tc, data, 10, 1, "eth0", 2, 11, NULL);
+    checkData(data, 10, 1, 2, FILTER);
 
     data = data->next;
-    checkData(tc, data, 11, 1, "eth1", 3, 12, NULL);
+    checkData(data, 11, 1, 3, FILTER);
 
-    CuAssertTrue(tc, data->next == NULL);
-}
-
-CuSuite* clientSyncSuite() {
-    CuSuite* suite = CuSuiteNew();
-    SUITE_ADD_TEST(suite, testSyncEmptyDb);
-    SUITE_ADD_TEST(suite, testSyncNoMatchingData);
-    SUITE_ADD_TEST(suite, testSyncDataOnAndAfterTs);
-    return suite;
+    assert_true(data->next == NULL);
+    freeData(first);
+    freeStmtList();
 }

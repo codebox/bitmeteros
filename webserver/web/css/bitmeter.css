@@ -42,6 +42,9 @@ a{
  	border-bottom: 1px solid;
  	padding-bottom: 0.5em;
 }
+.filterNameContainer{
+	width: 12em;
+}
 span.dateFormat{
 	font-size: 75%;
 }
@@ -115,11 +118,14 @@ h2{
 	position: absolute;
 	display: none;
 	background-color: white;
-	padding: 0.5em;
-	border: 2px solid #2E6E9E;
+	padding: 0.8em;
+	border: 1px solid black;
 	font-size: 1.1em;
 	-moz-border-radius: 5px;
 	-webkit-border-radius: 5px;
+	-moz-box-shadow: 	8px 8px 5px #555;
+	-webkit-box-shadow: 8px 8px 5px #555;
+	box-shadow: 		8px 8px 5px #555;	
 }
 .roundedCorners{
 	-moz-border-radius: 5px;
@@ -137,6 +143,8 @@ h2{
 }
 #floater td.historyHoverTime{
 	padding-bottom: 0.2em;
+	color: black;
+	font-weight: bold;
 }
 #floater td.historyHoverDir{
 	font-weight: bold;
@@ -175,15 +183,18 @@ div.spacer{
 #monitorReadout, #monitorReadout table{
 	padding: 5px 0 0 10px;
 }
-#monitorDlCurrent, #monitorUlCurrent {
-	font-size: 200%;
+.monitorCurrent {
+	font-size: 150%;
 	width: 7em;	
 }
-#monitorDlPeak, #monitorUlPeak, #monitorDlAverage, #monitorUlAverage, .monitorScaleLinks {
+.monitorPeak, .monitorAverage, .monitorScaleLinks {
 	font-size: 150%; 
 }
-#monitorDlCurrent, #monitorUlCurrent, #monitorDlPeak, #monitorUlPeak, #monitorDlAverage, #monitorUlAverage, td.monitorShowSeries, #monitorStopwatch {
+.monitorCurrent, .monitorPeak, .monitorAverage, td.monitorShowSeries, #monitorStopwatch {
 	text-align: right;
+}
+.monitorCurrent{
+	font-weight: bold;	
 }
 #monitorStopwatchIcon{
     cursor: pointer;   
@@ -307,7 +318,7 @@ div.spacer{
 .prefValue{
 	margin-left: 2em;
 }
-#dlColourPicker, #ulColourPicker{
+.filterColourBox{
 	border: 1px solid black;
 	width: 3em;
 	cursor: pointer;
@@ -443,9 +454,7 @@ h3#calcHowMuch{
 #swButtons button{
 	margin-bottom: 1em;
     cursor: pointer;
-    padding-top: 1em;
-    padding-bottom: 1em;
-    padding-left: 0.5em;
+    height: 3em;
 }
 #swReset{
 	margin-right: 0.5em;	
@@ -656,7 +665,6 @@ div.createAlertStartRepeatingTxt{
 	padding-right: .1em; 
 	border-right-width: 1px; 
 	border-right-width: 1px; 
-    margin-bottom: 2px;
 }
 .ui-tabs-vertical .ui-tabs-panel { 
 	padding: 1em; 
@@ -677,4 +685,8 @@ div.createAlertStartRepeatingTxt{
 }
 .prefUpdateStatus{
 	line-height: 2em;	
+}
+#prefsFilterColours div.filterNameContainer{
+	float: left;
+	line-height: 3em;
 }

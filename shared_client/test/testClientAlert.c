@@ -1,37 +1,15 @@
-/*
- * BitMeterOS
- * http://codebox.org.uk/bitmeterOS
- *
- * Copyright (c) 2011 Rob Dawson
- *
- * Licensed under the GNU General Public License
- * http://www.gnu.org/licenses/gpl.txt
- *
- * This file is part of BitMeterOS.
- *
- * BitMeterOS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * BitMeterOS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- */
-
 #ifdef _WIN32
 	#define __USE_MINGW_ANSI_STDIO 1
 #endif
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h> 
+#include <stddef.h> 
+#include <setjmp.h> 
+#include <cmockery.h> 
 #include <string.h>
 #include "common.h"
 #include "client.h"
-#include "CuTest.h"
 #include "test.h"
 
 static time_t makeTsFromParts(int y, int m, int d, int h){
@@ -57,7 +35,7 @@ void printDateCriteria(struct DateCriteria* criteria){
 		criteria->day  == NULL ? -1 : criteria->day->val1, 
 		criteria->hour == NULL ? -1 : criteria->hour->val1);	
 }
-void checkReplaceRelativeValues(CuTest *tc, int tsY, int tsM, int tsD, int tsH, 
+void checkReplaceRelativeValues(int tsY, int tsM, int tsD, int tsH, 
         char* yTxt, char* mTxt, char* dTxt, char* hTxt, 
         int exY, int exM, int exD, int exH){
             
@@ -65,30 +43,33 @@ void checkReplaceRelativeValues(CuTest *tc, int tsY, int tsM, int tsD, int tsH,
     time_t ts = makeTsFromParts(tsY, tsM, tsD, tsH);
     
     int resultOk = replaceRelativeValues(criteria, ts);
-	printDateCriteria(criteria);
-    CuAssertTrue(tc, resultOk);
+	//printDateCriteria(criteria);
+    assert_true(resultOk);
 	
     int yearOk  = ((criteria->year  == NULL) && (exY == -1)) || ((criteria->year  != NULL) && (criteria->year->val1  == exY));
-    CuAssertTrue(tc, yearOk);
+    assert_true(yearOk);
     
     int monthOk = ((criteria->month == NULL) && (exM == -1)) || ((criteria->month != NULL) && (criteria->month->val1 == exM));
-    CuAssertTrue(tc, monthOk);
+    assert_true(monthOk);
     
     int dayOk   = ((criteria->day   == NULL) && (exD == -1)) || ((criteria->day   != NULL) && (criteria->day->val1   == exD));
-    CuAssertTrue(tc, dayOk);
+    assert_true(dayOk);
     
     int hourOk  = ((criteria->hour  == NULL) && (exH == -1)) || ((criteria->hour  != NULL) && (criteria->hour->val1  == exH));
-    CuAssertTrue(tc, hourOk);    
+    assert_true(hourOk);      
+    
+    freeDateCriteria(criteria);
 }
-int checkReplaceRelativeValuesInvalid(CuTest *tc, int tsY, int tsM, int tsD, int tsH, 
+int checkReplaceRelativeValuesInvalid(int tsY, int tsM, int tsD, int tsH, 
         char* yTxt, char* mTxt, char* dTxt, char* hTxt){
             
     struct DateCriteria* criteria = makeDateCriteria(yTxt, mTxt, dTxt, "*", hTxt);
     time_t ts = makeTsFromParts(tsY, tsM, tsD, tsH);
     
-    CuAssertIntEquals(tc, 0, replaceRelativeValues(criteria, ts));
+    assert_int_equal(0, replaceRelativeValues(criteria, ts));
+    freeDateCriteria(criteria);
 }
-void checkFirstMatchingDate(CuTest *tc, int tsY, int tsM, int tsD, int tsH, 
+void checkFirstMatchingDate(int tsY, int tsM, int tsD, int tsH, 
         char* yTxt, char* mTxt, char* wTxt, char* dTxt, char* hTxt, 
         int exY, int exM, int exD, int exH){
     struct DateCriteria* criteria = makeDateCriteria(yTxt, mTxt, dTxt, wTxt, hTxt);
@@ -96,37 +77,39 @@ void checkFirstMatchingDate(CuTest *tc, int tsY, int tsM, int tsD, int tsH,
     time_t result = findFirstMatchingDate(criteria, ts);
     
     struct tm* t = localtime(&result);
-    CuAssertIntEquals(tc, exY, t->tm_year + 1900);
-    CuAssertIntEquals(tc, exM, t->tm_mon + 1);
-    CuAssertIntEquals(tc, exD, t->tm_mday);
-    CuAssertIntEquals(tc, exH, t->tm_hour);
+    assert_int_equal(exY, t->tm_year + 1900);
+    assert_int_equal(exM, t->tm_mon + 1);
+    assert_int_equal(exD, t->tm_mday);
+    assert_int_equal(exH, t->tm_hour);
+    freeDateCriteria(criteria);
 }
 
-void checkNoMatchingDates(CuTest *tc, int tsY, int tsM, int tsD, int tsH, char* yTxt, char* mTxt, char* wTxt, char* dTxt, char* hTxt){
+void checkNoMatchingDates(int tsY, int tsM, int tsD, int tsH, char* yTxt, char* mTxt, char* wTxt, char* dTxt, char* hTxt){
     struct DateCriteria* criteria = makeDateCriteria(yTxt, mTxt, dTxt, wTxt, hTxt);
     time_t ts = makeTsFromParts(tsY, tsM, tsD, tsH);
     time_t result = findFirstMatchingDate(criteria, ts);
     
-    CuAssertIntEquals(tc, -1, result);
+    assert_int_equal(-1, result);
+    freeDateCriteria(criteria);
 }
 
-void checkAlertTotals(CuTest *tc, struct Alert* alert, BW_INT dl, BW_INT ul){
+void checkAlertTotal(struct Alert* alert, BW_INT vl){
     struct Data* data = getTotalsForAlert(alert, getTime());
-    CuAssertIntEquals(tc, dl, data->dl);
-    CuAssertIntEquals(tc, ul, data->ul);   
+    assert_int_equal(vl, data->vl);   
+    freeData(data);
 }
 
 int callback(void* a, int b, char** c, char** d);
 int count = 0;
 
-void testRemoveAlertsDb(CuTest *tc){
+void testRemoveAlertsDb(void** state){
 	emptyDb();
 	
 	struct Alert* alert = allocAlert();
-    alert->active    = 1;
-    alert->direction = 1;
-    alert->amount    = 100000000000;
-    alert->bound     = makeDateCriteria("2010", "5", "26", "4", "15");
+    alert->active = 1;
+    alert->filter = 1;
+    alert->amount = 100000000000;
+    alert->bound  = makeDateCriteria("2010", "5", "26", "4", "15");
     setAlertName(alert, "alert1");
     
     struct DateCriteria* period1 = makeDateCriteria("*", "*", "*", "5,6", "0-6");
@@ -135,24 +118,27 @@ void testRemoveAlertsDb(CuTest *tc){
     alert->periods = period1;
     
     int alertId = addAlert(alert);
-    CuAssertIntEquals(tc, 1, getRowCount("SELECT * FROM alert;"));  
-    CuAssertIntEquals(tc, 2, getRowCount("SELECT * FROM alert_interval;")); 
-    CuAssertIntEquals(tc, 3, getRowCount("SELECT * FROM interval;"));
+    assert_int_equal(1, getRowCount("SELECT * FROM alert;"));  
+    assert_int_equal(2, getRowCount("SELECT * FROM alert_interval;")); 
+    assert_int_equal(3, getRowCount("SELECT * FROM interval;"));
     
     removeAlert(alertId);
-    CuAssertIntEquals(tc, 0, getRowCount("SELECT * FROM alert;"));  
-    CuAssertIntEquals(tc, 0, getRowCount("SELECT * FROM alert_interval;")); 
-    //CuAssertIntEquals(tc, 0, getRowCount("SELECT * FROM interval;"));
+    assert_int_equal(0, getRowCount("SELECT * FROM alert;"));  
+    assert_int_equal(0, getRowCount("SELECT * FROM alert_interval;")); 
+    assert_int_equal(0, getRowCount("SELECT * FROM interval;"));  
+    
+    freeAlert(alert);
+    freeStmtList();
 }
 
-void testAddGetRemoveAlerts(CuTest *tc){
+void testAddGetRemoveAlerts(void** state){
     count = 0;
     struct Alert* alert = allocAlert();
-    alert->id        = 2;
-    alert->active    = 1;
-    alert->direction = 1;
-    alert->amount    = 100000000000;
-    alert->bound     = makeDateCriteria("2010", "5", "26", "4", "15");
+    alert->id     = 2;
+    alert->active = 1;
+    alert->filter = 1;
+    alert->amount = 100000000000;
+    alert->bound  = makeDateCriteria("2010", "5", "26", "4", "15");
     setAlertName(alert, "alert1");
     
     struct DateCriteria* period1 = makeDateCriteria("*", "*", "*", "5,6", "0-6");
@@ -163,10 +149,11 @@ void testAddGetRemoveAlerts(CuTest *tc){
     
     int alertId1 = addAlert(alert);
     
+    freeAlert(alert);
     alert = allocAlert();
     alert->id      = 3;
     alert->active  = 0;
-    alert->direction = 3;
+    alert->filter = 3;
     alert->amount    = 999999999999;
     alert->bound   = makeDateCriteria("2011", "6", "27", "5", "16");
     setAlertName(alert, "alert2");
@@ -178,447 +165,446 @@ void testAddGetRemoveAlerts(CuTest *tc){
     alert->periods = period1;
     
     int alertId2 = addAlert(alert);
+    freeAlert(alert);
     
+    struct Alert* firstAlert;
     struct Alert* resultAlert = getAlerts();
-    CuAssertStrEquals(tc,"alert1", resultAlert->name);
-    CuAssertIntEquals(tc, alertId1, resultAlert->id);
-    CuAssertIntEquals(tc, 1, resultAlert->direction);
-    CuAssertIntEquals(tc, 100000000000, resultAlert->amount);
-    CuAssertIntEquals(tc, 1, resultAlert->active);
-    checkDateCriteriaPart(tc, resultAlert->bound->year,    0, 2010, 2010, 0);
-    checkDateCriteriaPart(tc, resultAlert->bound->month,   0, 5, 5, 0);
-    checkDateCriteriaPart(tc, resultAlert->bound->day,     0, 26, 26, 0);
-    checkDateCriteriaPart(tc, resultAlert->bound->weekday, 0, 4, 4, 0);
-    checkDateCriteriaPart(tc, resultAlert->bound->hour,    0, 15, 15, 0);
+    firstAlert = resultAlert;
+    assert_string_equal("alert1", resultAlert->name);
+    assert_int_equal(alertId1, resultAlert->id);
+    assert_int_equal(1, resultAlert->filter);
+    assert_int_equal(100000000000, resultAlert->amount);
+    assert_int_equal(1, resultAlert->active);
+    checkDateCriteriaPart(resultAlert->bound->year,    0, 2010, 2010, 0);
+    checkDateCriteriaPart(resultAlert->bound->month,   0, 5, 5, 0);
+    checkDateCriteriaPart(resultAlert->bound->day,     0, 26, 26, 0);
+    checkDateCriteriaPart(resultAlert->bound->weekday, 0, 4, 4, 0);
+    checkDateCriteriaPart(resultAlert->bound->hour,    0, 15, 15, 0);
     
     struct DateCriteria* period = resultAlert->periods;
-    CuAssertTrue(tc, NULL == period->year);
-    CuAssertTrue(tc, NULL == period->month);
-    CuAssertTrue(tc, NULL == period->day);
-    checkDateCriteriaPart(tc, period->weekday, 0, 5, 5, 1);
-    checkDateCriteriaPart(tc, period->weekday->next, 0, 6, 6, 0);
-    checkDateCriteriaPart(tc, period->hour,    0, 0, 6, 0);
+    assert_true(NULL == period->year);
+    assert_true(NULL == period->month);
+    assert_true(NULL == period->day);
+    checkDateCriteriaPart(period->weekday, 0, 5, 5, 1);
+    checkDateCriteriaPart(period->weekday->next, 0, 6, 6, 0);
+    checkDateCriteriaPart(period->hour,    0, 0, 6, 0);
     
     period = period->next;
-    CuAssertTrue(tc, NULL == period->year);
-    CuAssertTrue(tc, NULL == period->month);
-    CuAssertTrue(tc, NULL == period->day);
-    checkDateCriteriaPart(tc, period->weekday, 0, 0, 4, 0);
-    checkDateCriteriaPart(tc, period->hour,    0, 6, 12, 0);
+    assert_true(NULL == period->year);
+    assert_true(NULL == period->month);
+    assert_true(NULL == period->day);
+    checkDateCriteriaPart(period->weekday, 0, 0, 4, 0);
+    checkDateCriteriaPart(period->hour,    0, 6, 12, 0);
     
     resultAlert = resultAlert->next;
     
-    CuAssertStrEquals(tc,"alert2", resultAlert->name);
-    CuAssertIntEquals(tc, alertId2, resultAlert->id);
-    CuAssertIntEquals(tc, 0, resultAlert->active);
-    CuAssertIntEquals(tc, 999999999999, resultAlert->amount);
-    CuAssertIntEquals(tc, 3, resultAlert->direction);
-    checkDateCriteriaPart(tc, resultAlert->bound->year,    0, 2011, 2011, 0);
-    checkDateCriteriaPart(tc, resultAlert->bound->month,   0, 6, 6, 0);
-    checkDateCriteriaPart(tc, resultAlert->bound->day,     0, 27, 27, 0);
-    checkDateCriteriaPart(tc, resultAlert->bound->weekday, 0, 5, 5, 0);
-    checkDateCriteriaPart(tc, resultAlert->bound->hour,    0, 16, 16, 0);
+    assert_string_equal("alert2", resultAlert->name);
+    assert_int_equal(alertId2, resultAlert->id);
+    assert_int_equal(0, resultAlert->active);
+    assert_int_equal(999999999999, resultAlert->amount);
+    assert_int_equal(3, resultAlert->filter);
+    checkDateCriteriaPart(resultAlert->bound->year,    0, 2011, 2011, 0);
+    checkDateCriteriaPart(resultAlert->bound->month,   0, 6, 6, 0);
+    checkDateCriteriaPart(resultAlert->bound->day,     0, 27, 27, 0);
+    checkDateCriteriaPart(resultAlert->bound->weekday, 0, 5, 5, 0);
+    checkDateCriteriaPart(resultAlert->bound->hour,    0, 16, 16, 0);
     
     period = resultAlert->periods;
-    CuAssertTrue(tc, NULL == period->year);
-    CuAssertTrue(tc, NULL == period->month);
-    CuAssertTrue(tc, NULL == period->day);
-    checkDateCriteriaPart(tc, period->weekday, 0, 2, 2, 1);
-    checkDateCriteriaPart(tc, period->weekday->next, 0, 3, 3, 1);
-    checkDateCriteriaPart(tc, period->weekday->next->next, 0, 4, 4, 0);
-    checkDateCriteriaPart(tc, period->hour,    0, 1, 7, 0);
+    assert_true(NULL == period->year);
+    assert_true(NULL == period->month);
+    assert_true(NULL == period->day);
+    checkDateCriteriaPart(period->weekday, 0, 2, 2, 1);
+    checkDateCriteriaPart(period->weekday->next, 0, 3, 3, 1);
+    checkDateCriteriaPart(period->weekday->next->next, 0, 4, 4, 0);
+    checkDateCriteriaPart(period->hour,    0, 1, 7, 0);
     
     period = period->next;
-    CuAssertTrue(tc, NULL == period->year);
-    CuAssertTrue(tc, NULL == period->month);
-    CuAssertTrue(tc, NULL == period->day);
-    checkDateCriteriaPart(tc, period->weekday, 0, 1, 5, 0);
-    checkDateCriteriaPart(tc, period->hour,    0, 7, 13, 0);
+    assert_true(NULL == period->year);
+    assert_true(NULL == period->month);
+    assert_true(NULL == period->day);
+    checkDateCriteriaPart(period->weekday, 0, 1, 5, 0);
+    checkDateCriteriaPart(period->hour,    0, 7, 13, 0);
     
-    CuAssertTrue(tc, NULL == resultAlert->next);
+    assert_true(NULL == resultAlert->next);
     
  // Test update of existing alert
+ 	freeAlert(firstAlert);
     resultAlert = getAlerts();
-    CuAssertIntEquals(tc, alertId1, resultAlert->id);
+    assert_int_equal(alertId1, resultAlert->id);
     resultAlert->amount = 1000;
     updateAlert(resultAlert);
     
-    resultAlert = getAlerts();
+    freeAlert(resultAlert);
+    firstAlert = resultAlert = getAlerts();
     int found = FALSE;
     while(resultAlert != NULL){
     	if (resultAlert->id == alertId1){
-    		CuAssertIntEquals(tc, 1000, resultAlert->amount);
+    		assert_int_equal(1000, resultAlert->amount);
     		found = TRUE;	
     	}
     	resultAlert = resultAlert->next;
     }
-    CuAssertTrue(tc, found);
+    assert_true(found);
     
     removeAlert(alertId1);
-    resultAlert = getAlerts();
-    CuAssertIntEquals(tc, alertId2, resultAlert->id);
-    CuAssertTrue(tc, NULL == resultAlert->next);
+    freeAlert(firstAlert);
     
+    resultAlert = getAlerts();
+    assert_int_equal(alertId2, resultAlert->id);
+    assert_true(NULL == resultAlert->next);
     removeAlert(alertId1);
-    resultAlert = getAlerts();
-    CuAssertIntEquals(tc, alertId2, resultAlert->id);
-    CuAssertTrue(tc, NULL == resultAlert->next);
+    freeAlert(resultAlert);
     
+    resultAlert = getAlerts();
+    assert_int_equal(alertId2, resultAlert->id);
+    assert_true(NULL == resultAlert->next);
     removeAlert(alertId2);
-    resultAlert = getAlerts();
-    CuAssertTrue(tc, NULL == resultAlert);
+    freeAlert(resultAlert);
     
-
+    resultAlert = getAlerts();
+    assert_true(NULL == resultAlert);
+	freeAlert(resultAlert);
+	freeStmtList();
 }
-void testIsDateCriteriaPartMatch(CuTest* tc){
-    CuAssertIntEquals(tc, 1, isDateCriteriaPartMatch(NULL, 0));
-    CuAssertIntEquals(tc, 1, isDateCriteriaPartMatch(NULL, 1));
-    CuAssertIntEquals(tc, 1, isDateCriteriaPartMatch(NULL, 12));
+void testIsDateCriteriaPartMatch(void** state){
+    assert_int_equal(1, isDateCriteriaPartMatch(NULL, 0));
+    assert_int_equal(1, isDateCriteriaPartMatch(NULL, 1));
+    assert_int_equal(1, isDateCriteriaPartMatch(NULL, 12));
     
     struct DateCriteriaPart part2 = {0,1,1,NULL};
-    CuAssertIntEquals(tc, 1, isDateCriteriaPartMatch(&part2, 1));
-    CuAssertIntEquals(tc, 0, isDateCriteriaPartMatch(&part2, 0));
-    CuAssertIntEquals(tc, 0, isDateCriteriaPartMatch(&part2, 2));
-    CuAssertIntEquals(tc, 0, isDateCriteriaPartMatch(&part2, 12));
-
+    assert_int_equal(1, isDateCriteriaPartMatch(&part2, 1));
+    assert_int_equal(0, isDateCriteriaPartMatch(&part2, 0));
+    assert_int_equal(0, isDateCriteriaPartMatch(&part2, 2));
+    assert_int_equal(0, isDateCriteriaPartMatch(&part2, 12));
+    
     struct DateCriteriaPart part3 = {0,1,3,NULL};
-    CuAssertIntEquals(tc, 0, isDateCriteriaPartMatch(&part3, 0));
-    CuAssertIntEquals(tc, 1, isDateCriteriaPartMatch(&part3, 1));
-    CuAssertIntEquals(tc, 1, isDateCriteriaPartMatch(&part3, 2));
-    CuAssertIntEquals(tc, 1, isDateCriteriaPartMatch(&part3, 3));
-    CuAssertIntEquals(tc, 0, isDateCriteriaPartMatch(&part3, 4));
-
+    assert_int_equal(0, isDateCriteriaPartMatch(&part3, 0));
+    assert_int_equal(1, isDateCriteriaPartMatch(&part3, 1));
+    assert_int_equal(1, isDateCriteriaPartMatch(&part3, 2));
+    assert_int_equal(1, isDateCriteriaPartMatch(&part3, 3));
+    assert_int_equal(0, isDateCriteriaPartMatch(&part3, 4));
+    
     struct DateCriteriaPart part4 = {0,1,1,NULL};
     struct DateCriteriaPart part5 = {0,4,5,&part4};
-    CuAssertIntEquals(tc, 0, isDateCriteriaPartMatch(&part5, 0));
-    CuAssertIntEquals(tc, 1, isDateCriteriaPartMatch(&part5, 1));
-    CuAssertIntEquals(tc, 0, isDateCriteriaPartMatch(&part5, 2));
-    CuAssertIntEquals(tc, 0, isDateCriteriaPartMatch(&part5, 3));
-    CuAssertIntEquals(tc, 1, isDateCriteriaPartMatch(&part5, 4));
-    CuAssertIntEquals(tc, 1, isDateCriteriaPartMatch(&part5, 5));
-    CuAssertIntEquals(tc, 0, isDateCriteriaPartMatch(&part5, 6));
+    assert_int_equal(0, isDateCriteriaPartMatch(&part5, 0));
+    assert_int_equal(1, isDateCriteriaPartMatch(&part5, 1));
+    assert_int_equal(0, isDateCriteriaPartMatch(&part5, 2));
+    assert_int_equal(0, isDateCriteriaPartMatch(&part5, 3));
+    assert_int_equal(1, isDateCriteriaPartMatch(&part5, 4));
+    assert_int_equal(1, isDateCriteriaPartMatch(&part5, 5));
+    assert_int_equal(0, isDateCriteriaPartMatch(&part5, 6));
 }
-void testIsDateCriteriaMatch(CuTest* tc){
+void testIsDateCriteriaMatch(void** state){
     struct DateCriteria* criteria1 = makeDateCriteria("*", "1,4-5,11", "1-20", "*", "5");
     
-    CuAssertIntEquals(tc, 0, isDateCriteriaMatch(criteria1, makeTsFromParts(2010, 5, 20, 4)));
-    CuAssertIntEquals(tc, 1, isDateCriteriaMatch(criteria1, makeTsFromParts(2010, 5, 20, 5)));
-    CuAssertIntEquals(tc, 0, isDateCriteriaMatch(criteria1, makeTsFromParts(2010, 5, 20, 6)));
+    assert_int_equal(0, isDateCriteriaMatch(criteria1, makeTsFromParts(2010, 5, 20, 4)));
+    assert_int_equal(1, isDateCriteriaMatch(criteria1, makeTsFromParts(2010, 5, 20, 5)));
+    assert_int_equal(0, isDateCriteriaMatch(criteria1, makeTsFromParts(2010, 5, 20, 6)));
     
-    CuAssertIntEquals(tc, 1, isDateCriteriaMatch(criteria1, makeTsFromParts(2010, 5,  1, 5)));
-    CuAssertIntEquals(tc, 1, isDateCriteriaMatch(criteria1, makeTsFromParts(2010, 5, 20, 5)));
-    CuAssertIntEquals(tc, 0, isDateCriteriaMatch(criteria1, makeTsFromParts(2010, 5, 21, 5)));
-    CuAssertIntEquals(tc, 1, isDateCriteriaMatch(criteria1, makeTsFromParts(2010, 1, 20, 5)));
-    CuAssertIntEquals(tc, 0, isDateCriteriaMatch(criteria1, makeTsFromParts(2010, 2, 20, 5)));
-    CuAssertIntEquals(tc, 1, isDateCriteriaMatch(criteria1, makeTsFromParts(2010, 5, 20, 5)));
-    CuAssertIntEquals(tc, 0, isDateCriteriaMatch(criteria1, makeTsFromParts(2010, 7, 20, 5)));
-    CuAssertIntEquals(tc, 1, isDateCriteriaMatch(criteria1, makeTsFromParts(2010, 11, 20, 5)));
-    CuAssertIntEquals(tc, 1, isDateCriteriaMatch(criteria1, makeTsFromParts(2011, 5, 20, 5)));
-    CuAssertIntEquals(tc, 1, isDateCriteriaMatch(criteria1, makeTsFromParts(1980, 5, 20, 5)));
-
+    assert_int_equal(1, isDateCriteriaMatch(criteria1, makeTsFromParts(2010, 5,  1, 5)));
+    assert_int_equal(1, isDateCriteriaMatch(criteria1, makeTsFromParts(2010, 5, 20, 5)));
+    assert_int_equal(0, isDateCriteriaMatch(criteria1, makeTsFromParts(2010, 5, 21, 5)));
+    assert_int_equal(1, isDateCriteriaMatch(criteria1, makeTsFromParts(2010, 1, 20, 5)));
+    assert_int_equal(0, isDateCriteriaMatch(criteria1, makeTsFromParts(2010, 2, 20, 5)));
+    assert_int_equal(1, isDateCriteriaMatch(criteria1, makeTsFromParts(2010, 5, 20, 5)));
+    assert_int_equal(0, isDateCriteriaMatch(criteria1, makeTsFromParts(2010, 7, 20, 5)));
+    assert_int_equal(1, isDateCriteriaMatch(criteria1, makeTsFromParts(2010, 11, 20, 5)));
+    assert_int_equal(1, isDateCriteriaMatch(criteria1, makeTsFromParts(2011, 5, 20, 5)));
+    assert_int_equal(1, isDateCriteriaMatch(criteria1, makeTsFromParts(1980, 5, 20, 5)));
+	freeDateCriteria(criteria1);    
+    
     struct DateCriteria* criteria2 = makeDateCriteria("*", "4,5", "*", "4", "*");
-    CuAssertIntEquals(tc, 0, isDateCriteriaMatch(criteria2, makeTsFromParts(2010, 5,  5, 0)));
-    CuAssertIntEquals(tc, 1, isDateCriteriaMatch(criteria2, makeTsFromParts(2010, 5,  6, 0)));
-    CuAssertIntEquals(tc, 0, isDateCriteriaMatch(criteria2, makeTsFromParts(2010, 5,  7, 0)));
-    CuAssertIntEquals(tc, 1, isDateCriteriaMatch(criteria2, makeTsFromParts(2010, 5, 13, 0)));
-    CuAssertIntEquals(tc, 1, isDateCriteriaMatch(criteria2, makeTsFromParts(2010, 5, 20, 0)));
-
+    assert_int_equal(0, isDateCriteriaMatch(criteria2, makeTsFromParts(2010, 5,  5, 0)));
+    assert_int_equal(1, isDateCriteriaMatch(criteria2, makeTsFromParts(2010, 5,  6, 0)));
+    assert_int_equal(0, isDateCriteriaMatch(criteria2, makeTsFromParts(2010, 5,  7, 0)));
+    assert_int_equal(1, isDateCriteriaMatch(criteria2, makeTsFromParts(2010, 5, 13, 0)));
+    assert_int_equal(1, isDateCriteriaMatch(criteria2, makeTsFromParts(2010, 5, 20, 0)));
+    freeDateCriteria(criteria2);
+    
     struct DateCriteria* criteria3 = makeDateCriteria("2010", "*", "*", "*", "*");
-    CuAssertIntEquals(tc, 0, isDateCriteriaMatch(criteria3, makeTsFromParts(2009, 12, 31, 23)));
-    CuAssertIntEquals(tc, 1, isDateCriteriaMatch(criteria3, makeTsFromParts(2010, 1,  1, 0)));
-    CuAssertIntEquals(tc, 1, isDateCriteriaMatch(criteria3, makeTsFromParts(2010, 12,  31, 23)));
-    CuAssertIntEquals(tc, 0, isDateCriteriaMatch(criteria3, makeTsFromParts(2011, 1,  1, 0)));
+    assert_int_equal(0, isDateCriteriaMatch(criteria3, makeTsFromParts(2009, 12, 31, 23)));
+    assert_int_equal(1, isDateCriteriaMatch(criteria3, makeTsFromParts(2010, 1,  1, 0)));
+    assert_int_equal(1, isDateCriteriaMatch(criteria3, makeTsFromParts(2010, 12,  31, 23)));
+    assert_int_equal(0, isDateCriteriaMatch(criteria3, makeTsFromParts(2011, 1,  1, 0)));
+    freeDateCriteria(criteria3);
 }
-void testFindLowestMatch(CuTest* tc){    
+void testFindLowestMatch(void** state){    
     struct DateCriteriaPart part6 = {0,2,4,NULL};
-    CuAssertIntEquals(tc, 2, findLowestMatch(&part6));
+    assert_int_equal(2, findLowestMatch(&part6));
     
     struct DateCriteriaPart part7 = {0,2,4,NULL};
     struct DateCriteriaPart part8 = {0,10,10,&part7};
     struct DateCriteriaPart part9 = {0,5,6,&part8};
-    CuAssertIntEquals(tc, 2, findLowestMatch(&part9));
+    assert_int_equal(2, findLowestMatch(&part9));
 }
-void testFindHighestMatchAtOrBelowLimit(CuTest* tc){        
+void testFindHighestMatchAtOrBelowLimit(void** state){        
     struct DateCriteriaPart part10 = {0,5,6,NULL};
-    CuAssertIntEquals(tc,  6, findHighestMatchAtOrBelowLimit(&part10, 10));
-    CuAssertIntEquals(tc,  6, findHighestMatchAtOrBelowLimit(&part10, 6));
-    CuAssertIntEquals(tc,  5, findHighestMatchAtOrBelowLimit(&part10, 5));
-    CuAssertIntEquals(tc, -1, findHighestMatchAtOrBelowLimit(&part10, 4));
+    assert_int_equal( 6, findHighestMatchAtOrBelowLimit(&part10, 10));
+    assert_int_equal( 6, findHighestMatchAtOrBelowLimit(&part10, 6));
+    assert_int_equal( 5, findHighestMatchAtOrBelowLimit(&part10, 5));
+    assert_int_equal(-1, findHighestMatchAtOrBelowLimit(&part10, 4));
     
     struct DateCriteriaPart part11 = {0,2,4,NULL};
     struct DateCriteriaPart part12 = {0,10,10,&part11};
     struct DateCriteriaPart part13 = {0,5,6,&part12};
-    CuAssertIntEquals(tc, 10, findHighestMatchAtOrBelowLimit(&part13, 11));
-    CuAssertIntEquals(tc, 10, findHighestMatchAtOrBelowLimit(&part13, 10));
-    CuAssertIntEquals(tc, 6,  findHighestMatchAtOrBelowLimit(&part13, 9));
-    CuAssertIntEquals(tc, 6,  findHighestMatchAtOrBelowLimit(&part13, 8));
-    CuAssertIntEquals(tc, 6,  findHighestMatchAtOrBelowLimit(&part13, 7));
-    CuAssertIntEquals(tc, 6,  findHighestMatchAtOrBelowLimit(&part13, 6));
-    CuAssertIntEquals(tc, 5,  findHighestMatchAtOrBelowLimit(&part13, 5));
-    CuAssertIntEquals(tc, 4,  findHighestMatchAtOrBelowLimit(&part13, 4));
-    CuAssertIntEquals(tc, 3,  findHighestMatchAtOrBelowLimit(&part13, 3));
-    CuAssertIntEquals(tc, 2,  findHighestMatchAtOrBelowLimit(&part13, 2));
-    CuAssertIntEquals(tc, -1, findHighestMatchAtOrBelowLimit(&part13, 1));
+    assert_int_equal(10, findHighestMatchAtOrBelowLimit(&part13, 11));
+    assert_int_equal(10, findHighestMatchAtOrBelowLimit(&part13, 10));
+    assert_int_equal(6,  findHighestMatchAtOrBelowLimit(&part13, 9));
+    assert_int_equal(6,  findHighestMatchAtOrBelowLimit(&part13, 8));
+    assert_int_equal(6,  findHighestMatchAtOrBelowLimit(&part13, 7));
+    assert_int_equal(6,  findHighestMatchAtOrBelowLimit(&part13, 6));
+    assert_int_equal(5,  findHighestMatchAtOrBelowLimit(&part13, 5));
+    assert_int_equal(4,  findHighestMatchAtOrBelowLimit(&part13, 4));
+    assert_int_equal(3,  findHighestMatchAtOrBelowLimit(&part13, 3));
+    assert_int_equal(2,  findHighestMatchAtOrBelowLimit(&part13, 2));
+    assert_int_equal(-1, findHighestMatchAtOrBelowLimit(&part13, 1));
 }
-void testFindHighestMatch(CuTest* tc){         
+void testFindHighestMatch(void** state){         
     struct DateCriteriaPart part14 = {0,2,4,NULL};
-    CuAssertIntEquals(tc, 4, findHighestMatch(&part14));
+    assert_int_equal(4, findHighestMatch(&part14));
     
     struct DateCriteriaPart part15 = {0,2,4,NULL};
     struct DateCriteriaPart part16 = {0,10,10,&part15};
     struct DateCriteriaPart part17 = {0,5,6,&part16};
-    CuAssertIntEquals(tc, 10, findHighestMatch(&part17));
+    assert_int_equal(10, findHighestMatch(&part17));
 }
-void testGetNonRelativeValue(CuTest* tc){        
+void testGetNonRelativeValue(void** state){        
     struct DateCriteriaPart* nonRelPart = getNonRelativeValue(6);                                           
-    CuAssertIntEquals(tc, 6, nonRelPart->val1);                                                                    
-    CuAssertIntEquals(tc, 6, nonRelPart->val2);                                                                    
-    CuAssertIntEquals(tc, FALSE, nonRelPart->isRelative);                                                          
-    CuAssertTrue(tc, NULL == nonRelPart->next);
+    assert_int_equal(6, nonRelPart->val1);                                                                    
+    assert_int_equal(6, nonRelPart->val2);                                                                    
+    assert_int_equal(FALSE, nonRelPart->isRelative);                                                          
+    assert_true(NULL == nonRelPart->next);       
+    freeDateCriteriaPart(nonRelPart);
 }
-void testReplaceRelativeValues(CuTest* tc){
-    checkReplaceRelativeValues(tc, 2010, 5, 26, 3, "*", "*", "*", "-0", -1, -1, -1,  3);
-    checkReplaceRelativeValues(tc, 2010, 5, 26, 3, "*", "*", "*", "-1", -1, -1, -1,  2);
-    checkReplaceRelativeValues(tc, 2010, 5, 26, 3, "*", "*", "*", "-5", 2010, 5, 25, 22);
-    checkReplaceRelativeValuesInvalid(tc, 2010, 5, 26, 3, "1", "*", "*", "-1");
-    checkReplaceRelativeValuesInvalid(tc, 2010, 5, 26, 3, "*", "1", "*", "-1");
-    checkReplaceRelativeValuesInvalid(tc, 2010, 5, 26, 3, "*", "*", "1", "-1");
+static int replaceRelativeValuesAndFree(struct DateCriteria* criteria, time_t ts){
+	int val = replaceRelativeValues(criteria, ts);
+	freeDateCriteria(criteria);
+	return val;
+}
+void testReplaceRelativeValues(void** state){
+    checkReplaceRelativeValues(2010, 5, 26, 3, "*", "*", "*", "-0", -1, -1, -1,  3);
+    checkReplaceRelativeValues(2010, 5, 26, 3, "*", "*", "*", "-1", -1, -1, -1,  2);
+    checkReplaceRelativeValues(2010, 5, 26, 3, "*", "*", "*", "-5", 2010, 5, 25, 22);
+    checkReplaceRelativeValuesInvalid(2010, 5, 26, 3, "1", "*", "*", "-1");
+    checkReplaceRelativeValuesInvalid(2010, 5, 26, 3, "*", "1", "*", "-1");
+    checkReplaceRelativeValuesInvalid(2010, 5, 26, 3, "*", "*", "1", "-1");
     
-    checkReplaceRelativeValues(tc, 2010, 5, 26, 3, "*", "*",  "-0",  "0", -1, -1, 26, 0);
-    checkReplaceRelativeValues(tc, 2010, 5, 26, 3, "*", "*",  "-1",  "0", -1, -1, 25, 0);
-    checkReplaceRelativeValues(tc, 2010, 5, 26, 3, "*", "*", "-30",  "0", 2010, 4, 26, 0);
-    checkReplaceRelativeValues(tc, 2010, 5, 26, 3, "*", "*",  "-1", "-0", -1, -1, 25, 3);
-    checkReplaceRelativeValuesInvalid(tc, 2010, 5, 26, 3, "*", "*", "-1", "-1");
-    checkReplaceRelativeValuesInvalid(tc, 2010, 5, 26, 3, "*", "*", "-1",  "*");
-    checkReplaceRelativeValuesInvalid(tc, 2010, 5, 26, 3, "*", "1", "-1",  "0");
-    checkReplaceRelativeValuesInvalid(tc, 2010, 5, 26, 3, "1", "*", "-1",  "0");
+    checkReplaceRelativeValues(2010, 5, 26, 3, "*", "*",  "-0",  "0", -1, -1, 26, 0);
+    checkReplaceRelativeValues(2010, 5, 26, 3, "*", "*",  "-1",  "0", -1, -1, 25, 0);
+    checkReplaceRelativeValues(2010, 5, 26, 3, "*", "*", "-30",  "0", 2010, 4, 26, 0);
+    checkReplaceRelativeValues(2010, 5, 26, 3, "*", "*",  "-1", "-0", -1, -1, 25, 3);
+    checkReplaceRelativeValuesInvalid(2010, 5, 26, 3, "*", "*", "-1", "-1");
+    checkReplaceRelativeValuesInvalid(2010, 5, 26, 3, "*", "*", "-1",  "*");
+    checkReplaceRelativeValuesInvalid(2010, 5, 26, 3, "*", "1", "-1",  "0");
+    checkReplaceRelativeValuesInvalid(2010, 5, 26, 3, "1", "*", "-1",  "0");
     
-    checkReplaceRelativeValues(tc, 2010, 5, 26, 3, "*", "-0",   "1",  "0", -1,  5,  1, 0);
-    checkReplaceRelativeValues(tc, 2010, 5, 26, 3, "*", "-1",   "1",  "0", -1,  4,  1, 0);
-    checkReplaceRelativeValues(tc, 2010, 5, 26, 3, "*", "-6",   "1",  "0", 2009, 11,  1, 0);
-    checkReplaceRelativeValues(tc, 2010, 5, 26, 3, "*", "-6",  "-0", "-0", 2009, 11, 26, 3);
-    checkReplaceRelativeValuesInvalid(tc, 2010, 5, 26, 3, "*", "-1",  "1", "-1");
-    checkReplaceRelativeValuesInvalid(tc, 2010, 5, 26, 3, "*", "-1", "-1",  "0");
-    checkReplaceRelativeValuesInvalid(tc, 2010, 5, 26, 3, "*", "-1",  "1",  "*");
-    checkReplaceRelativeValuesInvalid(tc, 2010, 5, 26, 3, "*", "-1",  "*",  "0");
-    checkReplaceRelativeValuesInvalid(tc, 2010, 5, 26, 3, "1", "-1",  "1",  "0");
+    checkReplaceRelativeValues(2010, 5, 26, 3, "*", "-0",   "1",  "0", -1,  5,  1, 0);
+    checkReplaceRelativeValues(2010, 5, 26, 3, "*", "-1",   "1",  "0", -1,  4,  1, 0);
+    checkReplaceRelativeValues(2010, 5, 26, 3, "*", "-6",   "1",  "0", 2009, 11,  1, 0);
+    checkReplaceRelativeValues(2010, 5, 26, 3, "*", "-6",  "-0", "-0", 2009, 11, 26, 3);
+    checkReplaceRelativeValuesInvalid(2010, 5, 26, 3, "*", "-1",  "1", "-1");
+    checkReplaceRelativeValuesInvalid(2010, 5, 26, 3, "*", "-1", "-1",  "0");
+    checkReplaceRelativeValuesInvalid(2010, 5, 26, 3, "*", "-1",  "1",  "*");
+    checkReplaceRelativeValuesInvalid(2010, 5, 26, 3, "*", "-1",  "*",  "0");
+    checkReplaceRelativeValuesInvalid(2010, 5, 26, 3, "1", "-1",  "1",  "0");
     
-    checkReplaceRelativeValues(tc, 2010, 5, 26, 3, "-0",  "1",  "1",  "0", 2010,  1,  1, 0);
-    checkReplaceRelativeValues(tc, 2010, 5, 26, 3, "-1",  "1",  "1",  "0", 2009,  1,  1, 0);
-    checkReplaceRelativeValues(tc, 2010, 5, 26, 3, "-1", "-0", "-0", "-0", 2009,  5, 26, 3);
-    checkReplaceRelativeValuesInvalid(tc, 2010, 5, 26, 3, "-1",  "*",   "1",  "1");
-    checkReplaceRelativeValuesInvalid(tc, 2010, 5, 26, 3, "-1",  "1",   "*",  "1");
-    checkReplaceRelativeValuesInvalid(tc, 2010, 5, 26, 3, "-1",  "1",   "1",  "*");
-    checkReplaceRelativeValuesInvalid(tc, 2010, 5, 26, 3, "-1", "-1",   "1",  "1");
-    checkReplaceRelativeValuesInvalid(tc, 2010, 5, 26, 3, "-1",  "1",  "-1",  "1");
-    checkReplaceRelativeValuesInvalid(tc, 2010, 5, 26, 3, "-1",  "1",   "1", "-1");
+    checkReplaceRelativeValues(2010, 5, 26, 3, "-0",  "1",  "1",  "0", 2010,  1,  1, 0);
+    checkReplaceRelativeValues(2010, 5, 26, 3, "-1",  "1",  "1",  "0", 2009,  1,  1, 0);
+    checkReplaceRelativeValues(2010, 5, 26, 3, "-1", "-0", "-0", "-0", 2009,  5, 26, 3);
+    checkReplaceRelativeValuesInvalid(2010, 5, 26, 3, "-1",  "*",   "1",  "1");
+    checkReplaceRelativeValuesInvalid(2010, 5, 26, 3, "-1",  "1",   "*",  "1");
+    checkReplaceRelativeValuesInvalid(2010, 5, 26, 3, "-1",  "1",   "1",  "*");
+    checkReplaceRelativeValuesInvalid(2010, 5, 26, 3, "-1", "-1",   "1",  "1");
+    checkReplaceRelativeValuesInvalid(2010, 5, 26, 3, "-1",  "1",  "-1",  "1");
+    checkReplaceRelativeValuesInvalid(2010, 5, 26, 3, "-1",  "1",   "1", "-1");
     
     struct tm t1 = {0, 0, 3, 26, 4, 72, 0, 0, -1};
-    CuAssertIntEquals(tc, 0, replaceRelativeValues(makeDateCriteria("1990",  "*",  "*", "*", "-1"), mktime(&t1))); 
-    CuAssertIntEquals(tc, 0, replaceRelativeValues(makeDateCriteria("*",    "12",  "*", "*", "-1"), mktime(&t1))); 
-    CuAssertIntEquals(tc, 0, replaceRelativeValues(makeDateCriteria("*",     "*", "31", "*", "-1"), mktime(&t1))); 
-    CuAssertIntEquals(tc, 0, replaceRelativeValues(makeDateCriteria("2001",  "*", "-1", "*",  "1"), mktime(&t1))); 
-    CuAssertIntEquals(tc, 0, replaceRelativeValues(makeDateCriteria("*",    "12", "-1", "*",  "1"), mktime(&t1))); 
-    CuAssertIntEquals(tc, 0, replaceRelativeValues(makeDateCriteria("2002", "-1",  "*", "*",  "1"), mktime(&t1))); 
+    assert_int_equal(0, replaceRelativeValuesAndFree(makeDateCriteria("1990",  "*",  "*", "*", "-1"), mktime(&t1))); 
+    assert_int_equal(0, replaceRelativeValuesAndFree(makeDateCriteria("*",    "12",  "*", "*", "-1"), mktime(&t1))); 
+    assert_int_equal(0, replaceRelativeValuesAndFree(makeDateCriteria("*",     "*", "31", "*", "-1"), mktime(&t1))); 
+    assert_int_equal(0, replaceRelativeValuesAndFree(makeDateCriteria("2001",  "*", "-1", "*",  "1"), mktime(&t1))); 
+    assert_int_equal(0, replaceRelativeValuesAndFree(makeDateCriteria("*",    "12", "-1", "*",  "1"), mktime(&t1))); 
+    assert_int_equal(0, replaceRelativeValuesAndFree(makeDateCriteria("2002", "-1",  "*", "*",  "1"), mktime(&t1))); 
     
-    CuAssertIntEquals(tc, 0, replaceRelativeValues(makeDateCriteria("-1",  "1",  "1", "*", "*"), mktime(&t1))); 
-    CuAssertIntEquals(tc, 0, replaceRelativeValues(makeDateCriteria("-1",  "1",  "*", "*", "0"), mktime(&t1))); 
-    CuAssertIntEquals(tc, 0, replaceRelativeValues(makeDateCriteria("-1",  "*",  "1", "*", "0"), mktime(&t1))); 
-    CuAssertIntEquals(tc, 0, replaceRelativeValues(makeDateCriteria("*",  "-1",  "1", "*", "*"), mktime(&t1))); 
-    CuAssertIntEquals(tc, 0, replaceRelativeValues(makeDateCriteria("*",  "-1",  "*", "*", "0"), mktime(&t1))); 
-    CuAssertIntEquals(tc, 0, replaceRelativeValues(makeDateCriteria("*",  "*",  "-1", "*", "*"), mktime(&t1))); 
+    assert_int_equal(0, replaceRelativeValuesAndFree(makeDateCriteria("-1",  "1",  "1", "*", "*"), mktime(&t1))); 
+    assert_int_equal(0, replaceRelativeValuesAndFree(makeDateCriteria("-1",  "1",  "*", "*", "0"), mktime(&t1))); 
+    assert_int_equal(0, replaceRelativeValuesAndFree(makeDateCriteria("-1",  "*",  "1", "*", "0"), mktime(&t1))); 
+    assert_int_equal(0, replaceRelativeValuesAndFree(makeDateCriteria("*",  "-1",  "1", "*", "*"), mktime(&t1))); 
+    assert_int_equal(0, replaceRelativeValuesAndFree(makeDateCriteria("*",  "-1",  "*", "*", "0"), mktime(&t1))); 
+    assert_int_equal(0, replaceRelativeValuesAndFree(makeDateCriteria("*",  "*",  "-1", "*", "*"), mktime(&t1))); 
 }
-void testFindFirstMatchingDate(CuTest* tc){    
-    checkFirstMatchingDate(tc, 2010, 5, 12, 0, "*", "*", "*", "*", "*", 2010, 5, 12, 0); 
+void testFindFirstMatchingDate(void** state){    
+    checkFirstMatchingDate(2010, 5, 12, 0, "*", "*", "*", "*", "*", 2010, 5, 12, 0); 
     
-    checkFirstMatchingDate(tc, 2010,  5, 12,  0,      "2010", "*", "*", "*", "*", 2010,  5, 12,  0); 
-    checkFirstMatchingDate(tc, 2010,  5, 12,  3,        "-0", "1", "*", "1", "0", 2010,  1,  1,  0); 
-    checkFirstMatchingDate(tc, 2010,  5, 12,  0, "2000-2020", "*", "*", "*", "*", 2010,  5, 12,  0); 
-    checkFirstMatchingDate(tc, 2010,  5, 12,  9, "2000,2010", "*", "*", "*", "*", 2010,  5, 12,  9); 
-    checkFirstMatchingDate(tc, 2010, 11,  1,  0, "2010,2011", "*", "*", "*", "*", 2010, 11,  1,  0); 
-    checkFirstMatchingDate(tc, 2010,  5, 12,  3,      "2009", "*", "*", "*", "*", 2009, 12, 31, 23); 
-    checkFirstMatchingDate(tc, 2020,  1,  1,  6,      "2007", "*", "*", "*", "*", 2007, 12, 31, 23); 
-    checkFirstMatchingDate(tc, 2005,  1,  1,  0,      "2005", "*", "*", "*", "*", 2005,  1,  1,  0); 
-    checkFirstMatchingDate(tc, 2005, 12, 31,  0,      "2005", "*", "*", "*", "*", 2005, 12, 31,  0); 
-    checkFirstMatchingDate(tc, 2005, 12, 31, 23,      "2005", "*", "*", "*", "*", 2005, 12, 31, 23); 
-    checkFirstMatchingDate(tc, 2005, 12, 31, 23,        "-7", "1", "*", "1", "0", 1998,  1,  1,  0); 
-
-    checkNoMatchingDates(tc, 2010, 5, 12, 0, "2011",           "*", "*", "*", "*");
-    checkNoMatchingDates(tc, 2010, 5, 12, 0, "2011,2015-2020", "*", "*", "*", "*");
-
-    checkFirstMatchingDate(tc, 2010,  5, 12,  0, "*",       "5", "*", "*", "*", 2010,  5, 12,  0); 
-    checkFirstMatchingDate(tc, 2010,  5, 12,  0, "*",       "4", "*", "*", "*", 2010,  4, 30, 23); 
-    checkFirstMatchingDate(tc, 2010,  5, 12,  0, "*",       "9", "*", "*", "*", 2009,  9, 30, 23); 
-    checkFirstMatchingDate(tc, 2010,  5, 12,  0, "*", "1,3-4,9", "*", "*", "*", 2010,  4, 30, 23); 
-    checkFirstMatchingDate(tc, 2010,  5, 12,  0, "*",      "-2", "*", "1", "0", 2010,  3,  1,  0);       
-    checkFirstMatchingDate(tc, 2010,  5, 12,  0, "*",     "-12", "*", "1", "1", 2009,  5,  1,  1); 
-    checkFirstMatchingDate(tc, 2010,  5, 12,  1, "*",      "-0", "*", "1", "0", 2010,  5,  1,  0); 
-    checkFirstMatchingDate(tc, 2000,  1,  1,  0, "*",      "-0", "*", "1", "0", 2000,  1,  1,  0); 
-    checkFirstMatchingDate(tc, 2000, 12, 31, 23, "*",      "-0", "*", "1", "0", 2000, 12,  1,  0); 
+    checkFirstMatchingDate(2010,  5, 12,  0,      "2010", "*", "*", "*", "*", 2010,  5, 12,  0); 
+    checkFirstMatchingDate(2010,  5, 12,  3,        "-0", "1", "*", "1", "0", 2010,  1,  1,  0); 
+    checkFirstMatchingDate(2010,  5, 12,  0, "2000-2020", "*", "*", "*", "*", 2010,  5, 12,  0); 
+    checkFirstMatchingDate(2010,  5, 12,  9, "2000,2010", "*", "*", "*", "*", 2010,  5, 12,  9); 
+    checkFirstMatchingDate(2010, 11,  1,  0, "2010,2011", "*", "*", "*", "*", 2010, 11,  1,  0); 
+    checkFirstMatchingDate(2010,  5, 12,  3,      "2009", "*", "*", "*", "*", 2009, 12, 31, 23); 
+    checkFirstMatchingDate(2020,  1,  1,  6,      "2007", "*", "*", "*", "*", 2007, 12, 31, 23); 
+    checkFirstMatchingDate(2005,  1,  1,  0,      "2005", "*", "*", "*", "*", 2005,  1,  1,  0); 
+    checkFirstMatchingDate(2005, 12, 31,  0,      "2005", "*", "*", "*", "*", 2005, 12, 31,  0); 
+    checkFirstMatchingDate(2005, 12, 31, 23,      "2005", "*", "*", "*", "*", 2005, 12, 31, 23); 
+    checkFirstMatchingDate(2005, 12, 31, 23,        "-7", "1", "*", "1", "0", 1998,  1,  1,  0); 
+    
+    checkNoMatchingDates(2010, 5, 12, 0, "2011",           "*", "*", "*", "*");
+    checkNoMatchingDates(2010, 5, 12, 0, "2011,2015-2020", "*", "*", "*", "*");
+    
+    checkFirstMatchingDate(2010,  5, 12,  0, "*",       "5", "*", "*", "*", 2010,  5, 12,  0); 
+    checkFirstMatchingDate(2010,  5, 12,  0, "*",       "4", "*", "*", "*", 2010,  4, 30, 23); 
+    checkFirstMatchingDate(2010,  5, 12,  0, "*",       "9", "*", "*", "*", 2009,  9, 30, 23); 
+    checkFirstMatchingDate(2010,  5, 12,  0, "*", "1,3-4,9", "*", "*", "*", 2010,  4, 30, 23); 
+    checkFirstMatchingDate(2010,  5, 12,  0, "*",      "-2", "*", "1", "0", 2010,  3,  1,  0);       
+    checkFirstMatchingDate(2010,  5, 12,  0, "*",     "-12", "*", "1", "1", 2009,  5,  1,  1); 
+    checkFirstMatchingDate(2010,  5, 12,  1, "*",      "-0", "*", "1", "0", 2010,  5,  1,  0); 
+    checkFirstMatchingDate(2000,  1,  1,  0, "*",      "-0", "*", "1", "0", 2000,  1,  1,  0); 
+    checkFirstMatchingDate(2000, 12, 31, 23, "*",      "-0", "*", "1", "0", 2000, 12,  1,  0); 
                                                                                                
-    checkFirstMatchingDate(tc, 2010, 5, 11, 16, "*", "*",   "2",  "*", "*", 2010,  5, 11, 16); 
-    checkFirstMatchingDate(tc, 2010, 5, 11, 16, "*", "*",   "1",  "*", "*", 2010,  5, 10, 23); 
-    checkFirstMatchingDate(tc, 2010, 5, 11, 16, "*", "*",   "0",  "*", "*", 2010,  5,  9, 23); 
-    checkFirstMatchingDate(tc, 2010, 5, 11, 16, "*", "*",   "6",  "*", "*", 2010,  5,  8, 23); 
-    checkFirstMatchingDate(tc, 2010, 5, 11, 16, "*", "*",   "5",  "*", "*", 2010,  5,  7, 23); 
-    checkFirstMatchingDate(tc, 2010, 5, 11, 16, "*", "*",   "4",  "*", "*", 2010,  5,  6, 23); 
-    checkFirstMatchingDate(tc, 2010, 5, 11, 16, "*", "*",   "3",  "*", "*", 2010,  5,  5, 23); 
-    checkFirstMatchingDate(tc, 2010, 5, 12, 16, "*", "*", "1,2",  "*", "*", 2010,  5, 11, 23); 
-    checkFirstMatchingDate(tc, 2010, 5, 12, 16, "*", "*", "4-6",  "*", "*", 2010,  5,  8, 23); 
-    checkFirstMatchingDate(tc, 2010, 5,  1,  0, "*", "*",   "6",  "*", "*", 2010,  5,  1,  0); 
-    checkFirstMatchingDate(tc, 2010, 5,  1,  0, "*", "*",   "5",  "*", "*", 2010,  4, 30, 23); 
-    checkFirstMatchingDate(tc, 2010, 1,  1,  0, "*", "*",   "5",  "*", "*", 2010,  1,  1,  0);
-    checkFirstMatchingDate(tc, 2010, 1,  1,  0, "*", "*",   "4",  "*", "*", 2009, 12, 31, 23);
-    checkFirstMatchingDate(tc, 2010, 5, 11, 16, "*", "*",   "4",  "1", "*", 2010,  4,  1, 23);
-    checkFirstMatchingDate(tc, 2010, 5, 11, 16, "*", "*",   "2", "30", "2", 2010,  3, 30,  2);
+    checkFirstMatchingDate(2010, 5, 11, 16, "*", "*",   "2",  "*", "*", 2010,  5, 11, 16); 
+    checkFirstMatchingDate(2010, 5, 11, 16, "*", "*",   "1",  "*", "*", 2010,  5, 10, 23); 
+    checkFirstMatchingDate(2010, 5, 11, 16, "*", "*",   "0",  "*", "*", 2010,  5,  9, 23); 
+    checkFirstMatchingDate(2010, 5, 11, 16, "*", "*",   "6",  "*", "*", 2010,  5,  8, 23); 
+    checkFirstMatchingDate(2010, 5, 11, 16, "*", "*",   "5",  "*", "*", 2010,  5,  7, 23); 
+    checkFirstMatchingDate(2010, 5, 11, 16, "*", "*",   "4",  "*", "*", 2010,  5,  6, 23); 
+    checkFirstMatchingDate(2010, 5, 11, 16, "*", "*",   "3",  "*", "*", 2010,  5,  5, 23); 
+    checkFirstMatchingDate(2010, 5, 12, 16, "*", "*", "1,2",  "*", "*", 2010,  5, 11, 23); 
+    checkFirstMatchingDate(2010, 5, 12, 16, "*", "*", "4-6",  "*", "*", 2010,  5,  8, 23); 
+    checkFirstMatchingDate(2010, 5,  1,  0, "*", "*",   "6",  "*", "*", 2010,  5,  1,  0); 
+    checkFirstMatchingDate(2010, 5,  1,  0, "*", "*",   "5",  "*", "*", 2010,  4, 30, 23); 
+    checkFirstMatchingDate(2010, 1,  1,  0, "*", "*",   "5",  "*", "*", 2010,  1,  1,  0);
+    checkFirstMatchingDate(2010, 1,  1,  0, "*", "*",   "4",  "*", "*", 2009, 12, 31, 23);
+    checkFirstMatchingDate(2010, 5, 11, 16, "*", "*",   "4",  "1", "*", 2010,  4,  1, 23);
+    checkFirstMatchingDate(2010, 5, 11, 16, "*", "*",   "2", "30", "2", 2010,  3, 30,  2);
     
-    checkFirstMatchingDate(tc, 2010, 5, 12,  0, "*", "*", "*",     "12", "*", 2010,  5, 12,  0); 
-    checkFirstMatchingDate(tc, 2010, 5, 12,  0, "*", "*", "*",     "19", "*", 2010,  4, 19, 23); 
-    checkFirstMatchingDate(tc, 2010, 5, 12,  0, "*", "*", "*",      "7", "*", 2010,  5,  7, 23); 
-    checkFirstMatchingDate(tc, 2010, 5, 12,  0, "*", "*", "*",     "-2", "0", 2010,  5, 10,  0); 
-    checkFirstMatchingDate(tc, 2010, 5, 12,  0, "*", "*", "*",    "-12", "0", 2010,  4, 30,  0); 
-    checkFirstMatchingDate(tc, 2020, 1,  7, 14, "*", "*", "*",     "-8", "0", 2019, 12, 30,  0); 
-    checkFirstMatchingDate(tc, 2020, 1,  1,  0, "*", "*", "*",     "-0", "0", 2020,  1,  1,  0); 
-    checkFirstMatchingDate(tc, 2010, 5, 12,  0, "*", "*", "*",  "1,2,3", "*", 2010,  5,  3, 23); 
-    checkFirstMatchingDate(tc, 2010, 5, 12,  0, "*", "*", "*",    "1-5", "*", 2010,  5,  5, 23); 
-    checkFirstMatchingDate(tc, 2010, 5, 12,  0, "*", "*", "*",   "1-12", "*", 2010,  5, 12,  0); 
-    checkFirstMatchingDate(tc, 2010, 5, 12,  0, "*", "*", "*",  "20-25", "*", 2010,  4, 25, 23); 
-
-    checkFirstMatchingDate(tc, 2010, 5, 12,  0, "*", "*", "*", "*",    "-0", 2010,  5, 12,  0); 
-    checkFirstMatchingDate(tc, 2010, 5, 12,  0, "*", "*", "*", "*",    "-1", 2010,  5, 11, 23); 
-    checkFirstMatchingDate(tc, 2010, 5, 12,  0, "*", "*", "*", "*",    "-1", 2010,  5, 11, 23); 
-    checkFirstMatchingDate(tc, 2010, 5, 12, 15, "*", "*", "*", "*",    "15", 2010,  5, 12, 15); 
-    checkFirstMatchingDate(tc, 2010, 5, 12, 15, "*", "*", "*", "*",    "12", 2010,  5, 12, 12); 
-    checkFirstMatchingDate(tc, 2010, 5, 12, 15, "*", "*", "*", "*", "1,2-7", 2010,  5, 12,  7); 
-    checkFirstMatchingDate(tc, 2010, 5, 12, 15, "*", "*", "*", "*",    "16", 2010,  5, 11, 16); 
-    checkFirstMatchingDate(tc, 2010, 1,  1,  0, "*", "*", "*", "*",    "16", 2009, 12, 31, 16); 
-
-    checkFirstMatchingDate(tc, 2010, 5, 12, 15, "2010", "5", "*",  "*",  "*", 2010, 5, 12, 15); 
-    checkFirstMatchingDate(tc, 2010, 5, 12, 15, "2008", "5", "*",  "*",  "*", 2008, 5, 31, 23); 
-    checkFirstMatchingDate(tc, 2010, 5, 12, 15, "2008", "5", "*", "31",  "*", 2008, 5, 31, 23); 
-    checkFirstMatchingDate(tc, 2010, 5, 12, 15, "2008", "5", "*", "31", "23", 2008, 5, 31, 23); 
-    checkNoMatchingDates(tc, 2010, 5, 12,  0, "2010", "6", "*",  "*",     "*");
-    checkNoMatchingDates(tc, 2010, 5, 12, 15, "2010", "5", "*", "31",     "*"); 
-    checkNoMatchingDates(tc, 2010, 5, 12, 15, "2010", "5", "*", "12", "16-23"); 
-
-    checkFirstMatchingDate(tc, 2010, 5, 12, 15, "-1", "1", "*", "1", "0", 2009, 1,  1,  0); 
-    checkFirstMatchingDate(tc, 2010, 5, 12, 15, "*", "-1", "*", "1", "0", 2010,  4,  1,  0); 
-    checkFirstMatchingDate(tc, 2010, 5, 12, 15, "*", "-6", "*", "1", "0", 2009, 11,  1,  0); 
-    checkFirstMatchingDate(tc, 2010, 5, 12, 15, "2009", "11", "*", "*", "0", 2009, 11, 30,  0);
-
-    checkFirstMatchingDate(tc, 2010, 5, 12, 15, "*", "-6", "*", "-0", "-0", 2009, 11, 12, 15);
+    checkFirstMatchingDate(2010, 5, 12,  0, "*", "*", "*",     "12", "*", 2010,  5, 12,  0); 
+    checkFirstMatchingDate(2010, 5, 12,  0, "*", "*", "*",     "19", "*", 2010,  4, 19, 23); 
+    checkFirstMatchingDate(2010, 5, 12,  0, "*", "*", "*",      "7", "*", 2010,  5,  7, 23); 
+    checkFirstMatchingDate(2010, 5, 12,  0, "*", "*", "*",     "-2", "0", 2010,  5, 10,  0); 
+    checkFirstMatchingDate(2010, 5, 12,  0, "*", "*", "*",    "-12", "0", 2010,  4, 30,  0); 
+    checkFirstMatchingDate(2020, 1,  7, 14, "*", "*", "*",     "-8", "0", 2019, 12, 30,  0); 
+    checkFirstMatchingDate(2020, 1,  1,  0, "*", "*", "*",     "-0", "0", 2020,  1,  1,  0); 
+    checkFirstMatchingDate(2010, 5, 12,  0, "*", "*", "*",  "1,2,3", "*", 2010,  5,  3, 23); 
+    checkFirstMatchingDate(2010, 5, 12,  0, "*", "*", "*",    "1-5", "*", 2010,  5,  5, 23); 
+    checkFirstMatchingDate(2010, 5, 12,  0, "*", "*", "*",   "1-12", "*", 2010,  5, 12,  0); 
+    checkFirstMatchingDate(2010, 5, 12,  0, "*", "*", "*",  "20-25", "*", 2010,  4, 25, 23); 
     
-    checkFirstMatchingDate(tc, 2010, 5, 12, 15, "*", "*", "*",  "-1", "0", 2010, 5, 11,  0);
-    checkFirstMatchingDate(tc, 2010, 5, 12, 15, "*", "*", "*", "-15", "0", 2010, 4, 27,  0);
+    checkFirstMatchingDate(2010, 5, 12,  0, "*", "*", "*", "*",    "-0", 2010,  5, 12,  0); 
+    checkFirstMatchingDate(2010, 5, 12,  0, "*", "*", "*", "*",    "-1", 2010,  5, 11, 23); 
+    checkFirstMatchingDate(2010, 5, 12,  0, "*", "*", "*", "*",    "-1", 2010,  5, 11, 23); 
+    checkFirstMatchingDate(2010, 5, 12, 15, "*", "*", "*", "*",    "15", 2010,  5, 12, 15); 
+    checkFirstMatchingDate(2010, 5, 12, 15, "*", "*", "*", "*",    "12", 2010,  5, 12, 12); 
+    checkFirstMatchingDate(2010, 5, 12, 15, "*", "*", "*", "*", "1,2-7", 2010,  5, 12,  7); 
+    checkFirstMatchingDate(2010, 5, 12, 15, "*", "*", "*", "*",    "16", 2010,  5, 11, 16); 
+    checkFirstMatchingDate(2010, 1,  1,  0, "*", "*", "*", "*",    "16", 2009, 12, 31, 16); 
     
-    checkFirstMatchingDate(tc, 2010, 5, 12, 15, "*", "*", "*",  "*",  "-1", 2010, 5, 12, 14);
-    checkFirstMatchingDate(tc, 2010, 5, 12, 15, "*", "*", "*",  "*", "-20", 2010, 5, 11, 19);
-    checkFirstMatchingDate(tc, 2010, 5, 12, 15, "*", "*", "*",  "*", "-24", 2010, 5, 11, 15);
+    checkFirstMatchingDate(2010, 5, 12, 15, "2010", "5", "*",  "*",  "*", 2010, 5, 12, 15); 
+    checkFirstMatchingDate(2010, 5, 12, 15, "2008", "5", "*",  "*",  "*", 2008, 5, 31, 23); 
+    checkFirstMatchingDate(2010, 5, 12, 15, "2008", "5", "*", "31",  "*", 2008, 5, 31, 23); 
+    checkFirstMatchingDate(2010, 5, 12, 15, "2008", "5", "*", "31", "23", 2008, 5, 31, 23); 
+    checkNoMatchingDates(2010, 5, 12,  0, "2010", "6", "*",  "*",     "*");
+    checkNoMatchingDates(2010, 5, 12, 15, "2010", "5", "*", "31",     "*"); 
+    checkNoMatchingDates(2010, 5, 12, 15, "2010", "5", "*", "12", "16-23"); 
+    
+    checkFirstMatchingDate(2010, 5, 12, 15, "-1", "1", "*", "1", "0", 2009, 1,  1,  0); 
+    checkFirstMatchingDate(2010, 5, 12, 15, "*", "-1", "*", "1", "0", 2010,  4,  1,  0); 
+    checkFirstMatchingDate(2010, 5, 12, 15, "*", "-6", "*", "1", "0", 2009, 11,  1,  0); 
+    checkFirstMatchingDate(2010, 5, 12, 15, "2009", "11", "*", "*", "0", 2009, 11, 30,  0);
+    
+    checkFirstMatchingDate(2010, 5, 12, 15, "*", "-6", "*", "-0", "-0", 2009, 11, 12, 15);
+    
+    checkFirstMatchingDate(2010, 5, 12, 15, "*", "*", "*",  "-1", "0", 2010, 5, 11,  0);
+    checkFirstMatchingDate(2010, 5, 12, 15, "*", "*", "*", "-15", "0", 2010, 4, 27,  0);
+    
+    checkFirstMatchingDate(2010, 5, 12, 15, "*", "*", "*",  "*",  "-1", 2010, 5, 12, 14);
+    checkFirstMatchingDate(2010, 5, 12, 15, "*", "*", "*",  "*", "-20", 2010, 5, 11, 19);
+    checkFirstMatchingDate(2010, 5, 12, 15, "*", "*", "*",  "*", "-24", 2010, 5, 11, 15);
     
  // Common scenarios
- 
+    
  // First day of month
-    checkFirstMatchingDate(tc, 2010, 5,  1,  0, "*", "*", "*", "1", "0", 2010, 5, 1, 0);
-    checkFirstMatchingDate(tc, 2010, 5, 12, 15, "*", "*", "*", "1", "0", 2010, 5, 1, 0);
-    checkFirstMatchingDate(tc, 2010, 5, 31, 23, "*", "*", "*", "1", "0", 2010, 5, 1, 0);
-    checkFirstMatchingDate(tc, 2010, 6,  1,  0, "*", "*", "*", "1", "0", 2010, 6, 1, 0);
+    checkFirstMatchingDate(2010, 5,  1,  0, "*", "*", "*", "1", "0", 2010, 5, 1, 0);
+    checkFirstMatchingDate(2010, 5, 12, 15, "*", "*", "*", "1", "0", 2010, 5, 1, 0);
+    checkFirstMatchingDate(2010, 5, 31, 23, "*", "*", "*", "1", "0", 2010, 5, 1, 0);
+    checkFirstMatchingDate(2010, 6,  1,  0, "*", "*", "*", "1", "0", 2010, 6, 1, 0);
     
  // Rolling 30 day period
-    checkFirstMatchingDate(tc, 2010, 5,  1,  0, "*", "*", "*", "-30", "-0", 2010, 4,  1,  0);
-    checkFirstMatchingDate(tc, 2010, 5, 10,  3, "*", "*", "*", "-30", "-0", 2010, 4, 10,  3);
-    checkFirstMatchingDate(tc, 2010, 5, 31, 23, "*", "*", "*", "-30", "-0", 2010, 5,  1, 23);
+    checkFirstMatchingDate(2010, 5,  1,  0, "*", "*", "*", "-30", "-0", 2010, 4,  1,  0);
+    checkFirstMatchingDate(2010, 5, 10,  3, "*", "*", "*", "-30", "-0", 2010, 4, 10,  3);
+    checkFirstMatchingDate(2010, 5, 31, 23, "*", "*", "*", "-30", "-0", 2010, 5,  1, 23);
     
  // Since Sunday
-    checkFirstMatchingDate(tc, 2010, 5, 11,  0, "*", "*", "0", "*", "*", 2010, 5, 9, 23);
-    checkFirstMatchingDate(tc, 2010, 5, 10,  0, "*", "*", "0", "*", "*", 2010, 5, 9, 23);
-    checkFirstMatchingDate(tc, 2010, 5,  9,  2, "*", "*", "0", "*", "*", 2010, 5, 9,  2);
-    checkFirstMatchingDate(tc, 2010, 5,  8, 23, "*", "*", "0", "*", "*", 2010, 5, 2, 23);
+    checkFirstMatchingDate(2010, 5, 11,  0, "*", "*", "0", "*", "*", 2010, 5, 9, 23);
+    checkFirstMatchingDate(2010, 5, 10,  0, "*", "*", "0", "*", "*", 2010, 5, 9, 23);
+    checkFirstMatchingDate(2010, 5,  9,  2, "*", "*", "0", "*", "*", 2010, 5, 9,  2);
+    checkFirstMatchingDate(2010, 5,  8, 23, "*", "*", "0", "*", "*", 2010, 5, 2, 23);
 }
-void testGetTotalsForAlert(CuTest* tc){
+void testGetTotalsForAlert(void** state){
     emptyDb();
     setTime(makeTs("2010-05-30 12:00:00"));
-
-    struct Alert* alert = allocAlert();
-    alert->id        = 1;
-    alert->active    = 1;
-    alert->direction = 1;
-    alert->amount    = 10000;
-    alert->bound     = makeDateCriteria("2010", "5", "1", "*", "0");
-    setAlertName(alert, "alert1");
-    checkAlertTotals(tc, alert, 0, 0);
-
-    addDbRow(makeTs("2010-04-30 23:00:00"), 1, "eth0", 1, 1, NULL);
-    checkAlertTotals(tc, alert, 0, 0);
-
-    addDbRow(makeTs("2010-05-01 00:00:00"), 1, "eth0", 2, 2, NULL);
-    checkAlertTotals(tc, alert, 0, 0);
-
-    addDbRow(makeTs("2010-05-01 01:00:00"), 1, "eth0", 4, 4, NULL);
-    checkAlertTotals(tc, alert, 4, 0);
-
-    addDbRow(makeTs("2010-05-10 22:00:00"), 1, "eth1", 8, 8, NULL);
-    checkAlertTotals(tc, alert, 12, 0);
-
-    addDbRow(makeTs("2010-05-10 23:00:00"), 1, "eth1", 16, 16, NULL);
-    checkAlertTotals(tc, alert, 28, 0);
     
-    alert->direction = 2;
-    checkAlertTotals(tc, alert, 0, 28);
-    alert->direction = 0;
-    checkAlertTotals(tc, alert, 0, 0);
-    alert->direction = 3;
-    checkAlertTotals(tc, alert, 28, 28);
+    struct Alert* alert = allocAlert();
+    alert->id     = 1;
+    alert->active = 1;
+    alert->filter = 1;
+    alert->amount = 10000;
+    alert->bound  = makeDateCriteria("2010", "5", "1", "*", "0");
+    setAlertName(alert, "alert1");
+    checkAlertTotal(alert, 0);
+    
+    addDbRow(makeTs("2010-04-30 23:00:00"), 1, 1, 1);
+    checkAlertTotal(alert, 0);
+    
+    addDbRow(makeTs("2010-05-01 00:00:00"), 1, 2, 1);
+    checkAlertTotal(alert, 0);
+    
+    addDbRow(makeTs("2010-05-01 01:00:00"), 1, 4, 1);
+    checkAlertTotal(alert, 4);
+    
+    addDbRow(makeTs("2010-05-10 22:00:00"), 1, 8, 1);
+    checkAlertTotal(alert, 12);
+    
+    addDbRow(makeTs("2010-05-10 23:00:00"), 1, 16, 1);
+    checkAlertTotal(alert, 28);
+    
+    alert->filter = 2;
+    checkAlertTotal(alert, 0);
     
     emptyDb();
     
-    addDbRow(makeTs("2010-05-01 12:00:00"), 3600, "eth0", 1, 1, NULL); // Saturday (no)
-    addDbRow(makeTs("2010-05-01 13:00:00"), 3600, "eth0", 2, 2, NULL); // Saturday (yes)
-    addDbRow(makeTs("2010-05-01 16:00:00"), 3600, "eth0", 4, 4, NULL); // Saturday (yes)
-    addDbRow(makeTs("2010-05-01 17:00:00"), 3600, "eth0", 8, 8, NULL); // Saturday (yes) '12-16' = 12:**-16:**
-    addDbRow(makeTs("2010-05-01 18:00:00"), 3600, "eth0", 1, 1, NULL); // Saturday (no)
+    addDbRow(makeTs("2010-05-01 12:00:00"), 3600, 1, 1); // Saturday (no)
+    addDbRow(makeTs("2010-05-01 13:00:00"), 3600, 2, 1); // Saturday (yes)
+    addDbRow(makeTs("2010-05-01 16:00:00"), 3600, 4, 1); // Saturday (yes)
+    addDbRow(makeTs("2010-05-01 17:00:00"), 3600, 8, 1); // Saturday (yes) '12-16' = 12:**-16:**
+    addDbRow(makeTs("2010-05-01 18:00:00"), 3600, 1, 1); // Saturday (no)
     
-    addDbRow(makeTs("2010-05-02 12:00:00"), 3600, "eth0",  1,  1, NULL); // Sunday (no)
-    addDbRow(makeTs("2010-05-02 13:00:00"), 3600, "eth0", 16, 16, NULL); // Sunday (yes)
-    addDbRow(makeTs("2010-05-02 16:00:00"), 3600, "eth0", 32, 32, NULL); // Sunday (yes)
-    addDbRow(makeTs("2010-05-02 17:00:00"), 3600, "eth0", 64, 64, NULL); // Sunday (yes) '12-16' = 12:**-16:**
-    addDbRow(makeTs("2010-05-02 18:00:00"), 3600, "eth0",  1,  1, NULL); // Sunday (no)
-
-    addDbRow(makeTs("2010-05-03 06:00:00"), 3600, "eth0",    1,    1, NULL); // Monday (no)
-    addDbRow(makeTs("2010-05-03 07:00:00"), 3600, "eth0",  128,  128, NULL); // Monday (yes)
-    addDbRow(makeTs("2010-05-03 12:00:00"), 3600, "eth0",  256,  256, NULL); // Monday (yes)
-    addDbRow(makeTs("2010-05-03 19:00:00"), 3600, "eth0", 1024, 1024, NULL); // Monday (yes) '6-18' = 06:**-18:**
-    addDbRow(makeTs("2010-05-03 20:00:00"), 3600, "eth0",    1,    1, NULL); // Monday (no)
-
+    addDbRow(makeTs("2010-05-02 12:00:00"), 3600,  1, 1); // Sunday (no)
+    addDbRow(makeTs("2010-05-02 13:00:00"), 3600, 16, 1); // Sunday (yes)
+    addDbRow(makeTs("2010-05-02 16:00:00"), 3600, 32, 1); // Sunday (yes)
+    addDbRow(makeTs("2010-05-02 17:00:00"), 3600, 64, 1); // Sunday (yes) '12-16' = 12:**-16:**
+    addDbRow(makeTs("2010-05-02 18:00:00"), 3600,  1, 1); // Sunday (no)
+    
+    addDbRow(makeTs("2010-05-03 06:00:00"), 3600,    1, 1); // Monday (no)
+    addDbRow(makeTs("2010-05-03 07:00:00"), 3600,  128, 1); // Monday (yes)
+    addDbRow(makeTs("2010-05-03 12:00:00"), 3600,  256, 1); // Monday (yes)
+    addDbRow(makeTs("2010-05-03 19:00:00"), 3600, 1024, 1); // Monday (yes) '6-18' = 06:**-18:**
+    addDbRow(makeTs("2010-05-03 20:00:00"), 3600,    1, 1); // Monday (no)
+    
     struct DateCriteria* period3 = makeDateCriteria("*", "*", "*", "1-5", "6-18");
     struct DateCriteria* period4 = makeDateCriteria("*", "*", "*", "0,6", "12-16");
     period3->next = period4;
     alert->periods = period3;
     
-    checkAlertTotals(tc, alert, 1534, 1534);     
-    alert->direction = 0;
-    checkAlertTotals(tc, alert, 0, 0);
-    alert->direction = 1;
-    checkAlertTotals(tc, alert, 1534, 0);
-    alert->direction = 2;
-    checkAlertTotals(tc, alert, 0, 1534);
+    alert->filter = 1;
+    checkAlertTotal(alert, 1534);     
+    alert->filter = 2;
+    checkAlertTotal(alert, 0);      
+    
+    freeAlert(alert);
+    freeStmtList();
 }
 
 int callback(void* a, int b, char** c, char** d){
     count++;
 }
 
-CuSuite* clientAlertSuite() {
-    CuSuite* suite = CuSuiteNew();
-    SUITE_ADD_TEST(suite, testAddGetRemoveAlerts);
-    SUITE_ADD_TEST(suite, testRemoveAlertsDb);
-    SUITE_ADD_TEST(suite, testIsDateCriteriaPartMatch);
-    SUITE_ADD_TEST(suite, testIsDateCriteriaMatch);
-    SUITE_ADD_TEST(suite, testFindLowestMatch);
-    SUITE_ADD_TEST(suite, testFindHighestMatchAtOrBelowLimit);
-    SUITE_ADD_TEST(suite, testFindHighestMatch);
-    SUITE_ADD_TEST(suite, testGetNonRelativeValue);
-    SUITE_ADD_TEST(suite, testReplaceRelativeValues);
-    SUITE_ADD_TEST(suite, testFindFirstMatchingDate);
-    SUITE_ADD_TEST(suite, testGetTotalsForAlert);
-    return suite;
-}

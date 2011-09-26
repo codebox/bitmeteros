@@ -33,6 +33,17 @@ Stop the BitMeterOS data capture process, so that no bandwidth data will be logg
 Starts the BitMeterOS data capture process, so that bandwidth data will be logged to the database.
 .SS purge
 Deletes all BitMeterOS bandwidth data from the database.
+.SS showfilters
+Lists the names, and filter expressions, of all the current packet filters.
+.SS addfilter <name> <description> <filter expression>
+Adds a new packet filter, with the specified name. The filter expression argument must be valid TcpDump filter, but may include one or more of the following BitMeter-specific values:
+    {lan}     expands to an expression that specifies the IP address ranges reserved for private networks
+    {adapter} replaced with an expression containing the IP address/es of the network adapter to which the filter is applied
+ 
+for example:
+    bmdb addfilter webdl "Web Downloads" "dst host {adapter} and src port 80"
+.SS rmfilter <filter name>
+Deletes the named packet filter, and also removes all data captured using that filter from the main data table.
 .SS help
 Displays this help page.
 

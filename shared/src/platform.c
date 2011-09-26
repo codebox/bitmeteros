@@ -1,28 +1,6 @@
-/*
- * BitMeterOS
- * http://codebox.org.uk/bitmeterOS
- *
- * Copyright (c) 2011 Rob Dawson
- *
- * Licensed under the GNU General Public License
- * http://www.gnu.org/licenses/gpl.txt
- *
- * This file is part of BitMeterOS.
- *
- * BitMeterOS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * BitMeterOS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- */
-
+#ifdef UNIT_TESTING 
+	#include "test.h"
+#endif
 #include "common.h"
 #include <time.h>
 #include <stdlib.h>
@@ -32,9 +10,16 @@ Contains functions that must be replaced according to OS/platform, and according
 to whether we are running tests or not. When we unit test, this file is completely
 replaced by another containing test-friendly implementations of these functions.
 */
-time_t getTime(){
-	return time(NULL);
-}
+
+#ifdef UNIT_TESTING
+	void getDbPath(char* path){
+	    strcpy(path, IN_MEMORY_DB);
+	}
+	
+	void getLogPath(char* path){
+	    strcpy(path, "");
+	}
+#endif
 
 #ifdef _WIN32
     #include <windows.h>
@@ -45,6 +30,7 @@ time_t getTime(){
         Sleep(interval * 1000);
     }
 
+#ifndef UNIT_TESTING
     void getDbPath(char* path){
         char* envValue;
         if ((envValue = getenv(ENV_DB)) == NULL){
@@ -58,7 +44,6 @@ time_t getTime(){
             strcpy(path, envValue);
         }
     }
-
 
     void getLogPath(char* path){
         char* configValue;
@@ -74,6 +59,7 @@ time_t getTime(){
             strcpy(path, configValue);
         }
     }
+#endif
 
     void getWebRootPath(char* path){
         char* configValue;
@@ -116,7 +102,7 @@ time_t getTime(){
         sleep(interval);
     }
 
-
+#ifndef UNIT_TESTING
     void getDbPath(char* path){
         char* envValue;
         if ((envValue = getenv(ENV_DB)) == NULL){
@@ -134,12 +120,13 @@ time_t getTime(){
         if ((isDbOpen() == FALSE) || (configValue = getConfigText(CONFIG_LOG_PATH, TRUE)) == NULL){
          /* If an alternative path has not been specified in the db config table, or if the
             database isn't open yet, then we write the log out to the /var/log/bitmeter directory. */
-            strcpy(path, "/var/log/bitmeter/" LOG_NAME);
+            strcpy(path, "/var/log/bitmeter/error.log");
         } else {
          // A value was supplied in the config table, so use that location instead.
             strcpy(path, configValue);
         }
     }
+#endif
 
     void getWebRootPath(char* path){
         char* configValue;
@@ -161,6 +148,7 @@ time_t getTime(){
         sleep(interval);
     }
 
+#ifndef UNIT_TESTING
     void getDbPath(char* path){
         char* envValue;
         if ((envValue = getenv(ENV_DB)) == NULL){
@@ -178,12 +166,13 @@ time_t getTime(){
         if ((isDbOpen() == FALSE) || (configValue = getConfigText(CONFIG_LOG_PATH, TRUE)) == NULL){
          /* If an alternative path has not been specified in the db config table, or if the
             database isn't open yet, then we write the log out to the /Library/Logs directory. */
-            strcpy(path, "/Library/Logs/" LOG_NAME);
+            strcpy(path, "/Library/Logs/bitmeter.log");
         } else {
          // A value was supplied in the config table, so use that location instead.
             strcpy(path, configValue);
         }
     }
+#endif
 
     void getWebRootPath(char* path){
         char* configValue;

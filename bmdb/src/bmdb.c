@@ -1,28 +1,3 @@
-/*
- * BitMeterOS
- * http://codebox.org.uk/bitmeterOS
- *
- * Copyright (c) 2011 Rob Dawson
- *
- * Licensed under the GNU General Public License
- * http://www.gnu.org/licenses/gpl.txt
- *
- * This file is part of BitMeterOS.
- *
- * BitMeterOS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * BitMeterOS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -68,6 +43,9 @@ struct Action actions[] = {
     {"capstop",        "Stop the data capture process", &doCapStop},
     {"capstart",       "Start the data capture process", &doCapStart},
     {"purge",          "Delete all bandwidth data from the database", &doPurge},
+    {"showfilters",    "Lists all packet filters", &showFilters},
+    {"addfilter",      "Adds a new packet filter", &addFilter},
+    {"rmfilter",       "Deletes the named packet filter, and all its data", &rmFilter},
     {"help",           "Displays full help text", &doHelp},
     {NULL, NULL, NULL}
 };

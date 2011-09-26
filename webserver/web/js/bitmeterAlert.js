@@ -17,7 +17,7 @@ BITMETER.tabShowAlerts = function(){
 
         BITMETER.createAlertModel.setId(alertObj.id);
         BITMETER.createAlertModel.setAmount(alertObj.amount);
-        BITMETER.createAlertModel.setDirection(alertObj.direction);
+        BITMETER.createAlertModel.setFilter(alertObj.filter);
 
         function isRolling(txt){
             return txt.indexOf('-') === 0;
@@ -248,7 +248,7 @@ BITMETER.consts.alerts.arrWeekends = [1,0,0,0,0,0,1];
 BITMETER.consts.alerts.arrWeekdays = [0,1,1,1,1,1,0];
 
 BITMETER.createAlertModel = (function(){
-    var model = {}, onChangeCallback, id, amount = null, direction, startType = null, startFixedDate = null,
+    var model = {}, onChangeCallback, id, amount = null, filter, startType = null, startFixedDate = null,
             startFixedTime = null, startRepeatingType = null, startRepeatingDate = null,
             startRepeatingDay = null, startRepeatingTime = null, startRollingUnits = null,
             startRollingAmount = '', timesType = null, periods = {}, nextPeriodId = 0, periodCount = 0, name;
@@ -262,7 +262,7 @@ BITMETER.createAlertModel = (function(){
     }
 
     model.reset = function(){
-        id = name = amount = direction = startType = startFixedDate = startFixedTime = startRepeatingType = startRepeatingDate = startRepeatingDay = startRepeatingTime = startRollingUnits = startRollingAmount = timesType = null;
+        id = name = amount = filter = startType = startFixedDate = startFixedTime = startRepeatingType = startRepeatingDate = startRepeatingDay = startRepeatingTime = startRollingUnits = startRollingAmount = timesType = null;
         periods = {};
         nextPeriodId = periodCount = 0;
     };
@@ -282,12 +282,12 @@ BITMETER.createAlertModel = (function(){
         return amount;
     };
 
-    model.setDirection = function(dirn){
-        direction = dirn;
+    model.setFilter = function(fltr){
+        filter = fltr;
         onChange();
     };
-    model.getDirection = function(){
-        return direction;
+    model.getFilter = function(){
+        return filter;
     };
 
     model.setStartType = function(st){
@@ -397,10 +397,10 @@ BITMETER.createAlertModel = (function(){
     };
 
     model.isComplete = function(){
-        return this.isDirectionComplete() && this.isAmountComplete() && this.isStartComplete() && this.isTimesComplete() && this.isNameComplete();
+        return this.isFilterComplete() && this.isAmountComplete() && this.isStartComplete() && this.isTimesComplete() && this.isNameComplete();
     };
-    model.isDirectionComplete = function(){
-        return !!direction;
+    model.isFilterComplete = function(){
+        return !!filter;
     };
     model.isAmountComplete = function(){
         return !!amount;
@@ -458,8 +458,8 @@ BITMETER.createAlertModel.setChangeHandler(function(){BITMETER.updateCreateAlert
 BITMETER.resetAlertView = function(){
     $('#createAlertBoxAccordion').accordion('destroy').accordion(BITMETER.accordionOptions);
 
- // Direction
-    $('input:radio[name=createAlertDirn]').attr('checked','');
+ // Filter
+    $('input:radio[name=createAlertFilter]').attr('checked','');
 
  // Amount
     $('#createAlertAmount').val('');
@@ -500,15 +500,15 @@ BITMETER.resetAlertView = function(){
 };
 
 BITMETER.updateCreateAlertViewFromModel = function(isUserEdit){
-    var dirn, amt, start, repeatingStartType, startRepeatingDate, startRepeatingDay, startRepeatingTime,
+    var fltr, amt, start, repeatingStartType, startRepeatingDate, startRepeatingDay, startRepeatingTime,
             startRollingAmt, startRollingUnits, name, timesType, periodCount;
 
- // If no direction has been selected then populate it
-    dirn = BITMETER.createAlertModel.getDirection();
-    if (dirn){//if (!$('input:radio[name=createAlertDirn]:checked').val() && dirn){
-        $('input:radio[name=createAlertDirn][value=' + dirn + ']').attr('checked', 'checked');
-    } else {//if (!dirn) {
-        $('input:radio[name=createAlertDirn]').attr('checked', '');
+ // If no filter has been selected then populate it
+    fltr = BITMETER.createAlertModel.getFilter();
+    if (fltr){
+        $('input:radio[name=createAlertFltr][value=' + fltr + ']').attr('checked', 'checked');
+    } else {
+        $('input:radio[name=createAlertFltr]').attr('checked', '');
     }
 
  // If no amount has been entered then enter one
@@ -808,7 +808,7 @@ BITMETER.updateCreateAlertViewFromModel = function(isUserEdit){
 
             url += '&name=' + BITMETER.createAlertModel.getName();
             url += '&active=1';
-            url += '&direction=' + BITMETER.createAlertModel.getDirection();
+            url += '&filter=' + BITMETER.createAlertModel.getFilter();
             url += '&amount=' + BITMETER.createAlertModel.getAmount();
             url += '&bound=' + makeBoundParam();
             url += '&periods=' + makePeriodsParam();
@@ -832,13 +832,13 @@ BITMETER.updateAlertCompletionStatus = function(){
             o.find('a').css('color', 'red');
         }
     }
-    setStatusIndicator(BITMETER.createAlertModel.isDirectionComplete(), "dirnHeader"); //"createAlertStatusDir");
+    setStatusIndicator(BITMETER.createAlertModel.isFilterComplete(),    "fltrHeader"); //"createAlertStatusDir");
     setStatusIndicator(BITMETER.createAlertModel.isAmountComplete(),    "amtHeader"); //"createAlertStatusAmt");
     setStatusIndicator(BITMETER.createAlertModel.isStartComplete(),     "startHeader"); //"createAlertStatusStart");
     setStatusIndicator(BITMETER.createAlertModel.isTimesComplete(),     "timesHeader"); //"createAlertStatusTimes");
     setStatusIndicator(BITMETER.createAlertModel.isNameComplete(),      "nameHeader"); //"createAlertStatusName");
 
-    var completePercentage = (BITMETER.createAlertModel.isDirectionComplete() ? 20 : 0) +
+    var completePercentage = (BITMETER.createAlertModel.isFilterComplete() ? 20 : 0) +
         (BITMETER.createAlertModel.isAmountComplete() ? 20 : 0) +
         (BITMETER.createAlertModel.isStartComplete() ? 20 : 0) +
         (BITMETER.createAlertModel.isTimesComplete() ? 20 : 0) +
@@ -896,12 +896,24 @@ $(function(){
     $('#createAnotherAlert, #createFirstAlert').click(function(){
         BITMETER.showAlertEditor(true);
     });
+    
+    var filterList = $('#createAlertBoxFilterList');
+    BITMETER.forEachFilter(function(filter){
+		var chkBoxId = "alertFilterChk" + filter.id;
+		var chkBox = $('<input id="' + chkBoxId + '" name="createAlertFltr" value="' + filter.id + '" type="radio"></input>');
+        var filterLabel = $('<label for="' + chkBoxId + '">' + filter.desc + '</label>');
+
+		chkBox.click(function(){
+			BITMETER.createAlertModel.setFilter($(this).val());			
+		});
+
+    	filterList.append(chkBox);
+    	filterList.append(filterLabel);
+    	filterList.append('<br>');
+    });
+    
     $('#createAlertBoxAccordion').accordion(BITMETER.accordionOptions);
     $('#updateAlerts').click(BITMETER.updateAlertProgressBars);
-
-    $('#createAlertBoxAccordion input[name=createAlertDirn]').click(function(){
-        BITMETER.createAlertModel.setDirection($(this).val());
-    });
 
     $('#createAlertBoxAccordion input[name=createAlertStart]').click(function(e){
         BITMETER.createAlertModel.setStartType($(this).val());

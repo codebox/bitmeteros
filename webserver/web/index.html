@@ -13,7 +13,7 @@
 		<script type="text/javascript" src="js/jquery.js"></script>
 		<script type="text/javascript" src="js/jquery-ui.js"></script>
 		<script type="text/javascript" src="js/jquery.cookie.js"></script>
-		<!--[if lte IE 8]>
+		<!--[if IE]>
 		<script language="javascript" type="text/javascript" src="js/excanvas.min.js"></script>
 		<![endif]-->
 		<script type="text/javascript" src="js/jquery.flot.min.js"></script>
@@ -32,7 +32,7 @@
 		<link rel="alternate" type="application/rss+xml" title="BitMeter OS" href="rss.xml">
 	</head>
 	<body>
-		<h1>BitMeter OS</h1>
+		<!--<h1>BitMeter OS</h1>-->
 		<noscript>
 			<p>
 				You must enable JavaScript in your browser to use the BitMeter OS Web Interface.<br>
@@ -61,29 +61,6 @@
 		        	<div id="monitorDisplay" style="width:600px;height:300px;float: left;"></div>
 		        	<div id="monitorReadout">
 		        		<table>
-		        			<tr>
-		        				<td rowspan="2" class="monitorLabel">Current</td>
-		        				<td id="monitorDlCurrent"></td>
-		        			</tr>
-		        			<tr>
-		        				<td id="monitorUlCurrent"></td>
-		        			</tr>
-							<tr><td colspan="2" class="monitorSeparator"><hr></td></tr>
-							<tr>
-		        				<td rowspan="2" class="monitorLabel">Peak</td>
-		        				<td id="monitorDlPeak"></td>
-		        			</tr>
-		        			<tr>
-		        				<td id="monitorUlPeak"></td>
-		        			</tr>
-							<tr><td colspan="2" class="monitorSeparator"></td></tr>
-							<tr>
-		        				<td rowspan="2" class="monitorLabel">Average</td>
-		        				<td id="monitorDlAverage"></td>
-		        			</tr>
-		        			<tr>
-		        				<td id="monitorUlAverage"></td>
-		        			</tr>
 							<tr><td colspan="2" class="monitorSeparator"><hr></td></tr>		        			
 		        			<tr>
 		        				<td rowspan="2" class="monitorLabel">Scale</td>
@@ -93,22 +70,6 @@
 		        				<td class="scaleDownLink" id="monitorScaleDown"><a>Down</a></td>
 		        			</tr>
 							<tr><td colspan="2" class="monitorSeparator"><hr></td></tr>		        			
-		        			<tr class="monitorShowSeries">
-		        				<td class="monitorLabel">
-		        					Show Download
-		        				</td>
-		        				<td class="monitorShowSeries">
-		        					<input id="monitorShowDl" type="checkbox" />
-		        				</td>
-		        			</tr>
-		        			<tr class="monitorShowSeries">
-		        				<td class="monitorLabel">
-		        					Show Upload
-		        				</td>
-		        				<td class="monitorShowSeries">
-		        					<input id="monitorShowUl" type="checkbox" />
-		        				</td>
-		        			</tr>
 		        			<tr class="monitorShowSeries">
 		        				<td class="monitorLabel">
 		        					Show Speeds in Title
@@ -186,7 +147,7 @@
 		        <div class="panelContainer">
 		        	<h3>Minutes</h3>
 		        	<div class="historyContainer">
-		        		<div class="graphDiv" id="historyDisplayMinutes" style="width:600px;height:100px"></div>
+		        		<div class="graphDiv" id="historyDisplayMinutes" style="width:600px;height:150px"></div>
 		        		<div class="historyScale">
 		        			<div id="historyMinutesScaleUp" class="scaleUpLink">Up</div>
 		        			<div id="historyMinutesScaleDown" class="scaleDownLink">Down</div>
@@ -194,7 +155,7 @@
 		        	</div>
 		        	<h3>Hours</h3>
 		        	<div class="historyContainer">
-			        	<div class="graphDiv" id="historyDisplayHours" style="width:600px;height:100px"></div>
+			        	<div class="graphDiv" id="historyDisplayHours" style="width:600px;height:150px"></div>
 		        		<div class="historyScale">
 		        			<div id="historyHoursScaleUp" class="scaleUpLink">Up</div>
 		        			<div id="historyHoursScaleDown" class="scaleDownLink">Down</div>
@@ -202,7 +163,7 @@
 			        </div>
 		        	<h3>Days</h3>
 		        	<div class="historyContainer">
-			        	<div class="graphDiv" id="historyDisplayDays" style="width:600px;height:100px"></div>
+			        	<div class="graphDiv" id="historyDisplayDays" style="width:600px;height:150px"></div>
 		        		<div class="historyScale">
 		        			<div id="historyDaysScaleUp" class="scaleUpLink">Up</div>
 		        			<div id="historyDaysScaleDown" class="scaleDownLink">Down</div>
@@ -261,28 +222,7 @@
 		        <h2>Summary</h2><div class="helpLink" id="summaryHelpLink"><a title="Help" class="ui-icon ui-icon-newwin"></a></div>
 		        <p class="filterWarning"></p>
 		        <div class="panelContainer">
-			        <table>
-						<tr>
-							<th>&nbsp;</th><th>Download</th><th>Upload</th><th>Combined</th>
-						</tr>
-			        	<tr>
-			        		<td class="name">Today</td><td id="summaryTodayDl" class="value"></td><td id="summaryTodayUl" class="value"></td><td id="summaryTodayCm" class="value"></td>
-			        	</tr>
-			        	<tr>
-			        		<td class="name">This Month</td><td id="summaryMonthDl" class="value"></td><td id="summaryMonthUl" class="value"></td><td id="summaryMonthCm" class="value"></td>
-			        	</tr>
-			        	<tr>
-			        		<td class="name">This Year</td><td id="summaryYearDl" class="value"></td><td id="summaryYearUl" class="value"></td><td id="summaryYearCm" class="value"></td>
-			        	</tr>                                          
-			        	<tr>
-			        		<td class="name">Total</td><td id="summaryTotalDl" class="value"></td><td id="summaryTotalUl" class="value"></td><td id="summaryTotalCm" class="value"></td>
-			        	</tr>
-			        	<tr>
-			        		<td class="name">Since</td><td colspan="3" id="summarySince" class="value"></td>
-			        	</tr>                                          
-			        	<tr id="summaryHostRow">
-			        		<td class="name">Hosts</td><td colspan="3" id="summaryHosts" class="value"></td>
-			        	</tr>                                          			        
+			        <table id="summaryTable">
 			        </table>
 				</div>
 		    	<div class="dialog" title="Help">
@@ -414,14 +354,12 @@
 			        		<p>Create or update an alert. Complete each of the 5 sections below and save your changes. Section headings shown in red indicate missing information.</p>
 			        	</div>
 			        	<div id="createAlertBoxAccordion">
-							<h3 id="dirnHeader"><a href="#">Direction</a></h3>
+							<h3 id="fltrHeader"><a href="#">Filter</a></h3>
 							<div class="createAlertBoxAccordionPanel">
 								<p>
-									First, indicate whether you are interested in downloaded data only, uploaded data only, 
-									or a combined total of the two<br><br>
-									<input type="radio" name="createAlertDirn" value="1" id="createAlertDirnDl" /><label for="createAlertDirnDl">Download only</label><br>
-									<input type="radio" name="createAlertDirn" value="2" id="createAlertDirnUl" /><label for="createAlertDirnUl">Upload only</label><br>
-									<input type="radio" name="createAlertDirn" value="3" id="createAlertDirnAll" /><label for="createAlertDirnAll">Combined total</label><br>
+									First, indicate which filter the alert should use
+								</p>
+								<p id="createAlertBoxFilterList">
 								</p>
 							</div>
 							<h3 id="amtHeader"><a href="#">Amount</a></h3>
@@ -654,21 +592,16 @@
 		        
 			        <div id="prefsTabs">
 					    <ul>
-					        <li><a href="#prefsTabs-1"><span>Colours</span></a></li>
-					        <li><a href="#prefsTabs-2"><span>Data Filter</span></a></li>
+					        <li><a href="#prefsTabs-1"><span>Filter Colours</span></a></li>
+					        <li><a href="#prefsTabs-2"><span>Filter Display</span></a></li>
 					        <li><a href="#prefsTabs-3"><span>Units</span></a></li>
 					        <li><a href="#prefsTabs-4"><span>RSS</span></a></li>
 					        <li><a href="#prefsTabs-5"><span>Server Name</span></a></li>
 					        <li><a href="#prefsTabs-6"><span>Refresh Intervals</span></a></li>
 					    </ul>
 					    <div id="prefsTabs-1">
-					        <p class="compact">Pick the colours to be used to represent Upload and Download data on the graphs.</p>
-							<div class="prefName">Download</div>
-							<div class="prefValue" id="dlColourPicker"></div>
-							<div class="spacer"></div>
-							<div class="prefName">Upload</div>
-							<div class="prefValue" id="ulColourPicker"></div>
-							<div class="spacer"></div>
+					        <p class="compact">Pick the colours to be used to represent the data from each filter on the graphs.</p>
+					        <div id="prefsFilterColours"></div>
 							<p>
 								<button id="prefsColoursLocal">Save in Browser</button> 
 								<button id="prefsColoursRemote" class="adminOnly">Save to Server</button><br>
@@ -679,14 +612,14 @@
 					    <div id="prefsTabs-2">
 					        <p class="compact">If the database contains data from multiple hosts/adapters then use these options to determine what gets displayed. To import
 							data from other hosts use the <a href="http://codebox.org.uk/bitmeteros/bmsync/man">bmsync</a> utility.</p>
-							<table class="prefTable" id="adapterTable">
-								<tr><td></td></tr>
-							</table>
+							<div id="filterList">
+								
+							</div>
 							<p class="compact">
 								<label for="chkShowFilterWarning">Display a warning when filter is active</label><input type="checkbox" id="chkShowFilterWarning" />
 							</p>
 							<p>
-								<button id="prefsAdaptersSaveLocal">Save in Browser</button>
+								<button id="prefsFiltersSaveLocal">Save in Browser</button>
 							</p>
 					    </div>
 					    <div id="prefsTabs-3">
@@ -821,7 +754,7 @@
 					This application also has a <a href="m">mobile interface</a> designed for small screens, and an <a class="popup" href="rss.xml">RSS Feed</a>.
 					</p>
 					<p>
-					Copyright &copy; 2011 Rob Dawson
+					Copyright &copy; 2010 Rob Dawson
 					</p>
 					<p>
 					Licensed under the <a href="http://www.gnu.org/licenses/gpl.txt">GNU General Public License</a>
@@ -847,30 +780,15 @@
 					</p>
 				
 					<p>
-						<form id="donateForm" action="https://www.paypal.com/cgi-bin/webscr" method="post">
+						<!--<form id="donateForm" action="https://www.paypal.com/cgi-bin/webscr" method="post">
 						<input type="hidden" name="cmd" value="_s-xclick">
 						<input type="hidden" name="hosted_button_id" value="9675111">
 						<input type="image" src="https://www.paypal.com/en_GB/i/btn/btn_donate_SM.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online.">
 						<img alt="" border="0" src="https://www.paypal.com/en_GB/i/scr/pixel.gif" width="1" height="1">
-						</form>
+						</form>-->
 					</p>
 				</div>
 			</div>
-            <div id="newVersion">
-                <h2>Version </h2><br>
-                <div class="panelContainer">
-                    <p>
-                        A new version of BitMeter OS is available! This release includes the following changes:
-                    </p>
-                    <p id="newVersionInfo">
-                    </p>
-                    <p>
-                        <br>
-                        <a id="newVersionDownload">Download</a>
-                    </p>
-                    <div class="spacer"></div>
-                </div>
-            </div>
 		</div>
 		<div id="errorDialog" class="dialogBox roundedCorners">
 			<h2>Error</h2>
@@ -889,6 +807,20 @@
 				<button id="confirmNo"  class="roundedCorners">No</button>
 			</div>
 		</div>	
+		<div id="newVersion">
+			<h2>Version </h2><br>
+	        <div class="panelContainer">
+				<p>
+				A new version of BitMeter OS is available! This release includes the following changes:
+				</p>
+				<p id="newVersionInfo">
+				</p>
+				<p>
+				<br>
+				<a id="newVersionDownload">Download</a>
+				</p>
+			</div>
+		</div>
 		<div id="floater"></div>
 		<div id="modalBackground"></div>
 		<div id="dialogModalBackground"></div>

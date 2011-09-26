@@ -1,28 +1,6 @@
-/*
- * BitMeterOS
- * http://codebox.org.uk/bitmeterOS
- *
- * Copyright (c) 2011 Rob Dawson
- *
- * Licensed under the GNU General Public License
- * http://www.gnu.org/licenses/gpl.txt
- *
- * This file is part of BitMeterOS.
- *
- * BitMeterOS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * BitMeterOS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- */
-
+#ifdef UNIT_TESTING 
+	#include "test.h"
+#endif
 #ifdef _WIN32
 	#define __USE_MINGW_ANSI_STDIO 1
 #endif
@@ -33,6 +11,10 @@
 #include <sqlite3.h>
 #include "common.h"
 
+#define SQL_INSERT_INTO_DATA    "INSERT INTO data2 (ts,dr,vl,fl) VALUES (?,?,?,?)"
+#define SQL_SELECT_FOR_COMPRESS "SELECT fl, SUM(vl) FROM (SELECT * FROM data2 WHERE ts<=? AND dr=?) GROUP BY fl;"
+#define SQL_SELECT_MIN_TS       "SELECT MIN(ts) FROM data2 WHERE dr=?"
+#define SQL_DELETE_COMPRESSED   "DELETE FROM data2 WHERE ts<=? AND dr=?"
 /*
 Contains code that interacts with the database on behalf of the BitMeter Data Capture application. At a high level there
 are two database operations that are performed:
@@ -41,8 +23,6 @@ are two database operations that are performed:
     larger 'dr' value (see compressDb). This compression is performed at regular intervals, and also when the application
     starts up.
 */
-
-static sqlite3_stmt *stmtInsertData, *stmtSelectForCompression, *stmtSelectMinTsForDr, *stmtDeleteCompressed;
 
 /* Populated from the 'config' table value with key 'cap.keep_sec_limit', this represents the age (in seconds) beyond which
    data table rows with a 'dr' value of 1 will be compressed. By default this is set to 3600, meaning that the application
@@ -66,23 +46,21 @@ void setupDb(){
 	logMsg(LOG_DEBUG, "Starting db setup");
 	
  // Initialise things, this must be called first
-	prepareSql(&stmtInsertData,           "INSERT INTO data (ts,dr,ad,dl,ul,hs) VALUES (?,?,?,?,?,?)");
-	prepareSql(&stmtSelectMinTsForDr,     "SELECT MIN(ts) FROM data WHERE dr=?");
-	prepareSql(&stmtSelectForCompression, "SELECT ad, hs, SUM(dl), SUM(ul) FROM (SELECT * FROM data WHERE ts<=? AND dr=?) GROUP BY ad, hs;");
-	prepareSql(&stmtDeleteCompressed,     "DELETE FROM data WHERE ts<=? AND dr=?");
+	//prepareSql(&stmtInsertData,           "INSERT INTO data2 (ts,dr,vl,fl) VALUES (?,?,?,?)");
+	//prepareSql(&stmtSelectMinTsForDr,     "SELECT MIN(ts) FROM data2 WHERE dr=?");
+	//prepareSql(&stmtSelectForCompression, "SELECT fl, SUM(vl) FROM (SELECT * FROM data2 WHERE ts<=? AND dr=?) GROUP BY fl;");
+	//prepareSql(&stmtDeleteCompressed,     "DELETE FROM data2 WHERE ts<=? AND dr=?");
 
  // Read various values out of the 'config' table
-	keepPerSecLimit  = getConfigInt("cap.keep_sec_limit", FALSE);
-	keepPerMinLimit  = getConfigInt("cap.keep_min_limit", FALSE);
-	compressInterval = getConfigInt("cap.compress_interval", FALSE);
+	keepPerSecLimit  = getConfigInt(CONFIG_CAP_KEEP_SEC_LIMIT, FALSE);
+	keepPerMinLimit  = getConfigInt(CONFIG_CAP_KEEP_MIN_LIMIT, FALSE);
+	compressInterval = getConfigInt(CONFIG_CAP_COMPRESS_INTERVAL, FALSE);
 	
 	logMsg(LOG_DEBUG, "db setup complete");
 }
 
 int updateDb(int dr, struct Data* diffList){
     int status = SUCCESS;
-
-    beginTrans(FALSE);
 
  // Insert all the Data structs into the d/b, stopping if there are any failures
 	while (diffList != NULL) {
@@ -91,12 +69,6 @@ int updateDb(int dr, struct Data* diffList){
             break;
 		}
 		diffList = diffList->next;
-	}
-	
-	if (status == SUCCESS){
-		commitTrans();
-	} else {
-		rollbackTrans();
 	}
 	return status;
 }
@@ -129,55 +101,47 @@ int getNextCompressTime(){
 }
 
 
-static int doInsert(int ts, int dr, const char* addr, BW_INT dl, BW_INT ul, const char* host){
+static int doInsert(int ts, int dr, int fl, BW_INT vl){
  // Inserts a row with the specified values into the 'data' table
-	sqlite3_bind_int(stmtInsertData,  1, ts);
-	sqlite3_bind_int(stmtInsertData,  2, dr);
-	if (addr != NULL){
-        sqlite3_bind_text(stmtInsertData, 3, addr, strlen(addr), SQLITE_TRANSIENT);
-	} else {
-        sqlite3_bind_null(stmtInsertData, 3);
-	}
-	sqlite3_bind_int64(stmtInsertData,  4, dl);
-  	sqlite3_bind_int64(stmtInsertData,  5, ul);
-  	if (host != NULL){
-        sqlite3_bind_text(stmtInsertData, 6, host, strlen(host), SQLITE_TRANSIENT);
-  	} else {
-  	    sqlite3_bind_null(stmtInsertData, 6);
-  	}
+ 	sqlite3_stmt* stmt = getStmt(SQL_INSERT_INTO_DATA);
+	sqlite3_bind_int(stmt,    1, ts);
+	sqlite3_bind_int(stmt,    2, dr);
+	sqlite3_bind_int64(stmt,  3, vl);
+	sqlite3_bind_int(stmt,    4, fl);
 
 	int status;
-  	int rc = sqlite3_step(stmtInsertData);
+  	int rc = sqlite3_step(stmt);
   	if (rc != SQLITE_DONE){
-  		logMsg(LOG_ERR, "doInsert() failed to insert values %d,%d,%s,%llu,%llu,%s into db rc=%d error=%s", ts, dr, addr, dl, ul, host, rc, getDbError());
+  		logMsg(LOG_ERR, "doInsert() failed to insert values %d,%d,%d,%llu into db rc=%d error=%s", ts, dr, fl, vl, rc, getDbError());
   		status = FAIL;
   	} else {
-  		logMsg(LOG_INFO, "doInsert() ok: %d,%d,%s,%llu,%llu,%s", ts, dr, addr, dl, ul, host);//TODO
+  		logMsg(LOG_INFO, "doInsert() ok: %d,%d,%d,%llu", ts, dr, fl, vl);//TODO
         status = SUCCESS;
   	}
-  	sqlite3_reset(stmtInsertData);
+  	finishedStmt(stmt);
 
   	return status;
 }
 
 static int insertDataPartial(int dr, struct Data* data){
  // Inserts the data for a single Data struct into the 'data' table
-	return doInsert(data->ts, dr, data->ad, data->dl, data->ul, data->hs);
+	return doInsert(data->ts, dr, data->fl, data->vl);
 }
 
 int insertData(struct Data* data){
  // Inserts the data for a single Data struct into the 'data' table
-	return doInsert(data->ts, data->dr, data->ad, data->dl, data->ul, data->hs);
+	return doInsert(data->ts, data->dr, data->fl, data->vl);
 }
 
 static int doDelete(int ts, int dr){
     int status;
  /* Removes all rows with the specified 'dr' value, and with a 'ts' value less than or equal to the given one. This
     gets called during a compressDb operation, to remove the old rows that have been amalgamated into a single row. */
-	sqlite3_bind_int(stmtDeleteCompressed, 1, ts);
-	sqlite3_bind_int(stmtDeleteCompressed, 2, dr);
+    sqlite3_stmt* stmt = getStmt(SQL_DELETE_COMPRESSED);
+	sqlite3_bind_int(stmt, 1, ts);
+	sqlite3_bind_int(stmt, 2, dr);
 
-	int rc = sqlite3_step(stmtDeleteCompressed);
+	int rc = sqlite3_step(stmt);
 	if (rc != SQLITE_DONE){
 		logMsg(LOG_ERR, "Failed to delete compressed rows for ts=%d dr=%d rc=%d error=%s", ts, dr, rc, getDbError());
 		status = FAIL;
@@ -185,7 +149,7 @@ static int doDelete(int ts, int dr){
         status = SUCCESS;
 	}
 
-	sqlite3_reset(stmtDeleteCompressed);
+	finishedStmt(stmt);
 
 	return status;
 }
@@ -193,27 +157,26 @@ static int doDelete(int ts, int dr){
 static int doCompress(int ts, int oldDr, int newDr){
  // For each adapter, compresses rows older than 'ts' and with a 'dr' of oldDr, into a single row with 'dr' of newDr.
 	logMsg(LOG_DEBUG, "doCompress(%d,%d,%d)", ts, oldDr, newDr);
+	
+	sqlite3_stmt* stmt = getStmt(SQL_SELECT_FOR_COMPRESS);
 
-	sqlite3_bind_int(stmtSelectForCompression, 1, ts);
-	sqlite3_bind_int(stmtSelectForCompression, 2, oldDr);
+	sqlite3_bind_int(stmt, 1, ts);
+	sqlite3_bind_int(stmt, 2, oldDr);
 
 	int rc;
-	BW_INT dlTotal, ulTotal;
-	const void *addr;
-	const void *host;
+	BW_INT total;
+	int filter;
     int status = SUCCESS;
     int insertedOk, deletedOk;
 
-	while((rc=sqlite3_step(stmtSelectForCompression)) == SQLITE_ROW){
-     // We get 1 row back for each network adapter/host combination
-		addr     = sqlite3_column_text(stmtSelectForCompression,  0);
-		host     = sqlite3_column_text(stmtSelectForCompression,  1);
-		dlTotal  = sqlite3_column_int64(stmtSelectForCompression, 2);
-		ulTotal  = sqlite3_column_int64(stmtSelectForCompression, 3);
+	while((rc=sqlite3_step(stmt)) == SQLITE_ROW){
+     // We get 1 row back for each filter
+		filter = sqlite3_column_int(stmt,   0);
+		total  = sqlite3_column_int64(stmt, 1);
 
-		logMsg(LOG_DEBUG, "doCompress loop: dl=%llu ul=%llu addr=%s", dlTotal, ulTotal, addr);
+		logMsg(LOG_DEBUG, "doCompress loop: vl=%llu fl=%d", total, filter);
 
-		insertedOk = doInsert(ts, newDr, addr, dlTotal, ulTotal, host);
+		insertedOk = doInsert(ts, newDr, filter, total);
 		if (insertedOk){
          // Only remove the old rows if we succeeded in inserting the new one
 			deletedOk = doDelete(ts, oldDr);
@@ -227,25 +190,26 @@ static int doCompress(int ts, int oldDr, int newDr){
 		}
 	}
 
-  	sqlite3_reset(stmtSelectForCompression);
+  	finishedStmt(stmt);
 
   	return status;
 }
 
 static int getMinTs(int dr){
  // Find the smallest 'ts' in the data table having the specified 'dr'
-	sqlite3_bind_int(stmtSelectMinTsForDr, 1, dr);
+	sqlite3_stmt* stmt = getStmt(SQL_SELECT_MIN_TS);
+	sqlite3_bind_int(stmt, 1, dr);
 
 	int minTs;
-	int rc = sqlite3_step(stmtSelectMinTsForDr);
+	int rc = sqlite3_step(stmt);
 	if (rc == SQLITE_ROW){
-		minTs = sqlite3_column_int(stmtSelectMinTsForDr, 0);
+		minTs = sqlite3_column_int(stmt, 0);
 	} else {
      // We found no rows with the specified 'dr' value
 		minTs = 0;
 	}
 
-	sqlite3_reset(stmtSelectMinTsForDr);
+	finishedStmt(stmt);
 
 	return minTs;
 }

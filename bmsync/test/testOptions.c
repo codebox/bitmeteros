@@ -1,115 +1,100 @@
-/*
- * BitMeterOS
- * http://codebox.org.uk/bitmeterOS
- *
- * Copyright (c) 2011 Rob Dawson
- *
- * Licensed under the GNU General Public License
- * http://www.gnu.org/licenses/gpl.txt
- *
- * This file is part of BitMeterOS.
- *
- * BitMeterOS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * BitMeterOS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- */
-
 #define _GNU_SOURCE
-#include <stdlib.h>
+#include <test.h> 
+#include <stdarg.h> 
+#include <stddef.h> 
+#include <setjmp.h> 
+#include <cmockery.h> 
 #include "common.h"
 #include "string.h"
 #include "getopt.h"
-#include "test.h"
 #include "bmsync.h"
-#include "CuTest.h"
 
 /*
 Contains unit tests for the options module of the bmsync utility.
 */
 
 extern int optind, optreset;
-static void checkPrefs(CuTest *tc, struct SyncPrefs expectedPrefs, char* cmdLine);
+static void checkPrefs( struct SyncPrefs expectedPrefs, char* cmdLine);
 
-static void testEmptyCmdLine(CuTest *tc){
+void testEmptyCmdLine(void** state){
 	struct SyncPrefs prefs = {0, 0, NULL, 0, 0, NULL, ERR_OPT_NO_ARGS};
-	checkPrefs(tc, prefs, "");
+	checkPrefs(prefs, "");
 }
 
-static void testPort(CuTest *tc){
+void testPort(void** state){
 	struct SyncPrefs prefsBad = {0, 0, NULL, 0, 0, NULL, ERR_BAD_PORT};
 
-	checkPrefs(tc, prefsBad, "-p 0 h1");
-	checkPrefs(tc, prefsBad, "-p 65536 h1");
-	checkPrefs(tc, prefsBad, "-p bork h1");
+	checkPrefs(prefsBad, "-p 0 h1");
+	checkPrefs(prefsBad, "-p 65536 h1");
+	checkPrefs(prefsBad, "-p bork h1");
     
     char *hosts[1];
     hosts[0] = "h1";
 	struct SyncPrefs prefsOk1 = {0, 0, hosts, 1, 1, NULL, NULL};
-	checkPrefs(tc, prefsOk1, "-p 1 h1");
+	checkPrefs(prefsOk1, "-p 1 h1");
     
 	struct SyncPrefs prefsOk2 = {0, 0, hosts, 1, 65535, NULL, NULL};
-	checkPrefs(tc, prefsOk2, "-p 65535 h1");
+	checkPrefs(prefsOk2, "-p 65535 h1");
     
 	struct SyncPrefs prefsOk3 = {0, 0, hosts, 1, 80, NULL, NULL};
-	checkPrefs(tc, prefsOk3, "-p80 h1");
+	checkPrefs(prefsOk3, "-p80 h1");
 }
 
-static void testVersion(CuTest *tc){
+void testVersion(void** state){
 	struct SyncPrefs prefs = {1, 0, NULL, 0, 0, NULL, NULL};
-	checkPrefs(tc, prefs, "-v");
+	checkPrefs(prefs, "-v");
 }
 
-static void testHelp(CuTest *tc){
+void testHelp(void** state){
 	struct SyncPrefs prefs = {0, 1, NULL, 0, 0, NULL, NULL};
-	checkPrefs(tc, prefs, "-h");
+	checkPrefs(prefs, "-h");
 }
 
-static void testHost(CuTest *tc){
+void testHost(void** state){
 	char* host1[1];
 	host1[0] = strdup("h1");
 
 	struct SyncPrefs prefs1 = {0, 0, host1, 1, 0, NULL, NULL};
-	checkPrefs(tc, prefs1, "h1");
-
+	checkPrefs(prefs1, "h1");
+	free(host1[0]);
+	
 	char* host2[3];
 	host2[0] = strdup("h1");
 	host2[1] = strdup("h2");
 	host2[2] = strdup("h3");
 
 	struct SyncPrefs prefs2 = {0, 0, host2, 3, 0, NULL, NULL};
-	checkPrefs(tc, prefs2, "h1 h2 h3");
+	checkPrefs(prefs2, "h1 h2 h3");
+	free(host2[0]);
+	free(host2[1]);
+	free(host2[2]);
 }
 
-static void testAlias(CuTest *tc){
+void testAlias(void** state){
 	char* host1[2];
 	host1[0] = strdup("h1");
 	host1[1] = strdup("h2");
 
 	struct SyncPrefs prefs1 = {0, 0, host1, 0, 0, "alias", ERR_MULTIPLE_HOSTS_ONE_ALIAS};
-	checkPrefs(tc, prefs1, "-a alias h1 h2");
+	checkPrefs(prefs1, "-a alias h1 h2");
+	free(host1[0]);
+	free(host1[1]);
 
 	char* host2[1];
 	host2[0] = strdup("h1");
 
 	struct SyncPrefs prefs2 = {0, 0, host2, 1, 0, "alias", NULL};
-	checkPrefs(tc, prefs2, "-a alias h1");
+	checkPrefs(prefs2, "-a alias h1");
+	free(host2[0]);
 }
 
-static void testVariousValid(CuTest *tc){
+void testVariousValid(void** state){
 	char* host1[1];
 	host1[0] = strdup("myhost");
 
 	struct SyncPrefs prefs1 = {0, 0, host1, 1, 8080, "myalias", NULL};
-	checkPrefs(tc, prefs1, "-p 8080 -a myalias myhost");
+	checkPrefs(prefs1, "-p 8080 -a myalias myhost");
+	free(host1[0]);
 
 	char* host2[3];
 	host2[0] = strdup("h1");
@@ -117,31 +102,18 @@ static void testVariousValid(CuTest *tc){
 	host2[2] = strdup("h3");
 
 	struct SyncPrefs prefs2 = {0, 0, host2, 3, 10, NULL, NULL};
-	checkPrefs(tc, prefs2, "-p10 h1 h2 h3");
+	checkPrefs(prefs2, "-p10 h1 h2 h3");
+	free(host2[0]);
+	free(host2[1]);
+	free(host2[2]);
 }
 
-static void checkPrefs(CuTest *tc, struct SyncPrefs expectedPrefs, char* cmdLine){
+static void checkPrefs(struct SyncPrefs expectedPrefs, char* cmdLine){
  // Helper function for checking the values in a Prefs structure
-	int argc = 1;
-
-	char *cmdLineCopy = strdupa(cmdLine);
-	char* match = strtok(cmdLineCopy, " ");
-	while(match != NULL){
-        argc++;
-        match = strtok(NULL, " ");
-	}
-
-    char* argv[argc];
-    argv[0] = NULL;
-
-    int i=1;
-    cmdLineCopy = strdupa(cmdLine);
-    match = strtok(cmdLineCopy, " ");
-	do{
-        argv[i++] = match;
-        match = strtok(NULL, " ");
-	} while(match != NULL);
-
+	char** argv;
+	int argc;
+	parseCommandLine(cmdLine, &argv, &argc);
+	
 	struct SyncPrefs actualPrefs = {0, 0, NULL, 0, 0, NULL, NULL};
 	optind = 1; // need to reset this global between each call to getopt()
 	#if HAVE_DECL_OPTRESET
@@ -150,36 +122,37 @@ static void checkPrefs(CuTest *tc, struct SyncPrefs expectedPrefs, char* cmdLine
 
 	parseSyncArgs(argc, argv, &actualPrefs);
 
-	CuAssertIntEquals(tc, expectedPrefs.help,      actualPrefs.help);
-	CuAssertIntEquals(tc, expectedPrefs.version,   actualPrefs.version);
-	CuAssertIntEquals(tc, expectedPrefs.hostCount, actualPrefs.hostCount);
-	CuAssertIntEquals(tc, expectedPrefs.port,      actualPrefs.port);
+	assert_int_equal(expectedPrefs.help,      actualPrefs.help);
+	assert_int_equal(expectedPrefs.version,   actualPrefs.version);
+	assert_int_equal(expectedPrefs.hostCount, actualPrefs.hostCount);
+	assert_int_equal(expectedPrefs.port,      actualPrefs.port);
 
+	int i;
 	for (i=0; i<expectedPrefs.hostCount; i++){
-		CuAssertStrEquals(tc, expectedPrefs.hosts[i], actualPrefs.hosts[i]);
+		assert_string_equal(expectedPrefs.hosts[i], actualPrefs.hosts[i]);
+		free(actualPrefs.hosts[i]);
+	}
+	if (actualPrefs.hosts != NULL){
+		free(actualPrefs.hosts);
 	}
 
 	if (expectedPrefs.alias == NULL){
-		CuAssertTrue(tc, actualPrefs.alias == NULL);
+		assert_true(actualPrefs.alias == NULL);
 	} else {
-		CuAssertStrEquals(tc, expectedPrefs.alias, actualPrefs.alias);
+		assert_string_equal(expectedPrefs.alias, actualPrefs.alias);
+		free(actualPrefs.alias);
 	}
 
 	if (expectedPrefs.errMsg == NULL){
-		CuAssertTrue(tc, actualPrefs.errMsg == NULL);
+		assert_true(actualPrefs.errMsg == NULL);
 	} else {
-		CuAssertStrEquals(tc, expectedPrefs.errMsg, actualPrefs.errMsg);
+		assert_string_equal(expectedPrefs.errMsg, actualPrefs.errMsg);
+		free(actualPrefs.errMsg);
 	}
-}
-
-CuSuite* syncOptionsGetSuite() {
-    CuSuite* suite = CuSuiteNew();
-	SUITE_ADD_TEST(suite, testEmptyCmdLine);
-	SUITE_ADD_TEST(suite, testPort);
-	SUITE_ADD_TEST(suite, testVersion);
-	SUITE_ADD_TEST(suite, testHelp);
-	SUITE_ADD_TEST(suite, testHost);
-	SUITE_ADD_TEST(suite, testAlias);
-	SUITE_ADD_TEST(suite, testVariousValid);
-    return suite;
+	
+	int j=0;
+	while(j<argc){
+		free(argv[j++]);
+	}
+	free(argv);
 }

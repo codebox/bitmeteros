@@ -1,486 +1,550 @@
-/*
- * BitMeterOS
- * http://codebox.org.uk/bitmeterOS
- *
- * Copyright (c) 2011 Rob Dawson
- *
- * Licensed under the GNU General Public License
- * http://www.gnu.org/licenses/gpl.txt
- *
- * This file is part of BitMeterOS.
- *
- * BitMeterOS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * BitMeterOS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- */
-
 #include <stdio.h>
 #include "common.h"
 #include "test.h"
 #include "client.h"
-#include "CuTest.h"
+#include <stdarg.h> 
+#include <stddef.h> 
+#include <setjmp.h> 
+#include <cmockery.h> 
 #include "bmws.h"
 
 /*
 Contains unit tests for the handleAlert module.
 */
-void testAlertNoAction(CuTest *tc) {
+
+static void _writeHeadersServerError(SOCKET fd, char* msg, ...){
+	check_expected(msg);
+}
+static void _writeHeadersOk(SOCKET fd, char* contentType, int endHeaders){
+	check_expected(contentType);
+	check_expected(endHeaders);
+}
+static void _writeHeadersForbidden(SOCKET fd, char* request){
+	check_expected(request);
+}
+
+static void _writeText(SOCKET fd, char* txt){
+	check_expected(txt);
+}
+
+static void _writeNumValueToJson(SOCKET fd, char* key, BW_INT value){
+	check_expected(key);
+	check_expected(value);
+}
+static void _writeTextValueToJson(SOCKET fd, char* key, char* value){
+	check_expected(key);
+	check_expected(value);
+}
+static void _writeTextArrayToJsonValue(char* value){
+	check_expected(value);
+}
+static void _writeTextArrayToJson(SOCKET fd, char* key, char** values){
+	if (key != NULL){
+		check_expected(key);
+	}
+	
+	while (*values != NULL){
+		_writeTextArrayToJsonValue(*values);
+		values++;
+	}
+}
+
+void setupTestForHandleAlert(void** state){
+	setupTestDb(state);
+	struct HandleAlertCalls calls = {&_writeHeadersServerError, &_writeHeadersForbidden, 
+			&_writeHeadersOk, &_writeText, &_writeNumValueToJson, &_writeTextValueToJson,
+			&_writeTextArrayToJson};
+	mockHandleAlertCalls = calls;
+};
+
+void tearDownTestForHandleAlert(void** state){
+	tearDownTestDb(state);
+}
+
+void testAlertNoAction(void** state) {
  // The 'action' parameter is required, so we should get an HTTP error if its missing
     struct Request req = {"GET", "/alert", NULL, NULL};
 
-    int tmpFd = makeTmpFile();
-    processAlertRequest(tmpFd, &req, FALSE);
-
-    char* result = readTmpFile();
-
-    CuAssertStrEquals(tc,
-		"HTTP/1.0 500 Bad/missing parameter" HTTP_EOL
-        "Server: BitMeterOS " VERSION " Web Server" HTTP_EOL
-        "Date: Sun, 08 Nov 2009 10:00:00 +0000" HTTP_EOL
-        "Connection: Close" HTTP_EOL HTTP_EOL
-    , result);
+	expect_string(_writeHeadersServerError, msg, "Missing/invalid 'action' parameter: '%s'");    
+	
+    processAlertRequest(0, &req, FALSE);
 }
 
-void testAlertListNone(CuTest *tc) {
+void testAlertListNone(void** state) {
  	struct NameValuePair param = {"action", "list", NULL};
     struct Request req = {"GET", "/alert", &param, NULL};
-
-    int tmpFd = makeTmpFile();
-    processAlertRequest(tmpFd, &req, FALSE);
-
-    char* result = readTmpFile();
-
-    CuAssertStrEquals(tc,
-		"HTTP/1.0 200 OK" HTTP_EOL
-		"Content-Type: application/json" HTTP_EOL
-        "Server: BitMeterOS " VERSION " Web Server" HTTP_EOL
-        "Date: Sun, 08 Nov 2009 10:00:00 +0000" HTTP_EOL
-        "Connection: Close" HTTP_EOL HTTP_EOL
-        "[]"
-    , result);
+    
+    expect_string(_writeHeadersOk, contentType, "application/json");
+    expect_value(_writeHeadersOk, endHeaders, TRUE);
+    expect_string(_writeText, txt, "[");
+    expect_string(_writeText, txt, "]");
+    
+    processAlertRequest(0, &req, FALSE);
+    
+    freeStmtList();
 }
 
-void testAlertList(CuTest *tc) {
-	emptyDb();
+void testAlertList(void** state) {
 	struct Alert* alert1 = allocAlert();
-    alert1->active    = 1;
-    alert1->direction = 1;
-    alert1->amount    = 100000000000;
-    alert1->bound     = makeDateCriteria("2010", "5", "26", "4", "15");
+    alert1->active = 1;
+    alert1->filter = 1;
+    alert1->amount = 100000000000;
+    alert1->bound  = makeDateCriteria("2010", "5", "26", "4", "15");
     setAlertName(alert1, "alert1");
-
+    
     struct DateCriteria* period1 = makeDateCriteria("*", "*", "*", "5,6", "0-6");
     struct DateCriteria* period2 = makeDateCriteria("*", "*", "*", "0-4", "6-12");
     period1->next = period2;
     alert1->periods = period1;
 	addAlert(alert1);
-
+    freeAlert(alert1);
+    
 	struct Alert* alert2 = allocAlert();
-    alert2->active    = 0;
-    alert2->direction = 2;
-    alert2->amount    = 200000000000;
-    alert2->bound     = makeDateCriteria("2010", "5", "26", "4", "15");
+    alert2->active = 0;
+    alert2->filter = 2;
+    alert2->amount = 200000000000;
+    alert2->bound  = makeDateCriteria("2010", "5", "26", "4", "15");
     setAlertName(alert2, "alert2");
-
+    
     struct DateCriteria* period3 = makeDateCriteria("*", "*", "*", "2,8", "5");
     struct DateCriteria* period4 = makeDateCriteria("*", "*", "*", "1", "*");
     period3->next = period4;
     alert2->periods = period3;
     addAlert(alert2);
-
+    freeAlert(alert2);
+    
  	struct NameValuePair param = {"action", "list", NULL};
     struct Request req = {"GET", "/alert", &param, NULL};
+    
+    expect_string(_writeHeadersOk, contentType, "application/json");
+    expect_value(_writeHeadersOk, endHeaders, TRUE);
 
-    int tmpFd = makeTmpFile();
-    processAlertRequest(tmpFd, &req, FALSE);
+    expect_string(_writeText, txt, "[");
+    
+    expect_string(_writeText, txt, "{");
+    expect_string(_writeNumValueToJson, key, "id");
+    expect_value(_writeNumValueToJson, value, 1);
+    expect_string(_writeText, txt, ",");
+    expect_string(_writeTextValueToJson, key, "name");
+    expect_string(_writeTextValueToJson, value, "alert1");
+    expect_string(_writeText, txt, ",");
+    expect_string(_writeNumValueToJson, key, "active");
+    expect_value(_writeNumValueToJson, value, 1);
+    expect_string(_writeText, txt, ",");
+    expect_string(_writeNumValueToJson, key, "filter");
+    expect_value(_writeNumValueToJson, value, 1);
+    expect_string(_writeText, txt, ",");
+    expect_string(_writeNumValueToJson, key, "amount");
+    expect_value(_writeNumValueToJson, value, 100000000000);
+    expect_string(_writeText, txt, ",");
+    
+    expect_string(_writeTextArrayToJson, key, "bound");
+    expect_string(_writeTextArrayToJsonValue, value, "2010");
+    expect_string(_writeTextArrayToJsonValue, value, "5");
+    expect_string(_writeTextArrayToJsonValue, value, "26");
+    expect_string(_writeTextArrayToJsonValue, value, "4");
+    expect_string(_writeTextArrayToJsonValue, value, "15");
+    
+    expect_string(_writeText, txt, ",\"periods\" : [");
+    expect_string(_writeTextArrayToJsonValue, value, "*");
+    expect_string(_writeTextArrayToJsonValue, value, "*");
+    expect_string(_writeTextArrayToJsonValue, value, "*");
+    expect_string(_writeTextArrayToJsonValue, value, "5,6");
+    expect_string(_writeTextArrayToJsonValue, value, "0-6");
+    expect_string(_writeText, txt, ",");
+    expect_string(_writeTextArrayToJsonValue, value, "*");
+    expect_string(_writeTextArrayToJsonValue, value, "*");
+    expect_string(_writeTextArrayToJsonValue, value, "*");
+    expect_string(_writeTextArrayToJsonValue, value, "0-4");
+    expect_string(_writeTextArrayToJsonValue, value, "6-12");
+    expect_string(_writeText, txt, "]}");
+    
+    expect_string(_writeText, txt, ",");
 
-    char* result = readTmpFile();
-
-    CuAssertStrEquals(tc,
-		"HTTP/1.0 200 OK" HTTP_EOL
-		"Content-Type: application/json" HTTP_EOL
-        "Server: BitMeterOS " VERSION " Web Server" HTTP_EOL
-        "Date: Sun, 08 Nov 2009 10:00:00 +0000" HTTP_EOL
-        "Connection: Close" HTTP_EOL HTTP_EOL
-        "[{\"id\" : 1,\"name\" : \"alert1\",\"active\" : 1,\"direction\" : 1,\"amount\" : 100000000000,\"bound\" : [\"2010\",\"5\",\"26\",\"4\",\"15\"],\"periods\" : [[\"*\",\"*\",\"*\",\"5,6\",\"0-6\"],[\"*\",\"*\",\"*\",\"0-4\",\"6-12\"]]},"
-       	 "{\"id\" : 2,\"name\" : \"alert2\",\"active\" : 0,\"direction\" : 2,\"amount\" : 200000000000,\"bound\" : [\"2010\",\"5\",\"26\",\"4\",\"15\"],\"periods\" : [[\"*\",\"*\",\"*\",\"2,8\",\"5\"],[\"*\",\"*\",\"*\",\"1\",\"*\"]]}]"
-    , result);
+	expect_string(_writeText, txt, "{");
+    expect_string(_writeNumValueToJson, key, "id");
+    expect_value(_writeNumValueToJson, value, 2);
+    expect_string(_writeText, txt, ",");
+    expect_string(_writeTextValueToJson, key, "name");
+    expect_string(_writeTextValueToJson, value, "alert2");
+    expect_string(_writeText, txt, ",");
+    expect_string(_writeNumValueToJson, key, "active");
+    expect_value(_writeNumValueToJson, value, 0);
+    expect_string(_writeText, txt, ",");
+    expect_string(_writeNumValueToJson, key, "filter");
+    expect_value(_writeNumValueToJson, value, 2);
+    expect_string(_writeText, txt, ",");
+    expect_string(_writeNumValueToJson, key, "amount");
+    expect_value(_writeNumValueToJson, value, 200000000000);
+    expect_string(_writeText, txt, ",");
+    
+    expect_string(_writeTextArrayToJson, key, "bound");
+    expect_string(_writeTextArrayToJsonValue, value, "2010");
+    expect_string(_writeTextArrayToJsonValue, value, "5");
+    expect_string(_writeTextArrayToJsonValue, value, "26");
+    expect_string(_writeTextArrayToJsonValue, value, "4");
+    expect_string(_writeTextArrayToJsonValue, value, "15");
+    
+    expect_string(_writeText, txt, ",\"periods\" : [");
+    expect_string(_writeTextArrayToJsonValue, value, "*");
+    expect_string(_writeTextArrayToJsonValue, value, "*");
+    expect_string(_writeTextArrayToJsonValue, value, "*");
+    expect_string(_writeTextArrayToJsonValue, value, "2,8");
+    expect_string(_writeTextArrayToJsonValue, value, "5");
+    expect_string(_writeText, txt, ",");
+    expect_string(_writeTextArrayToJsonValue, value, "*");
+    expect_string(_writeTextArrayToJsonValue, value, "*");
+    expect_string(_writeTextArrayToJsonValue, value, "*");
+    expect_string(_writeTextArrayToJsonValue, value, "1");
+    expect_string(_writeTextArrayToJsonValue, value, "*");
+    expect_string(_writeText, txt, "]}");
+    
+    expect_string(_writeText, txt, "]");
+    
+    processAlertRequest(0, &req, FALSE);
+    
+    freeStmtList();
 }
 
-void testAlertDeleteOk(CuTest *tc) {
-	emptyDb();
+void testAlertDeleteOk(void** state) {
 	struct Alert* alert1 = allocAlert();
-    alert1->active    = 1;
-    alert1->direction = 1;
-    alert1->amount    = 100000000000;
-    alert1->bound     = makeDateCriteria("2010", "5", "26", "4", "15");
+    alert1->active = 1;
+    alert1->filter = 1;
+    alert1->amount = 100000000000;
+    alert1->bound  = makeDateCriteria("2010", "5", "26", "4", "15");
     setAlertName(alert1, "alert1");
-
+    
     struct DateCriteria* period1 = makeDateCriteria("*", "*", "*", "5,6", "0-6");
     struct DateCriteria* period2 = makeDateCriteria("*", "*", "*", "0-4", "6-12");
     period1->next = period2;
     alert1->periods = period1;
 	addAlert(alert1);
-
+    freeAlert(alert1);
+    
 	struct Alert* alert2 = allocAlert();
-    alert2->active    = 0;
-    alert2->direction = 2;
-    alert2->amount    = 200000000000;
-    alert2->bound     = makeDateCriteria("2010", "5", "26", "4", "15");
+    alert2->active = 0;
+    alert2->filter = 2;
+    alert2->amount = 200000000000;
+    alert2->bound  = makeDateCriteria("2010", "5", "26", "4", "15");
     setAlertName(alert2, "alert2");
-
+    
     struct DateCriteria* period3 = makeDateCriteria("*", "*", "*", "2,8", "5");
     struct DateCriteria* period4 = makeDateCriteria("*", "*", "*", "1", "*");
     period3->next = period4;
     alert2->periods = period3;
     addAlert(alert2);
-
+    freeAlert(alert2);
+    
     struct Alert* alert = getAlerts();
-    CuAssertIntEquals(tc, alert->id, 1);
-    CuAssertIntEquals(tc, alert->next->id, 2);
-    CuAssertTrue(tc, alert->next->next == NULL);
-
+    assert_int_equal(alert->id, 1);
+    assert_int_equal(alert->next->id, 2);
+    assert_true(alert->next->next == NULL);
+    freeAlert(alert);
+    
  	struct NameValuePair param1 = {"id", "1", NULL};
  	struct NameValuePair param2 = {"action", "delete", &param1};
     struct Request req = {"GET", "/alert", &param2, NULL};
+    
+    expect_string(_writeHeadersOk, contentType, "application/json");
+    expect_value(_writeHeadersOk, endHeaders, TRUE);
 
-    int tmpFd = makeTmpFile();
-    processAlertRequest(tmpFd, &req, TRUE);
+    expect_string(_writeText, txt, "{}");
 
-	char* result = readTmpFile();
-    CuAssertStrEquals(tc,
-		"HTTP/1.0 200 OK" HTTP_EOL
-		"Content-Type: application/json" HTTP_EOL
-        "Server: BitMeterOS " VERSION " Web Server" HTTP_EOL
-        "Date: Sun, 08 Nov 2009 10:00:00 +0000" HTTP_EOL
-        "Connection: Close" HTTP_EOL HTTP_EOL
-        "{}"
-    , result);
-
+    processAlertRequest(0, &req, TRUE);
+    
     alert = getAlerts();
-    CuAssertIntEquals(tc, alert->id, 2);
-    CuAssertTrue(tc, alert->next == NULL);
+    assert_int_equal(alert->id, 2);
+    assert_true(alert->next == NULL);
+    freeAlert(alert);
+    
+    freeStmtList();
 }
 
-void testAlertDeleteForbidden(CuTest *tc) {
-	emptyDb();
+void testAlertDeleteForbidden(void** state) {
 	struct Alert* alert1 = allocAlert();
-    alert1->active    = 1;
-    alert1->direction = 1;
-    alert1->amount    = 100000000000;
-    alert1->bound     = makeDateCriteria("2010", "5", "26", "4", "15");
+    alert1->active = 1;
+    alert1->filter = 1;
+    alert1->amount = 100000000000;
+    alert1->bound  = makeDateCriteria("2010", "5", "26", "4", "15");
     setAlertName(alert1, "alert1");
-
+    
     struct DateCriteria* period1 = makeDateCriteria("*", "*", "*", "5,6", "0-6");
     struct DateCriteria* period2 = makeDateCriteria("*", "*", "*", "0-4", "6-12");
     period1->next = period2;
     alert1->periods = period1;
 	addAlert(alert1);
-
+    freeAlert(alert1);
+    
 	struct Alert* alert2 = allocAlert();
-    alert2->active    = 0;
-    alert2->direction = 2;
-    alert2->amount    = 200000000000;
-    alert2->bound     = makeDateCriteria("2010", "5", "26", "4", "15");
+    alert2->active = 0;
+    alert2->filter = 2;
+    alert2->amount = 200000000000;
+    alert2->bound  = makeDateCriteria("2010", "5", "26", "4", "15");
     setAlertName(alert2, "alert2");
-
+    
     struct DateCriteria* period3 = makeDateCriteria("*", "*", "*", "2,8", "5");
     struct DateCriteria* period4 = makeDateCriteria("*", "*", "*", "1", "*");
     period3->next = period4;
     alert2->periods = period3;
     addAlert(alert2);
-
+    freeAlert(alert2);
+    
     struct Alert* alert = getAlerts();
-    CuAssertIntEquals(tc, alert->id, 1);
-    CuAssertIntEquals(tc, alert->next->id, 2);
-    CuAssertTrue(tc, alert->next->next == NULL);
-
+    assert_int_equal(alert->id, 1);
+    assert_int_equal(alert->next->id, 2);
+    assert_true(alert->next->next == NULL);
+    freeAlert(alert);
+    
  	struct NameValuePair param1 = {"id", "1", NULL};
  	struct NameValuePair param2 = {"action", "delete", &param1};
     struct Request req = {"GET", "/alert", &param2, NULL};
-
-    int tmpFd = makeTmpFile();
-    processAlertRequest(tmpFd, &req, FALSE);
-
-	char* result = readTmpFile();
-    CuAssertStrEquals(tc,
-		"HTTP/1.0 403 Forbidden" HTTP_EOL
-        "Server: BitMeterOS " VERSION " Web Server" HTTP_EOL
-        "Date: Sun, 08 Nov 2009 10:00:00 +0000" HTTP_EOL
-        "Connection: Close" HTTP_EOL HTTP_EOL
-    , result);
-
+                                                    
+	expect_string(_writeHeadersForbidden, request, "alert delete");
+    processAlertRequest(0, &req, FALSE);
+    
     alert = getAlerts();
-    CuAssertIntEquals(tc, alert->id, 1);
-    CuAssertIntEquals(tc, alert->next->id, 2);
-    CuAssertTrue(tc, alert->next->next == NULL);
-
+    assert_int_equal(alert->id, 1);
+    assert_int_equal(alert->next->id, 2);
+    assert_true(alert->next->next == NULL);
+    freeAlert(alert);
+    
+    freeStmtList();
 }
 
-static void checkAlertUpdateMissingArg(CuTest *tc, struct NameValuePair param){
+static void checkAlertUpdateMissingArg(struct NameValuePair param){
 	struct NameValuePair paramAction = {"action", "update", &param};
 	struct Request req = {"GET", "/alert", &paramAction, NULL};
-
-	int tmpFd = makeTmpFile();
-    processAlertRequest(tmpFd, &req, TRUE);
-
-    char* result = readTmpFile();
-
-    CuAssertStrEquals(tc,
-		"HTTP/1.0 500 Bad/missing parameter" HTTP_EOL
-        "Server: BitMeterOS " VERSION " Web Server" HTTP_EOL
-        "Date: Sun, 08 Nov 2009 10:00:00 +0000" HTTP_EOL
-        "Connection: Close" HTTP_EOL HTTP_EOL
-    , result);
+    expect_string(_writeHeadersServerError, msg, "processAlertUpdate param bad/missing id=%s, name=%s, active=%s, filter=%s, amount=%s, bound=%s, periods=%s");
+    processAlertRequest(0, &req, TRUE);
 }
 
-void testAlertUpdateMissingArgs(CuTest *tc) {
+void testAlertUpdateMissingArgs(void** state) {
  	struct NameValuePair param1 = {"id", "1", NULL};
  	struct NameValuePair param2 = {"name", "alert1", &param1};
  	struct NameValuePair param3 = {"active", "1", &param2};
- 	struct NameValuePair param4 = {"direction", "1", &param3};
+ 	struct NameValuePair param4 = {"filter", "1", &param3};
  	struct NameValuePair param5 = {"amount", "100", &param4};
  	struct NameValuePair param6 = {"bound", "2010,5,26,4,15", &param5};
  	struct NameValuePair param7 = {"periods", "2010,5,26,4,15", &param6};
-
+    
  // Missing 'id' parameter
   	param2.next = NULL;
-    checkAlertUpdateMissingArg(tc, param7);
+    checkAlertUpdateMissingArg(param7);
 	param2.next = &param1;
-
+    
  // Missing 'name' param
  	param3.next = &param1;
- 	checkAlertUpdateMissingArg(tc, param7);
+ 	checkAlertUpdateMissingArg(param7);
  	param3.next = &param2;
-
+    
  // Missing 'active' param
  	param4.next = &param2;
- 	checkAlertUpdateMissingArg(tc, param7);
+ 	checkAlertUpdateMissingArg(param7);
  	param4.next = &param3;
-
+    
  // Missing 'direction' param
  	param5.next = &param3;
- 	checkAlertUpdateMissingArg(tc, param7);
+ 	checkAlertUpdateMissingArg(param7);
  	param5.next = &param4;
-
+    
  // Missing 'amount' param
  	param6.next = &param4;
- 	checkAlertUpdateMissingArg(tc, param7);
+ 	checkAlertUpdateMissingArg(param7);
  	param6.next = &param5;
-
+    
  // Missing 'bound' param
  	param7.next = &param5;
- 	checkAlertUpdateMissingArg(tc, param7);
+ 	checkAlertUpdateMissingArg(param7);
  	param7.next = &param6;
-
+    
  // Missing 'periods' param
- 	checkAlertUpdateMissingArg(tc, param6);
+ 	checkAlertUpdateMissingArg(param6);
 }
 
-void testAlertUpdateOk(CuTest *tc) {
-	emptyDb();
+void testAlertUpdateOk(void** state) {
 	struct Alert* alert1 = allocAlert();
-    alert1->active    = 1;
-    alert1->direction = 1;
-    alert1->amount    = 100000000000;
-    alert1->bound     = makeDateCriteria("2010", "5", "26", "4", "15");
+    alert1->active = 1;
+    alert1->filter = 1;
+    alert1->amount = 100000000000;
+    alert1->bound  = makeDateCriteria("2010", "5", "26", "4", "15");
     setAlertName(alert1, "alert1");
-
+    
     struct DateCriteria* period1 = makeDateCriteria("*", "*", "*", "5,6", "0-6");
     struct DateCriteria* period2 = makeDateCriteria("*", "*", "*", "0-4", "6-12");
     period1->next = period2;
     alert1->periods = period1;
 	addAlert(alert1);
-
+	freeAlert(alert1);
+    
 	struct Alert* alert2 = allocAlert();
-    alert2->active    = 0;
-    alert2->direction = 2;
-    alert2->amount    = 200000000000;
-    alert2->bound     = makeDateCriteria("2010", "5", "26", "4", "15");
+    alert2->active = 0;
+    alert2->filter = 2;
+    alert2->amount = 200000000000;
+    alert2->bound  = makeDateCriteria("2010", "5", "26", "4", "15");
     setAlertName(alert2, "alert2");
-
+    
     struct DateCriteria* period3 = makeDateCriteria("*", "*", "*", "2,8", "5");
     struct DateCriteria* period4 = makeDateCriteria("*", "*", "*", "1", "*");
     period3->next = period4;
     alert2->periods = period3;
     addAlert(alert2);
-
+    freeAlert(alert2);
+    
     struct Alert* alert = getAlerts();
-    CuAssertIntEquals(tc, alert->id, 1);
-    CuAssertIntEquals(tc, alert->next->id, 2);
-    CuAssertTrue(tc, alert->next->next == NULL);
-
+    assert_int_equal(alert->id, 1);
+    assert_int_equal(alert->next->id, 2);
+    assert_true(alert->next->next == NULL);
+    freeAlert(alert);
+    
  	struct NameValuePair param1 = {"id", "1", NULL};
  	struct NameValuePair param2 = {"name", "newname", &param1};
  	struct NameValuePair param3 = {"active", "0", &param2};
- 	struct NameValuePair param4 = {"direction", "2", &param3};
+ 	struct NameValuePair param4 = {"filter", "2", &param3};
  	struct NameValuePair param5 = {"amount", "200", &param4};
  	struct NameValuePair param6 = {"bound", "['2009','4','25','3','14']", &param5};
  	struct NameValuePair param7 = {"periods", "[['2011','6','27','5','16']]", &param6};
  	struct NameValuePair param8 = {"action", "update", &param7};
-
+    
     struct Request req = {"GET", "/alert", &param8, NULL};
+    
+    expect_string(_writeHeadersOk, contentType, "application/json");
+    expect_value(_writeHeadersOk, endHeaders, TRUE);
 
-    int tmpFd = makeTmpFile();
-    processAlertRequest(tmpFd, &req, TRUE);
+    expect_string(_writeText, txt, "{}");
 
-    char* result = readTmpFile();
-
-    CuAssertStrEquals(tc,
-		"HTTP/1.0 200 OK" HTTP_EOL
-		"Content-Type: application/json" HTTP_EOL
-        "Server: BitMeterOS " VERSION " Web Server" HTTP_EOL
-        "Date: Sun, 08 Nov 2009 10:00:00 +0000" HTTP_EOL
-        "Connection: Close" HTTP_EOL HTTP_EOL
-        "{}"
-    , result);
-
+    processAlertRequest(0, &req, TRUE);
+    
     alert = getAlerts();
-    CuAssertIntEquals(tc, 2, alert->id);
-
+    assert_int_equal(2, alert->id);
+    
+    struct Alert* firstAlert = alert;
+    
 	alert = alert->next;
-    CuAssertIntEquals(tc, 1, alert->id);
-    CuAssertStrEquals(tc, "newname", alert->name);
-    CuAssertIntEquals(tc, 0, alert->active);
-    CuAssertIntEquals(tc, 2, alert->direction);
-    CuAssertIntEquals(tc, 200, alert->amount);
-
+    assert_int_equal(1, alert->id);
+    assert_string_equal("newname", alert->name);
+    assert_int_equal(0, alert->active);
+    assert_int_equal(2, alert->filter);
+    assert_int_equal(200, alert->amount);
+    
     struct DateCriteria* bound = alert->bound;
-    checkDateCriteriaPart(tc, bound->year,    FALSE, 2009, 2009, FALSE);
-	checkDateCriteriaPart(tc, bound->month,   FALSE, 4, 4, FALSE);
-	checkDateCriteriaPart(tc, bound->day,     FALSE, 25, 25, FALSE);
-	checkDateCriteriaPart(tc, bound->weekday, FALSE, 3, 3, FALSE);
-	checkDateCriteriaPart(tc, bound->hour,    FALSE, 14, 14, FALSE);
-
+    checkDateCriteriaPart(bound->year,    FALSE, 2009, 2009, FALSE);
+	checkDateCriteriaPart(bound->month,   FALSE, 4, 4, FALSE);
+	checkDateCriteriaPart(bound->day,     FALSE, 25, 25, FALSE);
+	checkDateCriteriaPart(bound->weekday, FALSE, 3, 3, FALSE);
+	checkDateCriteriaPart(bound->hour,    FALSE, 14, 14, FALSE);
+    
 	struct DateCriteria* period = alert->periods;
-    checkDateCriteriaPart(tc, period->year,    FALSE, 2011, 2011, FALSE);
-	checkDateCriteriaPart(tc, period->month,   FALSE, 6, 6, FALSE);
-	checkDateCriteriaPart(tc, period->day,     FALSE, 27, 27, FALSE);
-	checkDateCriteriaPart(tc, period->weekday, FALSE, 5, 5, FALSE);
-	checkDateCriteriaPart(tc, period->hour,    FALSE, 16, 16, FALSE);
-
-	CuAssertTrue(tc, period->next == NULL);
+    checkDateCriteriaPart(period->year,    FALSE, 2011, 2011, FALSE);
+	checkDateCriteriaPart(period->month,   FALSE, 6, 6, FALSE);
+	checkDateCriteriaPart(period->day,     FALSE, 27, 27, FALSE);
+	checkDateCriteriaPart(period->weekday, FALSE, 5, 5, FALSE);
+	checkDateCriteriaPart(period->hour,    FALSE, 16, 16, FALSE);
+    
+	assert_true(period->next == NULL);
+    freeAlert(firstAlert);
+	
+	freeStmtList();
 }
 
-void testAlertUpdateForbidden(CuTest *tc) {
-	emptyDb();
+void testAlertUpdateForbidden(void** state) {
 	struct Alert* alert1 = allocAlert();
-    alert1->active    = 1;
-    alert1->direction = 1;
-    alert1->amount    = 100000000000;
-    alert1->bound     = makeDateCriteria("2010", "5", "26", "4", "15");
+    alert1->active = 1;
+    alert1->filter = 1;
+    alert1->amount = 100000000000;
+    alert1->bound  = makeDateCriteria("2010", "5", "26", "4", "15");
     setAlertName(alert1, "alert1");
-
+    
     struct DateCriteria* period1 = makeDateCriteria("*", "*", "*", "5,6", "0-6");
     struct DateCriteria* period2 = makeDateCriteria("*", "*", "*", "0-4", "6-12");
     period1->next = period2;
     alert1->periods = period1;
 	addAlert(alert1);
-
+    freeAlert(alert1);
+    
 	struct Alert* alert2 = allocAlert();
-    alert2->active    = 0;
-    alert2->direction = 2;
-    alert2->amount    = 200000000000;
-    alert2->bound     = makeDateCriteria("2010", "5", "26", "4", "15");
+    alert2->active = 0;
+    alert2->filter = 2;
+    alert2->amount = 200000000000;
+    alert2->bound  = makeDateCriteria("2010", "5", "26", "4", "15");
     setAlertName(alert2, "alert2");
-
+    
     struct DateCriteria* period3 = makeDateCriteria("*", "*", "*", "2,8", "5");
     struct DateCriteria* period4 = makeDateCriteria("*", "*", "*", "1", "*");
     period3->next = period4;
     alert2->periods = period3;
     addAlert(alert2);
-
+    freeAlert(alert2);
+    
     struct Alert* alert = getAlerts();
-    CuAssertIntEquals(tc, alert->id, 1);
-    CuAssertIntEquals(tc, alert->next->id, 2);
-    CuAssertTrue(tc, alert->next->next == NULL);
-
+    assert_int_equal(alert->id, 1);
+    assert_int_equal(alert->next->id, 2);
+    assert_true(alert->next->next == NULL);
+    freeAlert(alert);
+    
  	struct NameValuePair param1 = {"id", "1", NULL};
  	struct NameValuePair param2 = {"name", "newname", &param1};
  	struct NameValuePair param3 = {"active", "0", &param2};
- 	struct NameValuePair param4 = {"direction", "2", &param3};
+ 	struct NameValuePair param4 = {"filter", "2", &param3};
  	struct NameValuePair param5 = {"amount", "200", &param4};
  	struct NameValuePair param6 = {"bound", "['2009','4','25','3','14']", &param5};
  	struct NameValuePair param7 = {"periods", "[['2011','6','27','5','16']]", &param6};
  	struct NameValuePair param8 = {"action", "update", &param7};
-
+    
     struct Request req = {"GET", "/alert", &param8, NULL};
-
-    int tmpFd = makeTmpFile();
-    processAlertRequest(tmpFd, &req, FALSE);
-
-    char* result = readTmpFile();
-
-    CuAssertStrEquals(tc,
-		"HTTP/1.0 403 Forbidden" HTTP_EOL
-        "Server: BitMeterOS " VERSION " Web Server" HTTP_EOL
-        "Date: Sun, 08 Nov 2009 10:00:00 +0000" HTTP_EOL
-        "Connection: Close" HTTP_EOL HTTP_EOL
-    , result);
-
+    
+    expect_string(_writeHeadersForbidden, request, "alert update");
+    processAlertRequest(0, &req, FALSE);
+    
     alert = getAlerts();
-    CuAssertIntEquals(tc, alert->id, 1);
-    CuAssertIntEquals(tc, alert->next->id, 2);
-    CuAssertTrue(tc, alert->next->next == NULL);
+    assert_int_equal(alert->id, 1);
+    assert_int_equal(alert->next->id, 2);
+    assert_true(alert->next->next == NULL);    
+    freeAlert(alert);
+    
+    freeStmtList();
 }
 
-void testProcessAlertStatus(CuTest *tc) {
-	emptyDb();
-
+void testProcessAlertStatus(void** state) {
 	struct Alert* alert1 = allocAlert();
-    alert1->active    = 1;
-    alert1->direction = 1;
-    alert1->amount    = 1000000;
-    alert1->bound     = makeDateCriteria("2009", "1", "1", "4", "1");
+    alert1->active = 1;
+    alert1->filter = 1;
+    alert1->amount = 1000000;
+    alert1->bound  = makeDateCriteria("2009", "1", "1", "4", "1");
     setAlertName(alert1, "alert1");
-
+    
     struct DateCriteria* period = makeDateCriteria("*", "*", "*", "*", "*");
     alert1->periods = period;
-
+    
 	addAlert(alert1);
-
+    freeAlert(alert1);
+    
  	struct NameValuePair param = {"action", "status", NULL};
-
+    
     struct Request req = {"GET", "/alert", &param, NULL};
-	addDbRow(makeTs("2009-11-01 00:00:00"), 3600, NULL, 200000, 300000, NULL);
+	addDbRow(makeTs("2009-11-01 00:00:00"), 3600, 200000, 1);
+    
+    expect_string(_writeHeadersOk, contentType, "application/json");
+    expect_value(_writeHeadersOk, endHeaders, TRUE);
 
-    int tmpFd = makeTmpFile();
-    processAlertStatus(tmpFd, &req, FALSE);
+    expect_string(_writeText, txt, "[");
+    expect_string(_writeText, txt, "{");
+    expect_string(_writeNumValueToJson, key, "id");
+    expect_value(_writeNumValueToJson, value, 1);
+    expect_string(_writeText, txt, ",");
+    expect_string(_writeTextValueToJson, key, "name");
+    expect_string(_writeTextValueToJson, value, "alert1");
+    expect_string(_writeText, txt, ",");
+    expect_string(_writeNumValueToJson, key, "current");
+    expect_value(_writeNumValueToJson, value, 200000);
+    expect_string(_writeText, txt, ",");
+    expect_string(_writeNumValueToJson, key, "limit");
+    expect_value(_writeNumValueToJson, value, 1000000);
+    expect_string(_writeText, txt, "}");
 
-    char* result = readTmpFile();
+    expect_string(_writeText, txt, "]");
 
-    CuAssertStrEquals(tc,
-		"HTTP/1.0 200 OK" HTTP_EOL
-		"Content-Type: application/json" HTTP_EOL
-        "Server: BitMeterOS " VERSION " Web Server" HTTP_EOL
-        "Date: Sun, 08 Nov 2009 10:00:00 +0000" HTTP_EOL
-        "Connection: Close" HTTP_EOL HTTP_EOL
-        "[{\"id\" : 1,\"name\" : \"alert1\",\"current\" : 200000,\"limit\" : 1000000}]"
-    , result);
-
+    processAlertStatus(0, &req, FALSE);
+    
+    freeStmtList();
 }
 
-CuSuite* handleAlertGetSuite() {
-    CuSuite* suite = CuSuiteNew();
-
-    SUITE_ADD_TEST(suite, testAlertNoAction);
-    SUITE_ADD_TEST(suite, testAlertListNone);
-    SUITE_ADD_TEST(suite, testAlertList);
-    SUITE_ADD_TEST(suite, testAlertDeleteOk);
-    SUITE_ADD_TEST(suite, testAlertDeleteForbidden);
-    SUITE_ADD_TEST(suite, testAlertUpdateMissingArgs);
-    SUITE_ADD_TEST(suite, testAlertUpdateOk);
-    SUITE_ADD_TEST(suite, testAlertUpdateForbidden);
-    SUITE_ADD_TEST(suite, testProcessAlertStatus);
-
-    return suite;
-}

@@ -1,172 +1,164 @@
-/*
- * BitMeterOS
- * http://codebox.org.uk/bitmeterOS
- *
- * Copyright (c) 2011 Rob Dawson
- *
- * Licensed under the GNU General Public License
- * http://www.gnu.org/licenses/gpl.txt
- *
- * This file is part of BitMeterOS.
- *
- * BitMeterOS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * BitMeterOS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <test.h> 
+#include <stdarg.h> 
+#include <stddef.h> 
+#include <setjmp.h> 
+#include <cmockery.h> 
 #include "common.h"
-#include "CuTest.h"
-#include "test.h"
 
-static void checkPartToText(CuTest *tc, char* txt){
-    CuAssertStrEquals(tc,txt, dateCriteriaPartToText(makeDateCriteriaPart(txt)));
+static void checkPartToText(char* txt){
+	struct DateCriteriaPart* part = makeDateCriteriaPart(txt);
+	char* result = dateCriteriaPartToText(part);
+    assert_string_equal(txt, result);
+    free(result);
+    freeDateCriteriaPart(part);
 }
 
-void testAllocAlert(CuTest *tc){
+void testAllocAlert(void **state){
     struct Alert* alert = allocAlert();
-    CuAssertTrue(tc, NULL == alert->name);
-    CuAssertTrue(tc, NULL == alert->bound);
-    CuAssertTrue(tc, NULL == alert->periods);
-    CuAssertTrue(tc, NULL == alert->next);
-    CuAssertIntEquals(tc,0, alert->id);
-    CuAssertIntEquals(tc,0, alert->active);
-    CuAssertIntEquals(tc,0, alert->direction);
-    CuAssertIntEquals(tc,0, alert->amount);
+    assert_true(NULL == alert->name);
+    assert_true(NULL == alert->bound);
+    assert_true(NULL == alert->periods);
+    assert_true(NULL == alert->next);
+    assert_int_equal(0, alert->id);
+    assert_int_equal(0, alert->active);
+    assert_int_equal(0, alert->filter);
+    assert_int_equal(0, alert->amount);
+    
+    freeAlert(alert);
 }
 
-void testSetAlertName(CuTest *tc){     
+void testSetAlertName(void **state){     
 	struct Alert* alert = allocAlert();   
     setAlertName(alert, "test");
-    CuAssertStrEquals(tc,"test", alert->name);
+    assert_string_equal("test", alert->name);
     setAlertName(alert, "  test2 ");
-    CuAssertStrEquals(tc,"test2", alert->name);
+    assert_string_equal("test2", alert->name);
     setAlertName(alert, NULL);
-    CuAssertTrue(tc, NULL == alert->name);
+    assert_true(NULL == alert->name);
+    
+    freeAlert(alert);
 }
 
-void testAppendAlert(CuTest *tc){    
+void testAppendAlert(void **state){    
     struct Alert* alertBase = NULL;
     struct Alert* alert1 = allocAlert();
     alert1->id = 1;
     appendAlert(&alertBase, alert1);
-    CuAssertIntEquals(tc,1, alertBase->id);
+    assert_int_equal(1, alertBase->id);
     
     struct Alert* alert2 = allocAlert();
     alert2->id = 2;
     appendAlert(&alertBase, alert2);
-    CuAssertIntEquals(tc,1, alertBase->id);
-    CuAssertIntEquals(tc,2, alertBase->next->id);
+    assert_int_equal(1, alertBase->id);
+    assert_int_equal(2, alertBase->next->id);
     
     struct Alert* alert3 = allocAlert();
     alert3->id = 3;
     appendAlert(&alert2, alert3);
-    CuAssertIntEquals(tc,1, alertBase->id);
-    CuAssertIntEquals(tc,2, alertBase->next->id);
-    CuAssertIntEquals(tc,3, alertBase->next->next->id);
+    assert_int_equal(1, alertBase->id);
+    assert_int_equal(2, alertBase->next->id);
+    assert_int_equal(3, alertBase->next->next->id);
+    
+    freeAlert(alert1);
 }
     
-void testMakeDateCriteriaPart(CuTest *tc){    
-    struct DateCriteriaPart* part;
-    CuAssertTrue(tc, NULL == makeDateCriteriaPart("*"));
-    CuAssertTrue(tc, NULL == makeDateCriteriaPart("x"));
-    checkDateCriteriaPart(tc,makeDateCriteriaPart("12"), 0, 12, 12, 0);
-    checkDateCriteriaPart(tc,makeDateCriteriaPart("-12"), 1, 12, 0, 0);
-    CuAssertTrue(tc, NULL == makeDateCriteriaPart("-"));
-    CuAssertTrue(tc, NULL == makeDateCriteriaPart("-x"));
-    CuAssertTrue(tc, NULL == makeDateCriteriaPart("1-"));
-    CuAssertTrue(tc, NULL == makeDateCriteriaPart("x-"));
-    checkDateCriteriaPart(tc,makeDateCriteriaPart("11-12"), 0, 11, 12, 0);
-    checkDateCriteriaPart(tc,makeDateCriteriaPart("12-12"), 0, 12, 12, 0);
-    CuAssertTrue(tc, NULL == makeDateCriteriaPart("12-11"));
-    CuAssertTrue(tc, NULL == makeDateCriteriaPart("x-12"));
-    CuAssertTrue(tc, NULL == makeDateCriteriaPart("11-x"));
     
-    CuAssertTrue(tc, NULL == makeDateCriteriaPart("1,2,x"));
-    CuAssertTrue(tc, NULL == makeDateCriteriaPart("1,2-x,3"));
-    
-    part = makeDateCriteriaPart("1,2-3,3");
-    checkDateCriteriaPart(tc,part, 0, 1, 1, 1);
-    part = part->next;
-    checkDateCriteriaPart(tc,part, 0, 2, 3, 1);
-    part = part->next;
-    checkDateCriteriaPart(tc,part, 0, 3, 3, 0);
-    
-    part = makeDateCriteriaPart("1,2,");
-    checkDateCriteriaPart(tc,part, 0, 1, 1, 1);
-    part = part->next;
-    checkDateCriteriaPart(tc,part, 0, 2, 2, 0);
+static void checkDateCriteriaPartIsNull(char* txt){
+    struct DateCriteriaPart* part = makeDateCriteriaPart(txt);
+    assert_true(NULL == part);
+}    
 
-    part = makeDateCriteriaPart(",1,2");
-    checkDateCriteriaPart(tc,part, 0, 1, 1, 1);
+void checkDateCriteriaPartNotNull(char* txt, int isRelative, int val1, int val2, int next){
+    struct DateCriteriaPart* part = makeDateCriteriaPart(txt);
+	checkDateCriteriaPart(part, isRelative, val1, val2, next);
+    freeDateCriteriaPart(part);
+}    
+
+void testMakeDateCriteriaPart(void **state){    
+    checkDateCriteriaPartIsNull("*");
+    checkDateCriteriaPartIsNull("x");
+
+    checkDateCriteriaPartNotNull("12", 0, 12, 12, 0);
+    checkDateCriteriaPartNotNull("-12", 1, 12, 0, 0);
+    checkDateCriteriaPartIsNull("-");
+    checkDateCriteriaPartIsNull("-x");
+    checkDateCriteriaPartIsNull("1-");
+    checkDateCriteriaPartIsNull("x-");
+    checkDateCriteriaPartNotNull("11-12", 0, 11, 12, 0);
+    checkDateCriteriaPartNotNull("12-12", 0, 12, 12, 0);
+    checkDateCriteriaPartIsNull("12-11");
+    checkDateCriteriaPartIsNull("x-12");
+   	checkDateCriteriaPartIsNull("11-x");
+    
+    checkDateCriteriaPartIsNull("1,2,x");
+    checkDateCriteriaPartIsNull("1,2-x,3");
+    
+    struct DateCriteriaPart* firstPart = makeDateCriteriaPart("1,2-3,3");
+    struct DateCriteriaPart* part = firstPart;
+    checkDateCriteriaPart(part, 0, 1, 1, 1);
     part = part->next;
-    checkDateCriteriaPart(tc,part, 0, 2, 2, 0);
+    checkDateCriteriaPart(part, 0, 2, 3, 1);
+    part = part->next;
+    checkDateCriteriaPart(part, 0, 3, 3, 0);
+	freeDateCriteriaPart(firstPart);
+    
+    firstPart = part = makeDateCriteriaPart("1,2,");
+    checkDateCriteriaPart(part, 0, 1, 1, 1);
+    part = part->next;
+    checkDateCriteriaPart(part, 0, 2, 2, 0);
+	freeDateCriteriaPart(firstPart);
+    
+    firstPart = part = makeDateCriteriaPart(",1,2");
+    checkDateCriteriaPart(part, 0, 1, 1, 1);
+    part = part->next;
+    checkDateCriteriaPart(part, 0, 2, 2, 0);
+    freeDateCriteriaPart(firstPart);
 }
 
-void testDateCriteriaPartToText(CuTest *tc){    
-    checkPartToText(tc,"*");
-    checkPartToText(tc,"1");
-    checkPartToText(tc,"1,4,8");
-    checkPartToText(tc,"-9");
-    checkPartToText(tc,"6-9,2,10-100");
+void testDateCriteriaPartToText(void **state){    
+    checkPartToText("*");
+    checkPartToText("1");
+    checkPartToText("1,4,8");
+    checkPartToText("-9");
+    checkPartToText("6-9,2,10-100");
 }
 
-void testMakeDateCriteria(CuTest *tc){    
+void testMakeDateCriteria(void **state){    
     struct DateCriteria* criteria = makeDateCriteria("*", "0,4-5,11", "1-20", "*", "5");
-    CuAssertTrue(tc, NULL == criteria->year);
+    assert_true(NULL == criteria->year);
     
     struct DateCriteriaPart* monthPart = criteria->month;
-    checkDateCriteriaPart(tc,monthPart, 0, 0, 0, 1);
+    checkDateCriteriaPart(monthPart, 0, 0, 0, 1);
     monthPart = monthPart->next;
-    checkDateCriteriaPart(tc,monthPart, 0, 4, 5, 1);
+    checkDateCriteriaPart(monthPart, 0, 4, 5, 1);
     monthPart = monthPart->next;
-    checkDateCriteriaPart(tc,monthPart, 0, 11, 11, 0);
+    checkDateCriteriaPart(monthPart, 0, 11, 11, 0);
     
-    checkDateCriteriaPart(tc,criteria->day, 0, 1, 20, 0);
+    checkDateCriteriaPart(criteria->day, 0, 1, 20, 0);
     
-    CuAssertTrue(tc, NULL == criteria->weekday);
+    assert_true(NULL == criteria->weekday);
     
-    checkDateCriteriaPart(tc,criteria->hour, 0, 5, 5, 0);
+    checkDateCriteriaPart(criteria->hour, 0, 5, 5, 0);
+    freeDateCriteria(criteria);
 }
 
-void testAppendDateCriteria(CuTest *tc){
+void testAppendDateCriteria(void **state){
     struct DateCriteria* baseCriteria = NULL;
     struct DateCriteria* criteria1 = makeDateCriteria("*", "*", "*", "*", "1");
  
     appendDateCriteria(&baseCriteria, criteria1);
-    CuAssertTrue(tc,baseCriteria == criteria1);
+    assert_true(baseCriteria == criteria1);
  
     struct DateCriteria* criteria2 = makeDateCriteria("*", "*", "*", "*", "2");
     appendDateCriteria(&baseCriteria, criteria2);
-    CuAssertTrue(tc,baseCriteria == criteria1);
-    CuAssertTrue(tc,baseCriteria->next == criteria2);
+    assert_true(baseCriteria == criteria1);
+    assert_true(baseCriteria->next == criteria2);
  
     struct DateCriteria* criteria3 = makeDateCriteria("*", "*", "*", "*", "3");
     appendDateCriteria(&criteria2, criteria3);
-    CuAssertTrue(tc,baseCriteria == criteria1);
-    CuAssertTrue(tc,baseCriteria->next == criteria2);
-    CuAssertTrue(tc,baseCriteria->next->next == criteria3);
+    assert_true(baseCriteria == criteria1);
+    assert_true(baseCriteria->next == criteria2);
+    assert_true(baseCriteria->next->next == criteria3);
+    
+    freeDateCriteria(baseCriteria);
 }    
-
-CuSuite* alertGetSuite() {
-    CuSuite* suite = CuSuiteNew();
-    SUITE_ADD_TEST(suite, testAllocAlert);
-    SUITE_ADD_TEST(suite, testSetAlertName);
-    SUITE_ADD_TEST(suite, testAppendAlert);
-    SUITE_ADD_TEST(suite, testMakeDateCriteriaPart);
-    SUITE_ADD_TEST(suite, testDateCriteriaPartToText);
-    SUITE_ADD_TEST(suite, testMakeDateCriteria);
-    SUITE_ADD_TEST(suite, testAppendDateCriteria);
-    return suite;
-}
