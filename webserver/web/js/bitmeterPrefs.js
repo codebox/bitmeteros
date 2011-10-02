@@ -95,34 +95,37 @@ $(function(){
     $('#prefSummaryInterval').keypress(BITMETER.makeKeyPressHandler(0,8,45,46,'0-9'));
     
  // Populate the Filters table from the list of filter data held in the config object
-    filterList.html('');
-
-	var filterIdArray = BITMETER.model.getFilters().split(',');
+ 	function setFiltersCheckboxes(){
+	    filterList.html('');
 	
-	$.each(config.filters, function(i,o){
-		var filterIsActive = BITMETER.isFilterActive(o.id);
-		var chkBoxId = "prefFilterChk" + o.id;
-		var chkBox = $('<input id="' + chkBoxId + '" name="' + o.id + '" type="checkbox"></input>');
-        var filterLabel = $('<label for="' + chkBoxId + '">' + o.desc + '</label>');
-        
-        function setCheckboxLabelColour(){
-	    	if (chkBox.attr('checked')){
-	    		filterLabel.css('color', BITMETER.model.getColour(o.name));
-	    	} else {
-	    		filterLabel.css('color', 'grey');
-	    	}
-		}
-        chkBox.attr('checked', filterIsActive ? 'checked' : null);
-        chkBox.click(function(){
-        	setCheckboxLabelColour();
-        });
-        
-        filterList.append(chkBox);
-        filterList.append(filterLabel);
-        filterList.append('<br>');
+		var filterIdArray = BITMETER.model.getFilters().split(',');
 		
-		setCheckboxLabelColour();
-	});    
+		$.each(config.filters, function(i,o){
+			var filterIsActive = BITMETER.isFilterActive(o.id);
+			var chkBoxId = "prefFilterChk" + o.id;
+			var chkBox = $('<input id="' + chkBoxId + '" name="' + o.id + '" type="checkbox"></input>');
+	        var filterLabel = $('<label for="' + chkBoxId + '">' + o.desc + '</label>');
+	        
+	        function setCheckboxLabelColour(){
+		    	if (chkBox.attr('checked')){
+		    		filterLabel.css('color', BITMETER.model.getColour(o.name));
+		    	} else {
+		    		filterLabel.css('color', 'grey');
+		    	}
+			}
+	        chkBox.attr('checked', filterIsActive ? 'checked' : null);
+	        chkBox.click(function(){
+	        	setCheckboxLabelColour();
+	        });
+	        
+	        filterList.append(chkBox);
+	        filterList.append(filterLabel);
+	        filterList.append('<br>');
+			
+			setCheckboxLabelColour();
+		});    
+	}
+    setFiltersCheckboxes();
     
     $('#chkShowFilterWarning').attr('checked', BITMETER.model.getShowFilterWarning());
     
@@ -133,7 +136,12 @@ $(function(){
         	filters.push(this.name);
         });
         
-		BITMETER.model.setFilters(filters.join(','));
+        if (filters.length){
+			BITMETER.model.setFilters(filters.join(','));
+		} else {
+			BITMETER.errorDialog.show('Please select at least one filter');
+			setFiltersCheckboxes();
+		}
     });
     
  // Set the correct display units type, and attach click handlers

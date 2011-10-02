@@ -130,36 +130,9 @@ struct NameValuePair* makeRssRequestValues(){
 
     return pair;
 }
-#ifdef _WIN32
- // Timezone not formatted correctly on Windows using '%z' so we have to roll our own
-	static void getRfc822Time(struct tm* time, char* timeTxt){
-		char part1[48];
-		strftime(part1, 47, "%a, %d %b %Y %H:%M:%S", time);
-
-		TIME_ZONE_INFORMATION info;
-		int ret = GetTimeZoneInformation(&info);
-
-		int bias;
-		if (ret == TIME_ZONE_ID_STANDARD || ret == TIME_ZONE_ID_UNKNOWN){
-      		bias = -info.StandardBias;
-   		} else if (ret == TIME_ZONE_ID_DAYLIGHT){
-   			bias = -info.DaylightBias;
-   		} else {
-   			bias = 0;
-   			//logMsg(LOG_ERR, "Unable to retrieve timezone information, rc=%d", ret);
-   		}
-   		int hh = bias / 60;
-		int mm = bias % 60;
-		int plus = hh >= 0;
-
-		sprintf(timeTxt, "%s %c%02d%02d", part1, (plus ? '+' : '-'), abs(hh), mm);
-	}
-#endif
-#ifndef _WIN32
-	static void getRfc822Time(struct tm* time, char* timeTxt){
-		strftime(timeTxt, 47, "%a, %d %b %Y %H:%M:%S %z", time);
-	}
-#endif
+static void getRfc822Time(struct tm* time, char* timeTxt){
+	strftime(timeTxt, 47, "%a, %d %b %Y %H:%M:%S +0000", time);
+}
 
 static char* makeItem(char* title, char* amountDescription, char* alertDescription, struct tm* pubTime,
 		char* guid){
@@ -244,7 +217,8 @@ static char* getAmountDesc(struct Filter* filters, time_t from, time_t to) {
 static void getDailyItems(char** itemsTxt, int rssItemCount, char* rssUrl){
  /* Populate the itemsTxt array with the various XML strings, each string contains an
  	item with information about upload/download volumes for a single day. */
-	struct tm toStruct = getLocalTime(getTime());
+ 	time_t ts = getTime();
+	struct tm toStruct = *(gmtime(&ts));
 
 	toStruct.tm_sec = 0;
 	toStruct.tm_min = 0;
@@ -304,7 +278,8 @@ static void getDailyItems(char** itemsTxt, int rssItemCount, char* rssUrl){
 static void getHourlyItems(char** itemsTxt, int rssItemCount, char* rssUrl){
  /* Populate the itemsTxt array with the various XML strings, each string contains an
  	item with information about upload/download volumes for a single hour. */
-	struct tm toStruct = getLocalTime(getTime());
+ 	time_t ts = getTime();
+	struct tm toStruct = *(gmtime(&ts));
 
 	toStruct.tm_sec = 0;
 	toStruct.tm_min = 0;
@@ -364,7 +339,9 @@ static void getHourlyItems(char** itemsTxt, int rssItemCount, char* rssUrl){
 
 static char* getPubDate(int rssFreq){
  // Build a string containing the correctly formatted date/time of the current publication date for the feed
-	struct tm now = getLocalTime(getTime());
+ 	time_t ts = getTime();
+	struct tm now = *(gmtime(&ts));
+	
 	now.tm_sec = 0;
 	now.tm_min = 0;
 	if (rssFreq == RSS_FREQ_DAILY){

@@ -5,6 +5,9 @@
 #include "common.h"
 #include "sqlite3.h"
 #include "bmdb.h"
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 /*
 Contains the entry-point for the bmdb utility, which performs admin/config operations
@@ -117,13 +120,42 @@ static int doPurge(){
 
 static int doVacuum(){
  // Frees any unused space occupied by the database file
-    printf("Vacuuming database...\n");
+ 	int dbFileSize1 = getDbFileSize();
+    printf("Database is currently %dk in size, vacuuming...", dbFileSize1/1024);
 	int status = executeSql("VACUUM", NULL);
-	printf("Finished.\n");
+	printf("finished.\n");
+	
+	int dbFileSize2 = getDbFileSize();
+	int diff = dbFileSize1 - dbFileSize2;
+
+	if (diff == 0){
+		printf("The database file could not be compressed any further - no space was saved.\n");	
+	} else {
+		printf("Compressed database to %dk, saving ", dbFileSize2/1024);
+		if (diff < 1024) {
+			printf("%d bytes\n", diff);			
+		} else {
+			printf("%dk\n", diff/1024);
+		}
+	}
 
 	return status;
 }
 
+static int getDbFileSize(){
+	char dbPath[MAX_PATH_LEN];
+	getDbPath(dbPath);
+	
+	FILE* dbFile = fopen(dbPath, "r");
+	int fd = fileno(dbFile);
+    struct stat buf;
+    fstat(fd, &buf);
+    int size = buf.st_size;
+    
+    fclose(dbFile);
+    
+    return size;
+}
 static int setAccessLevel(int level, char* successMsg, char* failMsg){
     int currentAccessLevel = getConfigInt(CONFIG_WEB_ALLOW_REMOTE, 0);
     int status;

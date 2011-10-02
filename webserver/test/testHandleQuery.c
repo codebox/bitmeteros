@@ -53,6 +53,7 @@ static void _writeText(SOCKET fd, char* txt){
 
 void setupTestForHandleQuery(void** state){
 	setupTestDb(state);
+	addFilterRow(FILTER, "filter desc", "filter", "expr", NULL);
 	struct HandleQueryCalls calls = {&_writeHeadersServerError, &_writeHeadersOk, &_writeHeader,
 			&_writeEndOfHeaders, &_writeDataToJson, &_writeText};
 	mockHandleQueryCalls = calls;
@@ -225,19 +226,19 @@ void testGroupByDayCsv(void** state) {
     struct Request req = {"GET", "/query", &flParam, NULL};
     
     emptyDb();
-    addDbRow(makeTs("2009-11-01 10:00:00"), 3600,  1, 1);
-    addDbRow(makeTs("2009-11-01 11:00:00"), 3600,  2, 1);
-    addDbRow(makeTs("2009-11-01 12:00:00"), 3600,  4, 1);
-    addDbRow(makeTs("2009-11-02 09:00:00"), 3600,  8, 1);
-    addDbRow(makeTs("2009-11-02 23:00:00"), 3600, 16, 1);
+    addDbRow(makeTs("2009-11-01 10:00:00"), 3600,  1, FILTER);
+    addDbRow(makeTs("2009-11-01 11:00:00"), 3600,  2, FILTER);
+    addDbRow(makeTs("2009-11-01 12:00:00"), 3600,  4, FILTER);
+    addDbRow(makeTs("2009-11-02 09:00:00"), 3600,  8, FILTER);
+    addDbRow(makeTs("2009-11-02 23:00:00"), 3600, 16, FILTER);
     
     expect_string(_writeHeadersOk, contentType, "text/csv");
     expect_value(_writeHeadersOk, endHeaders, FALSE);
     expect_string(_writeHeader, name, "Content-Disposition");
     expect_string(_writeHeader, value, "attachment;filename=bitmeterOsQuery.csv");
 	expect_value(_writeEndOfHeaders, fd, 0);
-    expect_string(_writeText, txt, "2009-11-01 09:00:00,7,1\n");
-    expect_string(_writeText, txt, "2009-11-02 00:00:00,24,1\n");
+    expect_string(_writeText, txt, "2009-11-01 09:00:00,7,filter\n");
+    expect_string(_writeText, txt, "2009-11-02 00:00:00,24,filter\n");
     
     processQueryRequest(0, &req);
     

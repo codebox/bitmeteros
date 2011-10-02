@@ -19,7 +19,8 @@
 Handles '/query' requests received by the web server.
 */
 
-static void writeCsvRow(SOCKET fd, struct Data* row);
+
+static void writeCsvRow(SOCKET fd, struct Data* row, struct Filter* filters);
 
 static struct HandleQueryCalls calls = {&writeHeadersServerError, &writeHeadersOk, &writeHeader,
 	&writeEndOfHeaders, &writeDataToJson, &writeText};
@@ -79,10 +80,13 @@ void processQueryRequest(SOCKET fd, struct Request* req){
 		    
 		    struct Data* thisResult = result;
 		    
+			struct Filter* filters = readFilters();
+
 		    while(thisResult != NULL){
-		    	writeCsvRow(fd, thisResult);	
+		    	writeCsvRow(fd, thisResult, filters);	
 		    	thisResult = thisResult->next;	
 		    }
+		    freeFilters(filters);
 		    
 		} else {
 		 // Send results back as JSON
@@ -96,14 +100,16 @@ void processQueryRequest(SOCKET fd, struct Request* req){
 
 }
 
-static void writeCsvRow(SOCKET fd, struct Data* row){
+static void writeCsvRow(SOCKET fd, struct Data* row, struct Filter* filters){
 	char datePart[11];
 	toDate(datePart, row->ts - row->dr);
 
 	char timePart[9];
 	toTime(timePart, row->ts - row->dr);
 
-	char rowTxt[256];
-	sprintf(rowTxt, "%s %s,%llu,%d\n", datePart, timePart, row->vl, row->fl);	
+	char rowTxt[256]; //TODO long filter names will break this
+	struct Filter* filter = getFilterFromId(filters, row->fl);
+	
+	sprintf(rowTxt, "%s %s,%llu,%s\n", datePart, timePart, row->vl, filter->name);	
 	getCalls().writeText(fd, rowTxt);
 }
