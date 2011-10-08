@@ -27,6 +27,36 @@ void testGetConfigText(void** state){
     freeStmtList();
 }
 
+void testGetConfigPairsWithPrefixOk(void** state){
+    addConfigRow("config.txt.1", "text1");
+    addConfigRow("some.txt",     "text");
+    addConfigRow("config.txt.2", "text2");
+    addConfigRow("config.txt.3", "text3");
+    struct NameValuePair* pair = getConfigPairsWithPrefix("config");
+    struct NameValuePair* firstPair = pair;
+    
+    assert_string_equal("config.txt.1", pair->name);
+    assert_string_equal("text1", pair->value);
+    pair = pair->next;
+    assert_string_equal("config.txt.2", pair->name);
+    assert_string_equal("text2", pair->value);
+    pair = pair->next;
+    assert_string_equal("config.txt.3", pair->name);
+    assert_string_equal("text3", pair->value);
+    pair = pair->next;
+    assert_true(pair == NULL);
+    
+    freeStmtList();
+    freeNameValuePairs(firstPair);
+}
+
+void testGetConfigPairsWithPrefixMissing(void** state){
+    addConfigRow("some.txt", "text");
+    struct NameValuePair* pairs = getConfigPairsWithPrefix("config");
+    assert_true(pairs == NULL);
+    freeStmtList();
+}
+
 void testSetConfigInt(void** state){
     assert_int_equal(-1, getConfigInt("config.int", TRUE));
     setConfigIntValue("config.int", 7);

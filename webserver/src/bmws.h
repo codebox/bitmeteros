@@ -35,17 +35,6 @@ struct HttpResponse{
     char* msg;
 };
 
-struct NameValuePair{
-    char* name;
-    char* value;
-    struct NameValuePair* next;
-};
-long getValueNumForName(char* name, struct NameValuePair* pair, long defaultValue);
-char* getValueForName(char* name, struct NameValuePair* pair, char* defaultValue);
-void freeNameValuePairs(struct NameValuePair* param);
-void appendNameValuePair(struct NameValuePair** earlierPair, struct NameValuePair* newPair);
-struct NameValuePair* makeNameValuePair(char* name, char* value);
-
 struct Request{
 	char* method;
     char* path;

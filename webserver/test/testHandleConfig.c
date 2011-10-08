@@ -51,11 +51,11 @@ void testConfigWithAdmin(void** state) {
     addConfigRow(CONFIG_WEB_SUMMARY_INTERVAL, "2");
     addConfigRow(CONFIG_WEB_HISTORY_INTERVAL, "3");
     addConfigRow(CONFIG_WEB_SERVER_NAME,      "server");
-    addConfigRow(CONFIG_WEB_COLOUR_DL,        "#ff0000");
-    addConfigRow(CONFIG_WEB_COLOUR_UL,        "#00ff00");
     addConfigRow(CONFIG_WEB_RSS_HOST,         "rsshost");
     addConfigRow(CONFIG_WEB_RSS_FREQ,         "1");
     addConfigRow(CONFIG_WEB_RSS_ITEMS,        "10");
+    addConfigRow(CONFIG_WEB_COLOUR ".dl",     "#ff0000");
+    addConfigRow(CONFIG_WEB_COLOUR ".ul",     "#00ff00");
     
     time_t now = makeTs("2009-11-08 10:00:00");
     setTime(now);
@@ -82,10 +82,6 @@ void testConfigWithAdmin(void** state) {
     expect_string(_writeText, txt, "\"summaryIntervalMax\" : 60000");
     expect_string(_writeText, txt, ", ");
     expect_string(_writeText, txt, "\"serverName\" : \"server\"");
-    expect_string(_writeText, txt, ", ");
-	expect_string(_writeText, txt, "\"dlColour\" : \"#ff0000\"");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"ulColour\" : \"#00ff00\"");
     expect_string(_writeText, txt, ", ");
     expect_string(_writeText, txt, "\"allowAdmin\" : 1");
     expect_string(_writeText, txt, ", ");
@@ -136,6 +132,10 @@ void testConfigWithAdmin(void** state) {
     expect_string(_writeText, txt, "\"desc\" : \"Filter 3\"");
     expect_string(_writeText, txt, "}");
     expect_string(_writeText, txt, "]");
+    expect_string(_writeText, txt, ", ");
+    expect_string(_writeText, txt, "\"web.colour.dl\" : \"#ff0000\"");
+    expect_string(_writeText, txt, ", ");
+    expect_string(_writeText, txt, "\"web.colour.ul\" : \"#00ff00\"");
     expect_string(_writeText, txt, " };");
     
     struct Request req = {"GET", "/config", NULL, NULL};
@@ -151,11 +151,12 @@ void testConfigWithoutAdmin(void** state) {
     addConfigRow(CONFIG_WEB_SUMMARY_INTERVAL, "2");
     addConfigRow(CONFIG_WEB_HISTORY_INTERVAL, "3");
     addConfigRow(CONFIG_WEB_SERVER_NAME,      "server");
-    addConfigRow(CONFIG_WEB_COLOUR_DL,        "#ff0000");
-    addConfigRow(CONFIG_WEB_COLOUR_UL,        "#00ff00");
     addConfigRow(CONFIG_WEB_RSS_HOST,         "rsshost");
     addConfigRow(CONFIG_WEB_RSS_FREQ,         "1");
     addConfigRow(CONFIG_WEB_RSS_ITEMS,        "10");
+    addConfigRow(CONFIG_WEB_COLOUR ".dl",     "#ff0000");
+    addConfigRow(CONFIG_WEB_COLOUR ".ul",     "#00ff00");
+
     
     time_t now = makeTs("2009-11-08 10:00:00");
     setTime(now);
@@ -182,10 +183,6 @@ void testConfigWithoutAdmin(void** state) {
     expect_string(_writeText, txt, "\"summaryIntervalMax\" : 60000");
     expect_string(_writeText, txt, ", ");
     expect_string(_writeText, txt, "\"serverName\" : \"server\"");
-    expect_string(_writeText, txt, ", ");
-	expect_string(_writeText, txt, "\"dlColour\" : \"#ff0000\"");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"ulColour\" : \"#00ff00\"");
     expect_string(_writeText, txt, ", ");
     expect_string(_writeText, txt, "\"allowAdmin\" : 0");
     expect_string(_writeText, txt, ", ");
@@ -217,6 +214,10 @@ void testConfigWithoutAdmin(void** state) {
     expect_string(_writeText, txt, "\"desc\" : \"Filter 2\"");
     expect_string(_writeText, txt, "}");
     expect_string(_writeText, txt, "]");
+    expect_string(_writeText, txt, ", ");
+    expect_string(_writeText, txt, "\"web.colour.dl\" : \"#ff0000\"");
+    expect_string(_writeText, txt, ", ");
+    expect_string(_writeText, txt, "\"web.colour.ul\" : \"#00ff00\"");
     expect_string(_writeText, txt, " };");
     
     struct Request req = {"GET", "/config", NULL, NULL};
@@ -288,24 +289,6 @@ void testConfigUpdateRssItems(void** state) {
 	testConfigUpdateOk("web.rss.items", "20");
 	testConfigUpdateErr("web.rss.items", "21");
 	testConfigUpdateErr("web.rss.items", "x");
-	freeStmtList();
-}
-
-void testConfigUpdateDlColour(void** state) {
-	testConfigUpdateOkChanged("web.colour_dl", "012345", "#012345");
-	testConfigUpdateOkChanged("web.colour_dl", "abcdef", "#abcdef");
-	testConfigUpdateErr("web.colour_dl", "00000g");
-	testConfigUpdateErr("web.colour_dl", "12345");
-	testConfigUpdateErr("web.colour_dl", "#123456");
-	freeStmtList();
-}
-
-void testConfigUpdateUlColour(void** state) {
-	testConfigUpdateOkChanged("web.colour_ul", "012345", "#012345");
-	testConfigUpdateOkChanged("web.colour_ul", "abcdef", "#abcdef");
-	testConfigUpdateErr("web.colour_ul", "00000g");
-	testConfigUpdateErr("web.colour_ul", "12345");
-	testConfigUpdateErr("web.colour_ul", "#123456");
 	freeStmtList();
 }
 

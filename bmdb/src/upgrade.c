@@ -267,12 +267,12 @@ static int upgrade4(){
 		return FAIL;
 	}
 
-    status = setConfigTextValue(CONFIG_WEB_COLOUR_DL, "#ff0000");
+    status = setConfigTextValue("web.colour_dl", "#ff0000");
     if (status == FAIL){
 		return FAIL;
 	}
 
-    status = setConfigTextValue(CONFIG_WEB_COLOUR_UL, "#00ff00");
+    status = setConfigTextValue("web.colour_ul", "#00ff00");
     if (status == FAIL){
 		return FAIL;
 	}

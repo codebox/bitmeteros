@@ -47,8 +47,7 @@
 #define CONFIG_WEB_SUMMARY_INTERVAL "web.summary_interval"
 #define CONFIG_WEB_HISTORY_INTERVAL "web.history_interval"
 #define CONFIG_WEB_SERVER_NAME      "web.server_name"
-#define CONFIG_WEB_COLOUR_DL        "web.colour_dl"
-#define CONFIG_WEB_COLOUR_UL        "web.colour_ul"
+#define CONFIG_WEB_COLOUR           "web.colour"
 #define CONFIG_WEB_ALLOW_REMOTE     "web.allow_remote"
 #define CONFIG_WEB_RSS_HOST         "web.rss.host"
 #define CONFIG_WEB_RSS_FREQ         "web.rss.freq"
@@ -143,6 +142,12 @@ struct Adapter {
 	struct Adapter* next;
 };
 
+struct NameValuePair{
+    char* name;
+    char* value;
+    struct NameValuePair* next;
+};
+
 #ifndef _WIN32
 	typedef int SOCKET;
 #endif
@@ -168,6 +173,7 @@ const char* getDbError();
 void closeDb();
 int getConfigInt(const char* key, int quiet);
 char* getConfigText(const char* key, int quiet);
+struct NameValuePair* getConfigPairsWithPrefix(const char* prefix);
 int setConfigTextValue(char* key, char* value);
 int setConfigIntValue(char* key, int value);
 int rmConfigValue(char* key);
@@ -260,4 +266,11 @@ struct TotalCalls {
 	void (*pcap_close)(pcap_t *);
 };
 struct TotalCalls mockTotalCalls;
+// ----
+long getValueNumForName(char* name, struct NameValuePair* pair, long defaultValue);
+char* getValueForName(char* name, struct NameValuePair* pair, char* defaultValue);
+void freeNameValuePairs(struct NameValuePair* param);
+void appendNameValuePair(struct NameValuePair** earlierPair, struct NameValuePair* newPair);
+struct NameValuePair* makeNameValuePair(char* name, char* value);
+
 #endif //#ifndef COMMON_H

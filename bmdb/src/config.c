@@ -9,7 +9,7 @@
 Displays a list of all the configuration values stored in the database.
 */
 
-int doListConfig(int argc, char** argv){
+int doListConfig(FILE* file, int argc, char** argv){
 	int rc;
 	sqlite3_stmt *stmt;
 	prepareSql(&stmt, "SELECT key, value FROM config");
@@ -32,8 +32,9 @@ int doListConfig(int argc, char** argv){
 	}
 }
 
-int doSetConfig(int argc, char** argv){
+int doSetConfig(FILE* file, int argc, char** argv){
     int status;
+
     if (argc == 2){
         status = setConfigTextValue(argv[0], argv[1]);
         if (status == SUCCESS){
@@ -48,7 +49,7 @@ int doSetConfig(int argc, char** argv){
     return status;
 }
 
-int doRmConfig(int argc, char** argv){
+int doRmConfig(FILE* file, int argc, char** argv){
     int status;
     if (argc == 1){
         status = rmConfigValue(argv[0]);

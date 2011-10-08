@@ -179,6 +179,8 @@ void testRmConfigOkValue(void** state);
 void testReadFiltersEmpty(void** state);
 void testReadFiltersOk(void** state);
 void testGetStmtSingleThreaded(void** state);
+void testGetConfigPairsWithPrefixOk(void** state);
+void testGetConfigPairsWithPrefixMissing(void** state);
 
 // handleConfig.c
 void testConfigWithAdmin(void** state);

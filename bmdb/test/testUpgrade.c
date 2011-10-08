@@ -94,11 +94,11 @@ void testUpgradeFrom3To4(void** state){
     assert_string_equal("", configTxt);
     free(configTxt);
     
-    configTxt = getConfigText(CONFIG_WEB_COLOUR_DL, FALSE);
+    configTxt = getConfigText("web.colour_dl", FALSE);
     assert_string_equal("#ff0000", configTxt);
     free(configTxt);
     
-    configTxt = getConfigText(CONFIG_WEB_COLOUR_UL, FALSE);
+    configTxt = getConfigText("web.colour_ul", FALSE);
     assert_string_equal("#00ff00", configTxt);
     free(configTxt);
     

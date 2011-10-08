@@ -10,11 +10,12 @@
 #include "common.h"
 
 #define BUSY_WAIT_INTERVAL 30000
-#define SQL_SELECT_CONFIG  "SELECT value FROM config WHERE key=?"
-#define SQL_INSERT_CONFIG  "INSERT INTO config (key, value) VALUES (?, ?)"
-#define SQL_UPDATE_CONFIG  "UPDATE config SET key=?, value=? WHERE key=?"
-#define SQL_DELETE_CONFIG  "DELETE FROM config WHERE key=?"
-#define SQL_SELECT_FILTERS "SELECT id,desc,name,expr,host FROM filter"
+#define SQL_SELECT_CONFIG   "SELECT value FROM config WHERE key=?"
+#define SQL_SELECT_CONFIGS  "SELECT key,value FROM config WHERE key like ?"
+#define SQL_INSERT_CONFIG   "INSERT INTO config (key, value) VALUES (?, ?)"
+#define SQL_UPDATE_CONFIG   "UPDATE config SET key=?, value=? WHERE key=?"
+#define SQL_DELETE_CONFIG   "DELETE FROM config WHERE key=?"
+#define SQL_SELECT_FILTERS  "SELECT id,desc,name,expr,host FROM filter"
 
 /*
 Contains common database-handling routines.
@@ -374,6 +375,34 @@ char* getConfigText(const char* key, int quiet){
   	finishedStmt(stmt);
 
   	return value;
+}
+
+struct NameValuePair* getConfigPairsWithPrefix(const char* prefix){
+   	assert(dbOpen);
+
+ // Return the specified value from the 'config' table
+  	sqlite3_stmt* stmt = getStmt(SQL_SELECT_CONFIGS);
+  	char prefixWithPercent[strlen(prefix) + 2];
+	sprintf(prefixWithPercent, "%s%%", prefix);
+	
+	sqlite3_bind_text(stmt, 1, prefixWithPercent, -1, SQLITE_TRANSIENT);
+
+	int rc;
+
+	char* value;
+	char* key;
+	struct NameValuePair* pairs = NULL;
+	while ((rc=sqlite3_step(stmt)) == SQLITE_ROW) {
+		key   = sqlite3_column_text(stmt, 0);
+		value = sqlite3_column_text(stmt, 1);
+
+        struct NameValuePair* pair = makeNameValuePair(key, value);
+		appendNameValuePair(&pairs, pair);
+	}
+
+  	finishedStmt(stmt);
+
+  	return pairs;
 }
 
 int setConfigIntValue(char* key, int value){

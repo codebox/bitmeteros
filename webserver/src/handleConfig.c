@@ -48,8 +48,7 @@ static int updateWebServerName(char* value);
 static int updateRssHostName(char* value);
 static int updateRssFreq(char* value);
 static int updateRssItems(char* value);
-static int updateDlColour(char* value);
-static int updateUlColour(char* value);
+static int updateColour(char* name, char* value);
 static int updateMonitorInterval(char* value);
 static int updateHistoryInterval(char* value);
 static int updateSummaryInterval(char* value);
@@ -88,11 +87,8 @@ void processConfigRequest(SOCKET fd, struct Request* req, int allowAdmin){
 	 			} else if (strcmp(CONFIG_WEB_RSS_ITEMS, params->name) == 0){
 	 				status = updateRssItems(params->value);
 
-	 			} else if (strcmp(CONFIG_WEB_COLOUR_DL, params->name) == 0){
-	 				status = updateDlColour(params->value);
-
-	 			} else if (strcmp(CONFIG_WEB_COLOUR_UL, params->name) == 0){
-	 				status = updateUlColour(params->value);
+	 			} else if (strstr(params->name, CONFIG_WEB_COLOUR) == params->name) {
+	 				status = updateColour(params->name, params->value);
 
 	 			} else {
 	 				if (strcmp("_", params->name) == 0){
@@ -163,6 +159,14 @@ static int isColourOk(char* value){
 	}
 	return TRUE;
 }
+static int isFilterNameOk(char* filterName){
+	struct Filter* allFilters = readFilters();
+	struct Filter* filter = getFilterFromName(allFilters, filterName);
+	int filterNameOk = (filter != NULL);
+	freeFilters(allFilters);
+	
+	return filterNameOk;
+}
 static int noDodgyChars(char* value){
 	if ((strchr(value, '<') != NULL) || (strchr(value, '>') != NULL)) {
 		logMsg(LOG_ERR, "Suspicious characters detected in config value %s", value);
@@ -201,24 +205,23 @@ static int updateSummaryInterval(char* value){
 	}
 }
 
-static int updateColour(char* value, char* configName){
+static int updateColour(char* name, char* value){
 	if (isColourOk(value)) {
-		char colTxt[7];
-		sprintf(colTxt, "#%s", value);
-		setConfigTextValue(configName, colTxt);
-		return SUCCESS;
+		char* filterName = name + strlen(CONFIG_WEB_COLOUR) + 1;
+		if (isFilterNameOk(filterName)) {
+			char colTxt[7];
+			sprintf(colTxt, "#%s", value);
+			
+			setConfigTextValue(name, colTxt);
+			return SUCCESS;
+			
+		} else {
+			return FAIL;
+		}
 
 	} else {
 		return FAIL;
 	}
-}
-
-static int updateDlColour(char* value){
-	return updateColour(value, CONFIG_WEB_COLOUR_DL);
-}
-
-static int updateUlColour(char* value){
-	return updateColour(value, CONFIG_WEB_COLOUR_UL);
 }
 
 static int updateRssItems(char* value){
@@ -299,16 +302,6 @@ static void writeConfig(SOCKET fd, int allowAdmin){
     free(val);
 
     getCalls().writeText(fd, ", ");
-    val = getConfigText(CONFIG_WEB_COLOUR_DL, FALSE);
-    writeTxtConfigValue(fd, "dlColour", val);
-    free(val);
-
-    getCalls().writeText(fd, ", ");
-    val = getConfigText(CONFIG_WEB_COLOUR_UL, FALSE);
-    writeTxtConfigValue(fd, "ulColour", val);
-    free(val);
-
-    getCalls().writeText(fd, ", ");
     writeNumConfigValue(fd, "allowAdmin", allowAdmin ? "1" : "0");
 
     getCalls().writeText(fd, ", ");
@@ -334,6 +327,15 @@ static void writeConfig(SOCKET fd, int allowAdmin){
 
     getCalls().writeText(fd, ", ");
     writeFilterList(fd);
+    
+    struct NameValuePair* colourConfig = getConfigPairsWithPrefix(CONFIG_WEB_COLOUR);
+    struct NameValuePair* firstColourConfig = colourConfig;
+    while(colourConfig != NULL){
+    	getCalls().writeText(fd, ", ");
+    	writeTxtConfigValue(fd, colourConfig->name, colourConfig->value);
+    	colourConfig = colourConfig->next;
+    }
+    freeNameValuePairs(firstColourConfig);
 
 	getCalls().writeText(fd, " };");
 }

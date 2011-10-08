@@ -41,6 +41,53 @@ $(function(){
         colourPickerDialogObj.dialog("open");
     }
     
+    function writeColoursIntoModel(){
+    	var colours = {};
+    	var COLOUR_PREFIX = "web.colour.";
+    	
+     // Use any colours that we get in the config object
+    	$.each(config, function(k,v){
+    		if (k.indexOf(COLOUR_PREFIX) === 0){
+    			var filter = k.substring(COLOUR_PREFIX.length);
+    			var colour = v;
+    			BITMETER.model.setColour(filter, colour);
+    		}
+    	});
+    	
+     // Then get colours for any filters that still don't have one
+     	var COLOUR_LIST = ['#ff0000', '#00ff00', '#A60000', '#007f16', '#0000ff', '#000088'];
+     	var coloursInUse = [];
+   		var colour;
+     	BITMETER.forEachFilter(function(f){
+     		if (colour = BITMETER.model.getColour(f.name)){
+     			coloursInUse.push(colour);
+     		}
+     	}, false);
+
+		function getUnusedColour(){
+			var unusedColour = '#000000';
+			$.each(COLOUR_LIST, function(i,colour){
+				if ($.inArray(colour, coloursInUse) == -1){
+					coloursInUse.push(colour);
+					unusedColour = colour;
+					return false;
+				}
+			});
+			return unusedColour;			
+		}
+
+     	BITMETER.forEachFilter(function(f){
+     		if (!BITMETER.model.getColour(f.name)){
+     			BITMETER.model.setColour(f.name, getUnusedColour());
+     		}
+     	}, false);
+
+    	return colours;	
+    }
+	writeColoursIntoModel();
+	
+    var FILTER_NAME = "filtername";
+    var HEX_COL = "hexcol";
     $.each(config.filters, function(i,o){
 	    $('#prefsFilterColours').append('<div class="filterNameContainer">' + o.desc + '</div>');
 	    
@@ -49,8 +96,8 @@ $(function(){
 	    var currentColour = BITMETER.model.getColour(o.name);
 	    filterBox.css('background-color', currentColour);
 	    
-	    var HEX_COL = "hexcol";
-	    filterBox.data(HEX_COL, currentColour)
+	    filterBox.data(HEX_COL, currentColour);
+	    filterBox.data(FILTER_NAME, o.name);
 	    
 	    filterBox.click(function(){
             showColourPicker(o.desc, filterBox.data(HEX_COL), function(value){
@@ -72,9 +119,6 @@ $(function(){
     $('#colourPickerTxtDiv li').click(function(){
         colourPickerObj.setColor('#' + this.id.substr(3));
     });
-    
-    //$('#dlColourPicker').css('background-color', BITMETER.model.getDownloadColour()).data(HEX_COL, BITMETER.model.getDownloadColour());
-    //$('#ulColourPicker').css('background-color', BITMETER.model.getUploadColour()).data(HEX_COL, BITMETER.model.getUploadColour());
     
     $('#rssCount').val(config.rssItems);
     $('#rssCount').keypress(BITMETER.makeKeyPressHandler(0,8,'0-9'));
@@ -165,30 +209,37 @@ $(function(){
     
  // Handlers for the 2 Save... buttons on the Colours tab 
     function setColoursOnModel(){
-        BITMETER.model.setDownloadColour($('#dlColourPicker').data(HEX_COL));
-        BITMETER.model.setUploadColour($('#ulColourPicker').data(HEX_COL));
+    	$("#prefsFilterColours .filterColourBox").each(function(){
+    		var filterName = $(this).data(FILTER_NAME);
+    		var colour     = $(this).data(HEX_COL);
+    		BITMETER.model.setColour(filterName, colour);	
+    	});
     }
     $('#prefsColoursRemote, #prefsColoursLocal').button();
     $('#prefsColoursRemote').click(function(){
         setColoursOnModel();
         $('#prefsSaveColoursStatus').html('Saving colour choices to the server... <img src="css/images/working.gif" /> ');
-        //var dlCol = BITMETER.model.getDownloadColour().substr(1),
-        //    ulCol = BITMETER.model.getUploadColour().substr(1);
-        //$.ajax({
-        //    url : 'config?web.colour_dl=' + dlCol + '&web.colour_ul=' + ulCol, 
-        //    success : function(){
-        //        $('#prefsSaveColoursStatus').html('Colour choices saved.');
-        //        window.setTimeout(function(){
-        //                $('#prefsSaveColoursStatus').html('');
-        //            }, 3000);
-        //    },
-        //    error : function(){
-        //        $('#prefsSaveColoursStatus').html('Failed to save colour choices.');
-        //        window.setTimeout(function(){
-        //                $('#prefsSaveColoursStatus').html('');
-        //            }, 3000);
-        //    }
-        //});
+        var colourParams = [];
+        BITMETER.forEachFilter(function(f){
+			var colour = BITMETER.model.getColour(f.name);
+			colourParams.push('web.colour.' + f.name + '=' + colour.substr(1).toLowerCase());        	
+        });
+
+        $.ajax({
+            url : 'config?' + colourParams.join('&'), 
+            success : function(){
+                $('#prefsSaveColoursStatus').html('Colour choices saved.');
+                window.setTimeout(function(){
+                        $('#prefsSaveColoursStatus').html('');
+                    }, 3000);
+            },
+            error : function(){
+                $('#prefsSaveColoursStatus').html('Failed to save colour choices.');
+                window.setTimeout(function(){
+                        $('#prefsSaveColoursStatus').html('');
+                    }, 3000);
+            }
+        });
     });
     $('#prefsColoursLocal').click(function(){
         setColoursOnModel();
@@ -345,5 +396,6 @@ $(function(){
     $('#prefsHelpLink').click(function(){
             prefsDialog.dialog("open");
         });
+    
 }); 
  

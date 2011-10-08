@@ -9,9 +9,9 @@
 
 int doVersion();
 int convertAddrValues();
-int doListConfig(int argc, char** argv);
-int doSetConfig(int argc, char** argv);
-int doRmConfig(int argc, char** argv);
+int doListConfig(FILE* file, int argc, char** argv);
+int doSetConfig(FILE* file, int argc, char** argv);
+int doRmConfig(FILE* file, int argc, char** argv);
 int doUpgrade(FILE* file, int argc, char** argv);
 int setConfigIntValue(char* key, int value);
 int doWebStop(FILE* file, int argc, char** argv);

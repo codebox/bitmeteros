@@ -12,10 +12,6 @@ BITMETER.model = (function(){
     
  // We use these defaults when there is nothing else in memory or in the cookie
     defaults = {
-    	'colour_dl'  : '#aa0000',
-    	'colour_ul'  : '#00aa00',
-    	'colour_idl' : '#ffaa00',
-    	'colour_iul' : '#00aaff',
         'monitorSpeedInTitle' : 'false',
         'monitorScale'  : 204800,
         'historyMinScale'  : 12288000,
@@ -192,7 +188,7 @@ BITMETER.model = (function(){
     model.setSummaryRefresh = function(summaryRefresh){
         set('summaryRefresh', summaryRefresh, true);
     };
-
+	
     return model;
 }());
 
