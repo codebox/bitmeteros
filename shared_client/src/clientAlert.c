@@ -255,32 +255,6 @@ static int doAddAlert(struct Alert* alert, int alertId){
     return status;
 }
 
-static int getNextId(char* sql){
- /* Helper function, used to generate unique ids for the various table. The SQL will
- 	say something like 'SELECT max(id) FROM mytable' */
-    sqlite3_stmt *stmtNextId = getStmt(sql);
-    int rc;
-    
-    rc = sqlite3_step(stmtNextId);
-    if (rc == SQLITE_ROW){
-     // There was at least 1 row in the specified table, so add 1 to the max value and return it
-        int maxId = sqlite3_column_int(stmtNextId, 0);
-        finishedStmt(stmtNextId);
-        
-        return maxId + 1;
-        
-    } else {
-    	finishedStmt(stmtNextId);
-    	if (rc == SQLITE_DONE) {
-    	 // There were no rows in the table, so return '1' as the first id
-        	return 1;
-	    } else {
-	    	logMsg(LOG_ERR, "stmtNextId failed: %d", rc);
-	        return -1;
-	    }
-	}
-}
-
 struct Alert* getAlerts(){
  // Return a list of all the alerts that are defined in the database
     sqlite3_stmt *stmtSelectAlerts              = getStmt(ALERT_SQL_SELECT_ALL);

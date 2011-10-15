@@ -39,10 +39,14 @@ void setupTestForHandleAlert(void** state);
 void tearDownTestForHandleAlert(void** state);
 void setupForProcessTest(void** state);
 void teardownForProcessTest(void** state);
+void setupTestForTotal(void** state);
+void teardownTestForTotal(void** state);
 void dumpDataTable();
 int tableHasColumn(char* table, char* column);
 
 // filter.c
+void testCopyFilter(void** state);
+void testFilterHasHost(void** state);
 void testAllocFilter(void **state);
 void testAllocFilterWithNulls(void **state);
 void testFreeFilter(void **state);
@@ -73,6 +77,7 @@ void testToTime(void **state);
 void testToDate(void **state);
 void testMakeHexString(void **state);
 void testStrToLong(void **state);
+void testReplace(void** state);
 
 // clientDump.c
 void testClientDumpEmptyDb(void **state);
@@ -292,3 +297,22 @@ void testRssHourlyNoAlerts(void** state);
 void testRssWithAlertOk(void** state);
 void testRssWithAlertExpired(void** state);
 void testRssDailyNoAlerts(void** state);
+
+// total.c
+void testAllocTotal(void **state);
+void testFreeTotals(void **state);
+void testAppendTotals(void **state);
+
+// handleSync.c
+void setupTestForHandleSync(void** state);
+void tearDownTestForHandleSync(void** state);
+void testSyncNoTsParam(void** state);
+void testSyncTsParamOk(void** state);
+
+// clientFilter.c
+void testGetFilter(void** state);
+void testReadFilters(void** state);
+void testFilterExprIsValid(void** state);
+void testAddFilter(void** state);
+void testRemoveFilter(void** state);
+void testReadFiltersForHost(void** state);

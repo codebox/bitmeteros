@@ -8,6 +8,8 @@
 int main(int argc, char* argv[]) { 
 	const UnitTest tests[] = { 
 		unit_test(testAllocFilter),
+		unit_test(testCopyFilter),
+		unit_test(testFilterHasHost),
 		unit_test(testAllocFilterWithNulls),
 		unit_test(testFreeFilter),
 		unit_test(testGetFilterFromId),
@@ -31,6 +33,7 @@ int main(int argc, char* argv[]) {
 		unit_test(testToDate),
 		unit_test(testMakeHexString),
 		unit_test(testStrToLong),
+		unit_test(testReplace),
 		unit_test_setup_teardown(testClientDumpEmptyDb, setupTestDb, tearDownTestDb),
 		unit_test_setup_teardown(testClientDumpOneEntry, setupTestDb, tearDownTestDb),
 		unit_test_setup_teardown(testClientDumpMultipleEntries, setupTestDb, tearDownTestDb),
@@ -194,7 +197,18 @@ int main(int argc, char* argv[]) {
 		unit_test_setup_teardown(testRssHourlyNoAlerts, setupTestDb, tearDownTestDb),
 		unit_test_setup_teardown(testRssWithAlertOk, setupTestDb, tearDownTestDb),
 		unit_test_setup_teardown(testRssWithAlertExpired, setupTestDb, tearDownTestDb),
-		unit_test_setup_teardown(testRssDailyNoAlerts, setupTestDb, tearDownTestDb)
+		unit_test_setup_teardown(testRssDailyNoAlerts, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testAllocTotal, setupTestForTotal, teardownTestForTotal),
+		unit_test_setup_teardown(testFreeTotals, setupTestForTotal, teardownTestForTotal),
+		unit_test_setup_teardown(testFreeTotals, setupTestForTotal, testAppendTotals),
+		unit_test_setup_teardown(testSyncNoTsParam, setupTestForHandleSync, tearDownTestForHandleSync),
+		unit_test_setup_teardown(testSyncTsParamOk, setupTestForHandleSync, tearDownTestForHandleSync),
+		unit_test_setup_teardown(testGetFilter, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testReadFilters, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testAddFilter, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testRemoveFilter, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testFilterExprIsValid, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testReadFiltersForHost, setupTestDb, tearDownTestDb)
 	}; 
 	return run_tests(tests); 
 }

@@ -20,7 +20,7 @@ void testConfigDump(void** state){
 	expect_string(printf_output, msg, INFO_DUMPING_CONFIG EOL); 
 	expect_string(printf_output, msg, "key1=value1" EOL); 
 	expect_string(printf_output, msg, "key2=value2" EOL); 
-    doListConfig(0,0);
+    doListConfig(NULL,0,0);
     freeStmtList();
 }
 
@@ -31,13 +31,13 @@ void testConfigUpdate(void** state){
 	char* args[] = {"key1", "value3"};
 	expect_string(printf_output, msg, "Config value 'key1' set to 'value3'." EOL); 
 	
-	doSetConfig(2, args);
+	doSetConfig(NULL, 2, args);
 
 	expect_string(printf_output, msg, INFO_DUMPING_CONFIG EOL); 
 	expect_string(printf_output, msg, "key1=value3" EOL); 
 	expect_string(printf_output, msg, "key2=value2" EOL); 
 
-    doListConfig(0, 0);
+    doListConfig(NULL, 0, 0);
     freeStmtList();
 }
 
@@ -47,10 +47,10 @@ void testConfigDelete(void** state){
 
 	char* args[] = {"key1"};
 	expect_string(printf_output, msg, "Config value 'key1' was removed." EOL); 
-	doRmConfig(1, args);
+	doRmConfig(NULL,1, args);
 
 	expect_string(printf_output, msg, INFO_DUMPING_CONFIG EOL); 
 	expect_string(printf_output, msg, "key2=value2" EOL); 
-    doListConfig(0, 0);
+    doListConfig(NULL,0, 0);
     freeStmtList();
 }

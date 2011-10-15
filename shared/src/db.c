@@ -497,29 +497,28 @@ void closeDb(){
 	dbOpen = FALSE;
 }
 
-struct Filter* readFilters(){
-	int rc;
-	int id;
-	char* name;
-	char* desc;
-	char* expr;
-	char* host;
-	
-	struct Filter* filters = NULL;
-	sqlite3_stmt* stmtReadFilters = getStmt(SQL_SELECT_FILTERS);
-	
-	while ((rc=sqlite3_step(stmtReadFilters)) == SQLITE_ROW) {
-		id   = sqlite3_column_int(stmtReadFilters,   0);
-		desc = sqlite3_column_text(stmtReadFilters,  1);
-		name = sqlite3_column_text(stmtReadFilters,  2);
-		expr = sqlite3_column_text(stmtReadFilters,  3);
-		host = sqlite3_column_text(stmtReadFilters,  4);
-
-		struct Filter* filter = allocFilter(id, desc, name, expr, host);    
-		
-		appendFilter(&filters, filter);
+int getNextId(char* sql){
+ /* Helper function, used to generate unique ids for the various table. The SQL will
+ 	say something like 'SELECT max(id) FROM mytable' */
+    sqlite3_stmt *stmtNextId = getStmt(sql);
+    int rc;
+    
+    rc = sqlite3_step(stmtNextId);
+    if (rc == SQLITE_ROW){
+     // There was at least 1 row in the specified table, so add 1 to the max value and return it
+        int maxId = sqlite3_column_int(stmtNextId, 0);
+        finishedStmt(stmtNextId);
+        
+        return maxId + 1;
+        
+    } else {
+    	finishedStmt(stmtNextId);
+    	if (rc == SQLITE_DONE) {
+    	 // There were no rows in the table, so return '1' as the first id
+        	return 1;
+	    } else {
+	    	logMsg(LOG_ERR, "stmtNextId failed: %d", rc);
+	        return -1;
+	    }
 	}
-  	sqlite3_reset(stmtReadFilters);
-  	
-	return filters;
 }

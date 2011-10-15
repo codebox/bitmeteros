@@ -20,4 +20,4 @@ int doCapStop(FILE* file, int argc, char** argv);
 int doCapStart(FILE* file, int argc, char** argv);
 int showFilters(FILE* file, int argc, char** argv);
 int rmFilter(FILE* file, int argc, char** argv);
-int addFilter(FILE* file, int argc, char** argv);
+int addNewFilter(FILE* file, int argc, char** argv);

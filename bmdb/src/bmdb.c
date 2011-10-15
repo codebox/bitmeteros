@@ -47,7 +47,7 @@ struct Action actions[] = {
     {"capstart",       "Start the data capture process", &doCapStart},
     {"purge",          "Delete all bandwidth data from the database", &doPurge},
     {"showfilters",    "Lists all packet filters", &showFilters},
-    {"addfilter",      "Adds a new packet filter", &addFilter},
+    {"addfilter",      "Adds a new packet filter", &addNewFilter},
     {"rmfilter",       "Deletes the named packet filter, and all its data", &rmFilter},
     {"help",           "Displays full help text", &doHelp},
     {NULL, NULL, NULL}

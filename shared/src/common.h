@@ -33,6 +33,8 @@
 #define IN_MEMORY_DB ":memory:"
 #define ENV_DB       "BITMETER_DB"
 
+#define FILTER_ROW_PREFIX "filter:"
+
 #define CONFIG_DB_VERSION            "db.version"
 #define CONFIG_LOG_PATH              "cap.logpath"
 #define CONFIG_CAP_LOG_LEVEL         "cap.loglevel"
@@ -178,6 +180,7 @@ int setConfigTextValue(char* key, char* value);
 int setConfigIntValue(char* key, int value);
 int rmConfigValue(char* key);
 int getDbVersion();
+int getNextId(char* sql);
 // ----
 struct DateCriteria* makeDateCriteria(char* yearTxt, char* monthTxt, char* dayTxt, char* weekdayTxt, char* hourTxt);
 int isDateCriteriaMatch(struct DateCriteria* criteria, time_t ts);

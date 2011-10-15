@@ -37,6 +37,10 @@ struct Filter* allocFilter(int id, char* desc, char* name, char* expr, char* hos
 	return filter;
 }
 
+struct Filter* copyFilter(struct Filter* filter){
+	return allocFilter(filter->id, filter->desc, filter->name, filter->expr, filter->host);
+}
+
 void freeFilters(struct Filter* filter){
 	while (filter != NULL) {
 		struct Filter* next = filter->next;
@@ -70,12 +74,32 @@ struct Filter* getFilterFromId(struct Filter* filters, int id) {
 	return NULL;
 }
 
-struct Filter* getFilterFromName(struct Filter* filters, char* name) {
+int filterHasHost(struct Filter* filter, char* host){
+	if (filter->host == NULL) {
+		return host == NULL;	
+	} else if (host == NULL) {
+		return FALSE;
+	} else {
+		return strcmp(filter->host, host) == 0;
+	}
+}
+
+static int filterHasName(struct Filter* filter, char* name){
+	if (filter->name == NULL) {
+		return name == NULL;	
+	} else if (name == NULL) {
+		return FALSE;
+	} else {
+		return strcmp(filter->name, name) == 0;
+	}
+}
+
+struct Filter* getFilterFromName(struct Filter* filters, char* name, char* host) {
 	struct Filter* filter = filters;
 		
 	while (filter != NULL) {
-		if (strcmp(filter->name, name) == 0) {
-			return filter;	
+		if (filterHasName(filter, name) && filterHasHost(filter, host)){
+			return filter;
 		}
 		filter = filter->next;
 	}

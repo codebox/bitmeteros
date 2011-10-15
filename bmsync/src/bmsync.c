@@ -143,7 +143,7 @@ int main(int argc, char **argv){
 
 static time_t getMaxTsForHost(char* alias){
  // Look for rows in the local database for this particular alias, return the ts value of the newest one (or 0)
- 	sqlite3_stmt* stmt = getStmt("SELECT MAX(ts) AS ts FROM data WHERE hs = ?");
+ 	sqlite3_stmt* stmt = getStmt("SELECT MAX(ts) AS ts FROM data2, filter WHERE data2.fl=filter.id AND filter.host = ?");
 	sqlite3_bind_text(stmt, 1, alias, -1, SQLITE_TRANSIENT);
     struct Data* result = runSelect(stmt);
     finishedStmt(stmt);
@@ -179,15 +179,28 @@ static int sendRequest(SOCKET fd, time_t ts, char* host, int port){
     return SUCCESS;
 }
 
-static struct Data* parseRow(char* row){
+static struct Filter* parseFilterRow(char* row, char* host){
+ // Parse a single row from the response into a Filter struct
+	int id;
+	char filterName[SMALL_BUFSIZE];
+	char filterDesc[SMALL_BUFSIZE];
+	char filterExpr[BUFSIZE];
+
+ // Row format is: filter:id,name,desc,expr
+	sscanf(row, FILTER_ROW_PREFIX "%d,%s,%s,%s", &id, filterName, filterDesc, filterExpr);
+
+	return allocFilter(id, filterDesc, filterName, filterExpr, host);
+}
+
+static struct Data* parseDataRow(char* row){
  // Parse a single row from the response into a Data struct
 	char addr[MAX_ADDR_LEN];
+	
 	struct Data* data = allocData();
 
- // Row format is: ts,dr,dl,ul,ad
-	sscanf(row, "%d,%d,%llu,%llu,%s", (int*)&(data->ts), &(data->dr),
-		&(data->dl), &(data->ul), addr);
-	setAddress(data, addr);
+ // Row format is: 	ts,dr,vl,fl
+	sscanf(row, "%d,%d,%llu,%d", (int*)&(data->ts), &(data->dr),
+		&(data->vl), &(data->fl));
 
 	return data;
 }
@@ -227,10 +240,42 @@ static int readLine(SOCKET fd, char* line){
 
 	return FALSE;
 }
+static int getLocalId(struct RemoteFilter* remoteFilter, int filterId){
+	while (remoteFilter != NULL) {
+		if (remoteFilter->remoteId == filterId){
+			return remoteFilter->localId;
+		}
+		remoteFilter = remoteFilter->next;
+	}
+	return 0;
+}
+static int getLocalFilter(struct Filter *remoteFilter){
+	struct Filter* matchingFilter = getFilter(remoteFilter->name, remoteFilter->host);
+	
+	int localFilterId;
+	if (matchingFilter == NULL){
+		localFilterId = addFilter(remoteFilter);
+	} else {
+		localFilterId = matchingFilter->id;
+		freeFilters(matchingFilter);
+	}
+	
+	return localFilterId;
+}
 
-static int parseData(SOCKET fd, char* alias, int* rowCount){
- // Handle the response that is returned from the host
-	int result = SUCCESS;
+static void appendRemoteFilter(struct RemoteFilter** remoteFilters, struct RemoteFilter* newRemoteFilter){
+	if (*remoteFilters == NULL){
+        *remoteFilters = newRemoteFilter;
+    } else {
+        struct RemoteFilter* curr = *remoteFilters;
+        while(curr->next != NULL){
+            curr = curr->next;
+        }
+        curr->next = newRemoteFilter;
+    }	
+}
+
+static int httpHeadersOk(SOCKET fd){
 	char line[MAX_LINE_LEN + 1];
 
  // First read all the HTTP headers
@@ -241,42 +286,100 @@ static int parseData(SOCKET fd, char* alias, int* rowCount){
             sscanf(line, "%*s %s %*s", responseCode);
             if (strcmp("200", responseCode) != 0){
                 statusMsg("Bad HTTP response code: %s", responseCode);
-                result = FAIL;
-                break;
+                return FAIL;
             }
 
 	    } else if (startsWith(line, HEADER_CONTENT_TYPE)) {
          // Check that the content-type is what we expect
             if (strstr(line, SYNC_CONTENT_TYPE) == NULL){
                 statusMsg("Bad content type: %s", line);
-                result = FAIL;
-                break;
+                return FAIL;
             }
 
 	    } else if (startsWith(line, HTTP_EOL)) {
          // Reached the end of the headers
             break;
 	    }
+	}	
+	return SUCCESS;
+}
+static void removeDataForDeletedFiltersFromThisHost(char* host, struct RemoteFilter* remoteFilter){
+	struct Filter* filtersForHost = readFiltersForHost(host);
+	
+	while(remoteFilter != NULL){
+	 /* Take a copy of all the filters that currently exist for this host in the database
+	 	and blank out the name of each one that came through in the data from the current
+	 	sync. We will use these in a moment when deciding which filters can be deleted 
+	 	because they no longer exist on the remote host. */
+		struct Filter* filter = getFilterFromId(filtersForHost, remoteFilter->localId);		
+		free(filter->name);
+		filter->name = NULL;
+		remoteFilter = remoteFilter->next;	
 	}
+	
+	struct Filter* filter = filtersForHost;
+	while (filter != NULL) {
+		if (filter->name == NULL){
+			int result = removeFilter(filter->name, host);
+			if (result == FAIL){
+			 // continue with the others if one fails - we can try again on the next sync
+			 	statusMsg("Failed to delete obsolete remote filter '%s' for host %s\n", filter->name, host);
+			}
+		}		
+		filter = filter->next;	
+	}
+	
+	freeFilters(filtersForHost);
+}
 
+static int parseData(SOCKET fd, char* alias, int* rowCount){
+ // Handle the response that is returned from the host
+	int result = httpHeadersOk(fd);
 	if (result == FAIL){
      // There was a problem with the headers, so stop now
         return FAIL;
 	}
 
+	struct RemoteFilter* remoteFilters = NULL;
+	char line[MAX_LINE_LEN + 1];
+	
+ // Next read the filters
+ 	while(readLine(fd, line)) {
+ 		if (startsWith(line, FILTER_ROW_PREFIX)){
+        	struct Filter* filterFromRow = parseFilterRow(line, alias);
+        	int localFilterId = getLocalFilter(filterFromRow);
+        	
+        	struct RemoteFilter remoteFilter = {filterFromRow->id, localFilterId, NULL};
+        	appendRemoteFilter(&remoteFilters, &remoteFilter);
+        	
+		} else {
+			break;	
+		}
+    }
+
+	removeDataForDeletedFiltersFromThisHost(alias, &remoteFilters);
+
  // Read the data one row at a time
 	struct Data* data;
 	int resultCount = 0, rc;
 
- 	while(readLine(fd, line)) {
-        data = parseRow(line);
+ 	do {
+        data = parseDataRow(line);
         if (data == NULL){
             statusMsg("Malformed data returned from host");
             result = FAIL;
             break;
         }
 
-        setHost(data, alias);
+        int localFilterId = getLocalId(remoteFilters, data->fl);
+        if (localFilterId == 0){
+        	statusMsg("Unknown filter id in host data"); //TODO display id
+        	result = FAIL;
+        	break;
+        } else {
+        	data->fl = localFilterId;
+        }
+        
         rc = insertData(data);
         if (rc == FAIL){
             statusMsg("Unable to insert data into local db");
@@ -285,7 +388,8 @@ static int parseData(SOCKET fd, char* alias, int* rowCount){
         }
         freeData(data);
         resultCount++;
-	}
+	} while(readLine(fd, line));
+	
 	*rowCount = resultCount;
 
 	return result;

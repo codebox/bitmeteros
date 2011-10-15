@@ -21,6 +21,12 @@ struct SyncPrefs{
 	char* errMsg;
 };
 
+struct RemoteFilter{
+	int remoteId;
+	int localId;
+	struct RemoteFilter* next;
+};
+
 int parseSyncArgs(int argc, char **argv, struct SyncPrefs *prefs);
 void doHelp();
 void doVersion();

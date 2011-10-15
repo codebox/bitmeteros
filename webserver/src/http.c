@@ -309,6 +309,12 @@ void writeSyncData(SOCKET fd, struct Data* data){
 	writeText(fd, row);
 }
 
+void writeFilterData(SOCKET fd, struct Filter* filter){
+	char row[BUFSIZE];
+	sprintf(row, FILTER_ROW_PREFIX "%d,%s,%s,%s" HTTP_EOL, filter->id, filter->name, filter->desc, filter->expr);
+	writeText(fd, row);
+}
+
 #ifdef _WIN32
 	HANDLE mutex = NULL;
 	void initMutex(){

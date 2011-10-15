@@ -16,6 +16,30 @@ Contains unit tests for the 'filter' module.
 #define FILTER_HOST "host"
 #define FILTER_IP   "1.2.3.4"
 
+void testCopyFilter(void** state){
+	struct Filter original = {1, "desc", "name", "expr", "host"};	
+	struct Filter* copy = copyFilter(&original);
+	
+	assert_false(&original == copy);
+	assert_string_equal("desc", copy->desc);
+	assert_string_equal("name", copy->name);
+	assert_string_equal("expr", copy->expr);
+	assert_string_equal("host", copy->host);
+	
+	freeFilters(copy);
+	
+	struct Filter empty = {0, NULL, NULL, NULL, NULL};	
+	copy = copyFilter(&empty);
+	
+	assert_false(&empty == copy);
+	assert_true(copy->desc == NULL);
+	assert_true(copy->name == NULL);
+	assert_true(copy->expr == NULL);
+	assert_true(copy->host == NULL);
+	
+	freeFilters(copy);
+}
+
 void testAllocFilter(void **state) { 
 	struct Filter* filter = allocFilter(FILTER_ID, FILTER_DESC, FILTER_NAME, FILTER_EXPR, FILTER_HOST);
 	
@@ -51,6 +75,17 @@ void testFreeFilter(void **state){
 	freeFilters(filter1);
 }
 
+void testFilterHasHost(void** state){
+	struct Filter filterWithHost = {1, "d", "n", "e", "host"};
+	assert_true(filterHasHost(&filterWithHost, "host"));
+	assert_false(filterHasHost(&filterWithHost, "not"));
+	assert_false(filterHasHost(&filterWithHost, NULL));
+	
+	struct Filter filterWithoutHost = {1, "d", "n", "e", NULL};
+	assert_false(filterHasHost(&filterWithoutHost, "host"));
+	assert_true(filterHasHost(&filterWithoutHost, NULL));
+}
+
 void testGetFilterFromId(void **state){
 	struct Filter* filter1 = allocFilter(1, FILTER_DESC, FILTER_NAME, FILTER_EXPR, FILTER_HOST);
 	struct Filter* filter2 = allocFilter(2, FILTER_DESC, FILTER_NAME, FILTER_EXPR, FILTER_HOST);
@@ -77,25 +112,31 @@ void testGetFilterFromId(void **state){
 }
 
 void testGetFilterFromName(void **state){
-	struct Filter* filter1 = allocFilter(FILTER_ID, FILTER_DESC, "A", FILTER_EXPR, FILTER_HOST);
+	struct Filter* filter1 = allocFilter(FILTER_ID, FILTER_DESC, "A", FILTER_EXPR, NULL);
 	struct Filter* filter2 = allocFilter(FILTER_ID, FILTER_DESC, "B", FILTER_EXPR, FILTER_HOST);
-	struct Filter* filter3 = allocFilter(FILTER_ID, FILTER_DESC, "C", FILTER_EXPR, FILTER_HOST);
-	
+	struct Filter* filter3 = allocFilter(FILTER_ID, FILTER_DESC, "C", FILTER_EXPR, NULL);
+
 	filter1->next = filter2;
 	filter2->next = filter3;
 	
 	struct Filter* result;
 	
-	result = getFilterFromName(filter1, "A");
+	result = getFilterFromName(filter1, "A", NULL);
 	assert_int_equal(filter1, result);
-
-	result = getFilterFromName(filter1, "B");
+    
+	result = getFilterFromName(filter1, "A", "host");
+	assert_true(result == NULL);
+    
+	result = getFilterFromName(filter1, "B", FILTER_HOST);
 	assert_int_equal(filter2, result);
-
-	result = getFilterFromName(filter1, "C");
+    
+	result = getFilterFromName(filter1, "B", NULL);
+	assert_true(result == NULL);
+    
+	result = getFilterFromName(filter1, "C", NULL);
 	assert_int_equal(filter3, result);
-
-	result = getFilterFromName(filter1, "X");
+    
+	result = getFilterFromName(filter1, "X", NULL);
 	assert_true(result == NULL);
 	
 	freeFilters(filter1);

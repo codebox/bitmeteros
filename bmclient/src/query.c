@@ -41,7 +41,7 @@ void doQuery(){
 
 	} else {
 		struct Filter* filters = readFilters();
-		struct Filter* filter = getFilterFromName(filters, prefs.filter);
+		struct Filter* filter = getFilterFromName(filters, prefs.filter, NULL);
 		
 		if (filter == NULL){
 			printf("No filter named '%s' could be found.\n", prefs.filter); //TODO put proper msg in #define

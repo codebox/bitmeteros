@@ -161,7 +161,7 @@ static int isColourOk(char* value){
 }
 static int isFilterNameOk(char* filterName){
 	struct Filter* allFilters = readFilters();
-	struct Filter* filter = getFilterFromName(allFilters, filterName);
+	struct Filter* filter = getFilterFromName(allFilters, filterName, NULL);
 	int filterNameOk = (filter != NULL);
 	freeFilters(allFilters);
 	

@@ -42,17 +42,17 @@ EXE_TEST=unittests.exe
 
 INCLUDE_DIRS=-I$(SHARED_SRC) -I$(SHARED_CLIENT_SRC) -I$(CLIENT_SRC) -I$(CAPTURE_SRC) -I$(WEB_SRC) -I$(BMDB_SRC) -I$(SYNC_SRC) -I$(SUP_SRC) -I$(TEST)
 LIBS=C:\windows\system32\sqlite3.dll -lws2_32 -lmswsock -ladvapi32 -lshlwapi -liphlpapi C:\rob\code\winpcap\Lib\Packet.lib C:\WINDOWS\system32\wpcap.dll
-OBJS_BMSYNC=bmsync.o syncHelp.o syncHelpText.o syncOptions.o sql.o common.o data.o db.o log.o platform.o time.o
-OBJS_BMDB=bmdb.o bmdbConfig.o upgrade.o bmdbVersion.o bmdbHelpText.o log.o db.o common.o platform.o data.o admin.o filter.o adapter.o filters.o total.o time.o nameValuePair.o
-OBJS_BMWS=bmwsWin32.o handleConfig.o handleFile.o handleMonitor.o handleQuery.o handleSync.o handleAlert.o handleSummary.o handleExport.o handleRss.o http.o httpRequest.o data.o common.o log.o platform.o dbMultiThreaded.o alert.o clientMonitor.o clientSummary.o clientSync.o clientQuery.o clientDump.o clientAlert.o clientUtil.o time.o filter.o nameValuePair.o
+OBJS_BMSYNC=bmsync.o syncHelp.o syncHelpText.o syncOptions.o sql.o common.o data.o db.o log.o platform.o time.o filter.o nameValuePair.o clientFilter.o
+OBJS_BMDB=bmdb.o bmdbConfig.o upgrade.o bmdbVersion.o bmdbHelpText.o log.o db.o common.o platform.o data.o admin.o filter.o adapter.o filters.o total.o time.o nameValuePair.o clientFilter.o
+OBJS_BMWS=bmwsWin32.o handleConfig.o handleFile.o handleMonitor.o handleQuery.o handleSync.o handleAlert.o handleSummary.o handleExport.o handleRss.o http.o httpRequest.o data.o common.o log.o platform.o dbMultiThreaded.o alert.o clientMonitor.o clientSummary.o clientSync.o clientQuery.o clientDump.o clientAlert.o clientUtil.o time.o filter.o nameValuePair.o 
 OBJS_CAP=sql.o time.o process.o common.o db.o log.o platform.o data.o adapter.o filter.o total.o nameValuePair.o
-OBJS_CLIENT=bmclient.o options.o monitor.o summary.o query.o dump.o help.o helpText.o time.o timeSupport.o common.o db.o log.o platform.o clientDump.o clientMonitor.o clientSummary.o clientQuery.o clientUtil.o data.o filter.o nameValuePair.o
+OBJS_CLIENT=bmclient.o options.o monitor.o summary.o query.o dump.o help.o helpText.o time.o timeSupport.o common.o db.o log.o platform.o clientDump.o clientMonitor.o clientSummary.o clientQuery.o clientUtil.o data.o filter.o nameValuePair.o clientFilter.o
 
 //OBJS_TEST=cmockery.o alltests.o testUtils.o db.o log.o data.o timeSupport.o common.o options.o clientUtil.o testClientOptions.o testConfig.o bmdbConfig.o testUpgrade.o upgrade.o testSyncOptions.o syncOptions.o testProcess.o processTesting.o sql.o time.o testSql.o testCommon.o testTime.o testDb.o testData.o testClientSummary.o clientSummary.o testClientMonitor.o clientMonitor.o testClientDump.o clientDump.o clientAlert.o testClientQuery.o clientQuery.o testClientSync.o clientSync.o testClientUtil.o testHttpRequest.o httpRequest.o testHandleConfig.o handleConfig.o httpTesting.o handleMonitor.o handleSummary.o handleQuery.o handleSync.o handleAlert.o handleExport.o handleFile.o handleRss.o testHandleMonitor.o testHandleQuery.o testHandleSummary.o testHandleFile.o testHandleRss.o testHandleSync.o testHandleAlert.o alert.o testAlert.o testClientAlert.o testNameValuePair.o
-OBJS_TEST=cmockery.o alltests.o filter.o testFilter.o adapter.o testAdapter.o nameValuePair.o total.o db.o log.o testUtils.o data.o timeSupport.o common.o platform.o time.o alert.o testAlert.o testCommon.o clientDump.o testClientDump.o bmclient.o testBmClient.o dump.o testDump.o clientUtil.o testData.o clientAlert.o testClientAlert.o clientMonitor.o testClientMonitor.o clientQuery.o testClientQuery.o clientSummary.o testClientSummary.o clientSync.o testClientSync.o testClientUtil.o bmdbConfig.o testConfig.o testDb.o handleConfig.o testHandleConfig.o testTime.o process.o testProcess.o sql.o monitor.o summary.o query.o help.o options.o http.o handleMonitor.o httpRequest.o handleSummary.o handleQuery.o handleSync.o handleExport.o handleAlert.o handleRss.o handleFile.o bmwsWin32.o helpText.o testSql.o testClientOptions.o testSyncOptions.o syncOptions.o upgrade.o testUpgrade.o testHandleSummary.o testHandleFile.o testHttpRequest.o testHandleQuery.o testHandleMonitor.o testHandleAlert.o testHandleRss.o testNameValuePair.o
+OBJS_TEST=cmockery.o alltests.o filter.o testFilter.o adapter.o testAdapter.o nameValuePair.o total.o db.o log.o testUtils.o data.o timeSupport.o common.o platform.o time.o alert.o testAlert.o testCommon.o clientDump.o testClientDump.o bmclient.o testBmClient.o dump.o testDump.o clientUtil.o testData.o clientAlert.o testClientAlert.o clientMonitor.o testClientMonitor.o clientQuery.o testClientQuery.o clientSummary.o testClientSummary.o clientSync.o testClientSync.o testClientUtil.o bmdbConfig.o testConfig.o testDb.o handleConfig.o testHandleConfig.o testTime.o process.o testProcess.o sql.o monitor.o summary.o query.o help.o options.o http.o handleMonitor.o httpRequest.o handleSummary.o handleQuery.o handleSync.o handleExport.o handleAlert.o handleRss.o handleFile.o bmwsWin32.o helpText.o testSql.o testClientOptions.o testSyncOptions.o syncOptions.o upgrade.o testUpgrade.o testHandleSummary.o testHandleFile.o testHttpRequest.o testHandleQuery.o testHandleMonitor.o testHandleAlert.o testHandleRss.o testNameValuePair.o testTotal.o testHandleSync.o testClientFilter.o clientFilter.o
 
-//CC=gcc -DUNIT_TESTING -DHAVE_DECL_OPTRESET -DSTATS_MODE
-CC=gcc -DSTATS_MODE
+CC=gcc -DUNIT_TESTING -DHAVE_DECL_OPTRESET -DSTATS_MODE
+//CC=gcc -DSTATS_MODE
 
 #### Install or reinstall
 install: all
@@ -144,6 +144,9 @@ testAlert.o: $(SHARED_TEST)\testAlert.c $(SHARED_SRC)\common.h $(TEST)\test.h $(
 testClientSummary.o: $(SHARED_CLIENT_TEST)\testClientSummary.c $(SHARED_SRC)\common.h $(TEST)\test.h $(TEST)\cmockery.h $(SHARED_CLIENT_SRC)\client.h
 	$(CC) -c $(SHARED_CLIENT_TEST)\testClientSummary.c -o testClientSummary.o $(INCLUDE_DIRS)
 
+testClientFilter.o: $(SHARED_CLIENT_TEST)\testClientFilter.c $(SHARED_SRC)\common.h $(TEST)\test.h $(TEST)\cmockery.h $(SHARED_CLIENT_SRC)\client.h
+	$(CC) -c $(SHARED_CLIENT_TEST)\testClientFilter.c -o testClientFilter.o $(INCLUDE_DIRS)
+
 testClientMonitor.o: $(SHARED_CLIENT_TEST)\testClientMonitor.c $(SHARED_SRC)\common.h $(TEST)\test.h $(TEST)\cmockery.h $(SHARED_CLIENT_SRC)\client.h
 	$(CC) -c $(SHARED_CLIENT_TEST)\testClientMonitor.c -o testClientMonitor.o $(INCLUDE_DIRS)
 
@@ -188,6 +191,9 @@ testHandleSync.o: $(WEB_TEST)\testHandleSync.c $(SHARED_SRC)\common.h $(TEST)\te
 
 testHandleAlert.o: $(WEB_TEST)\testHandleAlert.c $(SHARED_SRC)\common.h $(TEST)\test.h $(TEST)\cmockery.h $(SHARED_CLIENT_SRC)\client.h $(WEB_SRC)\bmws.h
 	$(CC) -c $(WEB_TEST)\testHandleAlert.c -o testHandleAlert.o $(INCLUDE_DIRS)
+
+testTotal.o: $(SHARED_TEST)\testTotal.c $(SHARED_SRC)\common.h $(TEST)\test.h $(TEST)\cmockery.h 
+	$(CC) -c $(SHARED_TEST)\testTotal.c -o testTotal.o $(INCLUDE_DIRS)
 
 httpTesting.o: $(WEB_SRC)\http.c $(WEB_SRC)\bmws.h $(SHARED_SRC)\common.h
 	$(CC) -c $(WEB_SRC)\http.c -o httpTesting.o $(INCLUDE_DIRS)
@@ -346,6 +352,9 @@ clientDump.o: $(SHARED_CLIENT_SRC)\clientDump.c $(SHARED_SRC)\common.h $(SHARED_
 
 clientAlert.o: $(SHARED_CLIENT_SRC)\clientAlert.c $(SHARED_SRC)\common.h $(SHARED_CLIENT_SRC)\client.h
 	$(CC) -c $(SHARED_CLIENT_SRC)\clientAlert.c -o clientAlert.o $(INCLUDE_DIRS)
+
+clientFilter.o: $(SHARED_CLIENT_SRC)\clientFilter.c $(SHARED_SRC)\common.h $(SHARED_CLIENT_SRC)\client.h
+	$(CC) -c $(SHARED_CLIENT_SRC)\clientFilter.c -o clientFilter.o $(INCLUDE_DIRS)
 
 clientMonitor.o: $(SHARED_CLIENT_SRC)\clientMonitor.c $(SHARED_SRC)\common.h $(SHARED_CLIENT_SRC)\client.h
 	$(CC) -c $(SHARED_CLIENT_SRC)\clientMonitor.c -o clientMonitor.o $(INCLUDE_DIRS)

@@ -36,7 +36,7 @@ void doMonitor(){
 	struct Filter* filters = readFilters();
 	struct Filter* filter;
 	
-	if ((filter = getFilterFromName(filters, prefs.filter)) == NULL) {
+	if ((filter = getFilterFromName(filters, prefs.filter, NULL)) == NULL) {
 		if (prefs.filter == NULL){
 			printf("No filter name has been specified, use -n <filter name>, or use '-h' to display help.\n");
 		} else {

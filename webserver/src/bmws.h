@@ -82,6 +82,7 @@ void writeTextValueToJson(SOCKET fd, char* key, char* value);
 void writeTextArrayToJson(SOCKET fd, char* key, char** values);
 void writeNumValueToJson(SOCKET fd, char* key, BW_INT value);
 void writeSyncData(SOCKET fd, struct Data* data);
+void writeFilterData(SOCKET fd, struct Filter* filter);
 void writeHeadersOk(SOCKET fd, char* contentType, int endHeaders);
 void writeHeadersNotFound(SOCKET fd, char* file);
 void writeHeadersForbidden(SOCKET fd, char* request);
@@ -142,4 +143,13 @@ struct HandleAlertCalls {
 	void (*writeTextArrayToJson)(SOCKET fd, char* key, char** values);
 };
 struct HandleAlertCalls mockHandleAlertCalls;
+
+struct HandleSyncCalls {
+	void (*writeHeadersServerError)(SOCKET fd, char* msg, ...);
+	void (*writeHeadersOk)(SOCKET fd, char* contentType, int endHeaders);
+	void (*writeFilterData)(SOCKET fd, struct Filter* filter);
+	void (*writeSyncData)(SOCKET fd, struct Data* data);
+};
+struct HandleSyncCalls mockHandleSyncCalls;
+
 #endif

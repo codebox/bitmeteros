@@ -131,3 +131,26 @@ void testStrToLong(void **state){
     assert_true(strToLong(" 123", -1) == 123);
     assert_true(strToLong(NULL, -1) == -1);
 }
+
+static void checkReplace(char* expected, char* src, char* target, char* replacement){
+	char* result = replace(src, target, replacement);
+	if (result != NULL){
+		assert_string_equal(expected, result);
+		free(result);	
+	} else {
+		assert_true(expected == NULL);	
+	}
+}
+void testReplace(void** state){
+	checkReplace(NULL,  NULL,  "a",  "b");
+	
+	checkReplace("abc", "abc", NULL, "x");
+	
+	checkReplace("bc", "abc", "a",  NULL);
+	checkReplace("ac", "abc", "b",  NULL);
+	checkReplace("ab", "abc", "c",  NULL);
+	
+	checkReplace("x",   "abc", "abc",  "x");
+	checkReplace("abc", "abc", "X",  "b");
+	checkReplace("aabbccdd", "abc", "abc",  "aabbccdd");
+}
