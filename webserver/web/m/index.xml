@@ -5,7 +5,6 @@
 	<head>
 		<title>BitMeter OS - Mobile Interface</title>
 		<link type="text/css" href="/m/css/bitmeter_mobile.css" rel="stylesheet" />
-		<script type="text/javascript" src="/m/js/bitmeter_mobile.js"></script>
 	</head>
 	<body>
 		<h1></h1>

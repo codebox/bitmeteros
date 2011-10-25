@@ -10,17 +10,26 @@
 #include <malloc.h>
 #include "common.h"
 
+struct NameValuePair* getPairForName(char* name, struct NameValuePair* pair){
+ 	while(pair != NULL){
+		if (strcmp(pair->name, name) == 0){
+			return pair;
+		}
+		pair = pair->next;
+	}
+	return NULL;
+}
+
 char* getValueForName(char* name, struct NameValuePair* pair, char* defaultValue){
  /* Searches the list of name/value pairs for the value that corresponds to the specified name.
     This returns a pointer to the value in the struct, not a copy, so don't change it if this will
     cause problems later. */
-	while(pair != NULL){
-		if (strcmp(pair->name, name) == 0){
-			return pair->value;
-		}
-		pair = pair->next;
+	struct NameValuePair* pairForName = getPairForName(name, pair);
+	if (pairForName != NULL){
+		return pairForName->value;	
+	} else {
+		return defaultValue;
 	}
-	return defaultValue;
 }
 
 long getValueNumForName(char* name, struct NameValuePair* pair, long defaultValue){
@@ -84,6 +93,22 @@ struct NameValuePair* makeNameValuePair(char* name, char* value){
     pair->next = NULL;
 
     return pair;
+}
+
+void freeNameValuePairs(struct NameValuePair* param){
+ // Free up all the memory used by a NameValuePair struct
+	struct NameValuePair* nextParam;
+	while (param != NULL){
+		nextParam = param->next;
+		if (param->name != NULL){
+			free(param->name);
+		}
+		if (param->value != NULL){
+			free(param->value);
+		}
+		free(param);
+		param = nextParam;
+	}
 }
 
 void appendNameValuePair(struct NameValuePair** earlierPair, struct NameValuePair* newPair){

@@ -399,13 +399,9 @@ static char* getAlertsTxt(time_t now){
 
 		} else {
 		 // This is not the first Alert, so append the new text onto the existing text
-			char* newAlertsTxt = malloc(strlen(alertsText) + strlen(HTML_LINE_BREAK) + alertTextLen + 1);
-			strcpy(newAlertsTxt, alertsText);
-			strcat(newAlertsTxt, HTML_LINE_BREAK);
-			strcat(newAlertsTxt, alertText);
-			free(alertsText);
-
-			alertsText = newAlertsTxt;
+		 	char* prevAlertsText = alertsText;
+			alertsText = strAppend(alertsText, HTML_LINE_BREAK, alertText, NULL);
+			free(prevAlertsText);
 		}
 
 		alert = alert->next;

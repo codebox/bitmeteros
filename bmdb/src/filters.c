@@ -85,7 +85,7 @@ int addNewFilter(FILE* file, int argc, char** argv){
 		char* filterTxt  = argv[2];
 
 	 // Check that the name is not already in use
-	 	if (filterExists(filterName, NULL)){
+	 	if (getFilter(filterName, NULL) != NULL){
 			printf("Error - a filter named '%s' already exists, please pick another name.", filterName);
 			status = FAIL;
 	 	} else {

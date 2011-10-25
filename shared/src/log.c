@@ -104,7 +104,7 @@ static int lastStatusMsgLen = 0;
 void statusMsg(const char* msg, ...){
     int i;
     for(i=0; i<lastStatusMsgLen; i++){
-        printf("\b \b");
+        fprintf(stdout, "\b \b");
     }
 
  // Write out the message, substituting the optargs for any tokens in the text

@@ -1,0 +1,26 @@
+#include "common.h"
+
+1 VERSIONINFO
+FILEVERSION     RES_VERSION
+PRODUCTVERSION  RES_VERSION
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "080904E4"
+    BEGIN
+      VALUE "CompanyName",      COMPANY
+      VALUE "FileDescription",  APP_NAME " Command Line Client"
+      VALUE "FileVersion",      VERSION
+      VALUE "InternalName",     "bmclient"
+      VALUE "LegalCopyright",   RES_COPYRIGHT
+      VALUE "OriginalFilename", "bmclient.exe"
+      VALUE "ProductName",      APP_NAME
+      VALUE "ProductVersion",   VERSION
+    END
+  END
+
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x809, 1252
+  END
+END

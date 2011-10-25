@@ -12,17 +12,6 @@
 /*
 Handles '/summary' requests received by the web server.
 */
-/*
-struct Summary{
-	struct Data* today;
-	struct Data* month;
-	struct Data* year;
-	struct Data* total;
-	time_t tsMin;
-	time_t tsMax;
-	char** hostNames;
-	int    hostCount;
-};*/
 
 static void writeTotal(SOCKET, char*, struct Data*);
 
@@ -109,62 +98,53 @@ static void writeTotal(SOCKET fd, char* totalName, struct Data* data){
 static void formatForMobile(BW_INT amt, char* txt){
 	formatAmount(amt, TRUE, UNITS_ABBREV, txt);
 }
-void processMobileSummaryRequest(SOCKET fd, struct Request* req){
-	struct Summary summary = getSummaryValues(NULL, NULL);
-//TODO
- // Daily amounts
-	//char dlDayTxt[32];
-	//formatForMobile(summary.today->dl, dlDayTxt);
-    //
-	//char ulDayTxt[32];
-	//formatForMobile(summary.today->ul, ulDayTxt);
-    //
-	//char cmDayTxt[32];
-	//formatForMobile(summary.today->dl + summary.today->ul, cmDayTxt);
-    //
- // //Monthly amounts
-	//char dlMonthTxt[32];
-	//formatForMobile(summary.month->dl, dlMonthTxt);
-    //
-	//char ulMonthTxt[32];
-	//formatForMobile(summary.month->ul, ulMonthTxt);
-    //
-	//char cmMonthTxt[32];
-	//formatForMobile(summary.month->dl + summary.month->ul, cmMonthTxt);
-    //
- // //Yearly amounts
-	//char dlYearTxt[32];
-	//formatForMobile(summary.year->dl, dlYearTxt);
-    //
-	//char ulYearTxt[32];
-	//formatForMobile(summary.year->ul, ulYearTxt);
-    //
-	//char cmYearTxt[32];
-	//formatForMobile(summary.year->dl + summary.year->ul, cmYearTxt);
-    //
- // //Total amounts
-	//char dlTotalTxt[32];
-	//formatForMobile(summary.total->dl, dlTotalTxt);
-    //
-	//char ulTotalTxt[32];
-	//formatForMobile(summary.total->ul, ulTotalTxt);
-    //
-	//char cmTotalTxt[32];
-	//formatForMobile(summary.total->dl + summary.total->ul, cmTotalTxt);
-    //
-    //
-	//struct NameValuePair pair1  = {"dlDay", dlDayTxt,   NULL};
-	//struct NameValuePair pair2  = {"ulDay", ulDayTxt,   &pair1};
-	//struct NameValuePair pair3  = {"cmDay", cmDayTxt,   &pair2};
-	//struct NameValuePair pair4  = {"dlMonth", dlMonthTxt, &pair3};
-	//struct NameValuePair pair5  = {"ulMonth", ulMonthTxt, &pair4};
-	//struct NameValuePair pair6  = {"cmMonth", cmMonthTxt, &pair5};
-	//struct NameValuePair pair7  = {"dlYear", dlYearTxt,  &pair6};
-	//struct NameValuePair pair8  = {"ulYear", ulYearTxt,  &pair7};
-	//struct NameValuePair pair9  = {"cmYear", cmYearTxt,  &pair8};
-	//struct NameValuePair pair10 = {"dlTotal", dlTotalTxt, &pair9};
-	//struct NameValuePair pair11 = {"ulTotal", ulTotalTxt, &pair10};
-	//struct NameValuePair pair12 = {"cmTotal", cmTotalTxt, &pair11};
 
-    //processFileRequest(fd, req, &pair12);
+static BW_INT getValueForFilter(int filterId, struct Data* data){
+	BW_INT total = 0;
+	while(data != NULL){
+		if (data->fl == filterId){
+			total += data->vl;	
+		}
+		data = data->next;
+	}
+	return total;
+}
+void processMobileSummaryRequest(SOCKET fd, struct Request* req){
+	struct Summary summary = getSummaryValues();
+	struct Filter* filters = readFilters();
+	struct Filter* filter;
+	
+	char* html = strdup("");
+	char* tmp;
+	
+ 	filter = filters;
+ 	while(filter != NULL){
+ 		BW_INT today = getValueForFilter(filter->id, summary.today);
+ 		char todayTxt[32];
+ 		formatForMobile(today, todayTxt);
+ 		
+ 		BW_INT month = getValueForFilter(filter->id, summary.month);
+ 		char monthTxt[32];
+ 		formatForMobile(month, monthTxt);
+
+ 		BW_INT year  = getValueForFilter(filter->id, summary.year);
+ 		char yearTxt[32];
+ 		formatForMobile(year, yearTxt);
+
+ 		BW_INT total = getValueForFilter(filter->id, summary.total);
+ 		char totalTxt[32];
+ 		formatForMobile(total, totalTxt);
+ 		
+ 		tmp = strAppend(html, "<tr><td class='filter'>", filter->name, "</td><td class='amt'>", todayTxt, "</td><td class='amt'>", monthTxt, "</td><td class='amt'>", yearTxt, "</td><td class='amt'>", totalTxt, "</td></tr>", NULL);
+ 		free(html);
+ 		html = tmp;
+ 		filter = filter->next;	
+ 	}
+
+	struct NameValuePair pair = {"summary", html, NULL};
+
+    processFileRequest(fd, req, &pair);
+    
+    freeFilters(filters);
+    free(html);
 }

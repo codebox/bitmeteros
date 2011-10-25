@@ -154,3 +154,25 @@ void testReplace(void** state){
 	checkReplace("abc", "abc", "X",  "b");
 	checkReplace("aabbccdd", "abc", "abc",  "aabbccdd");
 }
+
+void testStrAppend(void** state){
+	char* result;
+	
+	result = strAppend("text", NULL);
+	assert_string_equal("text", result);
+	free(result);
+	
+	result = strAppend("1", "2", NULL);
+	assert_string_equal("12", result);
+	free(result);
+	
+	result = strAppend("123", "", "4", "56789", NULL);
+	assert_string_equal("123456789", result);
+	free(result);
+
+	char* txt = strdup("sat");
+	result = strAppend("", "the cat ", "", txt, " on the mat", NULL);
+	free(txt);
+	assert_string_equal("the cat sat on the mat", result);
+	free(result);
+}

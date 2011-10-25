@@ -16,6 +16,7 @@ BMDB_TEST=..\..\bmdb\test
 SYNC_TEST=..\..\bmsync\test
 TEST=..\..\test
 
+RESOURCE_FILES=.\resources
 SUP_SRC=.\support
 
 # Target files for Help
@@ -42,17 +43,17 @@ EXE_TEST=unittests.exe
 
 INCLUDE_DIRS=-I$(SHARED_SRC) -I$(SHARED_CLIENT_SRC) -I$(CLIENT_SRC) -I$(CAPTURE_SRC) -I$(WEB_SRC) -I$(BMDB_SRC) -I$(SYNC_SRC) -I$(SUP_SRC) -I$(TEST)
 LIBS=C:\windows\system32\sqlite3.dll -lws2_32 -lmswsock -ladvapi32 -lshlwapi -liphlpapi C:\rob\code\winpcap\Lib\Packet.lib C:\WINDOWS\system32\wpcap.dll
-OBJS_BMSYNC=bmsync.o syncHelp.o syncHelpText.o syncOptions.o sql.o common.o data.o db.o log.o platform.o time.o filter.o nameValuePair.o clientFilter.o
-OBJS_BMDB=bmdb.o bmdbConfig.o upgrade.o bmdbVersion.o bmdbHelpText.o log.o db.o common.o platform.o data.o admin.o filter.o adapter.o filters.o total.o time.o nameValuePair.o clientFilter.o
-OBJS_BMWS=bmwsWin32.o handleConfig.o handleFile.o handleMonitor.o handleQuery.o handleSync.o handleAlert.o handleSummary.o handleExport.o handleRss.o http.o httpRequest.o data.o common.o log.o platform.o dbMultiThreaded.o alert.o clientMonitor.o clientSummary.o clientSync.o clientQuery.o clientDump.o clientAlert.o clientUtil.o time.o filter.o nameValuePair.o 
-OBJS_CAP=sql.o time.o process.o common.o db.o log.o platform.o data.o adapter.o filter.o total.o nameValuePair.o
-OBJS_CLIENT=bmclient.o options.o monitor.o summary.o query.o dump.o help.o helpText.o time.o timeSupport.o common.o db.o log.o platform.o clientDump.o clientMonitor.o clientSummary.o clientQuery.o clientUtil.o data.o filter.o nameValuePair.o clientFilter.o
+OBJS_BMSYNC=bmsync.o syncHelp.o syncHelpText.o syncOptions.o sql.o common.o data.o db.o log.o platform.o time.o filter.o nameValuePair.o clientFilter.o sync.o bmsync.res
+OBJS_BMDB=bmdb.o bmdbConfig.o upgrade.o bmdbVersion.o bmdbHelpText.o log.o db.o common.o platform.o data.o admin.o filter.o adapter.o filters.o total.o time.o nameValuePair.o clientFilter.o bmdb.res
+OBJS_BMWS=bmwsWin32.o handleConfig.o handleFile.o handleMonitor.o handleQuery.o handleSync.o handleAlert.o handleSummary.o handleExport.o handleRss.o http.o httpRequest.o data.o common.o log.o platform.o dbMultiThreaded.o alert.o clientMonitor.o clientSummary.o clientSync.o clientQuery.o clientDump.o clientAlert.o clientUtil.o time.o filter.o nameValuePair.o clientFilter.o
+OBJS_CAP=sql.o time.o process.o common.o db.o log.o platform.o data.o adapter.o filter.o total.o nameValuePair.o clientFilter.o
+OBJS_CLIENT=bmclient.o options.o monitor.o summary.o query.o dump.o help.o helpText.o time.o timeSupport.o common.o db.o log.o platform.o clientDump.o clientMonitor.o clientSummary.o clientQuery.o clientUtil.o data.o filter.o nameValuePair.o clientFilter.o bmclient.res
 
 //OBJS_TEST=cmockery.o alltests.o testUtils.o db.o log.o data.o timeSupport.o common.o options.o clientUtil.o testClientOptions.o testConfig.o bmdbConfig.o testUpgrade.o upgrade.o testSyncOptions.o syncOptions.o testProcess.o processTesting.o sql.o time.o testSql.o testCommon.o testTime.o testDb.o testData.o testClientSummary.o clientSummary.o testClientMonitor.o clientMonitor.o testClientDump.o clientDump.o clientAlert.o testClientQuery.o clientQuery.o testClientSync.o clientSync.o testClientUtil.o testHttpRequest.o httpRequest.o testHandleConfig.o handleConfig.o httpTesting.o handleMonitor.o handleSummary.o handleQuery.o handleSync.o handleAlert.o handleExport.o handleFile.o handleRss.o testHandleMonitor.o testHandleQuery.o testHandleSummary.o testHandleFile.o testHandleRss.o testHandleSync.o testHandleAlert.o alert.o testAlert.o testClientAlert.o testNameValuePair.o
-OBJS_TEST=cmockery.o alltests.o filter.o testFilter.o adapter.o testAdapter.o nameValuePair.o total.o db.o log.o testUtils.o data.o timeSupport.o common.o platform.o time.o alert.o testAlert.o testCommon.o clientDump.o testClientDump.o bmclient.o testBmClient.o dump.o testDump.o clientUtil.o testData.o clientAlert.o testClientAlert.o clientMonitor.o testClientMonitor.o clientQuery.o testClientQuery.o clientSummary.o testClientSummary.o clientSync.o testClientSync.o testClientUtil.o bmdbConfig.o testConfig.o testDb.o handleConfig.o testHandleConfig.o testTime.o process.o testProcess.o sql.o monitor.o summary.o query.o help.o options.o http.o handleMonitor.o httpRequest.o handleSummary.o handleQuery.o handleSync.o handleExport.o handleAlert.o handleRss.o handleFile.o bmwsWin32.o helpText.o testSql.o testClientOptions.o testSyncOptions.o syncOptions.o upgrade.o testUpgrade.o testHandleSummary.o testHandleFile.o testHttpRequest.o testHandleQuery.o testHandleMonitor.o testHandleAlert.o testHandleRss.o testNameValuePair.o testTotal.o testHandleSync.o testClientFilter.o clientFilter.o
+OBJS_TEST=cmockery.o alltests.o filter.o testFilter.o adapter.o testAdapter.o nameValuePair.o total.o db.o log.o testUtils.o data.o timeSupport.o common.o platform.o time.o alert.o testAlert.o testCommon.o clientDump.o testClientDump.o bmclient.o testBmClient.o dump.o testDump.o clientUtil.o testData.o clientAlert.o testClientAlert.o clientMonitor.o testClientMonitor.o clientQuery.o testClientQuery.o clientSummary.o testClientSummary.o clientSync.o testClientSync.o testClientUtil.o bmdbConfig.o testConfig.o testDb.o handleConfig.o testHandleConfig.o testTime.o process.o testProcess.o sql.o monitor.o summary.o query.o help.o options.o http.o handleMonitor.o httpRequest.o handleSummary.o handleQuery.o handleSync.o handleExport.o handleAlert.o handleRss.o handleFile.o bmwsWin32.o helpText.o testSql.o testClientOptions.o testSyncOptions.o syncOptions.o upgrade.o testUpgrade.o testHandleSummary.o testHandleFile.o testHttpRequest.o testHandleQuery.o testHandleMonitor.o testHandleAlert.o testHandleRss.o testNameValuePair.o testTotal.o testHandleSync.o testClientFilter.o clientFilter.o testSync.o sync.o
 
-CC=gcc -DUNIT_TESTING -DHAVE_DECL_OPTRESET -DSTATS_MODE
-//CC=gcc -DSTATS_MODE
+//CC=gcc -DUNIT_TESTING -DHAVE_DECL_OPTRESET -DSTATS_MODE
+CC=gcc -DSTATS_MODE
 
 #### Install or reinstall
 install: all
@@ -111,6 +112,9 @@ testUpgrade.o: $(BMDB_TEST)\testUpgrade.c $(BMDB_SRC)\bmdb.h $(TEST)\test.h $(TE
 testSyncOptions.o: $(SYNC_TEST)\testOptions.c $(SHARED_SRC)\common.h $(SYNC_SRC)\bmsync.h $(TEST)\test.h $(TEST)\cmockery.h 
 	$(CC) -c -D _BSD_SOURCE $(SYNC_TEST)\testOptions.c -o testSyncOptions.o $(INCLUDE_DIRS)
 
+testSync.o: $(SYNC_TEST)\testSync.c $(SHARED_SRC)\common.h $(SYNC_SRC)\bmsync.h $(TEST)\test.h $(TEST)\cmockery.h 
+	$(CC) -c -D _BSD_SOURCE $(SYNC_TEST)\testSync.c -o testSync.o $(INCLUDE_DIRS)
+	
 testProcess.o: $(CAPTURE_TEST)\testProcess.c $(SHARED_SRC)\common.h $(CAPTURE_SRC)\capture.h $(TEST)\test.h $(TEST)\cmockery.h 
 	$(CC) -c $(CAPTURE_TEST)\testProcess.c -o testProcess.o $(INCLUDE_DIRS)
 
@@ -206,6 +210,9 @@ processTesting.o: $(CAPTURE_SRC)\process.c $(CAPTURE_SRC)\capture.h $(SHARED_SRC
 bmsync: bmsynchelp $(OBJS_BMSYNC)
 	$(CC) $(OBJS_BMSYNC) -o $(EXE_BMSYNC) $(LIBS)
 
+bmsync.res: $(RESOURCE_FILES)\bmsync.rc $(SHARED_SRC)\common.h
+	-windres $(RESOURCE_FILES)\bmsync.rc $(INCLUDE_DIRS) -O coff -o bmsync.res
+
 bmsynchelp:
 	echo #include "common.h" > $(SYNC_HELP)
 	echo char* helpTxt= >> $(SYNC_HELP)
@@ -214,6 +221,9 @@ bmsynchelp:
 	
 bmsync.o: $(SYNC_SRC)\bmsync.c $(SHARED_SRC)\common.h $(SYNC_SRC)\bmsync.h $(CAPTURE_SRC)\capture.h $(WEB_SRC)\bmws.h
 	$(CC) -c $(SYNC_SRC)\bmsync.c -o bmsync.o $(INCLUDE_DIRS)
+
+sync.o: $(SYNC_SRC)\sync.c $(SHARED_SRC)\common.h $(SYNC_SRC)\bmsync.h $(CAPTURE_SRC)\capture.h $(WEB_SRC)\bmws.h
+	$(CC) -c $(SYNC_SRC)\sync.c -o sync.o $(INCLUDE_DIRS)
 
 syncHelp.o: $(SYNC_SRC)\help.c $(SHARED_SRC)\common.h $(SYNC_SRC)\bmsync.h
 	$(CC) -c $(SYNC_SRC)\help.c -o syncHelp.o $(INCLUDE_DIRS)
@@ -227,6 +237,9 @@ syncOptions.o: $(SYNC_SRC)\options.c $(SHARED_SRC)\common.h $(SYNC_SRC)\bmsync.h
 #### bmdb
 bmdb: bmdbhelp $(OBJS_BMDB)
 	$(CC) $(OBJS_BMDB) -o $(EXE_BMDB) $(LIBS)
+
+bmdb.res: $(RESOURCE_FILES)\bmdb.rc $(SHARED_SRC)\common.h
+	-windres $(RESOURCE_FILES)\bmdb.rc $(INCLUDE_DIRS) -O coff -o bmdb.res
 
 bmdbhelp:
 	echo #include "common.h" > $(BMDB_HELP)
@@ -256,12 +269,18 @@ bmdb.o: $(BMDB_SRC)\bmdb.c $(BMDB_SRC)\bmdb.h $(SHARED_SRC)\common.h $(BMDB_SRC)
 	$(CC) -c $(BMDB_SRC)\bmdb.c -o bmdb.o $(INCLUDE_DIRS)
 
 #### bmws standalone
-bmwsExe:  bmwsExe.o $(OBJS_BMWS)
-	$(CC) bmwsExe.o $(OBJS_BMWS) -o $(EXE_WEB) $(LIBS)
+bmwsExe:  bmwsExe.o $(OBJS_BMWS) bmwsExe.res $(SHARED_SRC)\common.h
+	$(CC) bmwsExe.o $(OBJS_BMWS) bmwsExe.res -o $(EXE_WEB) $(LIBS)
+
+bmwsExe.res: $(RESOURCE_FILES)\bmwsExe.rc $(SHARED_SRC)\common.h
+	-windres $(RESOURCE_FILES)\bmwsExe.rc $(INCLUDE_DIRS) -O coff -o bmwsExe.res
 
 #### bmws service
-bmwsService: bmwsWin32Service.o $(OBJS_BMWS)
-	$(CC)    bmwsWin32Service.o $(OBJS_BMWS) -o $(EXE_WEB_SRV) $(LIBS)
+bmwsService: bmwsWin32Service.o $(OBJS_BMWS) bmwsService.res $(SHARED_SRC)\common.h
+	$(CC)    bmwsWin32Service.o $(OBJS_BMWS) bmwsService.res -o $(EXE_WEB_SRV) $(LIBS)
+
+bmwsService.res: $(RESOURCE_FILES)\bmwsService.rc $(SHARED_SRC)\common.h
+	-windres $(RESOURCE_FILES)\bmwsService.rc $(INCLUDE_DIRS) -O coff -o bmwsService.res
 
 bmwsExe.o: $(WEB_SRC)\bmwsWin32Exe.c $(WEB_SRC)\bmws.h $(SHARED_SRC)\common.h
 	$(CC) -c $(WEB_SRC)\bmwsWin32Exe.c -o bmwsExe.o $(INCLUDE_DIRS)
@@ -306,12 +325,18 @@ httpRequest.o: $(WEB_SRC)\httpRequest.c $(WEB_SRC)\bmws.h $(SHARED_SRC)\common.h
 	$(CC) -c $(WEB_SRC)\httpRequest.c -o httpRequest.o $(INCLUDE_DIRS)
 
 #### bmcapture standalone
-bmcaptureExe: captureDaemon.o $(OBJS_CAP)
-	$(CC) captureDaemon.o $(OBJS_CAP) -o $(EXE_CAP) $(LIBS)
+bmcaptureExe: captureDaemon.o $(OBJS_CAP) bmcaptureExe.res $(SHARED_SRC)\common.h
+	$(CC) captureDaemon.o $(OBJS_CAP) bmcaptureExe.res -o $(EXE_CAP) $(LIBS)
+
+bmcaptureExe.res: $(RESOURCE_FILES)\bmcaptureExe.rc $(SHARED_SRC)\common.h
+	-windres $(RESOURCE_FILES)\bmcaptureExe.rc $(INCLUDE_DIRS) -O coff -o bmcaptureExe.res
 
 #### bmcapture service
-bmcaptureService: captureService.o $(OBJS_CAP)
-	$(CC) captureService.o $(OBJS_CAP) -o $(EXE_CAP_SRV) $(LIBS)
+bmcaptureService: captureService.o $(OBJS_CAP) bmcaptureService.res $(SHARED_SRC)\common.h
+	$(CC) captureService.o $(OBJS_CAP) bmcaptureService.res -o $(EXE_CAP_SRV) $(LIBS)
+
+bmcaptureService.res: $(RESOURCE_FILES)\bmcaptureService.rc $(SHARED_SRC)\common.h
+	-windres $(RESOURCE_FILES)\bmcaptureService.rc $(INCLUDE_DIRS) -O coff -o bmcaptureService.res
 
 captureDaemon.o: $(CAPTURE_SRC)\captureDaemon.c $(CAPTURE_SRC)\capture.h $(SHARED_SRC)\common.h
 	$(CC) -c $(CAPTURE_SRC)\captureDaemon.c -o captureDaemon.o $(INCLUDE_DIRS)
@@ -335,8 +360,11 @@ filter.o: $(SHARED_SRC)\filter.c $(SHARED_SRC)\common.h
 	$(CC) -c $(SHARED_SRC)\filter.c -o filter.o $(INCLUDE_DIRS)
 
 #### bmclient
-bmclient: bmclienthelp $(OBJS_CLIENT)
+bmclient: bmclienthelp $(OBJS_CLIENT) $(SHARED_SRC)\common.h
 	$(CC) $(OBJS_CLIENT) -o $(EXE_BMCLIENT) $(LIBS)
+
+bmclient.res: $(RESOURCE_FILES)\bmclient.rc
+	-windres $(RESOURCE_FILES)\bmclient.rc $(INCLUDE_DIRS) -O coff -o bmclient.res
 
 bmclienthelp:
 	echo #include "common.h" > $(CLIENT_HELP)
@@ -424,3 +452,4 @@ nameValuePair.o: $(SHARED_SRC)\nameValuePair.c $(SHARED_SRC)\common.h
 
 clean:
 	del *.o
+	del *.res

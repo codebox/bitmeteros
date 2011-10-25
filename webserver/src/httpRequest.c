@@ -163,19 +163,3 @@ void freeRequest(struct Request* request){
 		free(request);
 	}
 }
-
-void freeNameValuePairs(struct NameValuePair* param){
- // Free up all the memory used by a NameValuePair struct
-	struct NameValuePair* nextParam;
-	while (param != NULL){
-		nextParam = param->next;
-		if (param->name != NULL){
-			free(param->name);
-		}
-		if (param->value != NULL){
-			free(param->value);
-		}
-		free(param);
-		param = nextParam;
-	}
-}

@@ -88,26 +88,92 @@ void processMonitorRequest(SOCKET fd, struct Request* req) {
 	}
 }
 
+struct NameValuePair* buildFilterPairs(struct Data* data){
+	struct NameValuePair* pairs = NULL;   
+	struct Filter* filters = readFilters();
+	
+ // Initialise one pair for each filter, with an initial value of '0'
+	struct Filter* filter = filters;
+	while(filter != NULL){
+		struct NameValuePair* pair = makeNameValuePair(filter->name, "0");
+		appendNameValuePair(&pairs, pair);
+		filter = filter->next;
+	}
+	
+ /* In the first loop we iterate through all the Data items and accumulate a total
+ 	for each of the filters in 'pairs'. */
+	while (data != NULL) {
+		struct Filter* filter = getFilterFromId(filters, data->fl);
+		if (filter==NULL){
+			logMsg(LOG_ERR, "Unknown filterid %d passed into buildFilterPairs()", data->fl);
+			
+		} else {
+			char* filterName = filter->name;
+			
+			struct NameValuePair* pair = getPairForName(filterName, pairs);
+			BW_INT currentVal = strToBwInt(pair->value, 0);
+			BW_INT newVal = currentVal + data->vl;
+			
+			free(pair->value);
+			char amount[32];
+			sprintf(amount, "%llu", newVal);
+			
+			pair->value = strdup(amount);
+		}
+		
+		data = data->next;
+	}
+	
+ /* In the second loop we iterate over 'pairs' and replace the numeric char* values 
+ 	with formatted versions of the same amounts. */
+	struct NameValuePair* pair = pairs;
+	while(pair != NULL){
+		char formattedAmount[16];
+		BW_INT val = strToBwInt(pair->value, 0);
+		formatAmount(val, TRUE, TRUE, formattedAmount);
+		free(pair->value);
+		pair->value = strdup(formattedAmount);
+		pair = pair->next;	
+	}
+	
+	freeFilters(filters);
+	return pairs;
+}
+
+char* makeHtmlFromData(struct NameValuePair* pair){
+	//TODO move out of here into makeMobileMarkup.c
+	char* html = strdup("<table id='monitor'>");
+	char* tmp;
+	
+	while(pair != NULL){
+		tmp = strAppend(html, "<tr><td class='filter'>", pair->name, "</td><td class='amt'>", pair->value, "/s</td></tr>", NULL);
+		free(html);
+		html = tmp;
+		pair = pair->next;	
+	}
+	tmp = strAppend(html, "</table>", NULL);
+	free(html);
+	html = tmp;
+	
+	return html;
+}
+
 void processMobileMonitorRequest(SOCKET fd, struct Request* req){
 	int ts = getValueNumForName("ts", req->params, NO_VAL);
-	int fl = getValueNumForName("fl", req->params, NO_VAL);
-	//TODO if no fl then error
+
 	if (ts == NO_VAL){
-	 // No 'ts' param means that this was a full page request
-		struct Data* result = getMonitorValues(getTime() - MOBILE_MONITOR_DEFAULT_TS, fl);
+	 // No 'ts' param means that this was a mobile full-page request
+		struct Data* result = getMonitorValues(getTime() - MOBILE_MONITOR_DEFAULT_TS, NULL);
 	
-		BW_INT total = 0;
+	 // Items in this list have: name=<filter name> value=<formatted total for filter>
+		struct NameValuePair* pairs = buildFilterPairs(result);
 		
-		while (result != NULL) {
-			total += result->vl;
-			result = result->next;
-		}
-	
-		char txt[32];
-		formatAmount(total/MOBILE_MONITOR_DEFAULT_TS, TRUE, TRUE, txt);
+		char* html = makeHtmlFromData(pairs);
+		freeNameValuePairs(pairs);
 		
-	    struct NameValuePair pair = {"vl", txt, NULL};
+	    struct NameValuePair pair = {"monitor", html, NULL};
 	    processFileRequest(fd, req, &pair);
+	    free(html);
 	    
 	} else {
 	 // A 'ts' param means that this was an AJAX request

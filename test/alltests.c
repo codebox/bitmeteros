@@ -208,8 +208,26 @@ int main(int argc, char* argv[]) {
 		unit_test_setup_teardown(testAddFilter, setupTestDb, tearDownTestDb),
 		unit_test_setup_teardown(testRemoveFilter, setupTestDb, tearDownTestDb),
 		unit_test_setup_teardown(testFilterExprIsValid, setupTestDb, tearDownTestDb),
-		unit_test_setup_teardown(testReadFiltersForHost, setupTestDb, tearDownTestDb)
+		unit_test_setup_teardown(testReadFiltersForHost, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testGetMaxTsForHost, setupTestDb, tearDownTestDb),
+		unit_test(testParseFilterRow),
+		unit_test(testParseDataRow),
+		unit_test(testStartsWith),
+		unit_test(testGetLocalId),
+		unit_test_setup_teardown(testGetLocalFilter, setupTestDb, tearDownTestDb),
+		unit_test(testAppendRemoteFilter),
+		unit_test_setup_teardown(testRemoveDataForDeletedFiltersFromThisHost, setupTestDb, tearDownTestDb),
+		unit_test(testReadLine),
+		unit_test_setup_teardown(testHttpHeadersOk, setupTestDb, tearDownTestDb),
+		unit_test_setup_teardown(testParseDataOk, setupTestDb, tearDownTestDb),
+		unit_test(testSendReqToDefaultPort),
+		unit_test(testSendReqToOtherPort),
+		unit_test(testStrAppend),
+		unit_test_setup_teardown(testBuildFilterPairs, setupTestForHandleMonitor, tearDownTestForHandleMonitor),
+		unit_test(testFreeNameValuePairs),
+		unit_test(testAppendNameValuePair),
+		unit_test(testMakeHtmlFromData)
+
 	}; 
 	return run_tests(tests); 
 }
-

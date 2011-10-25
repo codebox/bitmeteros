@@ -221,3 +221,22 @@ char* replace(char* src, char* target, char* replace){
 		return result;
 	}
 }
+
+char* strAppend(char* startTxt, ...){
+	va_list argp;
+	char* txtToAppend;
+	char* tmp;
+	char* allText = strdup(startTxt);
+	va_start(argp, startTxt);
+
+	while((txtToAppend = va_arg(argp, char*)) != NULL){
+		tmp = malloc(strlen(allText) + strlen(txtToAppend) + 1);
+		strcpy(tmp, allText);
+		strcat(tmp, txtToAppend);
+		free(allText);
+		allText = tmp;
+	}
+	va_end(argp);
+	
+	return allText;
+}

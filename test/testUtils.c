@@ -162,7 +162,7 @@ void addConfigRow(char* key, char* value){
 }
 
 void checkTableContents(struct Data* expectedData){
-	sqlite3_stmt* stmt = getStmt("SELECT ts AS ts, dr AS dr, vl As vl, fl AS fl FROM data2 ORDER BY ts DESC");
+	sqlite3_stmt* stmt = getStmt("SELECT ts AS ts, dr AS dr, vl As vl, fl AS fl FROM data2 ORDER BY ts DESC, fl ASC");
 
 	int rc;
 	while((rc=sqlite3_step(stmt)) == SQLITE_ROW){

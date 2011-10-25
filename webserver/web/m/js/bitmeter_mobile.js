@@ -104,25 +104,3 @@ function buildAjaxRequest(){
 	return request;
 };
 
-function monitorOnLoad(){
-	var REFRESH_SECS = 5;
-	var dlAmount = document.getElementById('dlAmount');
-	var ulAmount = document.getElementById('ulAmount');
-	
-	setInterval(function(){
-		var req = buildAjaxRequest();
-		req.setErrorHandler(showError);
-		req.setSuccessHandler(function(txt){
-			var obj = eval('(' + txt + ')');
-			var itemCount = obj.data.length;
-			var i, dlTotal = 0, ulTotal = 0;
-			for(i=0; i<itemCount; i++){
-				dlTotal += obj.data[i].dl;
-				ulTotal += obj.data[i].ul;
-			}
-			dlAmount.innerHTML = formatAmount(dlTotal/REFRESH_SECS);
-			ulAmount.innerHTML = formatAmount(ulTotal/REFRESH_SECS);
-		});
-		req.send('/m/monitor?ts=5');
-	}, REFRESH_SECS * 1000);
-}

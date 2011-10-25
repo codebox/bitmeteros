@@ -33,7 +33,6 @@ void processSyncRequest(SOCKET fd, struct Request* req){
 
 	} else {
 	    getCalls().writeHeadersOk(fd, SYNC_CONTENT_TYPE, TRUE);
-
 		struct Filter* filters = readFilters();
 		struct Filter* thisFilter = filters;
 		while(thisFilter != NULL){

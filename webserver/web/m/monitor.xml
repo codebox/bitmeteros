@@ -4,18 +4,13 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 	<head>
 		<title>BitMeter OS - Mobile Interface</title>
+		<meta http-equiv="refresh" content="5"/>
 		<link type="text/css" href="/m/css/bitmeter_mobile.css" rel="stylesheet" />
-		<script type="text/javascript" src="/m/js/bitmeter_mobile.js"></script>
 	</head>
-	<body onload="monitorOnLoad()">
-		<h1></h1>
-		<div id="dl">
-			<span class="dl amt" id="dlAmount"><!--[dl]--></span>
-			<span class="dl unit">kb/s</span>
-		</div>
-		<div id="ul">
-			<span class="ul amt" id="ulAmount"><!--[ul]--></span>
-			<span class="ul unit">kb/s</span>
-		</div>
+	<body>
+		<h1>Monitor</h1>
+		<!--[monitor]-->
+		<br/>
+		<a class="refreshLink" href="/m/monitor">Refresh Now</a>
 	</body>
 </html>

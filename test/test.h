@@ -78,6 +78,7 @@ void testToDate(void **state);
 void testMakeHexString(void **state);
 void testStrToLong(void **state);
 void testReplace(void** state);
+void testStrAppend(void** state);
 
 // clientDump.c
 void testClientDumpEmptyDb(void **state);
@@ -243,6 +244,21 @@ void testHost(void** state);
 void testAlias(void** state);
 void testVariousValid(void** state);
 
+// sync.c
+void testGetMaxTsForHost(void** state);
+void testParseFilterRow(void** state);
+void testParseDataRow(void** state);
+void testStartsWith(void** state);
+void testGetLocalId(void** state);
+void testGetLocalFilter(void** state);
+void testAppendRemoteFilter(void** state);
+void testRemoveDataForDeletedFiltersFromThisHost(void** state);
+void testReadLine(void** state);
+void testHttpHeadersOk(void** state);
+void testParseDataOk(void** state);
+void testSendReqToDefaultPort(void** state);
+void testSendReqToOtherPort(void** state);
+
 // upgrade.c
 void testUpgradeToCurrentLevel(void** state);
 void testUpgradeToEarlierLevel(void** state);
@@ -264,8 +280,12 @@ void testGetMimeTypeForFile(void** state);
 
 // httpRequest.c
 void testParseRequest(void** state);
+
+// nameValuePair.c
 void testGetValueForName(void** state);
 void testGetValueNumForName(void** state);
+void testFreeNameValuePairs(void** state);
+void testAppendNameValuePair(void** state);
 
 // handleQuery.c
 void testMissingParam(void** state);
@@ -280,6 +300,8 @@ void testNoTsParam(void** state);
 void testNoTgParam(void** state);
 void testMonitorParamsOkOneFilter(void** state);
 void testMonitorParamsOkMultiFilter(void** state);
+void testBuildFilterPairs(void** state);
+void testMakeHtmlFromData(void** state);
 
 // handleAlert.c
 void testAlertNoAction(void** state);

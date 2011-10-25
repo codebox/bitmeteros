@@ -18,13 +18,21 @@
 #define EOL "\n"
 #endif
 
-#define VERSION "0.8.0"
-#define DB_VERSION 8
+#ifdef _WIN32
+#define RES_VERSION    0,0,8,0
+#endif
+
+#define VERSION        "0.8.0"
+#define DB_VERSION     8
+#define COMPANY        "Codebox Software"
+#define APP_NAME       "BitMeter OS"
+#define COPYRIGHT_YEAR "2011"
 
 #ifdef _WIN32
-#define COPYRIGHT "BitMeter OS v" VERSION " Copyright (c) 2011 Rob Dawson" EOL "Licenced under the GNU General Public License" EOL EOL
+#define RES_COPYRIGHT "Copyright (c) " COPYRIGHT_YEAR " Rob Dawson, Licenced under the GNU General Public License"
+#define COPYRIGHT     APP_NAME " v" VERSION " Copyright (c) " COPYRIGHT_YEAR " Rob Dawson" EOL "Licenced under the GNU General Public License" EOL EOL
 #else
-#define COPYRIGHT "BitMeter OS v" VERSION " Copyright © 2011 Rob Dawson" EOL "Licenced under the GNU General Public License" EOL EOL
+#define COPYRIGHT     APP_NAME " v" VERSION " Copyright © " COPYRIGHT_YEAR " Rob Dawson" EOL "Licenced under the GNU General Public License" EOL EOL
 #endif
 
 #define DB_NAME      "bitmeter.db"
@@ -215,8 +223,10 @@ struct Filter* allocFilter(int id, char* desc, char* name, char* filter, char* h
 void appendFilter(struct Filter** earlierFilter, struct Filter* newFilter);
 struct Filter* readFilters();
 struct Filter* getFilterFromId(struct Filter* filters, int id);
+struct Filter* getFilterFromName(struct Filter* , char*, char*);
 int getMaxFilterDescWidth(struct Filter* filter);
 int getMaxFilterNameWidth(struct Filter* filter);
+struct Filter* copyFilter(struct Filter* filter);
 // ----
 void doSleep(int interval);
 void getDbPath(char* path);
@@ -275,5 +285,4 @@ char* getValueForName(char* name, struct NameValuePair* pair, char* defaultValue
 void freeNameValuePairs(struct NameValuePair* param);
 void appendNameValuePair(struct NameValuePair** earlierPair, struct NameValuePair* newPair);
 struct NameValuePair* makeNameValuePair(char* name, char* value);
-
 #endif //#ifndef COMMON_H

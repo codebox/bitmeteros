@@ -80,3 +80,35 @@ void testGetValueNumForName(void** state) {
 	free(param2);
 	free(param3);
 }
+
+void testFreeNameValuePairs(void** state){
+	freeNameValuePairs(NULL);
+	
+	struct NameValuePair* pair1 = makeNameValuePair("n1", "v1");
+	freeNameValuePairs(pair1);
+	
+	struct NameValuePair* pair2 = makeNameValuePair("n2", "v2");
+	struct NameValuePair* pair3 = makeNameValuePair("n3", "v3");
+	pair2->next = pair3;
+	
+	freeNameValuePairs(pair2);
+}
+
+void testAppendNameValuePair(void** state){
+	struct NameValuePair* pairs = NULL;
+	struct NameValuePair* pair1 = makeNameValuePair("n1", "v1");
+	appendNameValuePair(&pairs, pair1);
+	
+	assert_string_equal("n1", pairs->name);
+	assert_string_equal("v1", pairs->value);
+	assert_true(pairs->next == NULL);
+	
+	struct NameValuePair* pair2 = makeNameValuePair("n2", "v2");
+	appendNameValuePair(&pairs, pair2);
+
+	assert_string_equal("n2", pairs->next->name);
+	assert_string_equal("v2", pairs->next->value);
+	assert_true(pairs->next->next == NULL);
+
+	freeNameValuePairs(pairs);
+}
