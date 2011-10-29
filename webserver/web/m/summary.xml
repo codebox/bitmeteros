@@ -4,6 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 	<head>
 		<title>BitMeter OS - Mobile Interface</title>
+		<meta http-equiv="refresh" content="15"/>
 		<link type="text/css" href="/m/css/bitmeter_mobile.css" rel="stylesheet" />
 	</head>
 	<body>

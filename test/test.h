@@ -1,15 +1,13 @@
+#ifndef TEST_H
+#define TEST_H
 #include "common.h"
+#include "bmclient.h"
 #include <time.h>
 #include <stdio.h>
+#define HAVE_REMOTE 1
+#include "pcap.h"
 
 #define _BSD_SOURCE 1
-
-#define malloc(size)          _test_malloc(size, __FILE__, __LINE__) 
-#define calloc(num, size)     _test_calloc(num, size, __FILE__, __LINE__) 
-#define free(ptr)             _test_free(ptr, __FILE__, __LINE__) 
-#define strdup(ptr)           _test_strdup(ptr, __FILE__, __LINE__) 
-#define printf(fmt , args...) _test_printf(fmt , ##args) 
-#define dbg(fmt , args...) fprintf(stdout , fmt , ##args) 
 
 #define expect_call(function) expect_any(function, dummy)
 
@@ -18,6 +16,53 @@
 #define FILTER3 3
 #define FILTER4 4
 
+// mock functions
+void mockDoHelp();
+void mockDoVersion();
+void mockDoSummary();
+void mockDoMonitor();
+void mockDoQuery();
+void mockDoDump();
+void mockSetLogLevel(int);
+int mockParseArgs(int argc, char** argv, struct Prefs* prefs);
+void mockDbVersionCheck();
+sqlite3* mockOpenDb();
+void mockCloseDb();
+void mockToTime(char* c, time_t t);
+void mockToDate(char* c, time_t t);
+void mockFormatAmountByUnits(const BW_INT v, char* c, int units);
+char* getRecvLine();
+int mockRecv(SOCKET fd, char* buffer, int a, int b);
+int mockSend(SOCKET fd, char* buffer, int a, int b);
+int mockCompressDb();
+int mockGetNextCompressTime();
+int mockPcap_findalldevs_ex(char *source, struct pcap_rmtauth *auth, pcap_if_t **alldevs, char *errbuf);
+pcap_t* mockPcap_open(const char *source, int snaplen, int flags, int read_timeout, struct pcap_rmtauth *auth, char *errbuf);
+int mockPcap_setnonblock(pcap_t* h, int i, char * c);
+int mockPcap_compile(pcap_t *h, struct bpf_program *p, const char *c, int i, bpf_u_int32 b);
+int mockPcap_setfilter(pcap_t *h, struct bpf_program *p);
+void mockPcap_freecode(struct bpf_program *p);
+#ifdef STATS_MODE	
+	int mockPcap_setmode(pcap_t *h, int mode);
+#endif
+int mockPcap_close(pcap_t *h);
+int mockPcap_dispatch(pcap_t *h, int i, pcap_handler fn, u_char *u);
+void mockPcap_freealldevs(pcap_if_t *device);
+void mockWriteHeadersServerError(SOCKET fd, char* msg, ...);
+void mockWriteHeadersOk(SOCKET fd, char* contentType, int endHeaders);
+void mockWriteHeadersForbidden(SOCKET fd, char* request);
+void mockWriteText(SOCKET fd, char* txt);
+void mockWriteNumValueToJson(SOCKET fd, char* key, BW_INT value);
+void mockWriteTextValueToJson(SOCKET fd, char* key, char* value);
+void mockWriteTextArrayToJsonValue(char* value);
+void mockWriteTextArrayToJson(SOCKET fd, char* key, char** values);
+size_t mockFread(void* buffer, size_t a, size_t b, FILE* c);
+void mockWriteData(SOCKET fd, char* data, int len);
+void mockCheckFilterValues(int id, char* name);
+void mockWriteFilterData(SOCKET fd, struct Filter* filter);
+void mockCheckDataValues(int filterId, int value);
+void mockWriteSyncData(SOCKET fd, struct Data* data);
+// ---------
 void setupTestDb(void** state);
 void tearDownTestDb(void** state);
 void addDbRow(time_t ts, int dr, int vl, int fl);
@@ -269,6 +314,7 @@ void testUpgradeFrom3To4(void** state);
 void testUpgradeFrom4To5(void** state);
 void testUpgradeFrom5To6(void** state);
 void testUpgradeFrom6To7(void** state);
+void testUpgradeFrom7To8(void** state);
 void testConvertAddrValues(void** state);
 
 // handleSummary.c
@@ -338,3 +384,4 @@ void testFilterExprIsValid(void** state);
 void testAddFilter(void** state);
 void testRemoveFilter(void** state);
 void testReadFiltersForHost(void** state);
+#endif

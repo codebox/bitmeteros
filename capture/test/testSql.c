@@ -12,7 +12,7 @@ Contains unit tests for the sql module.
 void setup();
 
 static int getDataRowCount(){
-	return getRowCount("SELECT * FROM data2");	
+	return getRowCount("SELECT * FROM data");	
 }
 void testUpdateDbNull(void** state) {
  // Check that nothing is added to the d/b if we pass in a NULL list

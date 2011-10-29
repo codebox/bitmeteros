@@ -68,7 +68,6 @@ void processMobileSummaryRequest(SOCKET fd, struct Request* req);
 void processQueryRequest(SOCKET fd, struct Request* req);
 void processSyncRequest(SOCKET fd, struct Request* req);
 void processConfigRequest(SOCKET fd, struct Request* req, int allowAdmin);
-void processExportRequest(SOCKET fd, struct Request* req);
 void processAlertRequest(SOCKET fd, struct Request* req, int allowAdmin);
 void processFileRequest(SOCKET fd, struct Request* req, struct NameValuePair* substPairs);
 void processRssRequest(SOCKET fd, struct Request* req);
@@ -94,62 +93,36 @@ void processRequest(SOCKET fd, char* buffer, int allowAdmin);
 
 void getWebRoot(char* path);
 
-struct HandleConfigCalls {
-	void (*writeHeadersOk)(SOCKET fd, char* contentType, int endHeaders);
-	void (*writeText)(SOCKET fd, char* txt);
-	void (*writeHeadersServerError)(SOCKET fd, char* msg, ...);
-	void (*writeHeadersForbidden)(SOCKET fd, char* request);
-};
-struct HandleConfigCalls mockHandleConfigCalls;
-
-struct HandleSummaryCalls {
-	void (*writeHeadersOk)(SOCKET fd, char* contentType, int endHeaders);
-	void (*writeText)(SOCKET fd, char* txt);
-	void (*writeNumValueToJson)(SOCKET fd, char* key, BW_INT value);
-};
-struct HandleSummaryCalls mockHandleSummaryCalls;
-
-struct HandleFileCalls {
-	int (*fread)(void*, size_t, size_t, FILE*);
-	void (*writeData)(SOCKET fd, char* data, int len);
-};
-struct HandleFileCalls mockHandleFileCalls;
-
-struct HandleQueryCalls {
-	void (*writeHeadersServerError)(SOCKET fd, char* msg, ...);
-	void (*writeHeadersOk)(SOCKET fd, char* contentType, int endHeaders);
-	void (*writeHeader)(SOCKET fd, char* name, char* value);
-	void (*writeEndOfHeaders)(SOCKET fd);
-	void (*writeDataToJson)(SOCKET fd, struct Data* data);
-	void (*writeText)(SOCKET fd, char* txt);
-};
-struct HandleQueryCalls mockHandleQueryCalls;
-
-struct HandleMonitorCalls {
-	void (*writeHeadersServerError)(SOCKET fd, char* msg, ...);
-	void (*writeHeadersOk)(SOCKET fd, char* contentType, int endHeaders);
-	void (*writeDataToJson)(SOCKET fd, struct Data* data);
-	void (*writeText)(SOCKET fd, char* txt);
-};
-struct HandleMonitorCalls mockHandleMonitorCalls;
-
-struct HandleAlertCalls {
-	void (*writeHeadersServerError)(SOCKET fd, char* msg, ...);
-	void (*writeHeadersForbidden)(SOCKET fd, char* request);
-	void (*writeHeadersOk)(SOCKET fd, char* contentType, int endHeaders);
-	void (*writeText)(SOCKET fd, char* txt);
-	void (*writeNumValueToJson)(SOCKET fd, char* key, BW_INT value);
-	void (*writeTextValueToJson)(SOCKET fd, char* key, char* value);
-	void (*writeTextArrayToJson)(SOCKET fd, char* key, char** values);
-};
-struct HandleAlertCalls mockHandleAlertCalls;
-
-struct HandleSyncCalls {
-	void (*writeHeadersServerError)(SOCKET fd, char* msg, ...);
-	void (*writeHeadersOk)(SOCKET fd, char* contentType, int endHeaders);
-	void (*writeFilterData)(SOCKET fd, struct Filter* filter);
-	void (*writeSyncData)(SOCKET fd, struct Data* data);
-};
-struct HandleSyncCalls mockHandleSyncCalls;
+#ifdef UNIT_TESTING
+	#define WRITE_HEADERS_SERVER_ERROR mockWriteHeadersServerError
+	#define WRITE_HEADERS_FORBIDDEN mockWriteHeadersForbidden
+	#define WRITE_HEADERS_OK mockWriteHeadersOk
+	#define WRITE_TEXT mockWriteText
+	#define WRITE_NUM_VALUE_TO_JSON mockWriteNumValueToJson
+	#define WRITE_TEXT_VALUE_TO_JSON mockWriteTextValueToJson
+	#define WRITE_TEXT_ARRAY_TO_JSON mockWriteTextArrayToJson
+	#define WRITE_HEADER mockWriteHeader
+	#define WRITE_END_OF_HEADERS mockWriteEndOfHeaders
+	#define WRITE_DATA_TO_JSON mockWriteDataToJson
+	#define FREAD mockFread
+	#define WRITE_DATA mockWriteData
+	#define WRITE_FILTER_DATA mockWriteFilterData
+	#define WRITE_SYNC_DATA mockWriteSyncData
+#else
+	#define WRITE_HEADERS_SERVER_ERROR writeHeadersServerError
+	#define WRITE_HEADERS_FORBIDDEN writeHeadersForbidden
+	#define WRITE_HEADERS_OK writeHeadersOk
+	#define WRITE_TEXT writeText
+	#define WRITE_NUM_VALUE_TO_JSON writeNumValueToJson
+	#define WRITE_TEXT_VALUE_TO_JSON writeTextValueToJson
+	#define WRITE_TEXT_ARRAY_TO_JSON writeTextArrayToJson
+	#define WRITE_HEADER writeHeader
+	#define WRITE_END_OF_HEADERS writeEndOfHeaders
+	#define WRITE_DATA_TO_JSON writeDataToJson
+	#define FREAD fread
+	#define WRITE_DATA writeData
+	#define WRITE_FILTER_DATA writeFilterData
+	#define WRITE_SYNC_DATA writeSyncData
+#endif
 
 #endif

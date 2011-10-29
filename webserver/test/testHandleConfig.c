@@ -17,31 +17,6 @@ static void testConfigUpdateErr(char* name, char* value);
 /*
 Contains unit tests for the handleConfig module.
 */
-
-static void _writeHeadersOk(SOCKET fd, char* contentType, int endHeaders){
-	check_expected(contentType);
-	check_expected(endHeaders);
-}
-static void _writeText(SOCKET fd, char* txt){
-	check_expected(txt);
-}
-static void _writeHeadersServerError(SOCKET fd, char* msg, ...){
-	check_expected(msg);
-}
-static void _writeHeadersForbidden(SOCKET fd, char* msg, ...){
-	check_expected(msg);
-}
-void setupTestForHandleConfig(void** state){
-	setupTestDb(state);
-	
- 	struct HandleConfigCalls calls = {&_writeHeadersOk, &_writeText, &_writeHeadersServerError, &_writeHeadersForbidden};
-	mockHandleConfigCalls = calls;
-}
-
-void teardownTestForHandleConfig(void** state){
-	tearDownTestDb(state);
-}
-
 void testConfigWithAdmin(void** state) {
  	addFilterRow(1, "Filter 1", "f1", "", "host1");
  	addFilterRow(2, "Filter 2", "f2", "", "host2");
@@ -60,83 +35,83 @@ void testConfigWithAdmin(void** state) {
     time_t now = makeTs("2009-11-08 10:00:00");
     setTime(now);
     
-    expect_string(_writeHeadersOk, contentType, "application/x-javascript");
-    expect_value(_writeHeadersOk, endHeaders, TRUE);
-    expect_string(_writeText, txt, "var config = { ");
-    expect_string(_writeText, txt, "\"monitorInterval\" : 1");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"summaryInterval\" : 2");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"historyInterval\" : 3");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"monitorIntervalMin\" : 1000");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"monitorIntervalMax\" : 30000");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"historyIntervalMin\" : 5000");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"historyIntervalMax\" : 60000");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"summaryIntervalMin\" : 1000");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"summaryIntervalMax\" : 60000");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"serverName\" : \"server\"");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"allowAdmin\" : 1");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"version\" : \"" VERSION "\"");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"rssItems\" : 10");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"rssFreq\" : 1");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"rssHost\" : \"rsshost\"");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"hosts\" : [");
-    expect_string(_writeText, txt, "\"");
-    expect_string(_writeText, txt, "host1");
-    expect_string(_writeText, txt, "\"");
-    expect_string(_writeText, txt, ",");
-    expect_string(_writeText, txt, "\"");
-    expect_string(_writeText, txt, "host2");
-    expect_string(_writeText, txt, "\"");
-    expect_string(_writeText, txt, ",");
-    expect_string(_writeText, txt, "\"");
-    expect_string(_writeText, txt, "host3");
-    expect_string(_writeText, txt, "\"");
-    expect_string(_writeText, txt, "]");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"filters\" : [");
-    expect_string(_writeText, txt, "{");
-    expect_string(_writeText, txt, "\"id\" : 1");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"name\" : \"f1\"");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"desc\" : \"Filter 1\"");
-    expect_string(_writeText, txt, "}");
-    expect_string(_writeText, txt, ",");
-    expect_string(_writeText, txt, "{");
-    expect_string(_writeText, txt, "\"id\" : 2");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"name\" : \"f2\"");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"desc\" : \"Filter 2\"");
-    expect_string(_writeText, txt, "}");
-    expect_string(_writeText, txt, ",");
-    expect_string(_writeText, txt, "{");
-    expect_string(_writeText, txt, "\"id\" : 3");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"name\" : \"f3\"");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"desc\" : \"Filter 3\"");
-    expect_string(_writeText, txt, "}");
-    expect_string(_writeText, txt, "]");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"web.colour.dl\" : \"#ff0000\"");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"web.colour.ul\" : \"#00ff00\"");
-    expect_string(_writeText, txt, " };");
+    expect_string(mockWriteHeadersOk, contentType, "application/x-javascript");
+    expect_value(mockWriteHeadersOk, endHeaders, TRUE);
+    expect_string(mockWriteText, txt, "var config = { ");
+    expect_string(mockWriteText, txt, "\"monitorInterval\" : 1");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"summaryInterval\" : 2");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"historyInterval\" : 3");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"monitorIntervalMin\" : 1000");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"monitorIntervalMax\" : 30000");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"historyIntervalMin\" : 5000");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"historyIntervalMax\" : 60000");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"summaryIntervalMin\" : 1000");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"summaryIntervalMax\" : 60000");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"serverName\" : \"server\"");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"allowAdmin\" : 1");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"version\" : \"" VERSION "\"");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"rssItems\" : 10");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"rssFreq\" : 1");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"rssHost\" : \"rsshost\"");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"hosts\" : [");
+    expect_string(mockWriteText, txt, "\"");
+    expect_string(mockWriteText, txt, "host1");
+    expect_string(mockWriteText, txt, "\"");
+    expect_string(mockWriteText, txt, ",");
+    expect_string(mockWriteText, txt, "\"");
+    expect_string(mockWriteText, txt, "host2");
+    expect_string(mockWriteText, txt, "\"");
+    expect_string(mockWriteText, txt, ",");
+    expect_string(mockWriteText, txt, "\"");
+    expect_string(mockWriteText, txt, "host3");
+    expect_string(mockWriteText, txt, "\"");
+    expect_string(mockWriteText, txt, "]");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"filters\" : [");
+    expect_string(mockWriteText, txt, "{");
+    expect_string(mockWriteText, txt, "\"id\" : 1");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"name\" : \"f1\"");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"desc\" : \"Filter 1\"");
+    expect_string(mockWriteText, txt, "}");
+    expect_string(mockWriteText, txt, ",");
+    expect_string(mockWriteText, txt, "{");
+    expect_string(mockWriteText, txt, "\"id\" : 2");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"name\" : \"f2\"");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"desc\" : \"Filter 2\"");
+    expect_string(mockWriteText, txt, "}");
+    expect_string(mockWriteText, txt, ",");
+    expect_string(mockWriteText, txt, "{");
+    expect_string(mockWriteText, txt, "\"id\" : 3");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"name\" : \"f3\"");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"desc\" : \"Filter 3\"");
+    expect_string(mockWriteText, txt, "}");
+    expect_string(mockWriteText, txt, "]");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"web.colour.dl\" : \"#ff0000\"");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"web.colour.ul\" : \"#00ff00\"");
+    expect_string(mockWriteText, txt, " };");
     
     struct Request req = {"GET", "/config", NULL, NULL};
     processConfigRequest(0, &req, TRUE);
@@ -161,64 +136,64 @@ void testConfigWithoutAdmin(void** state) {
     time_t now = makeTs("2009-11-08 10:00:00");
     setTime(now);
     
-    expect_string(_writeHeadersOk, contentType, "application/x-javascript");
-    expect_value(_writeHeadersOk, endHeaders, TRUE);
-    expect_string(_writeText, txt, "var config = { ");
-    expect_string(_writeText, txt, "\"monitorInterval\" : 1");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"summaryInterval\" : 2");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"historyInterval\" : 3");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"monitorIntervalMin\" : 1000");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"monitorIntervalMax\" : 30000");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"historyIntervalMin\" : 5000");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"historyIntervalMax\" : 60000");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"summaryIntervalMin\" : 1000");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"summaryIntervalMax\" : 60000");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"serverName\" : \"server\"");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"allowAdmin\" : 0");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"version\" : \"" VERSION "\"");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"rssItems\" : 10");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"rssFreq\" : 1");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"rssHost\" : \"rsshost\"");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"hosts\" : [");
-    expect_string(_writeText, txt, "]");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"filters\" : [");
-    expect_string(_writeText, txt, "{");
-    expect_string(_writeText, txt, "\"id\" : 1");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"name\" : \"f1\"");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"desc\" : \"Filter 1\"");
-    expect_string(_writeText, txt, "}");
-    expect_string(_writeText, txt, ",");
-    expect_string(_writeText, txt, "{");
-    expect_string(_writeText, txt, "\"id\" : 2");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"name\" : \"f2\"");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"desc\" : \"Filter 2\"");
-    expect_string(_writeText, txt, "}");
-    expect_string(_writeText, txt, "]");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"web.colour.dl\" : \"#ff0000\"");
-    expect_string(_writeText, txt, ", ");
-    expect_string(_writeText, txt, "\"web.colour.ul\" : \"#00ff00\"");
-    expect_string(_writeText, txt, " };");
+    expect_string(mockWriteHeadersOk, contentType, "application/x-javascript");
+    expect_value(mockWriteHeadersOk, endHeaders, TRUE);
+    expect_string(mockWriteText, txt, "var config = { ");
+    expect_string(mockWriteText, txt, "\"monitorInterval\" : 1");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"summaryInterval\" : 2");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"historyInterval\" : 3");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"monitorIntervalMin\" : 1000");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"monitorIntervalMax\" : 30000");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"historyIntervalMin\" : 5000");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"historyIntervalMax\" : 60000");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"summaryIntervalMin\" : 1000");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"summaryIntervalMax\" : 60000");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"serverName\" : \"server\"");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"allowAdmin\" : 0");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"version\" : \"" VERSION "\"");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"rssItems\" : 10");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"rssFreq\" : 1");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"rssHost\" : \"rsshost\"");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"hosts\" : [");
+    expect_string(mockWriteText, txt, "]");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"filters\" : [");
+    expect_string(mockWriteText, txt, "{");
+    expect_string(mockWriteText, txt, "\"id\" : 1");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"name\" : \"f1\"");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"desc\" : \"Filter 1\"");
+    expect_string(mockWriteText, txt, "}");
+    expect_string(mockWriteText, txt, ",");
+    expect_string(mockWriteText, txt, "{");
+    expect_string(mockWriteText, txt, "\"id\" : 2");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"name\" : \"f2\"");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"desc\" : \"Filter 2\"");
+    expect_string(mockWriteText, txt, "}");
+    expect_string(mockWriteText, txt, "]");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"web.colour.dl\" : \"#ff0000\"");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"web.colour.ul\" : \"#00ff00\"");
+    expect_string(mockWriteText, txt, " };");
     
     struct Request req = {"GET", "/config", NULL, NULL};
     processConfigRequest(0, &req, FALSE);
@@ -234,7 +209,7 @@ void testConfigUpdateWithoutAdmin(void** state) {
     struct NameValuePair param = {"anyparam", "anyvalue", NULL};
     struct Request req = {"GET", "/config", &param, NULL};
     
-    expect_string(_writeHeadersForbidden, msg, "config update");
+    expect_string(mockWriteHeadersForbidden, msg, "config update");
     processConfigRequest(0, &req, FALSE);
 	freeStmtList();
 }
@@ -310,9 +285,9 @@ static void testConfigUpdateOkChanged(char* name, char* valueIn, char* valueOut)
     struct NameValuePair param = {name, valueIn, NULL};
     struct Request req = {"GET", "/config", &param, NULL};
     
-    expect_string(_writeHeadersOk, contentType, "application/json");
-    expect_value(_writeHeadersOk, endHeaders, TRUE);
-	expect_string(_writeText, txt, "{}");
+    expect_string(mockWriteHeadersOk, contentType, "application/json");
+    expect_value(mockWriteHeadersOk, endHeaders, TRUE);
+	expect_string(mockWriteText, txt, "{}");
 	
     processConfigRequest(0, &req, TRUE);
     

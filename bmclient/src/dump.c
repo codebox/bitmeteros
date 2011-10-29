@@ -1,6 +1,3 @@
-#ifdef UNIT_TESTING 
-	#include "test.h"
-#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -18,17 +15,6 @@ extern struct Prefs prefs;
 static int valueColWidth = 0;
 static struct Filter* filters;
 
-static struct DumpCalls calls = {&calcMaxValue, &readFilters, &toTime,
-		&toDate, &formatAmountByUnits, &getFilterFromId};
-
-static struct DumpCalls getCalls(){
-	#ifdef UNIT_TESTING
-		return mockDumpCalls;
-	#else
-		return calls;
-	#endif
-}
-
 static void setDefaultPrefs(){
  // Use these defaults if nothing else is specified by the user
 	if (prefs.units == PREF_NOT_SET){
@@ -43,22 +29,26 @@ static void printRow(int ignored, struct Data* row){
  /* We want to print out the date of the beginning of each interval in the dump, so
  	compute this by subtracting the duration (dr) from the timestamp (ts). */
 	char date[11];
-	getCalls().toDate(date, row->ts - row->dr);
+	TO_DATE(date, row->ts - row->dr);
 
  // This is the time marking the start of the interval
 	char timeFrom[9];
-	getCalls().toTime(timeFrom, row->ts - row->dr);
+	TO_TIME(timeFrom, row->ts - row->dr);
 
  // This is the time marking the end of the interval
 	char timeTo[9];
-	getCalls().toTime(timeTo, row->ts);
+	TO_TIME(timeTo, row->ts);
 
  // Format the values
 	char vlTxt[20];
-	getCalls().formatAmountByUnits(row->vl, vlTxt, prefs.units);
+	FORMAT_AMOUNT_BY_UNITS(row->vl, vlTxt, prefs.units);
 
-	struct Filter* filter = getCalls().getFilterFromId(filters, row->fl);
-
+	struct Filter* filter = getFilterFromId(filters, row->fl);
+	if (filter == NULL){
+		logMsg(LOG_ERR, "No filter found for id=%d\n", row->fl);	
+		return;
+	}
+	
 	if (prefs.dumpFormat == PREF_DUMP_FORMAT_CSV){
 	 // Output in CSV is easy, just print it
 		printf("%s,%s,%s,%d,%s,%s\n", date, timeFrom, timeTo, row->dr, vlTxt, filter->name);
@@ -108,7 +98,7 @@ void doDump(){
 	setDefaultPrefs();
 
  // We need to retrieve details of the filters so we can print the correct filter name for each row
-	filters = getCalls().readFilters();
+	filters = readFilters();
 
  /* If we are displaying the ul/dl values in bytes, and we are using a fixed width output
  	format, then we need to calculate the larges ul/dl values so we know how wide to make
@@ -117,7 +107,7 @@ void doDump(){
 	if (calcColWidths){
 	 // We need a transaction because the max values must be consistent with the data that we are dumping out
         beginTrans(FALSE);
-        struct Data* data = getCalls().calcMaxValue();
+        struct Data* data = calcMaxValue();
 		valueColWidth = (int) log10(data->vl) + 1;
 		freeData(data);
 	}

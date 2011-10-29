@@ -11,47 +11,6 @@
 /*
 Contains unit tests for the handleMonitor module.
 */
-static void _writeHeadersServerError(SOCKET fd, char* msg, ...){
-	check_expected(msg);
-}
-static void _writeHeadersOk(SOCKET fd, char* contentType, int endHeaders){
-	check_expected(contentType);
-	check_expected(endHeaders);
-}
-static void _writeDataToJsonTs(time_t ts){
-	check_expected(ts);
-}
-static void _writeDataToJsonVl(BW_INT vl){
-	check_expected(vl);
-}
-static void _writeDataToJsonDr(int dr){
-	check_expected(dr);
-}
-static void _writeDataToJsonTg(int fl){
-	check_expected(fl);
-}
-static void _writeDataToJson(SOCKET fd, struct Data* data){
-	while(data != NULL){
-		_writeDataToJsonTs(data->ts);
-		_writeDataToJsonVl(data->vl);
-		_writeDataToJsonDr(data->dr);
-		_writeDataToJsonTg(data->fl);
-		data = data->next;
-	}
-}
-static void _writeText(SOCKET fd, char* txt){
-	check_expected(txt);
-}
-
-void setupTestForHandleMonitor(void** state){
-	setupTestDb(state);
-	struct HandleMonitorCalls calls = {&_writeHeadersServerError, &_writeHeadersOk, &_writeDataToJson, &_writeText};
-	mockHandleMonitorCalls = calls;
-};
-
-void tearDownTestForHandleMonitor(void** state){
-	tearDownTestDb(state);
-}
 
 void testNoTsParam(void** state) {
  // The 'ts' parameter is required, so we should get an HTTP error if its missing
@@ -60,7 +19,7 @@ void testNoTsParam(void** state) {
     time_t now = makeTs("2009-11-08 10:00:00");
     setTime(now);
     
-    expect_string(_writeHeadersServerError, msg, "processMonitorRequest, ts parameter missing/invalid: %s");
+    expect_string(mockWriteHeadersServerError, msg, "processMonitorRequest, ts parameter missing/invalid: %s");
 
     processMonitorRequest(0, &req);
 	freeStmtList();
@@ -74,7 +33,7 @@ void testNoTgParam(void** state) {
     time_t now = makeTs("2009-11-08 10:00:00");
     setTime(now);
     
-    expect_string(_writeHeadersServerError, msg, "processMonitorRequest, fl parameter missing");
+    expect_string(mockWriteHeadersServerError, msg, "processMonitorRequest, fl parameter missing");
 
     processMonitorRequest(0, &req);
 	freeStmtList();
@@ -99,26 +58,26 @@ void testMonitorParamsOkOneFilter(void** state) {
     addDbRow(makeTs("2009-11-08 09:58:00"), 1,  8, 2);
     addDbRow(makeTs("2009-11-08 09:57:59"), 1, 16, 1);
     
-    expect_string(_writeHeadersOk, contentType, "application/json");
-    expect_value(_writeHeadersOk, endHeaders, TRUE);
-	expect_string(_writeText, txt, "{\"serverTime\" : 1257674400, \"data\" : ");
+    expect_string(mockWriteHeadersOk, contentType, "application/json");
+    expect_value(mockWriteHeadersOk, endHeaders, TRUE);
+	expect_string(mockWriteText, txt, "{\"serverTime\" : 1257674400, \"data\" : ");
 
-    expect_value(_writeDataToJsonTs, ts, 0);
-    expect_value(_writeDataToJsonDr, dr, 1);
-    expect_value(_writeDataToJsonTg, fl, 1);
-    expect_value(_writeDataToJsonVl, vl, 2);
+    expect_value(mockWriteDataToJsonTs, ts, 0);
+    expect_value(mockWriteDataToJsonDr, dr, 1);
+    expect_value(mockWriteDataToJsonTg, fl, 1);
+    expect_value(mockWriteDataToJsonVl, vl, 2);
 
-    expect_value(_writeDataToJsonTs, ts, 60);
-    expect_value(_writeDataToJsonDr, dr, 1);
-    expect_value(_writeDataToJsonTg, fl, 1);
-    expect_value(_writeDataToJsonVl, vl, 4);
+    expect_value(mockWriteDataToJsonTs, ts, 60);
+    expect_value(mockWriteDataToJsonDr, dr, 1);
+    expect_value(mockWriteDataToJsonTg, fl, 1);
+    expect_value(mockWriteDataToJsonVl, vl, 4);
 
-    expect_value(_writeDataToJsonTs, ts, 120);
-    expect_value(_writeDataToJsonDr, dr, 1);
-    expect_value(_writeDataToJsonTg, fl, 1);
-    expect_value(_writeDataToJsonVl, vl, 8);
+    expect_value(mockWriteDataToJsonTs, ts, 120);
+    expect_value(mockWriteDataToJsonDr, dr, 1);
+    expect_value(mockWriteDataToJsonTg, fl, 1);
+    expect_value(mockWriteDataToJsonVl, vl, 8);
 
-	expect_string(_writeText, txt, "}");
+	expect_string(mockWriteText, txt, "}");
 	
     processMonitorRequest(0, &req);
     
@@ -144,31 +103,31 @@ void testMonitorParamsOkMultiFilter(void** state) {
     addDbRow(makeTs("2009-11-08 09:58:00"), 1,  8, 2);
     addDbRow(makeTs("2009-11-08 09:57:59"), 1, 16, 1);
     
-    expect_string(_writeHeadersOk, contentType, "application/json");
-    expect_value(_writeHeadersOk, endHeaders, TRUE);
-	expect_string(_writeText, txt, "{\"serverTime\" : 1257674400, \"data\" : ");
+    expect_string(mockWriteHeadersOk, contentType, "application/json");
+    expect_value(mockWriteHeadersOk, endHeaders, TRUE);
+	expect_string(mockWriteText, txt, "{\"serverTime\" : 1257674400, \"data\" : ");
 
-    expect_value(_writeDataToJsonTs, ts, 0);
-    expect_value(_writeDataToJsonDr, dr, 1);
-    expect_value(_writeDataToJsonTg, fl, 1);
-    expect_value(_writeDataToJsonVl, vl, 2);
+    expect_value(mockWriteDataToJsonTs, ts, 0);
+    expect_value(mockWriteDataToJsonDr, dr, 1);
+    expect_value(mockWriteDataToJsonTg, fl, 1);
+    expect_value(mockWriteDataToJsonVl, vl, 2);
 
-    expect_value(_writeDataToJsonTs, ts, 60);
-    expect_value(_writeDataToJsonDr, dr, 1);
-    expect_value(_writeDataToJsonTg, fl, 1);
-    expect_value(_writeDataToJsonVl, vl, 4);
+    expect_value(mockWriteDataToJsonTs, ts, 60);
+    expect_value(mockWriteDataToJsonDr, dr, 1);
+    expect_value(mockWriteDataToJsonTg, fl, 1);
+    expect_value(mockWriteDataToJsonVl, vl, 4);
 
-    expect_value(_writeDataToJsonTs, ts, 120);
-    expect_value(_writeDataToJsonDr, dr, 1);
-    expect_value(_writeDataToJsonTg, fl, 1);
-    expect_value(_writeDataToJsonVl, vl, 8);
+    expect_value(mockWriteDataToJsonTs, ts, 120);
+    expect_value(mockWriteDataToJsonDr, dr, 1);
+    expect_value(mockWriteDataToJsonTg, fl, 1);
+    expect_value(mockWriteDataToJsonVl, vl, 8);
 
-    expect_value(_writeDataToJsonTs, ts, 0);
-    expect_value(_writeDataToJsonDr, dr, 1);
-    expect_value(_writeDataToJsonTg, fl, 3);
-    expect_value(_writeDataToJsonVl, vl, 2);
+    expect_value(mockWriteDataToJsonTs, ts, 0);
+    expect_value(mockWriteDataToJsonDr, dr, 1);
+    expect_value(mockWriteDataToJsonTg, fl, 3);
+    expect_value(mockWriteDataToJsonVl, vl, 2);
 
-	expect_string(_writeText, txt, "}");
+	expect_string(mockWriteText, txt, "}");
 	
     processMonitorRequest(0, &req);
     

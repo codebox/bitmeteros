@@ -12,56 +12,10 @@
 Contains unit tests for the handleQuery module.
 */
 
-static void _writeHeadersServerError(SOCKET fd, char* msg, ...){
-	check_expected(msg);
-}
-static void _writeHeadersOk(SOCKET fd, char* contentType, int endHeaders){
-	check_expected(contentType);
-	check_expected(endHeaders);
-}
-static void _writeHeader(SOCKET fd, char* name, char* value){
-	check_expected(name);
-	check_expected(value);
-}
-static void _writeEndOfHeaders(SOCKET fd){
-	check_expected(fd);
-}
-static void _writeDataToJsonTs(time_t ts){
-	check_expected(ts);
-}
-static void _writeDataToJsonVl(BW_INT vl){
-	check_expected(vl);
-}
-static void _writeDataToJsonDr(int dr){
-	check_expected(dr);
-}
-static void _writeDataToJsonTg(int fl){
-	check_expected(fl);
-}
-static void _writeDataToJson(SOCKET fd, struct Data* data){
-	while(data != NULL){
-		_writeDataToJsonTs(data->ts);
-		_writeDataToJsonVl(data->vl);
-		_writeDataToJsonDr(data->dr);
-		_writeDataToJsonTg(data->fl);
-		data = data->next;
-	}
-}
-static void _writeText(SOCKET fd, char* txt){
-	check_expected(txt);
-}
-
 void setupTestForHandleQuery(void** state){
 	setupTestDb(state);
 	addFilterRow(FILTER, "filter desc", "filter", "expr", NULL);
-	struct HandleQueryCalls calls = {&_writeHeadersServerError, &_writeHeadersOk, &_writeHeader,
-			&_writeEndOfHeaders, &_writeDataToJson, &_writeText};
-	mockHandleQueryCalls = calls;
 };
-
-void tearDownTestForHandleQuery(void** state){
-	tearDownTestDb(state);
-}
 
 void testMissingParam(void** state) {
  // The 3 parameters are required, so we should get an HTTP error if they are missing
@@ -70,7 +24,7 @@ void testMissingParam(void** state) {
     time_t now = makeTs("2009-11-08 10:00:00");
     setTime(now);
     
-	expect_string(_writeHeadersServerError, msg, "processQueryRequest, param bad/missing from=%s, to=%s, group=%s, fl=%d");
+	expect_string(mockWriteHeadersServerError, msg, "processQueryRequest, param bad/missing from=%s, to=%s, group=%s, fl=%d");
     
     processQueryRequest(0, &req);
     
@@ -92,15 +46,15 @@ void testParamsOkOneFilter(void** state) {
     addDbRow(makeTs("2009-11-04 12:00:00"), 3600,  8, 1); // Match
     addDbRow(makeTs("2009-11-05 12:00:00"), 3600, 16, 1);
     
-    expect_string(_writeHeadersOk, contentType, "application/json");
-    expect_value(_writeHeadersOk, endHeaders, TRUE);
+    expect_string(mockWriteHeadersOk, contentType, "application/json");
+    expect_value(mockWriteHeadersOk, endHeaders, TRUE);
     
  // The 'ts' value = 2009-11-05 00:00:00, ie the end of the date range covered by the query
  // The 'dr' value = 3 * 24 * 3600, ie the number of seconds in 3 days
-    expect_value(_writeDataToJsonTs, ts, 1257379200);
-    expect_value(_writeDataToJsonDr, dr, 259200);
-    expect_value(_writeDataToJsonTg, fl, 1);
-    expect_value(_writeDataToJsonVl, vl, 14);
+    expect_value(mockWriteDataToJsonTs, ts, 1257379200);
+    expect_value(mockWriteDataToJsonDr, dr, 259200);
+    expect_value(mockWriteDataToJsonTg, fl, 1);
+    expect_value(mockWriteDataToJsonVl, vl, 14);
     processQueryRequest(0, &req);
                                     
 	freeStmtList();                                    	
@@ -123,25 +77,25 @@ void testParamsOkMultiFilter(void** state) {
     addDbRow(makeTs("2009-11-04 12:00:00"), 3600,  8, 4); // Match
     addDbRow(makeTs("2009-11-05 12:00:00"), 3600, 16, 1);
     
-    expect_string(_writeHeadersOk, contentType, "application/json");
-    expect_value(_writeHeadersOk, endHeaders, TRUE);
+    expect_string(mockWriteHeadersOk, contentType, "application/json");
+    expect_value(mockWriteHeadersOk, endHeaders, TRUE);
     
  // The 'ts' value = 2009-11-05 00:00:00, ie the end of the date range covered by the query
  // The 'dr' value = 3 * 24 * 3600, ie the number of seconds in 3 days
-    expect_value(_writeDataToJsonTs, ts, 1257379200);
-    expect_value(_writeDataToJsonDr, dr, 259200);
-    expect_value(_writeDataToJsonTg, fl, 1);
-    expect_value(_writeDataToJsonVl, vl, 6);
+    expect_value(mockWriteDataToJsonTs, ts, 1257379200);
+    expect_value(mockWriteDataToJsonDr, dr, 259200);
+    expect_value(mockWriteDataToJsonTg, fl, 1);
+    expect_value(mockWriteDataToJsonVl, vl, 6);
 
-    expect_value(_writeDataToJsonTs, ts, 1257249600);
-    expect_value(_writeDataToJsonDr, dr, 3600);
-    expect_value(_writeDataToJsonTg, fl, 3);
-    expect_value(_writeDataToJsonVl, vl, 4);
+    expect_value(mockWriteDataToJsonTs, ts, 1257249600);
+    expect_value(mockWriteDataToJsonDr, dr, 3600);
+    expect_value(mockWriteDataToJsonTg, fl, 3);
+    expect_value(mockWriteDataToJsonVl, vl, 4);
 
-    expect_value(_writeDataToJsonTs, ts, 1257336000);
-    expect_value(_writeDataToJsonDr, dr, 3600);
-    expect_value(_writeDataToJsonTg, fl, 4);
-    expect_value(_writeDataToJsonVl, vl, 8);
+    expect_value(mockWriteDataToJsonTs, ts, 1257336000);
+    expect_value(mockWriteDataToJsonDr, dr, 3600);
+    expect_value(mockWriteDataToJsonTg, fl, 4);
+    expect_value(mockWriteDataToJsonVl, vl, 8);
 
     processQueryRequest(0, &req);
                                     
@@ -164,18 +118,18 @@ void testGroupByDay(void** state) {
     addDbRow(makeTs("2009-11-02 23:00:00"), 3600, 16, 1);
     addDbRow(makeTs("2009-11-02 23:00:00"), 3600, 32, 3); // wrong filter
     
-    expect_string(_writeHeadersOk, contentType, "application/json");
-    expect_value(_writeHeadersOk, endHeaders, TRUE);
+    expect_string(mockWriteHeadersOk, contentType, "application/json");
+    expect_value(mockWriteHeadersOk, endHeaders, TRUE);
     
-    expect_value(_writeDataToJsonTs, ts, 1257120000);
-    expect_value(_writeDataToJsonDr, dr, 54000);
-    expect_value(_writeDataToJsonTg, fl, 1);
-    expect_value(_writeDataToJsonVl, vl, 7);
+    expect_value(mockWriteDataToJsonTs, ts, 1257120000);
+    expect_value(mockWriteDataToJsonDr, dr, 54000);
+    expect_value(mockWriteDataToJsonTg, fl, 1);
+    expect_value(mockWriteDataToJsonVl, vl, 7);
 
-    expect_value(_writeDataToJsonTs, ts, 1257206400);
-    expect_value(_writeDataToJsonDr, dr, 86400);
-    expect_value(_writeDataToJsonTg, fl, 1);
-    expect_value(_writeDataToJsonVl, vl, 24);
+    expect_value(mockWriteDataToJsonTs, ts, 1257206400);
+    expect_value(mockWriteDataToJsonDr, dr, 86400);
+    expect_value(mockWriteDataToJsonTg, fl, 1);
+    expect_value(mockWriteDataToJsonVl, vl, 24);
 
     processQueryRequest(0, &req);
                                     
@@ -197,20 +151,20 @@ void testParamsOkReversed(void** state) {
     addDbRow(makeTs("2009-11-04 12:00:00"), 3600,  8, 1); // Match
     addDbRow(makeTs("2009-11-05 12:00:00"), 3600, 16, 1);
     
-    expect_string(_writeHeadersOk, contentType, "application/json");
-    expect_value(_writeHeadersOk, endHeaders, TRUE);
+    expect_string(mockWriteHeadersOk, contentType, "application/json");
+    expect_value(mockWriteHeadersOk, endHeaders, TRUE);
     
  // The 'ts' values = 2009-11-04 00:00:00 and 2009-11-05 00:00:00, ie the ends of the 2 days
  // The 'dr' value = 24 * 3600, ie the number of seconds in a day
-    expect_value(_writeDataToJsonTs, ts, 1257292800);
-    expect_value(_writeDataToJsonDr, dr, 86400);
-    expect_value(_writeDataToJsonTg, fl, 1);
-    expect_value(_writeDataToJsonVl, vl, 4);
+    expect_value(mockWriteDataToJsonTs, ts, 1257292800);
+    expect_value(mockWriteDataToJsonDr, dr, 86400);
+    expect_value(mockWriteDataToJsonTg, fl, 1);
+    expect_value(mockWriteDataToJsonVl, vl, 4);
 
-    expect_value(_writeDataToJsonTs, ts, 1257379200);
-    expect_value(_writeDataToJsonDr, dr, 86400);
-    expect_value(_writeDataToJsonTg, fl, 1);
-    expect_value(_writeDataToJsonVl, vl, 8);
+    expect_value(mockWriteDataToJsonTs, ts, 1257379200);
+    expect_value(mockWriteDataToJsonDr, dr, 86400);
+    expect_value(mockWriteDataToJsonTg, fl, 1);
+    expect_value(mockWriteDataToJsonVl, vl, 8);
 
     processQueryRequest(0, &req);
     
@@ -222,7 +176,7 @@ void testGroupByDayCsv(void** state) {
     struct NameValuePair toParam    = {"to",   "1258281927", &fromParam};
     struct NameValuePair groupParam = {"group", "2", &toParam};
     struct NameValuePair csvParam   = {"csv", "1", &groupParam};
-    struct NameValuePair flParam    = {"fl", "1", &csvParam};
+    struct NameValuePair flParam    = {"fl", "1,2", &csvParam}; // include a filter that does not exist
     struct Request req = {"GET", "/query", &flParam, NULL};
     
     emptyDb();
@@ -232,13 +186,13 @@ void testGroupByDayCsv(void** state) {
     addDbRow(makeTs("2009-11-02 09:00:00"), 3600,  8, FILTER);
     addDbRow(makeTs("2009-11-02 23:00:00"), 3600, 16, FILTER);
     
-    expect_string(_writeHeadersOk, contentType, "text/csv");
-    expect_value(_writeHeadersOk, endHeaders, FALSE);
-    expect_string(_writeHeader, name, "Content-Disposition");
-    expect_string(_writeHeader, value, "attachment;filename=bitmeterOsQuery.csv");
-	expect_value(_writeEndOfHeaders, fd, 0);
-    expect_string(_writeText, txt, "2009-11-01 09:00:00,7,filter\n");
-    expect_string(_writeText, txt, "2009-11-02 00:00:00,24,filter\n");
+    expect_string(mockWriteHeadersOk, contentType, "text/csv");
+    expect_value(mockWriteHeadersOk, endHeaders, FALSE);
+    expect_string(mockWriteHeader, name, "Content-Disposition");
+    expect_string(mockWriteHeader, value, "attachment;filename=bitmeterOsQuery.csv");
+	expect_value(mockWriteEndOfHeaders, fd, 0);
+    expect_string(mockWriteText, txt, "2009-11-01 09:00:00,7,filter\n");
+    expect_string(mockWriteText, txt, "2009-11-02 00:00:00,24,filter\n");
     
     processQueryRequest(0, &req);
     

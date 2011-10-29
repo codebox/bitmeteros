@@ -1,10 +1,7 @@
-#ifdef UNIT_TESTING 
-	#include "test.h"
-#endif
 #ifdef _WIN32
 	#define __USE_MINGW_ANSI_STDIO 1
 #endif
-#define HAVE_REMOTE
+#define HAVE_REMOTE 1
 #include <stdio.h>
 #include <stdlib.h>
 #include "capture.h"
@@ -20,24 +17,6 @@ Contains the high-level code that is invoked by the main processing loop of the 
 in here co-ordinates the various data capture and storage invocations, as well as performing the required
 initialisation, and termination steps.
 */
-
-#ifdef STATS_MODE
-	static struct ProcessCalls calls = {&openDb, &closeDb, &compressDb, &getNextCompressTime, &pcap_findalldevs_ex,
-		&pcap_open, &pcap_setnonblock, &pcap_compile, &pcap_setfilter, &pcap_freecode, 
-		&pcap_setmode, &pcap_dispatch, &pcap_freealldevs};
-#else
-	static struct ProcessCalls calls = {&openDb, &closeDb, &compressDb, &getNextCompressTime, &pcap_findalldevs_ex,
-		&pcap_open, &pcap_setnonblock, &pcap_compile, &pcap_setfilter, &pcap_freecode, 
-		&pcap_dispatch, &pcap_freealldevs};
-#endif
-
-static struct ProcessCalls getCalls(){
-	#ifdef UNIT_TESTING
-		return mockProcessCalls;
-	#else
-		return calls;
-	#endif
-}
 
 static int tsCompress;
 static int dbWriteInterval;
@@ -57,13 +36,13 @@ static void setCustomLogLevel(){
 
 void setupCapture(){
  // Called once when the application starts - setup up the various db related things...
-    getCalls().openDb();
+    OPEN_DB();
     setCustomLogLevel();
     dbVersionCheck();
 	setupDb();
-	getCalls().compressDb();
+	COMPRESS_DB();
 
-	tsCompress = getCalls().getNextCompressTime();
+	tsCompress = GET_NEXT_COMPRESS_TIME();
 	
  // Check how often we should write captured values to the database - the default is every second
 	dbWriteInterval = getConfigInt(CONFIG_DB_WRITE_INTERVAL, TRUE);
@@ -76,7 +55,7 @@ void setupCapture(){
 	char errbuf[PCAP_ERRBUF_SIZE];
 
  // See what network devices are available
-    if (getCalls().pcap_findalldevs_ex(PCAP_SRC_IF_STRING, NULL, &allDevices, errbuf) == -1) {
+    if (PCAP_FINDALLDEVS_EX(PCAP_SRC_IF_STRING, NULL, &allDevices, errbuf) == -1) {
         logMsg(LOG_ERR, "Error in pcap_findalldevs_ex: %s", errbuf);
         exit(1); //TODO
     }
@@ -120,24 +99,24 @@ static pcap_t* getFilterHandle(char* dev, char* filter){
 	pcap_t *adhandle;
 	char errbuf[PCAP_ERRBUF_SIZE];
     
-    if ((adhandle = getCalls().pcap_open(dev, 100, NON_PROMISCUOUS_MODE, 1000, NULL, errbuf)) == NULL) {
+    if ((adhandle = PCAP_OPEN(dev, 100, NON_PROMISCUOUS_MODE, 1000, NULL, errbuf)) == NULL) {
         logMsg(LOG_ERR, "Unable to open the device %s", dev);
         return NULL;
     }
 
-	if (getCalls().pcap_setnonblock(adhandle, 1, errbuf) < 0) {
+	if (PCAP_SETNONBLOCK(adhandle, 1, errbuf) < 0) {
 		logMsg(LOG_ERR, "Unable to set non-blocking mode on device %s: %s", dev, errbuf);
 		return NULL;
 	}
 	
 	struct bpf_program fcode;
-	if (getCalls().pcap_compile(adhandle, &fcode, filter, 1, 0) < 0) {
+	if (PCAP_COMPILE(adhandle, &fcode, filter, 1, 0) < 0) {
         logMsg(LOG_ERR, "Unable to compile the packet filter '%s': %s", filter, pcap_geterr(adhandle));
         return NULL;
     }
 
-	int rc = getCalls().pcap_setfilter(adhandle, &fcode);
-    getCalls().pcap_freecode(&fcode); 	
+	int rc = PCAP_SETFILTER(adhandle, &fcode);
+    PCAP_FREECODE(&fcode); 	
 	if (rc < 0) {
         logMsg(LOG_ERR, "Error setting the filter: %s", pcap_geterr(adhandle));
         return NULL;
@@ -145,7 +124,7 @@ static pcap_t* getFilterHandle(char* dev, char* filter){
 
     #ifdef STATS_MODE
 	    /* Put the interface in statistics mode */
-	    if (getCalls().pcap_setmode(adhandle, MODE_STAT) < 0) { 
+	    if (PCAP_SETMODE(adhandle, MODE_STAT) < 0) { 
 	        logMsg(LOG_ERR, "Error putting device %s into statistics mode", dev);
 	        return NULL;
 	    }
@@ -163,7 +142,7 @@ int processCapture(){
 	while(adapter != NULL) {
 		struct Total* total = adapter->total;
 		while(total != NULL){
-			getCalls().pcap_dispatch(total->handle, -1, packet_handler, (u_char *)total);
+			PCAP_DISPATCH(total->handle, -1, packet_handler, (u_char *)total);
 			total = total->next;	
 		}
 		adapter = adapter->next;
@@ -194,20 +173,20 @@ int processCapture(){
 	
  // Is it time to compress the database yet?
 	if (ts > tsCompress) {
-		status = getCalls().compressDb();
+		status = COMPRESS_DB();
 		if (status == FAIL){
             return FAIL;
 		}
-		tsCompress = getCalls().getNextCompressTime();
+		tsCompress = GET_NEXT_COMPRESS_TIME();
 	}
 }
 
 void shutdownCapture(){
  // Called when the application shuts down
- 	getCalls().pcap_freealldevs(allDevices);
+ 	PCAP_FREEALLDEVS(allDevices);
  	freeAdapters(adapters);
  	freeFilters(filters);
-	getCalls().closeDb();
+	CLOSE_DB();
 }
 
 void logData(struct Data* data){

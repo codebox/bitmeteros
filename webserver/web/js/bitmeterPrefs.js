@@ -55,7 +55,7 @@ $(function(){
     	});
     	
      // Then get colours for any filters that still don't have one
-     	var COLOUR_LIST = ['#ff0000', '#00ff00', '#A60000', '#007f16', '#0000ff', '#000088'];
+     	var COLOUR_LIST = ['#ff0000', '#00b800', '#ffac0f', '#0065ff', '#8f00ff', '#9bff00', '#00f9ff', '#ff52ad', '#666666', '#000000'];
      	var coloursInUse = [];
    		var colour;
      	BITMETER.forEachFilter(function(f){
@@ -170,8 +170,6 @@ $(function(){
 		});    
 	}
     setFiltersCheckboxes();
-    
-    $('#chkShowFilterWarning').attr('checked', BITMETER.model.getShowFilterWarning());
     
     $('#prefsFiltersSaveLocal').button();
     $('#prefsFiltersSaveLocal').click(function(){
@@ -387,7 +385,14 @@ $(function(){
             }, 3000);
     });
     $(function() {
-        $("#prefsTabs").tabs().addClass('ui-tabs-vertical ui-helper-clearfix');
+        $("#prefsTabs").tabs({
+            show: function(event, ui) {
+             // Update the list of filters each time we display the tab
+            	if (ui.index===1){ // Filter Display
+            		setFiltersCheckboxes();
+            	}
+	        }
+	    }).addClass('ui-tabs-vertical ui-helper-clearfix');
         $("#prefsTabs li").removeClass('ui-corner-top').addClass('ui-corner-left');
     });
 

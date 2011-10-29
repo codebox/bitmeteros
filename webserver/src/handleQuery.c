@@ -1,9 +1,6 @@
 #ifdef _WIN32
 	#define __USE_MINGW_ANSI_STDIO 1
 #endif
-#ifdef UNIT_TESTING 
-	#include "test.h"
-#endif
 #include <stdlib.h>
 #include "sqlite3.h"
 #include "bmws.h"
@@ -19,19 +16,7 @@
 Handles '/query' requests received by the web server.
 */
 
-
 static void writeCsvRow(SOCKET fd, struct Data* row, struct Filter* filters);
-
-static struct HandleQueryCalls calls = {&writeHeadersServerError, &writeHeadersOk, &writeHeader,
-	&writeEndOfHeaders, &writeDataToJson, &writeText};
-                                         
-static struct HandleQueryCalls getCalls(){
-	#ifdef UNIT_TESTING	
-		return mockHandleQueryCalls;
-	#else
-		return calls;
-	#endif
-}
 
 void processQueryRequest(SOCKET fd, struct Request* req){
 	struct NameValuePair* params = req->params;
@@ -44,7 +29,7 @@ void processQueryRequest(SOCKET fd, struct Request* req){
 
     if (from == BAD_PARAM || to == BAD_PARAM || group == BAD_PARAM || fl == NULL){
      // We need all 4 parameters
-     	getCalls().writeHeadersServerError(fd, "processQueryRequest, param bad/missing from=%s, to=%s, group=%s, fl=%d",
+     	WRITE_HEADERS_SERVER_ERROR(fd, "processQueryRequest, param bad/missing from=%s, to=%s, group=%s, fl=%d",
      		getValueForName("from",  params, NULL),
      		getValueForName("to",    params, NULL),
      		getValueForName("fl",    params, NULL),
@@ -74,14 +59,13 @@ void processQueryRequest(SOCKET fd, struct Request* req){
 
 		if (csv){
 		 // Export the query results in CSV format
-		    getCalls().writeHeadersOk(fd, MIME_CSV, FALSE);
-		    getCalls().writeHeader(fd, "Content-Disposition", "attachment;filename=bitmeterOsQuery.csv");
-		    getCalls().writeEndOfHeaders(fd);
+		    WRITE_HEADERS_OK(fd, MIME_CSV, FALSE);
+		    WRITE_HEADER(fd, "Content-Disposition", "attachment;filename=bitmeterOsQuery.csv");
+		    WRITE_END_OF_HEADERS(fd);
 		    
 		    struct Data* thisResult = result;
 		    
 			struct Filter* filters = readFilters();
-
 		    while(thisResult != NULL){
 		    	writeCsvRow(fd, thisResult, filters);	
 		    	thisResult = thisResult->next;	
@@ -90,8 +74,8 @@ void processQueryRequest(SOCKET fd, struct Request* req){
 		    
 		} else {
 		 // Send results back as JSON
-	        getCalls().writeHeadersOk(fd, MIME_JSON, TRUE);
-			getCalls().writeDataToJson(fd, result);	
+	        WRITE_HEADERS_OK(fd, MIME_JSON, TRUE);
+			WRITE_DATA_TO_JSON(fd, result);	
 		}
         
         freeData(result);
@@ -101,15 +85,16 @@ void processQueryRequest(SOCKET fd, struct Request* req){
 }
 
 static void writeCsvRow(SOCKET fd, struct Data* row, struct Filter* filters){
-	char datePart[11];
-	toDate(datePart, row->ts - row->dr);
-
-	char timePart[9];
-	toTime(timePart, row->ts - row->dr);
-
-	char rowTxt[256]; //TODO long filter names will break this
 	struct Filter* filter = getFilterFromId(filters, row->fl);
+	if (filter != NULL){
+		char datePart[11];
+		toDate(datePart, row->ts - row->dr);
 	
-	sprintf(rowTxt, "%s %s,%llu,%s\n", datePart, timePart, row->vl, filter->name);	
-	getCalls().writeText(fd, rowTxt);
+		char timePart[9];
+		toTime(timePart, row->ts - row->dr);
+
+		char rowTxt[256]; //TODO long filter names will break this
+		sprintf(rowTxt, "%s %s,%llu,%s\n", datePart, timePart, row->vl, filter->name);	
+		WRITE_TEXT(fd, rowTxt);
+	}
 }

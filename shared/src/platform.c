@@ -1,6 +1,3 @@
-#ifdef UNIT_TESTING 
-	#include "test.h"
-#endif
 #include "common.h"
 #include <time.h>
 #include <stdlib.h>

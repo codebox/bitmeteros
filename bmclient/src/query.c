@@ -28,7 +28,7 @@ static void setDefaultPrefs(){
 	}
 }
 
-void doQuery(){
+void doBmClientQuery(){
 	setDefaultPrefs();
 
 	if (prefs.rangeFrom == 0 && prefs.rangeTo == 0){

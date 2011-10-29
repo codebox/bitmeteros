@@ -1,6 +1,3 @@
-#ifdef UNIT_TESTING 
-	#include "test.h"
-#endif
 #include <unistd.h>
 #include <sqlite3.h>
 #include <stdlib.h>

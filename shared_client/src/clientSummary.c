@@ -1,6 +1,3 @@
-#ifdef UNIT_TESTING
-	#import "test.h"
-#endif
 #include <sqlite3.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,7 +8,7 @@
 Contains a helper function for use by clients that need to produce database summaries.
 */
 
-#define DATA_SUMMARY_SQL_ALL "SELECT SUM(vl) AS vl, fl AS fl FROM data2 WHERE ts>=? GROUP BY fl ORDER BY fl"
+#define DATA_SUMMARY_SQL_ALL "SELECT SUM(vl) AS vl, fl AS fl FROM data WHERE ts>=? GROUP BY fl ORDER BY fl"
 #define HOST_SUMMARY_SQL     "SELECT DISTINCT(host) AS host FROM filter WHERE host != ''"
 
 static void getHosts(char*** hostNames, int* hostCount);

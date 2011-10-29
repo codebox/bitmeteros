@@ -1,7 +1,4 @@
 #define _GNU_SOURCE
-#ifdef UNIT_TESTING 
-	#include "test.h"
-#endif
 #include "common.h"
 #include <stdlib.h>
 #include <string.h>

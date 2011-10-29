@@ -12,60 +12,11 @@
 Contains unit tests for the handleAlert module.
 */
 
-static void _writeHeadersServerError(SOCKET fd, char* msg, ...){
-	check_expected(msg);
-}
-static void _writeHeadersOk(SOCKET fd, char* contentType, int endHeaders){
-	check_expected(contentType);
-	check_expected(endHeaders);
-}
-static void _writeHeadersForbidden(SOCKET fd, char* request){
-	check_expected(request);
-}
-
-static void _writeText(SOCKET fd, char* txt){
-	check_expected(txt);
-}
-
-static void _writeNumValueToJson(SOCKET fd, char* key, BW_INT value){
-	check_expected(key);
-	check_expected(value);
-}
-static void _writeTextValueToJson(SOCKET fd, char* key, char* value){
-	check_expected(key);
-	check_expected(value);
-}
-static void _writeTextArrayToJsonValue(char* value){
-	check_expected(value);
-}
-static void _writeTextArrayToJson(SOCKET fd, char* key, char** values){
-	if (key != NULL){
-		check_expected(key);
-	}
-	
-	while (*values != NULL){
-		_writeTextArrayToJsonValue(*values);
-		values++;
-	}
-}
-
-void setupTestForHandleAlert(void** state){
-	setupTestDb(state);
-	struct HandleAlertCalls calls = {&_writeHeadersServerError, &_writeHeadersForbidden, 
-			&_writeHeadersOk, &_writeText, &_writeNumValueToJson, &_writeTextValueToJson,
-			&_writeTextArrayToJson};
-	mockHandleAlertCalls = calls;
-};
-
-void tearDownTestForHandleAlert(void** state){
-	tearDownTestDb(state);
-}
-
 void testAlertNoAction(void** state) {
  // The 'action' parameter is required, so we should get an HTTP error if its missing
     struct Request req = {"GET", "/alert", NULL, NULL};
 
-	expect_string(_writeHeadersServerError, msg, "Missing/invalid 'action' parameter: '%s'");    
+	expect_string(mockWriteHeadersServerError, msg, "Missing/invalid 'action' parameter: '%s'");    
 	
     processAlertRequest(0, &req, FALSE);
 }
@@ -74,10 +25,10 @@ void testAlertListNone(void** state) {
  	struct NameValuePair param = {"action", "list", NULL};
     struct Request req = {"GET", "/alert", &param, NULL};
     
-    expect_string(_writeHeadersOk, contentType, "application/json");
-    expect_value(_writeHeadersOk, endHeaders, TRUE);
-    expect_string(_writeText, txt, "[");
-    expect_string(_writeText, txt, "]");
+    expect_string(mockWriteHeadersOk, contentType, "application/json");
+    expect_value(mockWriteHeadersOk, endHeaders, TRUE);
+    expect_string(mockWriteText, txt, "[");
+    expect_string(mockWriteText, txt, "]");
     
     processAlertRequest(0, &req, FALSE);
     
@@ -116,90 +67,90 @@ void testAlertList(void** state) {
  	struct NameValuePair param = {"action", "list", NULL};
     struct Request req = {"GET", "/alert", &param, NULL};
     
-    expect_string(_writeHeadersOk, contentType, "application/json");
-    expect_value(_writeHeadersOk, endHeaders, TRUE);
+    expect_string(mockWriteHeadersOk, contentType, "application/json");
+    expect_value(mockWriteHeadersOk, endHeaders, TRUE);
 
-    expect_string(_writeText, txt, "[");
+    expect_string(mockWriteText, txt, "[");
     
-    expect_string(_writeText, txt, "{");
-    expect_string(_writeNumValueToJson, key, "id");
-    expect_value(_writeNumValueToJson, value, 1);
-    expect_string(_writeText, txt, ",");
-    expect_string(_writeTextValueToJson, key, "name");
-    expect_string(_writeTextValueToJson, value, "alert1");
-    expect_string(_writeText, txt, ",");
-    expect_string(_writeNumValueToJson, key, "active");
-    expect_value(_writeNumValueToJson, value, 1);
-    expect_string(_writeText, txt, ",");
-    expect_string(_writeNumValueToJson, key, "filter");
-    expect_value(_writeNumValueToJson, value, 1);
-    expect_string(_writeText, txt, ",");
-    expect_string(_writeNumValueToJson, key, "amount");
-    expect_value(_writeNumValueToJson, value, 100000000000);
-    expect_string(_writeText, txt, ",");
+    expect_string(mockWriteText, txt, "{");
+    expect_string(mockWriteNumValueToJson, key, "id");
+    expect_value(mockWriteNumValueToJson, value, 1);
+    expect_string(mockWriteText, txt, ",");
+    expect_string(mockWriteTextValueToJson, key, "name");
+    expect_string(mockWriteTextValueToJson, value, "alert1");
+    expect_string(mockWriteText, txt, ",");
+    expect_string(mockWriteNumValueToJson, key, "active");
+    expect_value(mockWriteNumValueToJson, value, 1);
+    expect_string(mockWriteText, txt, ",");
+    expect_string(mockWriteNumValueToJson, key, "filter");
+    expect_value(mockWriteNumValueToJson, value, 1);
+    expect_string(mockWriteText, txt, ",");
+    expect_string(mockWriteNumValueToJson, key, "amount");
+    expect_value(mockWriteNumValueToJson, value, 100000000000);
+    expect_string(mockWriteText, txt, ",");
     
-    expect_string(_writeTextArrayToJson, key, "bound");
-    expect_string(_writeTextArrayToJsonValue, value, "2010");
-    expect_string(_writeTextArrayToJsonValue, value, "5");
-    expect_string(_writeTextArrayToJsonValue, value, "26");
-    expect_string(_writeTextArrayToJsonValue, value, "4");
-    expect_string(_writeTextArrayToJsonValue, value, "15");
+    expect_string(mockWriteTextArrayToJson, key, "bound");
+    expect_string(mockWriteTextArrayToJsonValue, value, "2010");
+    expect_string(mockWriteTextArrayToJsonValue, value, "5");
+    expect_string(mockWriteTextArrayToJsonValue, value, "26");
+    expect_string(mockWriteTextArrayToJsonValue, value, "4");
+    expect_string(mockWriteTextArrayToJsonValue, value, "15");
     
-    expect_string(_writeText, txt, ",\"periods\" : [");
-    expect_string(_writeTextArrayToJsonValue, value, "*");
-    expect_string(_writeTextArrayToJsonValue, value, "*");
-    expect_string(_writeTextArrayToJsonValue, value, "*");
-    expect_string(_writeTextArrayToJsonValue, value, "5,6");
-    expect_string(_writeTextArrayToJsonValue, value, "0-6");
-    expect_string(_writeText, txt, ",");
-    expect_string(_writeTextArrayToJsonValue, value, "*");
-    expect_string(_writeTextArrayToJsonValue, value, "*");
-    expect_string(_writeTextArrayToJsonValue, value, "*");
-    expect_string(_writeTextArrayToJsonValue, value, "0-4");
-    expect_string(_writeTextArrayToJsonValue, value, "6-12");
-    expect_string(_writeText, txt, "]}");
+    expect_string(mockWriteText, txt, ",\"periods\" : [");
+    expect_string(mockWriteTextArrayToJsonValue, value, "*");
+    expect_string(mockWriteTextArrayToJsonValue, value, "*");
+    expect_string(mockWriteTextArrayToJsonValue, value, "*");
+    expect_string(mockWriteTextArrayToJsonValue, value, "5,6");
+    expect_string(mockWriteTextArrayToJsonValue, value, "0-6");
+    expect_string(mockWriteText, txt, ",");
+    expect_string(mockWriteTextArrayToJsonValue, value, "*");
+    expect_string(mockWriteTextArrayToJsonValue, value, "*");
+    expect_string(mockWriteTextArrayToJsonValue, value, "*");
+    expect_string(mockWriteTextArrayToJsonValue, value, "0-4");
+    expect_string(mockWriteTextArrayToJsonValue, value, "6-12");
+    expect_string(mockWriteText, txt, "]}");
     
-    expect_string(_writeText, txt, ",");
+    expect_string(mockWriteText, txt, ",");
 
-	expect_string(_writeText, txt, "{");
-    expect_string(_writeNumValueToJson, key, "id");
-    expect_value(_writeNumValueToJson, value, 2);
-    expect_string(_writeText, txt, ",");
-    expect_string(_writeTextValueToJson, key, "name");
-    expect_string(_writeTextValueToJson, value, "alert2");
-    expect_string(_writeText, txt, ",");
-    expect_string(_writeNumValueToJson, key, "active");
-    expect_value(_writeNumValueToJson, value, 0);
-    expect_string(_writeText, txt, ",");
-    expect_string(_writeNumValueToJson, key, "filter");
-    expect_value(_writeNumValueToJson, value, 2);
-    expect_string(_writeText, txt, ",");
-    expect_string(_writeNumValueToJson, key, "amount");
-    expect_value(_writeNumValueToJson, value, 200000000000);
-    expect_string(_writeText, txt, ",");
+	expect_string(mockWriteText, txt, "{");
+    expect_string(mockWriteNumValueToJson, key, "id");
+    expect_value(mockWriteNumValueToJson, value, 2);
+    expect_string(mockWriteText, txt, ",");
+    expect_string(mockWriteTextValueToJson, key, "name");
+    expect_string(mockWriteTextValueToJson, value, "alert2");
+    expect_string(mockWriteText, txt, ",");
+    expect_string(mockWriteNumValueToJson, key, "active");
+    expect_value(mockWriteNumValueToJson, value, 0);
+    expect_string(mockWriteText, txt, ",");
+    expect_string(mockWriteNumValueToJson, key, "filter");
+    expect_value(mockWriteNumValueToJson, value, 2);
+    expect_string(mockWriteText, txt, ",");
+    expect_string(mockWriteNumValueToJson, key, "amount");
+    expect_value(mockWriteNumValueToJson, value, 200000000000);
+    expect_string(mockWriteText, txt, ",");
     
-    expect_string(_writeTextArrayToJson, key, "bound");
-    expect_string(_writeTextArrayToJsonValue, value, "2010");
-    expect_string(_writeTextArrayToJsonValue, value, "5");
-    expect_string(_writeTextArrayToJsonValue, value, "26");
-    expect_string(_writeTextArrayToJsonValue, value, "4");
-    expect_string(_writeTextArrayToJsonValue, value, "15");
+    expect_string(mockWriteTextArrayToJson, key, "bound");
+    expect_string(mockWriteTextArrayToJsonValue, value, "2010");
+    expect_string(mockWriteTextArrayToJsonValue, value, "5");
+    expect_string(mockWriteTextArrayToJsonValue, value, "26");
+    expect_string(mockWriteTextArrayToJsonValue, value, "4");
+    expect_string(mockWriteTextArrayToJsonValue, value, "15");
     
-    expect_string(_writeText, txt, ",\"periods\" : [");
-    expect_string(_writeTextArrayToJsonValue, value, "*");
-    expect_string(_writeTextArrayToJsonValue, value, "*");
-    expect_string(_writeTextArrayToJsonValue, value, "*");
-    expect_string(_writeTextArrayToJsonValue, value, "2,8");
-    expect_string(_writeTextArrayToJsonValue, value, "5");
-    expect_string(_writeText, txt, ",");
-    expect_string(_writeTextArrayToJsonValue, value, "*");
-    expect_string(_writeTextArrayToJsonValue, value, "*");
-    expect_string(_writeTextArrayToJsonValue, value, "*");
-    expect_string(_writeTextArrayToJsonValue, value, "1");
-    expect_string(_writeTextArrayToJsonValue, value, "*");
-    expect_string(_writeText, txt, "]}");
+    expect_string(mockWriteText, txt, ",\"periods\" : [");
+    expect_string(mockWriteTextArrayToJsonValue, value, "*");
+    expect_string(mockWriteTextArrayToJsonValue, value, "*");
+    expect_string(mockWriteTextArrayToJsonValue, value, "*");
+    expect_string(mockWriteTextArrayToJsonValue, value, "2,8");
+    expect_string(mockWriteTextArrayToJsonValue, value, "5");
+    expect_string(mockWriteText, txt, ",");
+    expect_string(mockWriteTextArrayToJsonValue, value, "*");
+    expect_string(mockWriteTextArrayToJsonValue, value, "*");
+    expect_string(mockWriteTextArrayToJsonValue, value, "*");
+    expect_string(mockWriteTextArrayToJsonValue, value, "1");
+    expect_string(mockWriteTextArrayToJsonValue, value, "*");
+    expect_string(mockWriteText, txt, "]}");
     
-    expect_string(_writeText, txt, "]");
+    expect_string(mockWriteText, txt, "]");
     
     processAlertRequest(0, &req, FALSE);
     
@@ -245,10 +196,10 @@ void testAlertDeleteOk(void** state) {
  	struct NameValuePair param2 = {"action", "delete", &param1};
     struct Request req = {"GET", "/alert", &param2, NULL};
     
-    expect_string(_writeHeadersOk, contentType, "application/json");
-    expect_value(_writeHeadersOk, endHeaders, TRUE);
+    expect_string(mockWriteHeadersOk, contentType, "application/json");
+    expect_value(mockWriteHeadersOk, endHeaders, TRUE);
 
-    expect_string(_writeText, txt, "{}");
+    expect_string(mockWriteText, txt, "{}");
 
     processAlertRequest(0, &req, TRUE);
     
@@ -299,7 +250,7 @@ void testAlertDeleteForbidden(void** state) {
  	struct NameValuePair param2 = {"action", "delete", &param1};
     struct Request req = {"GET", "/alert", &param2, NULL};
                                                     
-	expect_string(_writeHeadersForbidden, request, "alert delete");
+	expect_string(mockWriteHeadersForbidden, msg, "alert delete");
     processAlertRequest(0, &req, FALSE);
     
     alert = getAlerts();
@@ -314,7 +265,7 @@ void testAlertDeleteForbidden(void** state) {
 static void checkAlertUpdateMissingArg(struct NameValuePair param){
 	struct NameValuePair paramAction = {"action", "update", &param};
 	struct Request req = {"GET", "/alert", &paramAction, NULL};
-    expect_string(_writeHeadersServerError, msg, "processAlertUpdate param bad/missing id=%s, name=%s, active=%s, filter=%s, amount=%s, bound=%s, periods=%s");
+    expect_string(mockWriteHeadersServerError, msg, "processAlertUpdate param bad/missing id=%s, name=%s, active=%s, filter=%s, amount=%s, bound=%s, periods=%s");
     processAlertRequest(0, &req, TRUE);
 }
 
@@ -407,10 +358,10 @@ void testAlertUpdateOk(void** state) {
     
     struct Request req = {"GET", "/alert", &param8, NULL};
     
-    expect_string(_writeHeadersOk, contentType, "application/json");
-    expect_value(_writeHeadersOk, endHeaders, TRUE);
+    expect_string(mockWriteHeadersOk, contentType, "application/json");
+    expect_value(mockWriteHeadersOk, endHeaders, TRUE);
 
-    expect_string(_writeText, txt, "{}");
+    expect_string(mockWriteText, txt, "{}");
 
     processAlertRequest(0, &req, TRUE);
     
@@ -492,7 +443,7 @@ void testAlertUpdateForbidden(void** state) {
     
     struct Request req = {"GET", "/alert", &param8, NULL};
     
-    expect_string(_writeHeadersForbidden, request, "alert update");
+    expect_string(mockWriteHeadersForbidden, msg, "alert update");
     processAlertRequest(0, &req, FALSE);
     
     alert = getAlerts();
@@ -523,25 +474,25 @@ void testProcessAlertStatus(void** state) {
     struct Request req = {"GET", "/alert", &param, NULL};
 	addDbRow(makeTs("2009-11-01 00:00:00"), 3600, 200000, 1);
     
-    expect_string(_writeHeadersOk, contentType, "application/json");
-    expect_value(_writeHeadersOk, endHeaders, TRUE);
+    expect_string(mockWriteHeadersOk, contentType, "application/json");
+    expect_value(mockWriteHeadersOk, endHeaders, TRUE);
 
-    expect_string(_writeText, txt, "[");
-    expect_string(_writeText, txt, "{");
-    expect_string(_writeNumValueToJson, key, "id");
-    expect_value(_writeNumValueToJson, value, 1);
-    expect_string(_writeText, txt, ",");
-    expect_string(_writeTextValueToJson, key, "name");
-    expect_string(_writeTextValueToJson, value, "alert1");
-    expect_string(_writeText, txt, ",");
-    expect_string(_writeNumValueToJson, key, "current");
-    expect_value(_writeNumValueToJson, value, 200000);
-    expect_string(_writeText, txt, ",");
-    expect_string(_writeNumValueToJson, key, "limit");
-    expect_value(_writeNumValueToJson, value, 1000000);
-    expect_string(_writeText, txt, "}");
+    expect_string(mockWriteText, txt, "[");
+    expect_string(mockWriteText, txt, "{");
+    expect_string(mockWriteNumValueToJson, key, "id");
+    expect_value(mockWriteNumValueToJson, value, 1);
+    expect_string(mockWriteText, txt, ",");
+    expect_string(mockWriteTextValueToJson, key, "name");
+    expect_string(mockWriteTextValueToJson, value, "alert1");
+    expect_string(mockWriteText, txt, ",");
+    expect_string(mockWriteNumValueToJson, key, "current");
+    expect_value(mockWriteNumValueToJson, value, 200000);
+    expect_string(mockWriteText, txt, ",");
+    expect_string(mockWriteNumValueToJson, key, "limit");
+    expect_value(mockWriteNumValueToJson, value, 1000000);
+    expect_string(mockWriteText, txt, "}");
 
-    expect_string(_writeText, txt, "]");
+    expect_string(mockWriteText, txt, "]");
 
     processAlertStatus(0, &req, FALSE);
     

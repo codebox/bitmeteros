@@ -1,6 +1,3 @@
-#ifdef UNIT_TESTING 
-	#include "test.h"
-#endif
 #include "common.h" 
 
 struct Filter* allocFilter(int id, char* desc, char* name, char* expr, char* host){
@@ -71,6 +68,7 @@ struct Filter* getFilterFromId(struct Filter* filters, int id) {
 		filter = filter->next;
 	}
 	
+	logMsg(LOG_DEBUG, "getFilterFromId() called with id=%d, but this filter does not exist", id);
 	return NULL;
 }
 
@@ -96,7 +94,6 @@ static int filterHasName(struct Filter* filter, char* name){
 
 struct Filter* getFilterFromName(struct Filter* filters, char* name, char* host) {
 	struct Filter* filter = filters;
-		
 	while (filter != NULL) {
 		if (filterHasName(filter, name) && filterHasHost(filter, host)){
 			return filter;
@@ -104,6 +101,7 @@ struct Filter* getFilterFromName(struct Filter* filters, char* name, char* host)
 		filter = filter->next;
 	}
 	
+	logMsg(LOG_DEBUG, "getFilterFromName() called with name=%s, host=%s but this filter does not exist", name, host);
 	return NULL;
 }
 

@@ -1,6 +1,3 @@
-#ifdef UNIT_TESTING 
-	#include "test.h"
-#endif
 #include <sqlite3.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,9 +10,9 @@
 Contains thread-safe utility functions used by other client modules.
 */
 
-#define TS_BOUNDS_SQL_ALL    "SELECT MIN(ts), MAX(ts) FROM data2"
-#define TS_BOUNDS_SQL_FILTER "SELECT MIN(ts), MAX(ts) FROM data2 WHERE fl=?"
-#define MAX_VALUES_SQL       "SELECT MAX(vl) AS vl FROM data2"
+#define TS_BOUNDS_SQL_ALL    "SELECT MIN(ts), MAX(ts) FROM data"
+#define TS_BOUNDS_SQL_FILTER "SELECT MIN(ts), MAX(ts) FROM data WHERE fl=?"
+#define MAX_VALUES_SQL       "SELECT MAX(vl) AS vl FROM data"
 
 static struct ValueBounds* buildTsBounds(sqlite3_stmt* stmtTsBounds);
 

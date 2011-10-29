@@ -1,6 +1,3 @@
-#ifdef UNIT_TESTING
-	#include "test.h"
-#endif
 #ifdef _WIN32
 	#define __USE_MINGW_ANSI_STDIO 1
 #endif
@@ -16,18 +13,8 @@
 Handles '/monitor' requests received by the web server.
 */
 
-static struct HandleMonitorCalls calls = {&writeHeadersServerError, &writeHeadersOk, &writeDataToJson, &writeText};
-                                         
-static struct HandleMonitorCalls getCalls(){
-	#ifdef UNIT_TESTING	
-		return mockHandleMonitorCalls;
-	#else
-		return calls;
-	#endif
-}
-
 static void processMonitorAjaxRequest(SOCKET fd, int ts, int* fl){
-	getCalls().writeHeadersOk(fd, MIME_JSON, TRUE);
+	WRITE_HEADERS_OK(fd, MIME_JSON, TRUE);
 
  /* The 'ts' parameter is an offset from the current (server) time rather than an actual timestamp, done like this
     because there may be differences in the clocks on the client and server, if the client was a minute
@@ -60,9 +47,9 @@ static void processMonitorAjaxRequest(SOCKET fd, int ts, int* fl){
 
     char jsonBuffer[64];
     sprintf(jsonBuffer, "{\"serverTime\" : %d, \"data\" : ", now);
-    getCalls().writeText(fd, jsonBuffer);
-    getCalls().writeDataToJson(fd, resultsFromNow);
-    getCalls().writeText(fd, "}");
+    WRITE_TEXT(fd, jsonBuffer);
+    WRITE_DATA_TO_JSON(fd, resultsFromNow);
+    WRITE_TEXT(fd, "}");
     freeData(result);
 }
 
@@ -74,12 +61,12 @@ void processMonitorRequest(SOCKET fd, struct Request* req) {
 
 	if (ts == NO_VAL) {
      // We need a 'ts' parameter
-     	getCalls().writeHeadersServerError(fd, "processMonitorRequest, ts parameter missing/invalid: %s", 
+     	WRITE_HEADERS_SERVER_ERROR(fd, "processMonitorRequest, ts parameter missing/invalid: %s", 
      			getValueForName("ts", params, NULL));
      			
      } else if (fl == NULL){
      // We need a 'fl' parameter
-     	getCalls().writeHeadersServerError(fd, "processMonitorRequest, fl parameter missing");
+     	WRITE_HEADERS_SERVER_ERROR(fd, "processMonitorRequest, fl parameter missing");
      	
      } else {
 		processMonitorAjaxRequest(fd, ts, fl);

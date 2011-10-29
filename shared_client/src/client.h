@@ -46,7 +46,7 @@ struct ValueBounds* calcTsBounds(int fl);
 struct Data* calcMaxValue();
 struct Data* getQueryValues();
 BW_INT getValueForFilterId(struct Data* data, int filterId);
-struct Data* getSyncValues(int ts);
+struct Data* getSyncValues(time_t ts);
 void getDumpValues(int, void (*callback)(int, struct Data*));
 int addAlert(struct Alert* alert);
 int updateAlert(struct Alert* alert);
@@ -57,4 +57,10 @@ struct Data* calcTotalsForAllSince(int ts, char* hs);
 struct Data* calcTotalsForHsSince(int ts, char* hs);
 struct Data* calcTotalsForHsAdSince(int ts, char* hs);
 void formatAmountByUnits(const BW_INT vl, char* vlTxt, int units);
+
+#ifdef UNIT_TESTING	
+	#define FORMAT_AMOUNT_BY_UNITS mockFormatAmountByUnits
+#else
+	#define FORMAT_AMOUNT_BY_UNITS formatAmountByUnits
+#endif
 #endif

@@ -1,6 +1,3 @@
-#ifdef UNIT_TESTING
-	#import "test.h"
-#endif
 #ifdef _WIN32
 	#define __USE_MINGW_ANSI_STDIO 1
 #endif
@@ -19,7 +16,7 @@
 #define SQL_SELECT_FILTER_BY_NAME_HOST "SELECT id FROM filter WHERE upper(name)=upper(?) and host=?"
 #define SQL_SELECT_FILTER_BY_NAME  	"SELECT id FROM filter WHERE upper(name)=upper(?) and host is NULL"
 #define SQL_DELETE_FILTER_BY_ID    	"DELETE FROM filter WHERE id=?"
-#define SQL_DELETE_DATA_FOR_FILTER 	"DELETE FROM data2 WHERE fl=?"
+#define SQL_DELETE_DATA_FOR_FILTER 	"DELETE FROM data WHERE fl=?"
 
 #define DUMMY_VALID_IP "1.2.3.4"
 

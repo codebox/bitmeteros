@@ -1,6 +1,3 @@
-#ifdef UNIT_TESTING
-	#import "test.h"
-#endif
 #ifdef _WIN32
 	#define __USE_MINGW_ANSI_STDIO 1
 #endif
@@ -24,8 +21,8 @@
 #define ALERT_SQL_INSERT_ALERT               "INSERT INTO alert (id, name, active, bound, filter, amount) VALUES (?,?,?,?,?,?);"
 #define ALERT_SQL_INSERT_INTERVAL            "INSERT INTO interval (id, yr, mn, dy, wk, hr) VALUES (?,?,?,?,?,?);"
 #define ALERT_SQL_INSERT_ALERT_INTERVAL      "INSERT INTO alert_interval (alert_id, interval_id) VALUES (?,?);"
-#define ALERT_SQL_SELECT_ROWS                "SELECT ts AS ts, dr AS dr, vl AS vl FROM data2 WHERE ts >=? AND fl=?;"
-#define ALERT_SQL_TOTAL_BETWEEN              "SELECT SUM(vl) AS vl FROM data2 WHERE ts>? AND ts <=? AND fl=?"
+#define ALERT_SQL_SELECT_ROWS                "SELECT ts AS ts, dr AS dr, vl AS vl FROM data WHERE ts >=? AND fl=?;"
+#define ALERT_SQL_TOTAL_BETWEEN              "SELECT SUM(vl) AS vl FROM data WHERE ts>? AND ts <=? AND fl=?"
 
 static int getNextId(char* sql);
 static struct Alert* alertForRow(sqlite3_stmt *stmtSelectAlerts, sqlite3_stmt *stmtSelectInterval, sqlite3_stmt *stmtSelectIntervalIdsForAlert);    

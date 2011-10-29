@@ -1,6 +1,3 @@
-#ifdef UNIT_TESTING 
-	#include "test.h"
-#endif
 #ifdef _WIN32
 	#define __USE_MINGW_ANSI_STDIO 1
 #endif
@@ -15,56 +12,46 @@ Handles '/summary' requests received by the web server.
 
 static void writeTotal(SOCKET, char*, struct Data*);
 
-static struct HandleSummaryCalls calls = {&writeHeadersOk, &writeText, &writeNumValueToJson};
-
-static struct HandleSummaryCalls getCalls(){
-	#ifdef UNIT_TESTING	
-		return mockHandleSummaryCalls;
-	#else
-		return calls;
-	#endif
-}
-
 void processSummaryRequest(SOCKET fd, struct Request* req){
-    getCalls().writeHeadersOk(fd, MIME_JSON, TRUE);
+    WRITE_HEADERS_OK(fd, MIME_JSON, TRUE);
 
 	struct Summary summary = getSummaryValues();
 
-	getCalls().writeText(fd, "{");
+	WRITE_TEXT(fd, "{");
 	writeTotal(fd, "today", summary.today);
-	getCalls().writeText(fd, ", ");
+	WRITE_TEXT(fd, ", ");
 	writeTotal(fd, "month", summary.month);
-	getCalls().writeText(fd, ", ");
+	WRITE_TEXT(fd, ", ");
 	writeTotal(fd, "year",  summary.year);
-	getCalls().writeText(fd, ", ");
+	WRITE_TEXT(fd, ", ");
 	writeTotal(fd, "total", summary.total);
-	getCalls().writeText(fd, ", ");
+	WRITE_TEXT(fd, ", ");
 
 	if (summary.hostNames != NULL){
-        getCalls().writeText(fd, "\"hosts\": [");
+        WRITE_TEXT(fd, "\"hosts\": [");
 
         int i;
         for(i=0; i<summary.hostCount; i++){
             if (i>0){
-                getCalls().writeText(fd, ", ");
+                WRITE_TEXT(fd, ", ");
             }
-            getCalls().writeText(fd, "\"");
-            getCalls().writeText(fd, summary.hostNames[i]);
-            getCalls().writeText(fd, "\"");
+            WRITE_TEXT(fd, "\"");
+            WRITE_TEXT(fd, summary.hostNames[i]);
+            WRITE_TEXT(fd, "\"");
         }
 
-        getCalls().writeText(fd, "]");
+        WRITE_TEXT(fd, "]");
 	} else {
-	    getCalls().writeText(fd, "\"hosts\": null");
+	    WRITE_TEXT(fd, "\"hosts\": null");
 	}
 
-	getCalls().writeText(fd, ", \"since\": ");
+	WRITE_TEXT(fd, ", \"since\": ");
 
 	char sinceTs[12];
     unsigned long since = (unsigned long) summary.tsMin;
 	sprintf(sinceTs, "%lu", since);
-	getCalls().writeText(fd, sinceTs);
-	getCalls().writeText(fd, "}");
+	WRITE_TEXT(fd, sinceTs);
+	WRITE_TEXT(fd, "}");
 
 	freeSummary(&summary);
 }
@@ -73,26 +60,26 @@ static void writeTotal(SOCKET fd, char* totalName, struct Data* data){
  // Helper function, writes out one of the summary totals in the correct JSON format
  	char prefix[32];
  	sprintf(prefix, "\"%s\": ", totalName);
-	getCalls().writeText(fd, prefix);
+	WRITE_TEXT(fd, prefix);
 	
-	getCalls().writeText(fd, "[");
+	WRITE_TEXT(fd, "[");
 	int firstItem = TRUE;
 	while(data != NULL){
 		if (!firstItem){
-			getCalls().writeText(fd, ",");	
+			WRITE_TEXT(fd, ",");	
 		}
 
-		getCalls().writeText(fd, "{");
-		getCalls().writeNumValueToJson(fd, "vl", data->vl);
-		getCalls().writeText(fd, ",");
-		getCalls().writeNumValueToJson(fd, "fl", data->fl);
-		getCalls().writeText(fd, "}");
+		WRITE_TEXT(fd, "{");
+		WRITE_NUM_VALUE_TO_JSON(fd, "vl", data->vl);
+		WRITE_TEXT(fd, ",");
+		WRITE_NUM_VALUE_TO_JSON(fd, "fl", data->fl);
+		WRITE_TEXT(fd, "}");
 		firstItem = FALSE;
 		
 		data = data->next;	
 	}
 	
-	getCalls().writeText(fd, "]");
+	WRITE_TEXT(fd, "]");
 }
 
 static void formatForMobile(BW_INT amt, char* txt){

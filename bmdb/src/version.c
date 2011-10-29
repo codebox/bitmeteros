@@ -7,15 +7,26 @@
 Displays some pieces of version information which might be useful.
 */
 int doVersion(){
-	printf(
-		"App Version:    %s\n"
-		"DB Version:     %d\n"
-		"SQLite Version: %s\n"
-		"PCAP Version:   %s\n",
-		VERSION,
-		getDbVersion(),
-		sqlite3_libversion(),
-		pcap_lib_version());
+	setTextColour(TEXT_YELLOW);
+	printf("App Version:    ");
+	setTextColour(TEXT_DEFAULT);
+	printf(VERSION);
+	
+	setTextColour(TEXT_YELLOW);
+	printf(EOL "DB Version:     ");
+	setTextColour(TEXT_DEFAULT);
+	printf("%d", getDbVersion());
+	
+	setTextColour(TEXT_YELLOW);
+	printf(EOL "SQLite Version: ");
+	setTextColour(TEXT_DEFAULT);
+	printf(sqlite3_libversion());
+	
+	setTextColour(TEXT_YELLOW);
+	printf(EOL "PCAP Version:   ");
+	setTextColour(TEXT_DEFAULT);
+	printf(pcap_lib_version());
+	printf(EOL);
 
     return SUCCESS;
 }

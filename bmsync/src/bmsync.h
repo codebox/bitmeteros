@@ -55,8 +55,10 @@ int parseData(SOCKET fd, char* alias, int* rowCount);
 int sendRequest(SOCKET fd, time_t ts, char* host, int port);
 
 // ----
-struct SyncCalls {
-	int (*recv)(SOCKET,char*,int,int);
-	int (*send)(SOCKET,char*,int,int);
-};
-struct SyncCalls mockSyncCalls;
+#ifdef UNIT_TESTING	
+	#define SEND mockSend
+	#define RECV mockRecv
+#else
+	#define SEND send
+	#define RECV recv
+#endif

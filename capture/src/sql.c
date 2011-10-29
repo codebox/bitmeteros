@@ -1,6 +1,3 @@
-#ifdef UNIT_TESTING 
-	#include "test.h"
-#endif
 #ifdef _WIN32
 	#define __USE_MINGW_ANSI_STDIO 1
 #endif
@@ -11,10 +8,10 @@
 #include <sqlite3.h>
 #include "common.h"
 
-#define SQL_INSERT_INTO_DATA    "INSERT INTO data2 (ts,dr,vl,fl) VALUES (?,?,?,?)"
-#define SQL_SELECT_FOR_COMPRESS "SELECT fl, SUM(vl) FROM (SELECT * FROM data2 WHERE ts<=? AND dr=?) GROUP BY fl;"
-#define SQL_SELECT_MIN_TS       "SELECT MIN(ts) FROM data2 WHERE dr=?"
-#define SQL_DELETE_COMPRESSED   "DELETE FROM data2 WHERE ts<=? AND dr=?"
+#define SQL_INSERT_INTO_DATA    "INSERT INTO data (ts,dr,vl,fl) VALUES (?,?,?,?)"
+#define SQL_SELECT_FOR_COMPRESS "SELECT fl, SUM(vl) FROM (SELECT * FROM data WHERE ts<=? AND dr=?) GROUP BY fl;"
+#define SQL_SELECT_MIN_TS       "SELECT MIN(ts) FROM data WHERE dr=?"
+#define SQL_DELETE_COMPRESSED   "DELETE FROM data WHERE ts<=? AND dr=?"
 /*
 Contains code that interacts with the database on behalf of the BitMeter Data Capture application. At a high level there
 are two database operations that are performed:
@@ -45,12 +42,6 @@ static int compressDbStage(int secKeepInterval, int oldDr, int newDr, int (*fnRo
 void setupDb(){
 	logMsg(LOG_DEBUG, "Starting db setup");
 	
- // Initialise things, this must be called first
-	//prepareSql(&stmtInsertData,           "INSERT INTO data2 (ts,dr,vl,fl) VALUES (?,?,?,?)");
-	//prepareSql(&stmtSelectMinTsForDr,     "SELECT MIN(ts) FROM data2 WHERE dr=?");
-	//prepareSql(&stmtSelectForCompression, "SELECT fl, SUM(vl) FROM (SELECT * FROM data2 WHERE ts<=? AND dr=?) GROUP BY fl;");
-	//prepareSql(&stmtDeleteCompressed,     "DELETE FROM data2 WHERE ts<=? AND dr=?");
-
  // Read various values out of the 'config' table
 	keepPerSecLimit  = getConfigInt(CONFIG_CAP_KEEP_SEC_LIMIT, FALSE);
 	keepPerMinLimit  = getConfigInt(CONFIG_CAP_KEEP_MIN_LIMIT, FALSE);

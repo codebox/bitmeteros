@@ -112,7 +112,7 @@ void testReadFiltersOk(void** state){
 }
 
 void testGetStmtSingleThreaded(void** state){
-	char* sql1 = "select * from data2";
+	char* sql1 = "select * from data";
 	char* sql2 = "select * from config";
 	assert_true(stmtList == NULL);
 	

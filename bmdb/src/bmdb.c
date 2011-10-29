@@ -54,7 +54,9 @@ struct Action actions[] = {
 };
 
 int main(int argc, char **argv){
+	setTextColour(TEXT_BLUE);
     printf(COPYRIGHT);
+    setTextColour(TEXT_DEFAULT);
     setLogLevel(LOG_INFO);
 
 	if (argc == 1){
@@ -202,7 +204,10 @@ static int dumpActions(){
     printf("The following actions are available:" EOL EOL);
 	struct Action* action = actions;
 	while(action->name != NULL){
-        printf(" %-14s - %s\n", action->name, action->description);
+		setTextColour(TEXT_YELLOW);
+		printf(" %-14s", action->name);
+		setTextColour(TEXT_DEFAULT);
+        printf(" - %s\n", action->description);
         action++;
 	}
 

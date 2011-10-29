@@ -1,3 +1,6 @@
+#ifndef BMCLIENT_H
+#define BMCLIENT_H
+
 #include "common.h"
 #include "client.h"
 
@@ -112,35 +115,29 @@ struct Prefs{
     char* errorMsg;
 };
 // ----
-struct BmClientCalls{
-	void (*doHelp)();
-	void (*doVersion)();
-	void (*doDump)();
-	void (*doMonitor)();
-	void (*doSummary)();
-	void (*doQuery)();
-	void (*setLogLevel)(int);
-	int (*parseArgs)(int, char **, struct Prefs*);
-	sqlite3* (*openDb)();
-	void (*closeDb)();
-	void (*dbVersionCheck)();
-};
-struct BmClientCalls mockBmClientCalls;
-// ----
-struct DumpCalls{
-	struct Data* (*calcMaxValue)();
-	struct Filter* (*readFilters)();
-	void (*toTime)(char*, time_t);
-	void (*toDate)(char*, time_t);
-	void (*formatAmountByUnits)(const BW_INT, char*, int);
-	struct Filter* (*getFilterFromId)(struct Filter*, int);
-};
-struct DumpCalls mockDumpCalls;
-// ----
 int parseArgs(int argc, char **argv, struct Prefs*);
 void doDump();
 void doMonitor();
-void doQuery();
+void doBmClientQuery();
 void doSummary();
 void doHelp();
-void doVersion();
+void doBmClientVersion();
+
+#ifdef UNIT_TESTING	
+	#define DO_HELP mockDoHelp
+	#define DO_VERSION mockDoBmClientVersion
+	#define DO_DUMP mockDoDump
+	#define DO_MONITOR mockDoMonitor
+	#define DO_SUMMARY mockDoSummary
+	#define DO_QUERY mockDoQuery
+	#define PARSE_ARGS mockParseArgs
+#else
+	#define DO_HELP doHelp
+	#define DO_VERSION doBmClientVersion	
+	#define DO_DUMP doDump	
+	#define DO_MONITOR doMonitor	
+	#define DO_SUMMARY doSummary
+	#define DO_QUERY doBmClientQuery
+	#define PARSE_ARGS parseArgs
+#endif
+#endif

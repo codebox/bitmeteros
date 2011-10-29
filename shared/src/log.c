@@ -1,6 +1,3 @@
-#ifdef UNIT_TESTING 
-	#include "test.h"
-#endif
 #ifdef _WIN32
 	#define __USE_MINGW_ANSI_STDIO 1
 #endif
@@ -117,3 +114,15 @@ void statusMsg(const char* msg, ...){
 void resetStatusMsg(){
     lastStatusMsgLen = 0;
 }
+
+#ifdef _WIN32
+#include  <windows.h>
+void setTextColour(int colour){
+	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	SetConsoleTextAttribute(hConsole,colour);
+}
+#else
+void setTextColour(int colour){
+	
+}
+#endif

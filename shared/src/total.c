@@ -1,17 +1,4 @@
-#ifdef UNIT_TESTING 
-	#include "test.h"
-#endif
 #include "common.h"
-
-static struct TotalCalls calls = {&pcap_close};
-
-struct TotalCalls getCalls(){
-	#ifdef UNIT_TESTING	
-		return mockTotalCalls;
-	#else
-		return calls;
-	#endif
-}
 
 struct Total* allocTotal(struct Filter* filter){
 	struct Total* total = malloc(sizeof(struct Total));
@@ -30,7 +17,7 @@ void freeTotals(struct Total* total){
 		struct Total* next = total->next;
 		
 		if (total->handle != NULL){
-			getCalls().pcap_close(total->handle);
+			PCAP_CLOSE(total->handle);
 		}
 		free(total);
 		

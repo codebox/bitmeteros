@@ -1,6 +1,3 @@
-#ifdef UNIT_TESTING 
-	#include "test.h"
-#endif
 #include <sqlite3.h>
 #include <assert.h>
 #include <time.h>
@@ -14,7 +11,7 @@ Contains a helper function for use by clients that need to perform database quer
 based on timestamp ranges, with result grouping.
 */
 
-#define CLIENT_QUERY_SQL "SELECT SUM(vl) AS vl FROM data2 WHERE fl=? AND ts>? AND ts<=?"
+#define CLIENT_QUERY_SQL "SELECT SUM(vl) AS vl FROM data WHERE fl=? AND ts>? AND ts<=?"
 
 static struct Data* doQueryForInterval(sqlite3_stmt* stmt, time_t tsFrom, time_t tsTo, int fl);
 static struct Data* doQuery(sqlite3_stmt *stmt, time_t minFrom, time_t maxTo, time_t (*getNext)(time_t), time_t (*addTo)(time_t), int fl);

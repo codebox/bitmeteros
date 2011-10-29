@@ -155,12 +155,12 @@ void testRemoveDataForDeletedFiltersFromThisHost(void** state){
 
  // nothing should be removed at this stage	
 	removeDataForDeletedFiltersFromThisHost("host1", &rf3);
-	assert_int_equal(6, getRowCount("select * from data2"));
+	assert_int_equal(6, getRowCount("select * from data"));
 	                                         
  // again, nothing removed because no items for this host exist	                                         
 	struct RemoteFilter rf4 = {600, 6, NULL};
 	removeDataForDeletedFiltersFromThisHost("host3", &rf4);
-	assert_int_equal(6, getRowCount("select * from data2"));
+	assert_int_equal(6, getRowCount("select * from data"));
 
  // this time only 1 and 2 came through, so 5 must have been deleted
 	removeDataForDeletedFiltersFromThisHost("host1", &rf2);
@@ -180,26 +180,6 @@ void testRemoveDataForDeletedFiltersFromThisHost(void** state){
 	
 	freeStmtList();
 }
-static char* getRecvLine(){
-	return (char*)mock();
-}
-static int _recv(SOCKET fd, char* buffer, int a, int b){
-	char* txt = getRecvLine();
-	if (txt != NULL){
-		buffer[0] = txt[0];	
-		buffer[1] = 0;
-		return 1;
-	} else {
-		return 0;
-	}
-}
-static int _send(SOCKET fd, char* buffer, int a, int b){
-	check_expected(buffer);
-}
-static void setupMocks(){
-	struct SyncCalls calls = {&_recv, &_send};	
-	mockSyncCalls = calls;
-}
 static void setupRecvReturns(char* txt){
 	if (txt == NULL){
 		will_return(getRecvLine, NULL);
@@ -210,7 +190,6 @@ static void setupRecvReturns(char* txt){
 	}
 }
 void testReadLine(void** state){
-	setupMocks();                 
 	char buffer[200];
 	
 	setupRecvReturns("ABCD\r\nXYZ");
@@ -245,8 +224,6 @@ void testReadLine(void** state){
 }
 
 void testHttpHeadersOk(void** state){
-	setupMocks();
-	
  // Everything is ok
 	setupRecvReturns("HTTP 200 OK\r\n");
 	setupRecvReturns("Content-Type: application/vnd.codebox.bitmeter-sync\r\n");
@@ -265,8 +242,6 @@ void testHttpHeadersOk(void** state){
 }
 
 void testParseDataOk(void** state){
-	setupMocks();
-	
  // Everything is ok
 	setupRecvReturns("HTTP 200 OK\r\n");
 	setupRecvReturns("Content-Type: application/vnd.codebox.bitmeter-sync\r\n");
@@ -305,16 +280,16 @@ void testParseDataOk(void** state){
 }
 
 void testSendReqToDefaultPort(void** state){
-	expect_string(_send, buffer, "GET /sync?ts=1000 HTTP/1.1\r\n");
-	expect_string(_send, buffer, "Host: host");
-	expect_string(_send, buffer, "\r\n\r\n");
+	expect_string(mockSend, buffer, "GET /sync?ts=1000 HTTP/1.1\r\n");
+	expect_string(mockSend, buffer, "Host: host");
+	expect_string(mockSend, buffer, "\r\n\r\n");
 	int result = sendRequest(1, 1000, "host", 80);
 	assert_int_equal(SUCCESS, result);
 }
 void testSendReqToOtherPort(void** state){
-	expect_string(_send, buffer, "GET /sync?ts=1000 HTTP/1.1\r\n");
-	expect_string(_send, buffer, "Host: host:2605");
-	expect_string(_send, buffer, "\r\n\r\n");
+	expect_string(mockSend, buffer, "GET /sync?ts=1000 HTTP/1.1\r\n");
+	expect_string(mockSend, buffer, "Host: host:2605");
+	expect_string(mockSend, buffer, "\r\n\r\n");
 	int result = sendRequest(1, 1000, "host", 2605);
 	assert_int_equal(SUCCESS, result);
 }

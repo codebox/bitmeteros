@@ -1,6 +1,3 @@
-#ifdef UNIT_TESTING 
-	#include "test.h"
-#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -15,17 +12,6 @@ Contains the entry-point for the bmclient command-line utility.
 // This struct get populated by the various flags/options read from the command-line
 struct Prefs prefs = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL};
 
-static struct BmClientCalls calls = {&doHelp, &doVersion, &doDump, &doMonitor, 
-		&doSummary, &doQuery, &setLogLevel, &parseArgs, &openDb, &closeDb, &dbVersionCheck};	
-
-static struct BmClientCalls getCalls(){
-	#ifdef UNIT_TESTING	
-		return mockBmClientCalls;
-	#else
-		return calls;
-	#endif
-}
-
 #ifndef UNIT_TESTING	
 	int main(int argc, char **argv){
 		return _main(argc, argv);	
@@ -34,10 +20,10 @@ static struct BmClientCalls getCalls(){
 
 int _main(int argc, char **argv){
  // Interpret the command-lin arguments and decide if they make sense
-	int status = getCalls().parseArgs(argc, argv, &prefs);
+	int status = PARSE_ARGS(argc, argv, &prefs);
 
     printf(COPYRIGHT);
-	getCalls().setLogLevel(LOG_INFO);
+	SET_LOG_LEVEL(LOG_INFO);
 	
 	if (status == FAIL){
 	 // The command-line was duff...
@@ -52,36 +38,36 @@ int _main(int argc, char **argv){
 
 	} else if (prefs.help){
 	 // Dump the help info and stop
-		getCalls().doHelp();
+		DO_HELP();
 
 	} else if (prefs.version){
 	 // Show the version and stop
-		getCalls().doVersion();
+		DO_VERSION();
 
 	} else {
 	 // We will need to go to the database if we end up here
-		getCalls().openDb();
-        getCalls().dbVersionCheck();
+		OPEN_DB();
+        DB_VERSION_CHECK();
 
 		switch(prefs.mode){
 			case PREF_MODE_DUMP:
-				getCalls().doDump();
+				DO_DUMP();
 				break;
 			case PREF_MODE_SUMMARY:
-				getCalls().doSummary();
+				DO_SUMMARY();
 				break;
 			case PREF_MODE_MONITOR:
-				getCalls().doMonitor();
+				DO_MONITOR();
 				break;
 			case PREF_MODE_QUERY:
-				getCalls().doQuery();
+				DO_QUERY();
 				break;
 			default:
 				assert(FALSE); // Any other mode value should cause parseArgs to fail
 				break;
 		}
 
-		getCalls().closeDb();
+		CLOSE_DB();
 	}
 
 	return 0;

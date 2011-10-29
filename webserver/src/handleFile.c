@@ -1,7 +1,4 @@
 #define _GNU_SOURCE
-#ifdef UNIT_TESTING 
-	#include "test.h"
-#endif
 #include <stdlib.h>
 #ifndef _WIN32
 	#include <sys/socket.h>
@@ -33,16 +30,6 @@ struct MimeType MIME_TYPES[] = {
 	{NULL,   NULL,      FALSE}
 };
 struct MimeType DEFAULT_MIME_TYPE = {"bin", MIME_BIN, TRUE};
-
-static struct HandleFileCalls calls = {&fread, &writeData};
-
-static struct HandleFileCalls getCalls(){
-	#ifdef UNIT_TESTING	
-		return mockHandleFileCalls;
-	#else
-		return calls;
-	#endif
-}
 
 struct MimeType* getMimeTypeForFile(char* fileName){
  // Work out which MIME type we should use, based on the name of the file
@@ -144,7 +131,7 @@ struct MimeType* getMimeTypeForFile(char* fileName){
 void doSubs(SOCKET fd, FILE* fp, struct NameValuePair* substPairs){
 	char bufferIn[SUBST_BUFSIZE];
 	char bufferOut[SUBST_BUFSIZE];
-	int size = getCalls().fread(bufferIn, 1, sizeof(bufferIn), fp);
+	int size = FREAD(bufferIn, 1, sizeof(bufferIn), fp);
 	
 	if (size == SUBST_BUFSIZE){
 		logMsg(LOG_ERR, "doSubs, file too large - exceeded %d bytes", size);
@@ -186,7 +173,7 @@ void doSubs(SOCKET fd, FILE* fp, struct NameValuePair* substPairs){
 			substPairs = substPairs->next;	
 		}
 
-		getCalls().writeData(fd, bufferIn, size);
+		WRITE_DATA(fd, bufferIn, size);
 	}
 }
 
@@ -230,8 +217,8 @@ void processFileRequest(SOCKET fd, struct Request* req, struct NameValuePair* su
         if (substPairs == NULL){
 	        int rc;
 	        char buffer[BUFSIZE];
-	        while ( (rc = getCalls().fread(buffer, 1, BUFSIZE, fp)) > 0 ) {
-	           	getCalls().writeData(fd, buffer, rc);
+	        while ( (rc = FREAD(buffer, 1, BUFSIZE, fp)) > 0 ) {
+	           	WRITE_DATA(fd, buffer, rc);
 	        }
 	    } else {
 	    	doSubs(fd, fp, substPairs);

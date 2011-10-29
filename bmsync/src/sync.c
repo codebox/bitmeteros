@@ -1,6 +1,3 @@
-#ifdef UNIT_TESTING 
-	#include "test.h"
-#endif
 #ifdef _WIN32
 	#include <winsock2.h>
 #endif
@@ -16,15 +13,9 @@
 #include "sqlite3.h"
 #include "bmws.h"
 
-static struct SyncCalls calls = {&recv, &send};
-                                         
-static struct SyncCalls getCalls(){
-	#ifdef UNIT_TESTING	
-		return mockSyncCalls;
-	#else
-		return calls;
-	#endif
-}
+#define SELECT_MAX_TS_FOR_LOCAL "SELECT MAX(ts) AS ts FROM data, filter WHERE data.fl=filter.id AND filter.host is null"
+#define SELECT_MAX_TS_FOR_HOST  "SELECT MAX(ts) AS ts FROM data, filter WHERE data.fl=filter.id AND filter.host = ?"
+
 struct Filter* parseFilterRow(char* row, char* host){
  // Parse a single row from the response into a Filter struct
 	int id;
@@ -61,9 +52,9 @@ time_t getMaxTsForHost(char* alias){
  // Look for rows in the local database for this particular alias, return the ts value of the newest one (or 0)
  	sqlite3_stmt* stmt;
  	if (alias == NULL){
- 		stmt = getStmt("SELECT MAX(ts) AS ts FROM data2, filter WHERE data2.fl=filter.id AND filter.host is null"); 		
+ 		stmt = getStmt(SELECT_MAX_TS_FOR_LOCAL);
  	} else {
- 		stmt = getStmt("SELECT MAX(ts) AS ts FROM data2, filter WHERE data2.fl=filter.id AND filter.host = ?");
+ 		stmt = getStmt(SELECT_MAX_TS_FOR_HOST);
 		sqlite3_bind_text(stmt, 1, alias, -1, SQLITE_TRANSIENT);
  	}
     struct Data* result = runSelect(stmt);
@@ -175,7 +166,7 @@ int readLine(SOCKET fd, char* line){
     int prevChar = 0, thisChar = 0;
     int lineIndex = 0;
     int rc;
-    while ((rc = getCalls().recv(fd, (line + lineIndex), 1, 0)) > 0) {
+    while ((rc = RECV(fd, (line + lineIndex), 1, 0)) > 0) {
         thisChar = line[lineIndex++];
         if (thisChar== '\n' && prevChar == '\r'){
          // We found an HTTP end-of-line sequence, so the current line has been read. Insert a string terminator and return.
@@ -310,17 +301,17 @@ int sendRequest(SOCKET fd, time_t ts, char* host, int port){
 	char buffer[MAX_REQUEST_LEN];
     sprintf(buffer, "GET /sync?ts=%d HTTP/1.1" HTTP_EOL, (int)ts);
 
-    getCalls().send(fd, buffer, strlen(buffer), 0);
+    SEND(fd, buffer, strlen(buffer), 0);
 
 	if (port == DEFAULT_HTTP_PORT){
 		sprintf(buffer, "Host: %s", host);
 	} else {
 		sprintf(buffer, "Host: %s:%d", host, port);
 	}
-	getCalls().send(fd, buffer, strlen(buffer), 0);
+	SEND(fd, buffer, strlen(buffer), 0);
     
 	sprintf(buffer, HTTP_EOL HTTP_EOL);
-    getCalls().send(fd, buffer, strlen(buffer), 0);
+    SEND(fd, buffer, strlen(buffer), 0);
 
     return SUCCESS;
 }

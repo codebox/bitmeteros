@@ -57,8 +57,7 @@ BITMETER.tabShowSummary = function(){
 			table.html(html.join(''));
 		}
 		
-		var reqTxt = BITMETER.addFiltersToRequest('summary');
-		$.get(reqTxt, function(objSummary){
+		$.get('/summary', function(objSummary){
 			 // Get the next set of summary data from the server and display it
 				BITMETER.model.setSummary(objSummary);
 				populateSummary();

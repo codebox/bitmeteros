@@ -64,9 +64,9 @@ BITMETER.updateMonitor = function(){
         });
         
      // Store the peak values, we will need them again later
-	     	BITMETER.forEachFilter(function(o){
-		     		BITMETER.model.setMonitorPeak(o.id, filterStats[o.id].peak);
-		    	}, true);
+     	BITMETER.forEachFilter(function(o){
+	     		BITMETER.model.setMonitorPeak(o.id, filterStats[o.id].peak);
+	    	}, true);
         
      // Format the values and display them
         ts = BITMETER.getMonitorTs();
@@ -77,9 +77,13 @@ BITMETER.updateMonitor = function(){
         	$("#monitorPeak_"    + stats.filterName).html(BITMETER.formatAmount(stats.peak)     + '/s');
         });
         
-        //if (BITMETER.model.getMonitorSpeedInTitle()){
-        //    window.document.title = 'DL: ' + BITMETER.formatAmount(dlCurr) + '/s UL: ' + BITMETER.formatAmount(ulCurr) + '/s'; 
-        //}
+        if (BITMETER.model.getMonitorSpeedInTitle()){
+        	var titleTxtArr = [];
+        	BITMETER.forEachFilter(function(filter){
+	     		titleTxtArr.push(filter.name + ': ' + BITMETER.formatAmount(filterStats[filter.id].curr));
+	    	}, true);
+            window.document.title = titleTxtArr.join('|'); 
+        }
     }
 
  // Sends the AJAX request to get the Monitor data

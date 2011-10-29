@@ -1,6 +1,3 @@
-#ifdef UNIT_TESTING
-	#import "test.h"
-#endif
 #include "common.h"
 #include "bmdb.h"
 #include <stdio.h>
@@ -20,7 +17,10 @@ int doListConfig(FILE* file, int argc, char** argv){
 	while ((rc = sqlite3_step(stmt)) == SQLITE_ROW){
 		key   = sqlite3_column_text(stmt, 0);
 		value = sqlite3_column_text(stmt, 1);
-		printf("%s=%s" EOL, key, value);
+		setTextColour(TEXT_YELLOW);
+		printf(key);
+		setTextColour(TEXT_DEFAULT);
+		printf("=%s" EOL, value);
 	}
 	sqlite3_finalize(stmt);
 

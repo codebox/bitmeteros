@@ -5,47 +5,47 @@ $.ajaxSetup({
     cache: false,
     timeout: 30000,
     error : function (xhrObj, errType) {
-            var msg;
-            if (errType === "error") {
-                if (xhrObj.status === 0) {
-                    msg = "Unable to contact the server, is it still running?";
-                } else {
-                    msg = "An HTTP error occurred: " + xhrObj.status + " " + xhrObj.statusText;
-                }
-
-            } else if (errType === "timeout") {
-                msg = "The server is taking a long time to respond - this may be caused by a slow network (if you are monitoring remotely) or very high CPU load.";
-
-            } else if (errType === "parsererror") {
-                msg = "Unable to parse the server response";
-
+        var msg;
+        if (errType === "error") {
+            if (xhrObj.status === 0) {
+                msg = "Unable to contact the server, is it still running?";
             } else {
-                msg = "An error occurred while attempting to communicate with the server: " + errType;
+                msg = "An HTTP error occurred: " + xhrObj.status + " " + xhrObj.statusText;
             }
-            BITMETER.errorDialog.show(msg);
-        },
+
+        } else if (errType === "timeout") {
+            msg = "The server is taking a long time to respond - this may be caused by a slow network (if you are monitoring remotely) or very high CPU load.";
+
+        } else if (errType === "parsererror") {
+            msg = "Unable to parse the server response";
+
+        } else {
+            msg = "An error occurred while attempting to communicate with the server: " + errType;
+        }
+        BITMETER.errorDialog.show(msg);
+    },
     dataFilter : function (data, dataType) {
-        if (!data){
+        if (!data) {
          // If the server goes down we get an empty 'data' parameter
-            throw "No data returned";	
+            throw "No data returned";
         }
         BITMETER.errorDialog.hide();
         return data;
     }
 });
 
-BITMETER.refreshTimer = (function(){
+BITMETER.refreshTimer = (function() {
  // Manages the automatic screen refreshes
     var timer = {}, interval;
 
-    timer.clear = function(){
-        if (interval){
+    timer.clear = function() {
+        if (interval) {
             window.clearInterval(interval);
         }
         interval = null;
     };
 
-    timer.set = function(fnDoThis, periodInMillis){
+    timer.set = function(fnDoThis, periodInMillis) {
         this.clear();
         interval = window.setInterval(fnDoThis, periodInMillis);
     };
@@ -54,14 +54,14 @@ BITMETER.refreshTimer = (function(){
 }());
 
 // Gets called to signal to the current tab that it is being closed
-BITMETER.onTabHide = (function(){
+BITMETER.onTabHide = (function() {
     var onTabHide = {}, fnDoThis;
 
-    onTabHide.set = function(newFn){
+    onTabHide.set = function(newFn) {
         fnDoThis = newFn;
     };
 
-    onTabHide.run = function(){
+    onTabHide.run = function() {
      // Run the handler and then remove it, only want these to get executed once
         if (fnDoThis){
             fnDoThis();
@@ -72,21 +72,21 @@ BITMETER.onTabHide = (function(){
     return onTabHide;
 }());
 
-BITMETER.infoFloat = (function(){
+BITMETER.infoFloat = (function() {
  /* Returns an object representing the small hovering box that appears near the mouse
     pointer in certain areas of the page (eg when hovering over the bars on the History
     page). */
     var float = {}, guiBox, floaterVisible, hoverElement;
 
-    float.setHTML = function(html){
+    float.setHTML = function(html) {
         guiBox.html(html);
     };
 
-    function mouseMoveHandler(e){
+    function mouseMoveHandler(e) {
         guiBox.css({'left' : e.pageX + 15, 'top' : e.pageY });
     }
 
-    float.show = function(el, evObj, html){
+    float.show = function(el, evObj, html) {
         if (!floaterVisible){
             hoverElement = el;
             if (html){

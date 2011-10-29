@@ -91,7 +91,7 @@ void setupTestDb(void** state){
     //executeSql("insert into config (key,value) values ('cap.keep_sec_limit',     3600)", NULL);
     //executeSql("insert into config (key,value) values ('cap.keep_min_limit',     86400)", NULL);
     //executeSql("insert into config (key,value) values ('cap.busy_wait_interval', 60000)", NULL);
-    executeSql("create table data2 (ts,dr,vl,fl)", NULL);
+    executeSql("create table data (ts,dr,vl,fl)", NULL);
     executeSql("create table alert (id, name, active, bound, filter, amount);", NULL);
     executeSql("create table interval (id, yr, mn, dy, wk, hr);", NULL);
     executeSql("create table alert_interval (alert_id, interval_id);", NULL);
@@ -103,7 +103,7 @@ void tearDownTestDb(void** state){
 }
 
 void emptyDb(){
-    executeSql("delete from data2", NULL);
+    executeSql("delete from data", NULL);
     executeSql("delete from alert;", NULL);
     executeSql("delete from alert_interval;", NULL);
     executeSql("delete from interval;", NULL);
@@ -123,7 +123,7 @@ int getRowCount(char* sql){
 
 void addDbRow(time_t ts, int dr, int vl, int fl){
     char sql[200];
-    sprintf(sql, "INSERT INTO data2 (ts, dr, vl, fl) values (%d, %d, %d, %d)", (int)ts, dr, vl, fl);
+    sprintf(sql, "INSERT INTO data (ts, dr, vl, fl) values (%d, %d, %d, %d)", (int)ts, dr, vl, fl);
     executeSql(sql, NULL);
 }
 
@@ -162,7 +162,7 @@ void addConfigRow(char* key, char* value){
 }
 
 void checkTableContents(struct Data* expectedData){
-	sqlite3_stmt* stmt = getStmt("SELECT ts AS ts, dr AS dr, vl As vl, fl AS fl FROM data2 ORDER BY ts DESC, fl ASC");
+	sqlite3_stmt* stmt = getStmt("SELECT ts AS ts, dr AS dr, vl As vl, fl AS fl FROM data ORDER BY ts DESC, fl ASC");
 
 	int rc;
 	while((rc=sqlite3_step(stmt)) == SQLITE_ROW){
@@ -178,7 +178,7 @@ void checkTableContents(struct Data* expectedData){
 }
 
 void dumpDataTable(){
-	sqlite3_stmt* stmt = getStmt("select ts as ts, dr as dr, vl as vl, fl as fl from data2");
+	sqlite3_stmt* stmt = getStmt("select ts as ts, dr as dr, vl as vl, fl as fl from data");
 	
 	dbg("==================\n");
 	while(sqlite3_step(stmt) == SQLITE_ROW){
@@ -241,7 +241,7 @@ int tableExists(char* tableName){
 
 void addDbRowBinaryAddress(time_t ts, int dr, int dl, int ul, char* ad, int adLen){
     char sql[200];
-    sprintf(sql, "INSERT INTO data2 (ts, dr, ad, dl, ul) values (%d, %d, ?, %d, %d)", (int)ts, dr, dl, ul);
+    sprintf(sql, "INSERT INTO data (ts, dr, ad, dl, ul) values (%d, %d, ?, %d, %d)", (int)ts, dr, dl, ul);
     sqlite3_stmt *stmt;
     prepareSql(&stmt, sql);
     sqlite3_bind_blob(stmt, 1, ad, adLen, SQLITE_STATIC);
@@ -251,135 +251,3 @@ void addDbRowBinaryAddress(time_t ts, int dr, int dl, int ul, char* ad, int adLe
 	}
 	sqlite3_reset(stmt);
 }
-
-//static FILE* tmpFile = NULL;
-//char* tmpFileData = NULL;
-//FILE* makeTmpFileStream(){
-//    if (tmpFile != NULL){
-//        fclose(tmpFile);
-//        tmpFile = NULL;
-//    }
-//    if (tmpFileData != NULL){
-//        free(tmpFileData);
-//        tmpFileData = NULL;
-//    }
-//
-//    tmpFile = tmpfile();
-//    return tmpFile;
-//}
-//int makeTmpFile(){
-//    return fileno( makeTmpFileStream());
-//}
-//char* readTmpFile(){
-//    assert(tmpFile != NULL);
-//    rewind(tmpFile);
-//    tmpFileData = malloc(BUFFER_SIZE);
-//    int l = fread(tmpFileData, 1, BUFFER_SIZE, tmpFile);
-//    tmpFileData[l] = 0;
-//    return tmpFileData;
-//}
-
-//
-//
-//sqlite3_stmt *selectAllStmt;
-//static struct Data* storedData;
-//
-//
-//void doSleep(int interval){
-//
-//}
-//
-//void getLogPath(char* path){
-//    strcpy(path, "");
-//}
-//void getWebRootPath(char* path){
-//    strcpy(path, "");
-//}
-//#ifdef _WIN32
-//	void logWin32ErrMsg(char* msg, int rc) {
-//	}
-//#endif
-//void getWebRoot(char* path){
-//    strcpy(path, "");
-//}
-//
-//static char* originalTz;
-//void setTzToGmt(){
-//	#ifndef _WIN32
-//	 // Need this because the date/time fns use localtime	
-//		originalTz = getenv("TZ");
-//	    putenv("TZ=GMT"); 
-//	#endif
-//}
-//void restoreTz(){
-//	#ifndef _WIN32	
-//		char restoreTz[32];
-//	    sprintf(restoreTz, "TZ=%s", originalTz);
-//	    putenv(restoreTz);
-//	#endif
-//}
-//
-//sqlite3* db;
-//sqlite3* getDb(){
-//    return db;
-//}
-//void setUpDbForTest(){
-//    db = openDb();
-//    executeSql("create table config (key, value)", NULL);
-//    populateConfigTable();
-//    executeSql("create table data2 (ts,dr,vl,fl,hs)", NULL);
-//    executeSql("create table alert (id, name, active, bound, direction, amount);", NULL);
-//    executeSql("create table interval (id, yr, mn, dy, wk, hr);", NULL);
-//    executeSql("create table alert_interval (alert_id, interval_id);", NULL);
-//}
-//void setup(){
-//    setUpDbForTest();
-//    //setupDb();
-//    setTzToGmt();
-//    prepareSql(&selectAllStmt, "SELECT ts AS ts, dr AS dr, vl As vl, fl AS fl, hs AS hs FROM data2 ORDER BY ts DESC");
-//}
-//void addDbRow(time_t ts, int dr, int vl, int fl, char* hs){
-//    char sql[200];
-//    if (hs != NULL){
-//        sprintf(sql, "INSERT INTO data2 (ts, dr, vl, fl, hs) values (%d, %d, %d, %d, '%s')", (int)ts, dr, vl, fl, hs);
-//    } else {
-//        sprintf(sql, "INSERT INTO data2 (ts, dr, vl, fl) values (%d, %d, %d, %d)", (int)ts, dr, vl, fl);
-//    }
-//    executeSql(sql, NULL);
-//}
-//
-//time_t makeTs(const char* dateTxt){
-//    struct tm t;
-//    t.tm_isdst = -1;
-//    strptime(dateTxt, "%Y-%m-%d %H:%M:%S", &t);
-//    return mktime(&t);
-//}
-//
-//
-
-//
-////void checkDateCriteriaPart(CuTest *tc, struct DateCriteriaPart* part, int isRelative, int val1, int val2, int next){
-////    CuAssertIntEquals(tc, part->isRelative, isRelative);
-////    CuAssertIntEquals(tc, part->val1, val1);
-////    CuAssertIntEquals(tc, part->val2, val2);
-////    if (next){
-////        CuAssertTrue(tc, NULL != (part->next));
-////    } else {
-////        CuAssertTrue(tc, NULL == (part->next));
-////    }
-////}
-//
-//static void printTmStruct(struct tm tm){
-//	printf("%d %d %d (%d) %d:%d:%d\n", tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_wday, 
-//			tm.tm_hour, tm.tm_min, tm.tm_sec);
-//}
-//
-//static struct Data* nextData = NULL;
-//struct Data* getData(){
-//	return nextData;
-//}
-//void setData(struct Data* data){
-//	nextData = data;
-//}
-//
-//

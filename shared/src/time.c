@@ -1,6 +1,3 @@
-#ifdef UNIT_TESTING 
-	#include "test.h"
-#endif
 #include <stdlib.h>
 #include <time.h>
 #include "common.h"
@@ -12,6 +9,9 @@ Contains code for performing date-based calculations.
 #ifndef UNIT_TESTING
 	time_t getTime(){
 		return time(NULL);
+	}
+	void setTime(time_t newTime){
+	    // do nothing
 	}
 #else
 	static time_t now;

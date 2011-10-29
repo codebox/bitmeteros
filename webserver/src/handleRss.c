@@ -1,6 +1,3 @@
-#ifdef UNIT_TESTING
-	#include "test.h"
-#endif
 #include <stdio.h>
 #include <time.h>
 #include "bmws.h"

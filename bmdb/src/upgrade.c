@@ -1,7 +1,4 @@
 #define _GNU_SOURCE
-#ifdef UNIT_TESTING 
-	#include "test.h"
-#endif
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -142,8 +139,8 @@ int convertAddrValues(){
  // Convert all 'ad' values to strings
     sqlite3_stmt* stmtSelect;
     sqlite3_stmt* stmtUpdate;
-    prepareSql(&stmtSelect, "SELECT DISTINCT ad FROM data2");
-    prepareSql(&stmtUpdate, "UPDATE data2 SET ad=? WHERE ad=?");
+    prepareSql(&stmtSelect, "SELECT DISTINCT ad FROM data");
+    prepareSql(&stmtUpdate, "UPDATE data SET ad=? WHERE ad=?");
 
     const char* adBytes;
     char adTxt[MAC_ADDR_LEN * 2 + 1];
@@ -245,7 +242,7 @@ static int upgrade3(){
 	}
 
     sqlite3_stmt* stmtAddColumn;
-    prepareSql(&stmtAddColumn, "ALTER TABLE data2 ADD COLUMN hs;");
+    prepareSql(&stmtAddColumn, "ALTER TABLE data ADD COLUMN hs;");
     status = sqlite3_step(stmtAddColumn);
     if (status != SQLITE_DONE){
         logMsg(LOG_ERR, "add column failed rc=%d error=%s", status, getDbError());
@@ -287,7 +284,7 @@ static int upgrade5(){
 		return FAIL;
 	}
 
-    status = executeSql("UPDATE data2 SET hs = '' WHERE hs IS NULL", NULL);
+    status = executeSql("UPDATE data SET hs = '' WHERE hs IS NULL", NULL);
     if (status == FAIL){
 		return FAIL;
 	}
@@ -317,7 +314,7 @@ static int upgrade6(){
 		return FAIL;
 	}
 
-	status = executeSql("CREATE INDEX idxDataTs ON data2(ts)", NULL);
+	status = executeSql("CREATE INDEX idxDataTs ON data(ts)", NULL);
     if (status == FAIL){
 		return FAIL;
 	}
@@ -357,33 +354,166 @@ static int upgrade8(){
 		return FAIL;
 	}
 
-    status = executeSql("CREATE TABLE filter (id INTEGER PRIMARY KEY AUTOINCREMENT, desc, name, filter, host)", NULL);
+ // Create the new filter table
+    status = executeSql("CREATE TABLE filter (id INTEGER PRIMARY KEY AUTOINCREMENT, desc, name, expr, host)", NULL);
     if (status == FAIL){
 		return FAIL;
 	}
 
-    status = executeSql("INSERT INTO filter (id,desc,name,filter) VALUES (1, 'All Downloads', 'dl', 'dst host {adapter}')", NULL);
+ // Create the 4 default filters
+    status = executeSql("INSERT INTO filter (id, desc,name,expr) VALUES (1, 'All Downloads', 'dl', 'dst host {adapter}')", NULL);
     if (status == FAIL){
 		return FAIL;
 	}
 
-    status = executeSql("INSERT INTO filter (id,desc,name,filter) VALUES (2, 'All Uploads', 'ul', 'src host {adapter}')", NULL);
+    status = executeSql("INSERT INTO filter (id, desc,name,expr) VALUES (2, 'All Uploads', 'ul', 'src host {adapter}')", NULL);
     if (status == FAIL){
 		return FAIL;
 	}
 
-    status = executeSql("INSERT INTO filter (desc,name,filter) VALUES ('Internet Downloads', 'idl', 'dst host {adapter} and not (src net {lan})')", NULL);
+    status = executeSql("INSERT INTO filter (id, desc,name,expr) VALUES (3, 'Internet Downloads', 'idl', 'dst host {adapter} and not (src net {lan})')", NULL);
     if (status == FAIL){
 		return FAIL;
 	}
 
-    status = executeSql("INSERT INTO filter (desc,name,filter) VALUES ('Internet Uploads', 'iul', 'src host {adapter} and not (dst net {lan})')", NULL);
+    status = executeSql("INSERT INTO filter (id, desc,name,expr) VALUES (4, 'Internet Uploads', 'iul', 'src host {adapter} and not (dst net {lan})')", NULL);
     if (status == FAIL){
 		return FAIL;
 	}
 
-//insert into data2 (ts,dr,vl,fl,hs) select ts,dr,dl,1,hs from data;
-//insert into data2 (ts,dr,vl,fl,hs) select ts,dr,ul,2,hs from data;
+ // Make a temporary table that we can use to start transforming the data
+    status = executeSql("CREATE TABLE datatmp (ts,dr,vl,fl)", NULL);
+    if (status == FAIL){
+		return FAIL;
+	}
 
+ // Transform the local download data into the new format
+    status = executeSql("INSERT INTO datatmp (ts,dr,vl,fl) SELECT ts,dr,dl,1 FROM data where hs=''", NULL);
+    if (status == FAIL){
+		return FAIL;
+	}
+
+ // Transform the local upload data into the new format
+    status = executeSql("INSERT INTO datatmp (ts,dr,vl,fl) SELECT ts,dr,ul,2 FROM data where hs=''", NULL);
+    if (status == FAIL){
+		return FAIL;
+	}
+
+ // Get the remote host names that we have imported data from
+	int nextFilterId = 5;
+ 	sqlite3_stmt* stmt = getStmt("SELECT DISTINCT(hs) FROM data WHERE hs!=''");
+ 	
+ /* For each host name we need to create 2 new filters, one for the dl data and one for the ul.
+    We then need to transform rows from the old 'data' table into the new format. */
+	while(sqlite3_step(stmt) == SQLITE_ROW){
+		char* host = sqlite3_column_text(stmt, 0);
+
+	 // Add a filter for downloads from this host
+	 	char dlFilterSql[256];
+	 	int dlFilterId = nextFilterId++;
+	 	
+	 	sprintf(dlFilterSql, 
+	 		"INSERT INTO filter (id,desc,name,expr,host) VALUES (%d, 'Downloads from %s', 'dl%d', 'dst host {adapter}', '%s')", 
+	 		dlFilterId, host, dlFilterId, host);
+	    status = executeSql(dlFilterSql, NULL);
+	    if (status == FAIL){
+			return FAIL;
+		}
+		
+	 // Transform the download data from this host into the new format
+	 	char dlInsertSql[256];
+	 	sprintf(dlInsertSql, "INSERT INTO datatmp (ts,dr,vl,fl) SELECT ts,dr,dl,%d FROM data where hs='%s'", dlFilterId, host);
+	    status = executeSql(dlInsertSql, NULL);
+	    if (status == FAIL){
+			return FAIL;
+		}
+
+	 // Add a filter for uploads from this host
+	 	char ulFilterSql[256];
+	 	int ulFilterId = nextFilterId++;
+	 	
+	 	sprintf(ulFilterSql, 
+	 		"INSERT INTO filter (id,desc,name,expr,host) VALUES (%d, 'Uploads from %s', 'ul%d', 'src host {adapter}', '%s')", 
+	 		ulFilterId, host, ulFilterId, host);
+	    status = executeSql(ulFilterSql, NULL);
+	    if (status == FAIL){
+			return FAIL;
+		}
+
+	 // Transform the upload data from this host into the new format
+	 	char ulInsertSql[256];
+	 	sprintf(ulInsertSql, "INSERT INTO datatmp (ts,dr,vl,fl) SELECT ts,dr,ul,%d FROM data where hs='%s'", ulFilterId, host);
+	    status = executeSql(ulInsertSql, NULL);
+	    if (status == FAIL){
+			return FAIL;
+		}
+
+	}
+  	finishedStmt(stmt);
+
+ // Make a backup of the old data table, since we are discarding some information (namely the adapter values)
+    status = executeSql("CREATE TABLE preUpgrade8Data AS SELECT * FROM data", NULL);
+    if (status == FAIL){
+		return FAIL;
+	}
+
+ // Drop the old data table
+    status = executeSql("DROP TABLE data", NULL);
+    if (status == FAIL){
+		return FAIL;
+	}
+
+ // Create the new old data table
+    status = executeSql("CREATE TABLE data AS SELECT * FROM datatmp", NULL);
+    if (status == FAIL){
+		return FAIL;
+	}
+
+ // A couple of indexes for the data table, which can get large
+	status = executeSql("CREATE INDEX idxDataFl ON data(fl)", NULL);
+    if (status == FAIL){
+		return FAIL;
+	}
+	
+	status = executeSql("CREATE INDEX idxDataTsDr ON data(ts,dr)", NULL);
+    if (status == FAIL){
+		return FAIL;
+	}
+
+ // Drop the temporary data table
+    status = executeSql("DROP TABLE datatmp", NULL);
+    if (status == FAIL){
+		return FAIL;
+	}
+	
+ // Fix the alerts table - sqlite does not support renaming of columns so we have to do all this...
+ 	status = executeSql("CREATE TABLE alerttmp (id, name, active, bound, filter, amount)", NULL);
+    if (status == FAIL){
+		return FAIL;
+	}
+    
+ 	status = executeSql("INSERT INTO alerttmp (id, name, active, bound, filter, amount) SELECT id, name, active, bound, direction, amount FROM alert", NULL);
+    if (status == FAIL){
+		return FAIL;
+	}
+    
+ 	status = executeSql("DROP TABLE alert", NULL);
+    if (status == FAIL){
+		return FAIL;
+	}
+    
+ 	status = executeSql("ALTER TABLE alerttmp RENAME TO alert", NULL);
+    if (status == FAIL){
+		return FAIL;
+	}
+    
+	/* Previous dl/ul direction values are the same as the respective filter values (1 and 2) so no
+	   need to make any adjustments. Alerts of combined dl+ul are not supported by the initial 
+	   configuration of v0.8.0, so we delete these. */
+ 	status = executeSql("DELETE FROM alert WHERE filter > 2 OR filter < 1", NULL);
+    if (status == FAIL){
+		return FAIL;
+	}
+	
     return SUCCESS;
 }

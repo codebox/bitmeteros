@@ -149,14 +149,6 @@ BITMETER.model = (function(){
         set('filters', filters, true);
     };
 
- // Determines if a warning is shown when a data filter is active
-    model.getShowFilterWarning = function(){
-        return get('showFilterWarning') === 'true';
-    };
-    model.setShowFilterWarning = function(showFilterWarning){
-        set('showFilterWarning', '' + showFilterWarning, true);
-    };
-
  // Determines whether we use binary or decimal units
     model.getBinaryUnits = function(){
         return get('binaryUnits') === 'true';

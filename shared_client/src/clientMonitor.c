@@ -6,8 +6,8 @@
 Contains a helper function for use by clients that need to monitor the database.
 */
 
-#define CLIENT_MONITOR_SQL     "SELECT ts AS ts, dr AS dr, SUM(vl) AS vl, fl AS fl FROM data2 WHERE fl = ? GROUP BY ts HAVING ts >= ? ORDER BY ts DESC"
-#define CLIENT_MONITOR_SQL_ALL "SELECT ts AS ts, dr AS dr, SUM(vl) AS vl, fl AS fl FROM data2 GROUP BY ts,fl HAVING ts >= ? ORDER BY ts DESC"
+#define CLIENT_MONITOR_SQL     "SELECT ts AS ts, dr AS dr, SUM(vl) AS vl, fl AS fl FROM data WHERE fl = ? GROUP BY ts HAVING ts >= ? ORDER BY ts DESC"
+#define CLIENT_MONITOR_SQL_ALL "SELECT ts AS ts, dr AS dr, SUM(vl) AS vl, fl AS fl FROM data GROUP BY ts,fl HAVING ts >= ? ORDER BY ts DESC"
 
 struct Data* getMonitorValues(int ts, int fl){
  // A list of Data structs will be returned, once for each db entry with a timestamp >= ts and a matching filter id

@@ -245,6 +245,21 @@ void logMsg(int level, char* msg, ...);
 void vlogMsg(int level, char* msg, va_list argp);
 void statusMsg(const char* msg, ...);
 void resetStatusMsg();
+#ifdef _WIN32
+	#include  <windows.h>
+	#define TEXT_DEFAULT FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_BLUE
+	#define TEXT_YELLOW  FOREGROUND_RED | FOREGROUND_GREEN
+	#define TEXT_RED     FOREGROUND_RED
+	#define TEXT_GREEN   FOREGROUND_GREEN
+	#define TEXT_BLUE    FOREGROUND_BLUE | FOREGROUND_GREEN
+#else
+	#define TEXT_DEFAULT 0
+	#define TEXT_YELLOW  0
+	#define TEXT_RED     0
+	#define TEXT_GREEN   0
+	#define TEXT_BLUE    0
+#endif
+void setTextColour(int colour);
 // ----
 void formatAmount(const BW_INT amount, const int binary, const int abbrev, char* txt);
 void toTime(char* timeText, time_t ts);
@@ -285,4 +300,28 @@ char* getValueForName(char* name, struct NameValuePair* pair, char* defaultValue
 void freeNameValuePairs(struct NameValuePair* param);
 void appendNameValuePair(struct NameValuePair** earlierPair, struct NameValuePair* newPair);
 struct NameValuePair* makeNameValuePair(char* name, char* value);
+
+#ifdef UNIT_TESTING	
+	#define SET_LOG_LEVEL mockSetLogLevel
+	#define OPEN_DB mockOpenDb
+	#define CLOSE_DB mockCloseDb
+	#define DB_VERSION_CHECK mockDbVersionCheck
+	#define TO_TIME mockToTime
+	#define TO_DATE mockToDate
+	#define PCAP_CLOSE mockPcap_close
+	#define malloc(size)          _test_malloc(size, __FILE__, __LINE__) 
+	#define calloc(num, size)     _test_calloc(num, size, __FILE__, __LINE__) 
+	#define free(ptr)             _test_free(ptr, __FILE__, __LINE__) 
+	#define strdup(ptr)           _test_strdup(ptr, __FILE__, __LINE__) 
+	#define printf(fmt , args...) _test_printf(fmt , ##args) 
+	#define dbg(fmt , args...) fprintf(stdout , fmt , ##args) 
+#else
+	#define SET_LOG_LEVEL setLogLevel
+	#define OPEN_DB openDb
+	#define CLOSE_DB closeDb
+	#define DB_VERSION_CHECK dbVersionCheck
+	#define TO_TIME toTime
+	#define TO_DATE toDate
+	#define PCAP_CLOSE pcap_close
+#endif
 #endif //#ifndef COMMON_H

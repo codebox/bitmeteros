@@ -46,9 +46,9 @@ void testFreeTotals(void **state) {
 	total1->next = total2;
 	total2->next = total3;
 	
-	expect_value(_pcap_close, h, 1); 
-	expect_value(_pcap_close, h, 2); 
-	expect_value(_pcap_close, h, 3); 
+	expect_value(mockPcap_close, h, 1); 
+	expect_value(mockPcap_close, h, 2); 
+	expect_value(mockPcap_close, h, 3); 
 	freeTotals(total1);
 }
 
