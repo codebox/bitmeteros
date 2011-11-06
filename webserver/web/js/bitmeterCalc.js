@@ -1,5 +1,5 @@
 /*global $,BITMETER,window,config*/
-/*jslint onevar: true, undef: true, nomen: true, eqeqeq: true, bitwise: true, regexp: true, newcap: true, immed: true, strict: false */
+/*jslint sloppy: true, white: true, plusplus: true, unparam: true */
 
 BITMETER.tabShowCalc = function(){
     function setSliderRange(min, max){

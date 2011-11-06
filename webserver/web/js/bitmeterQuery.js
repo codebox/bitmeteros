@@ -1,5 +1,5 @@
 /*global $,BITMETER,window,config*/
-/*jslint onevar: true, undef: true, nomen: true, eqeqeq: true, bitwise: true, regexp: true, newcap: true, immed: true, strict: false */
+/*jslint sloppy: true, white: true, plusplus: true, unparam: true */
 
 /*
 Contains code that handles to Query page
@@ -9,35 +9,35 @@ BITMETER.tabShowQuery = function(){
 };
 
 $(function(){
-    var queryResultsGridObj, dateFormat, queryDialog, datePickerOpts = { showOn: 'button', buttonImage: '/css/images/calendar.gif' };
-
-	var TS_TRIMMERS = {
-		'fnHour' : function(ts){
-			var dt = new Date(ts);
-			dt.setMilliseconds(0);
-			dt.setSeconds(0);
-			dt.setMinutes(0);
-			return dt.getTime();
-		},
-		'fnDay' : function(ts){
-			var dt = new Date(TS_TRIMMERS.fnHour(ts));
-			dt.setHours(0);
-			return dt.getTime();
-		},
-		'fnMonth' : function(ts){
-			var dt = new Date(TS_TRIMMERS.fnDay(ts));
-			dt.setDate(1);
-			return dt.getTime();
-		},
-		'fnYear' : function(ts){
-			var dt = new Date(TS_TRIMMERS.fnMonth(ts));
-			dt.setMonth(0);
-			return dt.getTime();
-		},
-		'fnTotal' : function(ts){
-			return 0;
-		}
-	};
+    var queryResultsGridObj, dateFormat, queryDialog, 
+        datePickerOpts = { showOn: 'button', buttonImage: '/css/images/calendar.gif' },
+        TS_TRIMMERS = {
+            'fnHour' : function(ts){
+                var dt = new Date(ts);
+                dt.setMilliseconds(0);
+                dt.setSeconds(0);
+                dt.setMinutes(0);
+                return dt.getTime();
+            },
+            'fnDay' : function(ts){
+                var dt = new Date(TS_TRIMMERS.fnHour(ts));
+                dt.setHours(0);
+                return dt.getTime();
+            },
+            'fnMonth' : function(ts){
+                var dt = new Date(TS_TRIMMERS.fnDay(ts));
+                dt.setDate(1);
+                return dt.getTime();
+            },
+            'fnYear' : function(ts){
+                var dt = new Date(TS_TRIMMERS.fnMonth(ts));
+                dt.setMonth(0);
+                return dt.getTime();
+            },
+            'fnTotal' : function(ts){
+                return 0;
+            }
+        }, colModelArray, formattersArray;
 
     function runQuery(){
         var fd, td, errList=[], df, reqTxt;
@@ -68,44 +68,44 @@ $(function(){
             reqTxt = BITMETER.addFiltersToRequest('query?from=' + fd + '&to=' + td + '&group=' + $('#queryDisplay').val());
             $.get(reqTxt, function(results){
              // Store the results for later
-            	var tsBuckets = {};
-	            var currentGrouping = BITMETER.model.getQueryGrouping();
-	            var TRIM_FN_NAMES = ['fnHour', 'fnDay', 'fnMonth', 'fnYear', 'fnTotal'];
-          		var fnTsAdjuster = TS_TRIMMERS[TRIM_FN_NAMES[currentGrouping-1]];
-          		
-            	$.each(results, function(i,o){
-					var ts = fnTsAdjuster((o.ts - o.dr) * 1000) / 1000;
-					
-            	    if (!tsBuckets[ts]){
-            	     // First entry for this ts, so set up the initial values
-            	    	tsBuckets[ts] = {dr : o.dr}; 
-	        			BITMETER.forEachFilter(function(f){
-	        				tsBuckets[ts][f.id] = 0;
-						}, false);
-            	    }
-            	    tsBuckets[ts][o.fl] += o.vl;
-            	});
-            	
-            	var resultArray = [];
-            	$.each(tsBuckets, function(k,v){
-            		v.ts = k;
-            		resultArray.push(v);
-            	});
-            	
-            	BITMETER.model.setQueryResults(resultArray);
-            	BITMETER.model.setQueryGrouping($('#queryDisplay').val());
-            	queryResultsGridObj[0].grid.populate();
-            	
-            	var resultCount = resultArray.length;
-            	$('#queryStatusBox').html('Search found ' + resultCount + ' result' + (resultCount === 1 ? '' : 's') + '.');
-            	
-            	if (resultCount){
-            	    $('#queryExportLink').show();
-            	    $('#queryExportLink').attr('href', reqTxt + '&csv=1');
-            	} else {
-            	    $('#queryExportLink').attr('href', '');
-            	    $('#queryExportLink').hide();
-            	}
+                var tsBuckets = {}, resultCount,
+                    currentGrouping = BITMETER.model.getQueryGrouping(),
+                    TRIM_FN_NAMES = ['fnHour', 'fnDay', 'fnMonth', 'fnYear', 'fnTotal'],
+                    fnTsAdjuster = TS_TRIMMERS[TRIM_FN_NAMES[currentGrouping-1]],
+                    resultArray = [];
+                
+                $.each(results, function(i,o){
+                    var ts = fnTsAdjuster((o.ts - o.dr) * 1000) / 1000;
+                    
+                    if (!tsBuckets[ts]){
+                     // First entry for this ts, so set up the initial values
+                        tsBuckets[ts] = {dr : o.dr}; 
+                        BITMETER.forEachFilter(function(f){
+                            tsBuckets[ts][f.id] = 0;
+                        }, false);
+                    }
+                    tsBuckets[ts][o.fl] += o.vl;
+                });
+                
+                $.each(tsBuckets, function(k,v){
+                    v.ts = k;
+                    resultArray.push(v);
+                });
+                
+                BITMETER.model.setQueryResults(resultArray);
+                BITMETER.model.setQueryGrouping($('#queryDisplay').val());
+                queryResultsGridObj[0].grid.populate();
+                
+                resultCount = resultArray.length;
+                $('#queryStatusBox').html('Search found ' + resultCount + ' result' + (resultCount === 1 ? '' : 's') + '.');
+                
+                if (resultCount){
+                    $('#queryExportLink').show();
+                    $('#queryExportLink').attr('href', reqTxt + '&csv=1');
+                } else {
+                    $('#queryExportLink').attr('href', '');
+                    $('#queryExportLink').hide();
+                }
             });
         } else {
          // There was a problem with the dates, show an error and don't send the query
@@ -146,17 +146,16 @@ $(function(){
 
     $('#queryButton').button();
 
-	var colModelArray = [{display: 'Date', name : 'ts', width : 180, sortable : true, align: 'center'}];
-	BITMETER.forEachFilter(function(o){
-			colModelArray.push(
-				{display: o.desc, name : o.id, width : 120, sortable : true, align: 'center'}
-			);
-		}, true);
+    colModelArray = [{display: 'Date', name : 'ts', width : 180, sortable : true, align: 'center'}];
+    BITMETER.forEachFilter(function(o){
+            colModelArray.push(
+                {display: o.desc, name : o.id, width : 120, sortable : true, align: 'center'}
+            );
+        }, true);
 
-
-	var formattersArray = [
+    formattersArray = [
         function(ts){
-        	ts = Number(ts);
+            ts = Number(ts);
             var formatTxt, mod, roundedTs, startOfRange, endOfRange;
 
             if (BITMETER.model.getQueryGrouping() !== 1){
@@ -190,9 +189,9 @@ $(function(){
         }
     ];
         
-	BITMETER.forEachFilter(function(){
-		formattersArray.push(BITMETER.formatAmount);
-	}, false);
+    BITMETER.forEachFilter(function(){
+        formattersArray.push(BITMETER.formatAmount);
+    }, false);
 
  // Set up the grid, the flexigrid prefs are non-standard because we use a hacked version
     queryResultsGridObj = $('#queryResults').flexigrid({
@@ -201,18 +200,18 @@ $(function(){
             var rows = [];
 
             $.each(data, function(i,o) {
-		     	var cellData = [o.ts];
-		     	BITMETER.forEachFilter(function(f){
-			     		var valueForThisFilter = o[f.id];
-			     		if (valueForThisFilter){
-				     		cellData.push(valueForThisFilter);
-				     	} else {
-				     		cellData.push(0);
-				     	}
-			     	}, true);
-		     	
-		        rows.push({id: o.ts, cell: cellData});
-		 	});
+                var cellData = [o.ts];
+                BITMETER.forEachFilter(function(f){
+                        var valueForThisFilter = o[f.id];
+                        if (valueForThisFilter){
+                            cellData.push(valueForThisFilter);
+                        } else {
+                            cellData.push(0);
+                        }
+                    }, true);
+                
+                rows.push({id: o.ts, cell: cellData});
+            });
 
             return {total : BITMETER.model.getQueryResults().length, page : BITMETER.model.getQueryResultsPage(), rows: rows};
         },
@@ -249,7 +248,7 @@ $(function(){
         onReload : runQuery
     });
 
-	
+    
  // Clear out the grid when the page loads...
     queryResultsGridObj[0].grid.populate();
 

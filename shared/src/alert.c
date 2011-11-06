@@ -12,9 +12,9 @@ void freeDateCriteria(struct DateCriteria* criteria);
 
 struct Alert* allocAlert(){
  // Create an Alert struct on the heap
-	struct Alert* alert = (struct Alert*) malloc( sizeof( struct Alert ) );
+    struct Alert* alert = (struct Alert*) malloc( sizeof( struct Alert ) );
 
-	alert->id      = 0;
+    alert->id      = 0;
     alert->name    = NULL;
     alert->active  = 0;
     alert->bound   = NULL;
@@ -23,14 +23,14 @@ struct Alert* allocAlert(){
     alert->amount  = 0;
     alert->next    = NULL;
 
-	return alert;
+    return alert;
 }
 void setAlertName(struct Alert* alert, const char* name){
  // Free up the current name if there is one
     if (alert->name != NULL){
         free(alert->name);   
     }
-	
+    
     if (name == NULL){
         alert->name = NULL;
         
@@ -56,45 +56,45 @@ void appendAlert(struct Alert** earlierAlert, struct Alert* newAlert){
 }
 void freeAlert(struct Alert* alert){
  // Free up the memory used by this Alert struct, and all others that can be reached through the 'next' pointer chain
-	struct Alert* next;
-	while(alert != NULL){
-		next = alert->next;
-		if (alert->name != NULL){
-			free(alert->name);
-		}
-		if (alert->bound != NULL){
-			freeDateCriteria(alert->bound);
-		}
-		if (alert->periods != NULL){
-			freeDateCriteria(alert->periods);
-		}
-		free(alert);
-		alert = next;
-	}
+    struct Alert* next;
+    while(alert != NULL){
+        next = alert->next;
+        if (alert->name != NULL){
+            free(alert->name);
+        }
+        if (alert->bound != NULL){
+            freeDateCriteria(alert->bound);
+        }
+        if (alert->periods != NULL){
+            freeDateCriteria(alert->periods);
+        }
+        free(alert);
+        alert = next;
+    }
 }
 
 void freeDateCriteria(struct DateCriteria* criteria){
     struct DateCriteria* next;
-	while(criteria != NULL){
-		next = criteria->next;
-		
-		freeDateCriteriaPart(criteria->year);
-		freeDateCriteriaPart(criteria->month);
-		freeDateCriteriaPart(criteria->day);
-		freeDateCriteriaPart(criteria->weekday);
-		freeDateCriteriaPart(criteria->hour);
-		free(criteria);
-		
-		criteria = next;
-	}
+    while(criteria != NULL){
+        next = criteria->next;
+        
+        freeDateCriteriaPart(criteria->year);
+        freeDateCriteriaPart(criteria->month);
+        freeDateCriteriaPart(criteria->day);
+        freeDateCriteriaPart(criteria->weekday);
+        freeDateCriteriaPart(criteria->hour);
+        free(criteria);
+        
+        criteria = next;
+    }
 }
 void freeDateCriteriaPart(struct DateCriteriaPart* criteriaPart){
     struct DateCriteriaPart* next;
-	while(criteriaPart != NULL){
-		next = criteriaPart->next;
-		free(criteriaPart);
-		criteriaPart = next;
-	}
+    while(criteriaPart != NULL){
+        next = criteriaPart->next;
+        free(criteriaPart);
+        criteriaPart = next;
+    }
 }
 
 char* dateCriteriaPartToText(struct DateCriteriaPart* part){
@@ -104,16 +104,16 @@ char* dateCriteriaPartToText(struct DateCriteriaPart* part){
         strcpy(txt, "*");
         
     } else {
-    	strcpy(txt, "");
+        strcpy(txt, "");
         int firstPart = TRUE;
         
         while(part != NULL){
          // Check if we are getting close to the end of the buffer
-        	if (strlen(txt) >= (MAX_PART_LENGTH - 32)){
-        		logMsg(LOG_ERR, "DateCriteriaPart contents too large for text buffer of %d chars, text so far is %s", MAX_PART_LENGTH, txt);
-        		return txt;	
-        	}
-        	
+            if (strlen(txt) >= (MAX_PART_LENGTH - 32)){
+                logMsg(LOG_ERR, "DateCriteriaPart contents too large for text buffer of %d chars, text so far is %s", MAX_PART_LENGTH, txt);
+                return txt; 
+            }
+            
             if (!firstPart){
                 strcat(txt, ",");
             }
@@ -139,88 +139,88 @@ char* dateCriteriaPartToText(struct DateCriteriaPart* part){
 }
     
 struct DateCriteriaPart* makeDateCriteriaPart(char* txt){
-	if (txt == NULL){
-		logMsg(LOG_ERR, "makeDateCriteriaPart argument was NULL");
-		return NULL;
-		
-	} else if (strcmp("*", txt) == 0){
-		return NULL;
-		
-	} else if (strlen(txt) > MAX_PART_LENGTH){
-	    logMsg(LOG_ERR, "makeDateCriteriaPart argument length was too big at %d chars: %s", strlen(txt), txt);
-	    return NULL;
-		
-	} else if (txt[0] == '-') {
-		struct DateCriteriaPart* result = malloc(sizeof(struct DateCriteriaPart));
-		
-		int val = strToInt(txt + 1, BAD_NUM);
-		if (val != BAD_NUM){
-    		result->isRelative = TRUE;
-    		result->val1 = val;
-    		result->val2 = 0;
-    		result->next = NULL;
-    		
-    		return result;
-    	} else {
-    		free(result);
-    	    logMsg(LOG_ERR, "makeDateCriteriaPart argument was invalid relative part: %s", txt);
-    	    return NULL;   
-    	}
-		
-	} else {
-		struct DateCriteriaPart* firstResult = NULL;
-		struct DateCriteriaPart* lastResult = NULL;
+    if (txt == NULL){
+        logMsg(LOG_ERR, "makeDateCriteriaPart argument was NULL");
+        return NULL;
+        
+    } else if (strcmp("*", txt) == 0){
+        return NULL;
+        
+    } else if (strlen(txt) > MAX_PART_LENGTH){
+        logMsg(LOG_ERR, "makeDateCriteriaPart argument length was too big at %d chars: %s", strlen(txt), txt);
+        return NULL;
+        
+    } else if (txt[0] == '-') {
+        struct DateCriteriaPart* result = malloc(sizeof(struct DateCriteriaPart));
+        
+        int val = strToInt(txt + 1, BAD_NUM);
+        if (val != BAD_NUM){
+            result->isRelative = TRUE;
+            result->val1 = val;
+            result->val2 = 0;
+            result->next = NULL;
+            
+            return result;
+        } else {
+            free(result);
+            logMsg(LOG_ERR, "makeDateCriteriaPart argument was invalid relative part: %s", txt);
+            return NULL;   
+        }
+        
+    } else {
+        struct DateCriteriaPart* firstResult = NULL;
+        struct DateCriteriaPart* lastResult = NULL;
 
         char* txtCopy = strdupa(txt);
-		char* ptr = strtok(txtCopy, ",");
-		while (ptr != NULL){
-			struct DateCriteriaPart* thisPart = malloc(sizeof(struct DateCriteriaPart));
-			thisPart->isRelative = FALSE;
-			thisPart->next = NULL;                     
-			
-			char* hyphenPos;
-			if ((hyphenPos = strchr(ptr, '-')) > 0){
-			    char part1[hyphenPos - ptr + 1];
-			    strncpy(part1, ptr, hyphenPos - ptr);
-			    part1[hyphenPos - ptr] = 0;
-				thisPart->val1 = strToInt(part1, BAD_NUM);
-				thisPart->val2 = strToInt(hyphenPos + 1, BAD_NUM);			
-			} else {
-				thisPart->val2 = thisPart->val1 = strToInt(ptr, BAD_NUM);
-			}
-			
-			if (thisPart->val1 == BAD_NUM || thisPart->val2 == BAD_NUM || thisPart->val1 > thisPart->val2){
-				if (firstResult != NULL){
-					freeDateCriteriaPart(firstResult);
-				}
-			    firstResult = NULL;
-			    freeDateCriteriaPart(thisPart);
-			    break;
-			}
-			
-			if (firstResult == NULL) {
-				firstResult = thisPart;
-			} else {
-				lastResult->next = thisPart;
-			}
-			lastResult = thisPart;
-			
-			ptr = strtok(NULL, ",");
-		}
-		return firstResult;
-	}
+        char* ptr = strtok(txtCopy, ",");
+        while (ptr != NULL){
+            struct DateCriteriaPart* thisPart = malloc(sizeof(struct DateCriteriaPart));
+            thisPart->isRelative = FALSE;
+            thisPart->next = NULL;                     
+            
+            char* hyphenPos;
+            if ((hyphenPos = strchr(ptr, '-')) > 0){
+                char part1[hyphenPos - ptr + 1];
+                strncpy(part1, ptr, hyphenPos - ptr);
+                part1[hyphenPos - ptr] = 0;
+                thisPart->val1 = strToInt(part1, BAD_NUM);
+                thisPart->val2 = strToInt(hyphenPos + 1, BAD_NUM);          
+            } else {
+                thisPart->val2 = thisPart->val1 = strToInt(ptr, BAD_NUM);
+            }
+            
+            if (thisPart->val1 == BAD_NUM || thisPart->val2 == BAD_NUM || thisPart->val1 > thisPart->val2){
+                if (firstResult != NULL){
+                    freeDateCriteriaPart(firstResult);
+                }
+                firstResult = NULL;
+                freeDateCriteriaPart(thisPart);
+                break;
+            }
+            
+            if (firstResult == NULL) {
+                firstResult = thisPart;
+            } else {
+                lastResult->next = thisPart;
+            }
+            lastResult = thisPart;
+            
+            ptr = strtok(NULL, ",");
+        }
+        return firstResult;
+    }
 }
 
 struct DateCriteria* makeDateCriteria(char* yearTxt, char* monthTxt, char* dayTxt, char* weekdayTxt, char* hourTxt){
-	struct DateCriteria* result = malloc(sizeof(struct DateCriteria));
-	result->year    = makeDateCriteriaPart(yearTxt);
-	result->month   = makeDateCriteriaPart(monthTxt);
-	result->day     = makeDateCriteriaPart(dayTxt);
-	result->weekday = makeDateCriteriaPart(weekdayTxt);
-	result->hour    = makeDateCriteriaPart(hourTxt);
-	result->next    = NULL;
-	
-	return result;
+    struct DateCriteria* result = malloc(sizeof(struct DateCriteria));
+    result->year    = makeDateCriteriaPart(yearTxt);
+    result->month   = makeDateCriteriaPart(monthTxt);
+    result->day     = makeDateCriteriaPart(dayTxt);
+    result->weekday = makeDateCriteriaPart(weekdayTxt);
+    result->hour    = makeDateCriteriaPart(hourTxt);
+    result->next    = NULL;
+    
+    return result;
 }
 
 void appendDateCriteria(struct DateCriteria** earlierCriteria, struct DateCriteria* newCriteria){

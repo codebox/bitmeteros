@@ -1,11 +1,11 @@
 /*global $,BITMETER,window,config*/
-/*jslint onevar: true, undef: true, nomen: true, eqeqeq: true, bitwise: true, regexp: true, newcap: true, immed: true, strict: false */
+/*jslint sloppy: true, white: true, plusplus: true, unparam: true */
 
 /*
 Contains the code for the Preferences page.
 */
 BITMETER.tabShowPrefs = function(){
-	// nothing to do
+    // nothing to do
 };
 
 $(function(){
@@ -14,9 +14,6 @@ $(function(){
         colourPickerObj       = $.farbtastic('#colourPickerDiv', function(col){
             $('#colourPickerTxt').val(col);
         }),
-        rowIndex=0,
-        filters = {},
-        adapterCount = 0,
         prefsDialog,
         dialogOpts = {
             autoOpen : false,
@@ -24,7 +21,10 @@ $(function(){
             minWidth: 440,
             height: 280,
             width: 440      
-        };
+        },
+        FILTER_NAME = "filtername",
+        HEX_COL = "hexcol";
+
                         
     $('#colourPickerDiv').farbtastic('#colourPickerTxt');
     $('#prefsTabs').tabs().addClass('ui-tabs-vertical ui-helper-clearfix'); 
@@ -42,74 +42,69 @@ $(function(){
     }
     
     function writeColoursIntoModel(){
-    	var colours = {};
-    	var COLOUR_PREFIX = "web.colour.";
-    	
+        var colours = {}, COLOUR_PREFIX = "web.colour.", COLOUR_LIST = ['#ff0000', '#00b800', '#ffac0f', '#0065ff', '#8f00ff', '#9bff00', '#00f9ff', '#ff52ad', '#666666', '#000000'],
+            coloursInUse = [], colour;
+        
      // Use any colours that we get in the config object
-    	$.each(config, function(k,v){
-    		if (k.indexOf(COLOUR_PREFIX) === 0){
-    			var filter = k.substring(COLOUR_PREFIX.length);
-    			var colour = v;
-    			BITMETER.model.setColour(filter, colour);
-    		}
-    	});
-    	
+        $.each(config, function(k,v){
+            if (k.indexOf(COLOUR_PREFIX) === 0){
+                var filter = k.substring(COLOUR_PREFIX.length), colour = v;
+                
+                BITMETER.model.setColour(filter, colour);
+            }
+        });
+        
      // Then get colours for any filters that still don't have one
-     	var COLOUR_LIST = ['#ff0000', '#00b800', '#ffac0f', '#0065ff', '#8f00ff', '#9bff00', '#00f9ff', '#ff52ad', '#666666', '#000000'];
-     	var coloursInUse = [];
-   		var colour;
-     	BITMETER.forEachFilter(function(f){
-     		if (colour = BITMETER.model.getColour(f.name)){
-     			coloursInUse.push(colour);
-     		}
-     	}, false);
+        BITMETER.forEachFilter(function(f){
+            if (colour = BITMETER.model.getColour(f.name)){
+                coloursInUse.push(colour);
+            }
+        }, false);
 
-		function getUnusedColour(){
-			var unusedColour = '#000000';
-			$.each(COLOUR_LIST, function(i,colour){
-				if ($.inArray(colour, coloursInUse) == -1){
-					coloursInUse.push(colour);
-					unusedColour = colour;
-					return false;
-				}
-			});
-			return unusedColour;			
-		}
+        function getUnusedColour(){
+            var unusedColour = '#000000';
+            $.each(COLOUR_LIST, function(i,colour){
+                if ($.inArray(colour, coloursInUse) === -1){
+                    coloursInUse.push(colour);
+                    unusedColour = colour;
+                    return false;
+                }
+            });
+            return unusedColour;            
+        }
 
-     	BITMETER.forEachFilter(function(f){
-     		if (!BITMETER.model.getColour(f.name)){
-     			BITMETER.model.setColour(f.name, getUnusedColour());
-     		}
-     	}, false);
+        BITMETER.forEachFilter(function(f){
+            if (!BITMETER.model.getColour(f.name)){
+                BITMETER.model.setColour(f.name, getUnusedColour());
+            }
+        }, false);
 
-    	return colours;	
+        return colours; 
     }
-	writeColoursIntoModel();
-	
-    var FILTER_NAME = "filtername";
-    var HEX_COL = "hexcol";
+    writeColoursIntoModel();
+    
     $.each(config.filters, function(i,o){
-	    $('#prefsFilterColours').append('<div class="filterNameContainer">' + o.desc + '</div>');
-	    
-	    var filterBox = $('<div class="prefValue filterColourBox"></div>');
-	    
-	    var currentColour = BITMETER.model.getColour(o.name);
-	    filterBox.css('background-color', currentColour);
-	    
-	    filterBox.data(HEX_COL, currentColour);
-	    filterBox.data(FILTER_NAME, o.name);
-	    
-	    filterBox.click(function(){
+        $('#prefsFilterColours').append('<div class="filterNameContainer">' + o.desc + '</div>');
+        
+        var filterBox = $('<div class="prefValue filterColourBox"></div>'),
+            currentColour = BITMETER.model.getColour(o.name);
+            
+        filterBox.css('background-color', currentColour);
+        
+        filterBox.data(HEX_COL, currentColour);
+        filterBox.data(FILTER_NAME, o.name);
+        
+        filterBox.click(function(){
             showColourPicker(o.desc, filterBox.data(HEX_COL), function(value){
                     filterBox.css('background-color', value).data(HEX_COL, value);
                     BITMETER.model.setColour(o.name, value);
                 });
         });
-	    $('#prefsFilterColours').append(filterBox);
-	    
-		$('#prefsFilterColours').append('<div class="spacer"></div>');
-	});
-	
+        $('#prefsFilterColours').append(filterBox);
+        
+        $('#prefsFilterColours').append('<div class="spacer"></div>');
+    });
+    
     $('#colourPickerTxt').keyup(function(){
         colourPickerObj.setColor($('#colourPickerTxt').val());
     });
@@ -139,51 +134,49 @@ $(function(){
     $('#prefSummaryInterval').keypress(BITMETER.makeKeyPressHandler(0,8,45,46,'0-9'));
     
  // Populate the Filters table from the list of filter data held in the config object
- 	function setFiltersCheckboxes(){
-	    filterList.html('');
-	
-		var filterIdArray = BITMETER.model.getFilters().split(',');
-		
-		$.each(config.filters, function(i,o){
-			var filterIsActive = BITMETER.isFilterActive(o.id);
-			var chkBoxId = "prefFilterChk" + o.id;
-			var chkBox = $('<input id="' + chkBoxId + '" name="' + o.id + '" type="checkbox"></input>');
-	        var filterLabel = $('<label for="' + chkBoxId + '">' + o.desc + '</label>');
-	        
-	        function setCheckboxLabelColour(){
-		    	if (chkBox.attr('checked')){
-		    		filterLabel.css('color', BITMETER.model.getColour(o.name));
-		    	} else {
-		    		filterLabel.css('color', 'grey');
-		    	}
-			}
-	        chkBox.attr('checked', filterIsActive ? 'checked' : null);
-	        chkBox.click(function(){
-	        	setCheckboxLabelColour();
-	        });
-	        
-	        filterList.append(chkBox);
-	        filterList.append(filterLabel);
-	        filterList.append('<br>');
-			
-			setCheckboxLabelColour();
-		});    
-	}
+    function setFiltersCheckboxes(){
+        filterList.html('');
+    
+        $.each(config.filters, function(i,o){
+            var filterIsActive = BITMETER.isFilterActive(o.id),
+                chkBoxId = "prefFilterChk" + o.id, 
+                chkBox = $('<input id="' + chkBoxId + '" name="' + o.id + '" type="checkbox"></input>'),
+                filterLabel = $('<label for="' + chkBoxId + '">' + o.desc + '</label>');
+            
+            function setCheckboxLabelColour(){
+                if (chkBox.attr('checked')){
+                    filterLabel.css('color', BITMETER.model.getColour(o.name));
+                } else {
+                    filterLabel.css('color', 'grey');
+                }
+            }
+            chkBox.attr('checked', filterIsActive ? 'checked' : null);
+            chkBox.click(function(){
+                setCheckboxLabelColour();
+            });
+            
+            filterList.append(chkBox);
+            filterList.append(filterLabel);
+            filterList.append('<br>');
+            
+            setCheckboxLabelColour();
+        });    
+    }
     setFiltersCheckboxes();
     
     $('#prefsFiltersSaveLocal').button();
     $('#prefsFiltersSaveLocal').click(function(){
-    	var filters = [];
+        var filters = [];
         $('#filterList input:checked').each(function(){
-        	filters.push(this.name);
+            filters.push(this.name);
         });
         
         if (filters.length){
-			BITMETER.model.setFilters(filters.join(','));
-		} else {
-			BITMETER.errorDialog.show('Please select at least one filter');
-			setFiltersCheckboxes();
-		}
+            BITMETER.model.setFilters(filters.join(','));
+        } else {
+            BITMETER.errorDialog.show('Please select at least one filter');
+            setFiltersCheckboxes();
+        }
     });
     
  // Set the correct display units type, and attach click handlers
@@ -207,11 +200,11 @@ $(function(){
     
  // Handlers for the 2 Save... buttons on the Colours tab 
     function setColoursOnModel(){
-    	$("#prefsFilterColours .filterColourBox").each(function(){
-    		var filterName = $(this).data(FILTER_NAME);
-    		var colour     = $(this).data(HEX_COL);
-    		BITMETER.model.setColour(filterName, colour);	
-    	});
+        $("#prefsFilterColours .filterColourBox").each(function(){
+            var filterName = $(this).data(FILTER_NAME),
+                colour     = $(this).data(HEX_COL);
+            BITMETER.model.setColour(filterName, colour);   
+        });
     }
     $('#prefsColoursRemote, #prefsColoursLocal').button();
     $('#prefsColoursRemote').click(function(){
@@ -219,8 +212,8 @@ $(function(){
         $('#prefsSaveColoursStatus').html('Saving colour choices to the server... <img src="css/images/working.gif" /> ');
         var colourParams = [];
         BITMETER.forEachFilter(function(f){
-			var colour = BITMETER.model.getColour(f.name);
-			colourParams.push('web.colour.' + f.name + '=' + colour.substr(1).toLowerCase());        	
+            var colour = BITMETER.model.getColour(f.name);
+            colourParams.push('web.colour.' + f.name + '=' + colour.substr(1).toLowerCase());           
         });
 
         $.ajax({
@@ -282,7 +275,7 @@ $(function(){
         $.ajax({
             url : 'config?web.server_name=' + $('#prefServerName').val(), 
             success : function(){
-				window.location.reload();
+                window.location.reload();
             },
             error : function(){
                 $('#prefsServerNameSaveStatus').html('Failed to save Server Name');
@@ -388,11 +381,11 @@ $(function(){
         $("#prefsTabs").tabs({
             show: function(event, ui) {
              // Update the list of filters each time we display the tab
-            	if (ui.index===1){ // Filter Display
-            		setFiltersCheckboxes();
-            	}
-	        }
-	    }).addClass('ui-tabs-vertical ui-helper-clearfix');
+                if (ui.index===1){ // Filter Display
+                    setFiltersCheckboxes();
+                }
+            }
+        }).addClass('ui-tabs-vertical ui-helper-clearfix');
         $("#prefsTabs li").removeClass('ui-corner-top').addClass('ui-corner-left');
     });
 

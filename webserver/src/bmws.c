@@ -35,8 +35,8 @@ static void web(SOCKET fd){
         exit(1);
     }
     
-	int allowAdmin = isLocalConnection(fd) || allowRemoteAdmin;
-	processRequest(fd, buffer, allowAdmin);
+    int allowAdmin = isLocalConnection(fd) || allowRemoteAdmin;
+    processRequest(fd, buffer, allowAdmin);
 
     exit(0);
 }
@@ -64,37 +64,37 @@ static int getPort(){
 
 static SOCKET setupListener(){
  // Sets up, and returns, the listener socket that we use to receive client requests
-	SOCKET listener = socket(AF_INET, SOCK_STREAM,0);
-	if (listener < 0){
-		logMsg(LOG_ERR, "socket() returned %d, %s", listener, strerror(errno));
-		exit(1);
-	}
+    SOCKET listener = socket(AF_INET, SOCK_STREAM,0);
+    if (listener < 0){
+        logMsg(LOG_ERR, "socket() returned %d, %s", listener, strerror(errno));
+        exit(1);
+    }
 
-	int yes = 1;
-	int rc = setsockopt(listener, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
-	if (rc < 0){
-		logMsg(LOG_ERR, "setsockopt() returned %d, %s", rc, strerror(errno));
-		exit(1);
-	}
+    int yes = 1;
+    int rc = setsockopt(listener, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
+    if (rc < 0){
+        logMsg(LOG_ERR, "setsockopt() returned %d, %s", rc, strerror(errno));
+        exit(1);
+    }
 
-	static struct sockaddr_in serverAddress;
-	serverAddress.sin_family = AF_INET;
-	serverAddress.sin_addr.s_addr = (allowRemoteConnect ? INADDR_ANY : LOCAL_ONLY);
-	serverAddress.sin_port = htons(port);
+    static struct sockaddr_in serverAddress;
+    serverAddress.sin_family = AF_INET;
+    serverAddress.sin_addr.s_addr = (allowRemoteConnect ? INADDR_ANY : LOCAL_ONLY);
+    serverAddress.sin_port = htons(port);
 
-	rc = bind(listener, (struct sockaddr *) &serverAddress, sizeof(serverAddress));
-	if (rc < 0){
-		logMsg(LOG_ERR, "bind() returned %d, %s", rc, strerror(errno));
-		exit(1);
-	}
+    rc = bind(listener, (struct sockaddr *) &serverAddress, sizeof(serverAddress));
+    if (rc < 0){
+        logMsg(LOG_ERR, "bind() returned %d, %s", rc, strerror(errno));
+        exit(1);
+    }
 
-	rc = listen(listener, CONNECTION_BACKLOG);
-	if (rc < 0){
-		logMsg(LOG_ERR, "listen() returned %d, %s", rc, strerror(errno));
-		exit(1);
-	}
+    rc = listen(listener, CONNECTION_BACKLOG);
+    if (rc < 0){
+        logMsg(LOG_ERR, "listen() returned %d, %s", rc, strerror(errno));
+        exit(1);
+    }
 
-	return listener;
+    return listener;
 }
 
 static char webRoot[MAX_PATH_LEN];
@@ -104,50 +104,50 @@ void getWebRoot(char* path){
 
 static void setCustomLogLevel(){
  // If a custom logging level for the web server process has been set in the db then use it
-	int dbLogLevel = getConfigInt(CONFIG_WEB_LOG_LEVEL, TRUE);
-	if (dbLogLevel > 0) {
-		setLogLevel(dbLogLevel);
-	}
+    int dbLogLevel = getConfigInt(CONFIG_WEB_LOG_LEVEL, TRUE);
+    if (dbLogLevel > 0) {
+        setLogLevel(dbLogLevel);
+    }
 }
 
 static void readDbConfig(){
  // Read in some config parameters from the database
-	openDb();
-	setCustomLogLevel();
-	dbVersionCheck();
-	int allowRemote = getConfigInt(CONFIG_WEB_ALLOW_REMOTE, 0);
-	allowRemoteConnect = (allowRemote >= ALLOW_REMOTE_CONNECT);
-	allowRemoteAdmin   = (allowRemote == ALLOW_REMOTE_ADMIN);
-	port = getPort();
+    openDb();
+    setCustomLogLevel();
+    dbVersionCheck();
+    int allowRemote = getConfigInt(CONFIG_WEB_ALLOW_REMOTE, 0);
+    allowRemoteConnect = (allowRemote >= ALLOW_REMOTE_CONNECT);
+    allowRemoteAdmin   = (allowRemote == ALLOW_REMOTE_ADMIN);
+    port = getPort();
     getWebRootPath(webRoot);
-	closeDb();
+    closeDb();
 }
 
 int isLocalConnection(SOCKET socket){
-	struct sockaddr_in sa;
-	int sa_len = sizeof(sa);
-	if (getsockname(socket, &sa, &sa_len) == -1) {
-		logMsg(LOG_ERR, "getsockname() returned an error: %s", strerror(errno));
-		return FALSE;
-	}
+    struct sockaddr_in sa;
+    int sa_len = sizeof(sa);
+    if (getsockname(socket, &sa, &sa_len) == -1) {
+        logMsg(LOG_ERR, "getsockname() returned an error: %s", strerror(errno));
+        return FALSE;
+    }
  // Local access means any IP in the 127.x.x.x range
-	return (sa.sin_addr.s_addr & 0xff) == 127;
+    return (sa.sin_addr.s_addr & 0xff) == 127;
 }
 
 SOCKET listener;
 int main(){
     int pid;
-	SOCKET socketfd;
+    SOCKET socketfd;
     socklen_t length;
     static struct sockaddr_in clientAddress;
 
-	setLogLevel(LOG_ERR);
-	setAppName("WEB");
-	setLogToFile(TRUE);
+    setLogLevel(LOG_ERR);
+    setAppName("WEB");
+    setLogToFile(TRUE);
 
     signal(SIGCHLD, SIG_IGN); /* ignore child death */
-	signal(SIGINT,  sigHandler);	// Trap Ctrl-C in case we are running interactively
-	signal(SIGTERM, sigHandler);	// Trap termination requests from the system
+    signal(SIGINT,  sigHandler);    // Trap Ctrl-C in case we are running interactively
+    signal(SIGTERM, sigHandler);    // Trap termination requests from the system
 
     readDbConfig();
 
@@ -157,7 +157,7 @@ int main(){
         length = sizeof(clientAddress);
 
         socketfd = accept(listener, (struct sockaddr *) &clientAddress, &length);
-   		
+        
         if (socketfd < 0){
             logMsg(LOG_ERR, "accept() returned %d, %s", socketfd, strerror(errno));
         } else {
@@ -184,6 +184,6 @@ int main(){
 
 static void sigHandler(){
  // Shut down the listener and stop
-	close(listener);
-	exit(0);
+    close(listener);
+    exit(0);
 }

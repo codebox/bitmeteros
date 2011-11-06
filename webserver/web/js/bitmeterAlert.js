@@ -1,5 +1,5 @@
 /*global $,BITMETER,window,config*/
-/*jslint onevar: true, undef: true, nomen: true, eqeqeq: true, bitwise: true, regexp: true, newcap: true, immed: true, strict: false */
+/*jslint sloppy: true, white: true, plusplus: true, unparam: true */
 
 BITMETER.tabShowAlerts = function(){
     function deleteAlert(alert){
@@ -887,7 +887,7 @@ BITMETER.accordionOptions = {
 $(function(){
  // Show the Help dialog box when the help link is clicked
     var alertHelpDialog = $('#alerts .dialog').dialog(BITMETER.consts.dialogOpts),
-        sliderDiv = $('#createAlertPeriodTimes');
+        sliderDiv = $('#createAlertPeriodTimes'), filterList;
         
     $('#alertHelpLink').click(function(){
             alertHelpDialog.dialog("open");
@@ -897,19 +897,20 @@ $(function(){
         BITMETER.showAlertEditor(true);
     });
     
-    var filterList = $('#createAlertBoxFilterList');
+    filterList = $('#createAlertBoxFilterList');
     BITMETER.forEachFilter(function(filter){
-		var chkBoxId = "alertFilterChk" + filter.id;
-		var chkBox = $('<input id="' + chkBoxId + '" name="createAlertFltr" value="' + filter.id + '" type="radio"></input>');
-        var filterLabel = $('<label for="' + chkBoxId + '">' + filter.desc + '</label>');
+        var chkBoxId, chkBox, filterLabel;
+        chkBoxId = "alertFilterChk" + filter.id;
+        chkBox = $('<input id="' + chkBoxId + '" name="createAlertFltr" value="' + filter.id + '" type="radio"></input>');
+        filterLabel = $('<label for="' + chkBoxId + '">' + filter.desc + '</label>');
 
-		chkBox.click(function(){
-			BITMETER.createAlertModel.setFilter($(this).val());			
-		});
+        chkBox.click(function(){
+            BITMETER.createAlertModel.setFilter($(this).val());         
+        });
 
-    	filterList.append(chkBox);
-    	filterList.append(filterLabel);
-    	filterList.append('<br>');
+        filterList.append(chkBox);
+        filterList.append(filterLabel);
+        filterList.append('<br>');
     });
     
     $('#createAlertBoxAccordion').accordion(BITMETER.accordionOptions);

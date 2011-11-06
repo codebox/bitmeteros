@@ -2,20 +2,20 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML Basic 1.1//EN"
     "http://www.w3.org/TR/xhtml-basic/xhtml-basic11.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
-	<head>
-		<title>BitMeter OS - Mobile Interface</title>
-		<meta http-equiv="refresh" content="15"/>
-		<link type="text/css" href="/m/css/bitmeter_mobile.css" rel="stylesheet" />
-	</head>
-	<body>
-		<h1>Summary</h1>
-		<table id="summary">
-			<tr>
-				<th></th><th>Today</th><th>Month</th><th>Year</th><th>Total</th>
-			</tr>
-        	<!--[summary]-->
+    <head>
+        <title>BitMeter OS - Mobile Interface</title>
+        <meta http-equiv="refresh" content="15"/>
+        <link type="text/css" href="/m/css/bitmeter_mobile.css" rel="stylesheet" />
+    </head>
+    <body>
+        <h1>Summary</h1>
+        <table id="summary">
+            <tr>
+                <th></th><th>Today</th><th>Month</th><th>Year</th><th>Total</th>
+            </tr>
+            <!--[summary]-->
         </table>
         <br/>
         <a class="refreshLink" href="/m/summary">Refresh Now</a>
-	</body>
+    </body>
 </html>

@@ -44,15 +44,15 @@ void testClientDumpMultipleEntries(void **state) {
     addDbRow(1235, 3, 6, 9);
 
     getDumpValues(0, &onDumpRow);
-	struct Data* first = dumpResult;
-	
+    struct Data* first = dumpResult;
+    
     checkData(dumpResult, 1235, 3, 6, 9);
 
-	dumpResult = dumpResult->next;
-	checkData(dumpResult, 1234, 2, 5, 8);
+    dumpResult = dumpResult->next;
+    checkData(dumpResult, 1234, 2, 5, 8);
 
-	dumpResult = dumpResult->next;
-	checkData(dumpResult, 1233, 1, 4, 7);
+    dumpResult = dumpResult->next;
+    checkData(dumpResult, 1233, 1, 4, 7);
 
     dumpResult = dumpResult->next;
     assert_true(dumpResult == NULL);

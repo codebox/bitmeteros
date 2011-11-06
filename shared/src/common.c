@@ -9,7 +9,6 @@
 #include <errno.h>
 #include "common.h"
 
-
 #define BINARY_K 1024
 #define BINARY_KB_MIN pow(BINARY_K, 1)
 #define BINARY_MB_MIN pow(BINARY_K, 2)
@@ -52,93 +51,93 @@ void formatAmount(const BW_INT amount, const int binary, const int abbrev, char*
     If the 'abbrev' flag is set then abbreviated versions of unit names are used
     otherwise the full unit names are used. */
 
-	const BW_INT kbMin = (binary ? BINARY_KB_MIN : SI_KB_MIN);
-	const BW_INT mbMin = (binary ? BINARY_MB_MIN : SI_MB_MIN);
-	const BW_INT gbMin = (binary ? BINARY_GB_MIN : SI_GB_MIN);
-	const BW_INT tbMin = (binary ? BINARY_TB_MIN : SI_TB_MIN);
-	const BW_INT pbMin = (binary ? BINARY_PB_MIN : SI_PB_MIN);
-	const BW_INT ebMin = (binary ? BINARY_EB_MIN : SI_EB_MIN);
+    const BW_INT kbMin = (binary ? BINARY_KB_MIN : SI_KB_MIN);
+    const BW_INT mbMin = (binary ? BINARY_MB_MIN : SI_MB_MIN);
+    const BW_INT gbMin = (binary ? BINARY_GB_MIN : SI_GB_MIN);
+    const BW_INT tbMin = (binary ? BINARY_TB_MIN : SI_TB_MIN);
+    const BW_INT pbMin = (binary ? BINARY_PB_MIN : SI_PB_MIN);
+    const BW_INT ebMin = (binary ? BINARY_EB_MIN : SI_EB_MIN);
 
-	char* unit;
-	float divisor;
+    char* unit;
+    float divisor;
 
-	if (amount < kbMin) {
-	 // Display value in bytes
-		unit    = (abbrev ? B_SHORT : B_LONG);
-		divisor = 1;
+    if (amount < kbMin) {
+     // Display value in bytes
+        unit    = (abbrev ? B_SHORT : B_LONG);
+        divisor = 1;
 
-	} else if (amount < mbMin) {
-	 // Display value in kilobytes
-		unit    = (abbrev ? KB_SHORT : KB_LONG);
-		divisor = kbMin;
+    } else if (amount < mbMin) {
+     // Display value in kilobytes
+        unit    = (abbrev ? KB_SHORT : KB_LONG);
+        divisor = kbMin;
 
-	} else if (amount < gbMin) {
-	 // Display value in megabytes
-		unit    = (abbrev ? MB_SHORT : MB_LONG);
-		divisor = mbMin;
+    } else if (amount < gbMin) {
+     // Display value in megabytes
+        unit    = (abbrev ? MB_SHORT : MB_LONG);
+        divisor = mbMin;
 
-	} else if (amount < tbMin) {
-	 // Display value in gigabytes
-		unit    = (abbrev ? GB_SHORT : GB_LONG);
-		divisor = gbMin;
+    } else if (amount < tbMin) {
+     // Display value in gigabytes
+        unit    = (abbrev ? GB_SHORT : GB_LONG);
+        divisor = gbMin;
 
-	} else if (amount < pbMin) {
-	 // Display value in terabytes
-		unit    = (abbrev ? TB_SHORT : TB_LONG);
-		divisor = tbMin;
+    } else if (amount < pbMin) {
+     // Display value in terabytes
+        unit    = (abbrev ? TB_SHORT : TB_LONG);
+        divisor = tbMin;
 
-	} else if (amount < ebMin) {
-	 // Display value in exabytes
-		unit    = (abbrev ? PB_SHORT : PB_LONG);
-		divisor = pbMin;
+    } else if (amount < ebMin) {
+     // Display value in exabytes
+        unit    = (abbrev ? PB_SHORT : PB_LONG);
+        divisor = pbMin;
 
-	} else {
-	 // Display value in petabytes
-		unit = (abbrev ? EB_SHORT : EB_LONG);
-		divisor = ebMin;
-	}
+    } else {
+     // Display value in petabytes
+        unit = (abbrev ? EB_SHORT : EB_LONG);
+        divisor = ebMin;
+    }
 
  // Use 2 decimal places
-	sprintf(txt, "%1.2f %s", amount/divisor, unit);
+    sprintf(txt, "%1.2f %s", amount/divisor, unit);
 
 }
 
 void toTime(char* timeText, time_t ts){
  /* Populates the 'timeText' string with the time component of the specified timestamp, when 
- 	expressed as local time, in the format HH:MM:SS */
-	struct tm* cal = localtime(&ts);
+    expressed as local time, in the format HH:MM:SS */
+    struct tm* cal = localtime(&ts);
 
-	int h = cal->tm_hour;
-	int m = cal->tm_min;
-	int s = cal->tm_sec;
+    int h = cal->tm_hour;
+    int m = cal->tm_min;
+    int s = cal->tm_sec;
 
-	sprintf(timeText, "%02d:%02d:%02d", h, m, s);
+    sprintf(timeText, "%02d:%02d:%02d", h, m, s);
 }
 
 void toDate(char* dateText, time_t ts){
  /* Populates the 'dateText' string with the time component of the specified timestamp,  when
- 	expressed as local time, in the format yyyy-mm-dd */
-	struct tm* cal = localtime(&ts);
+    expressed as local time, in the format yyyy-mm-dd */
+    struct tm* cal = localtime(&ts);
 
-	int y = 1900 + cal->tm_year;
-	int m = 1 + cal->tm_mon;
-	int d = cal->tm_mday;
+    int y = 1900 + cal->tm_year;
+    int m = 1 + cal->tm_mon;
+    int d = cal->tm_mday;
 
-	sprintf(dateText, "%04d-%02d-%02d", y, m, d);
+    sprintf(dateText, "%04d-%02d-%02d", y, m, d);
 }
 
 
 static char HEX[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 void makeHexString(char* hexString, const char* data, int dataLen){
  // Convert the MAC address bytes that we get back from the API into a hex string
-	char thisByte;
-	int i;
-	for(i = 0; i < dataLen; i++){
-		thisByte = data[i];
-		hexString[i*2]     = HEX[(thisByte >> 4) & 0xF];
-		hexString[i*2 + 1] = HEX[thisByte & 0x0F];
-	}
-	hexString[dataLen * 2] = 0;
+    char thisByte;
+    int i;
+    for(i = 0; i < dataLen; i++){
+        thisByte = data[i];
+        hexString[i*2]     = HEX[(thisByte >> 4) & 0xF];
+        hexString[i*2 + 1] = HEX[thisByte & 0x0F];
+    }
+    hexString[dataLen * 2] = 0;
 }
 
 BW_INT strToBwInt(char* txt, BW_INT defaultValue){
@@ -196,44 +195,44 @@ char *trim(char *str){
 }
 
 char* replace(char* src, char* target, char* replace){
-	if (src == NULL) {
-		return NULL;	
-	} else if (target == NULL) {
-		return strdup(src);
-	} else {
-		if (replace == NULL){
-			replace = "";	
-		}
-		char* match;
-		char* result = strdup(src);
-		while ((match = strstr(result, target)) != NULL) {
-			int matchPosn = match - result;
-			char* tmp = calloc(strlen(result) + strlen(replace) - strlen(target) + 1, 1);
-			strncpy(tmp, result, matchPosn);
-			strcat(tmp, replace);
-			strcat(tmp, result + matchPosn + strlen(target));
-			free(result);	
-			result = tmp;
-		}
-		return result;
-	}
+    if (src == NULL) {
+        return NULL;    
+    } else if (target == NULL) {
+        return strdup(src);
+    } else {
+        if (replace == NULL){
+            replace = "";   
+        }
+        char* match;
+        char* result = strdup(src);
+        while ((match = strstr(result, target)) != NULL) {
+            int matchPosn = match - result;
+            char* tmp = calloc(strlen(result) + strlen(replace) - strlen(target) + 1, 1);
+            strncpy(tmp, result, matchPosn);
+            strcat(tmp, replace);
+            strcat(tmp, result + matchPosn + strlen(target));
+            free(result);   
+            result = tmp;
+        }
+        return result;
+    }
 }
 
 char* strAppend(char* startTxt, ...){
-	va_list argp;
-	char* txtToAppend;
-	char* tmp;
-	char* allText = strdup(startTxt);
-	va_start(argp, startTxt);
+    va_list argp;
+    char* txtToAppend;
+    char* tmp;
+    char* allText = strdup(startTxt);
+    va_start(argp, startTxt);
 
-	while((txtToAppend = va_arg(argp, char*)) != NULL){
-		tmp = malloc(strlen(allText) + strlen(txtToAppend) + 1);
-		strcpy(tmp, allText);
-		strcat(tmp, txtToAppend);
-		free(allText);
-		allText = tmp;
-	}
-	va_end(argp);
-	
-	return allText;
+    while((txtToAppend = va_arg(argp, char*)) != NULL){
+        tmp = malloc(strlen(allText) + strlen(txtToAppend) + 1);
+        strcpy(tmp, allText);
+        strcat(tmp, txtToAppend);
+        free(allText);
+        allText = tmp;
+    }
+    va_end(argp);
+    
+    return allText;
 }

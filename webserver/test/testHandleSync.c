@@ -34,9 +34,9 @@ void testSyncTsParamOk(void** state) {
     setTime(now);
     
     emptyDb();
-   	addFilterRow(1, "Filter 1", "f1", "port 1", NULL);
-	addFilterRow(2, "Filter 2", "f2", "port 2", "host1");
-	addFilterRow(3, "Filter 3", "f3", "port 3", NULL);
+    addFilterRow(1, "Filter 1", "f1", "port 1", NULL);
+    addFilterRow(2, "Filter 2", "f2", "port 2", "host1");
+    addFilterRow(3, "Filter 3", "f3", "port 3", NULL);
     
     addDbRow(makeTsUtc("2009-10-31 10:00:00"), 1,  1, 1); // too early
     addDbRow(makeTsUtc("2009-11-01 10:00:00"), 1,  2, 2);
@@ -65,6 +65,6 @@ void testSyncTsParamOk(void** state) {
     expect_value(mockCheckDataValues, value, 128);
     
     processSyncRequest(0, &req);
-	freeStmtList();
+    freeStmtList();
 }
 

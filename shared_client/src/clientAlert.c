@@ -1,5 +1,5 @@
 #ifdef _WIN32
-	#define __USE_MINGW_ANSI_STDIO 1
+    #define __USE_MINGW_ANSI_STDIO 1
 #endif
 #include <unistd.h>
 #include <sqlite3.h>
@@ -73,6 +73,7 @@ static int addInterval(struct DateCriteria* interval){
 }
 
 static int addAlertInterval(int alertId, int intervalId){
+    printf("addAlertInterval\n");
  // Inserts a row into the 'alert_interval' table
     sqlite3_stmt *stmtInsertAlertInterval = getStmt(ALERT_SQL_INSERT_ALERT_INTERVAL);
     sqlite3_bind_int(stmtInsertAlertInterval, 1, alertId);
@@ -108,19 +109,19 @@ struct Data* getTotalsForAlert(struct Alert* alert, time_t now){
             sqlite3_bind_int(stmt, 2, now);
             sqlite3_bind_int(stmt, 3, alert->filter);
             totals = runSelect(stmt);
-			finishedStmt(stmt);            
-			
+            finishedStmt(stmt);            
+            
             if (totals == NULL){
-            	totals = allocData();	
+                totals = allocData();   
             }
             
         } else {
          /* This alert covers certains times/days only - we retrieve all rows from the database that might
-         	match (ie all those later than the 'first matching' ts we found above) and then check each one 
-         	in turn against each of the periods for which this alert is active. If a given row matches any 
-         	of the periods, then its values are added to the total and we continue with the next row. */
-        	totals = allocData();
-        	
+            match (ie all those later than the 'first matching' ts we found above) and then check each one 
+            in turn against each of the periods for which this alert is active. If a given row matches any 
+            of the periods, then its values are added to the total and we continue with the next row. */
+            totals = allocData();
+            
          // Get all rows from the db after the first matching ts
             sqlite3_stmt *stmt = getStmt(ALERT_SQL_SELECT_ROWS);
             sqlite3_bind_int(stmt, 1, ts + 1);
@@ -132,18 +133,18 @@ struct Data* getTotalsForAlert(struct Alert* alert, time_t now){
             
          // Check each db row in turn
             while(resultRow != NULL){
-            	if (resultRow->ts < now){
-	                period = alert->periods;
-	             // Check each of the alert's periods to see if it matches the ts of the current row
-	                while(period != NULL){
-	                    if (isDateCriteriaMatch(period, resultRow->ts - resultRow->dr)){
-	                     // There is a match - add the rows values to the totals and move on to the next row
+                if (resultRow->ts < now){
+                    period = alert->periods;
+                 // Check each of the alert's periods to see if it matches the ts of the current row
+                    while(period != NULL){
+                        if (isDateCriteriaMatch(period, resultRow->ts - resultRow->dr)){
+                         // There is a match - add the rows values to the totals and move on to the next row
                             totals->vl += resultRow->vl;
-	                        break;    
-	                    }
-	                    period = period->next;   
-	                }
-	            }
+                            break;    
+                        }
+                        period = period->next;   
+                    }
+                }
                 resultRow = resultRow->next;   
             }
             
@@ -153,7 +154,7 @@ struct Data* getTotalsForAlert(struct Alert* alert, time_t now){
         }
     } else {
      // No matching time was found (the Alert starts in the future maybe?)
-    	totals = allocData();
+        totals = allocData();
     }
 
     return totals;
@@ -161,7 +162,7 @@ struct Data* getTotalsForAlert(struct Alert* alert, time_t now){
 
 int updateAlert(struct Alert* alert) {
  /* Update the database values for an existing alert, since we do this in 2 parts (a delete and
- 	then an insert) we use a database transaction. */
+    then an insert) we use a database transaction. */
     beginTrans(FALSE);
     
     int alertId = alert->id;
@@ -203,14 +204,14 @@ static int doAddAlert(struct Alert* alert, int alertId){
     int status = SUCCESS;
     
  /* Insert an entry into the 'interval' table for the alerts 'bound' (ie when it starts) and
- 	remember the id - we'll need it shortly*/
+    remember the id - we'll need it shortly*/
     int boundId = addInterval(alert->bound);
     if (boundId == ALERT_ID_FAIL){
         status = FAIL;
     }
     
     if (status == SUCCESS){
- 	 // Add an entry into the main 'alert' table    	
+     // Add an entry into the main 'alert' table        
         sqlite3_stmt *stmtInsertAlert = getStmt(ALERT_SQL_INSERT_ALERT);
         sqlite3_bind_int(stmtInsertAlert,   1, alertId);
         sqlite3_bind_text(stmtInsertAlert,  2, alert->name, strlen(alert->name), SQLITE_TRANSIENT);
@@ -221,7 +222,7 @@ static int doAddAlert(struct Alert* alert, int alertId){
         
         int rc = sqlite3_step(stmtInsertAlert);
         if (rc != SQLITE_DONE){
-        	logMsg(LOG_ERR, "stmtInsertAlert failed: %d", rc);
+            logMsg(LOG_ERR, "stmtInsertAlert failed: %d", rc);
             status = FAIL;   
         }
         finishedStmt(stmtInsertAlert);
@@ -257,17 +258,17 @@ struct Alert* getAlerts(){
     sqlite3_stmt *stmtSelectAlerts              = getStmt(ALERT_SQL_SELECT_ALL);
     sqlite3_stmt *stmtSelectInterval            = getStmt(ALERT_SQL_SELECT_INTERVAL);
     sqlite3_stmt *stmtSelectIntervalIdsForAlert = getStmt(ALERT_SQL_SELECT_INTERVALS_FOR_ALERT);
-	struct Alert* result = NULL;
-	struct Alert* thisAlert = NULL;
+    struct Alert* result = NULL;
+    struct Alert* thisAlert = NULL;
 
-	int rc;
+    int rc;
 
     beginTrans(FALSE);
  // Loop once for each entry in the 'alert' table
-	while ((rc = sqlite3_step(stmtSelectAlerts)) == SQLITE_ROW){
-		thisAlert = alertForRow(stmtSelectAlerts, stmtSelectInterval, stmtSelectIntervalIdsForAlert);
-		appendAlert(&result, thisAlert);
-	}
+    while ((rc = sqlite3_step(stmtSelectAlerts)) == SQLITE_ROW){
+        thisAlert = alertForRow(stmtSelectAlerts, stmtSelectInterval, stmtSelectIntervalIdsForAlert);
+        appendAlert(&result, thisAlert);
+    }
     commitTrans();
 
  // Tidy up
@@ -275,11 +276,11 @@ struct Alert* getAlerts(){
     finishedStmt(stmtSelectInterval);
     finishedStmt(stmtSelectAlerts);
 
-	if (rc != SQLITE_DONE){
-		logMsg(LOG_ERR, "stmtSelectAlerts failed: %d.", rc);
-	}
+    if (rc != SQLITE_DONE){
+        logMsg(LOG_ERR, "stmtSelectAlerts failed: %d.", rc);
+    }
 
-	return result;    
+    return result;    
 }
 int removeAlert(int id){
  // Delete the alert with the specified 'id' (as well as all its intervals)
@@ -309,22 +310,22 @@ static int doRemoveAlert(int id){
     sqlite3_bind_int(stmtDeleteInterval, 2, id);
     rc = sqlite3_step(stmtDeleteInterval);
     if (rc == SQLITE_DONE){
-    	status = SUCCESS;	
+        status = SUCCESS;   
     } else {
-    	logMsg(LOG_ERR, "stmtDeleteInterval failed: %d", rc);
-    	status = FAIL;
+        logMsg(LOG_ERR, "stmtDeleteInterval failed: %d", rc);
+        status = FAIL;
     }
     
     if (status == SUCCESS){
      // Remove row from the alert table
-    	sqlite3_bind_int(stmtDeleteAlert, 1, id);
-    	rc = sqlite3_step(stmtDeleteAlert);
-    	if (rc == SQLITE_DONE){
-	    	status = SUCCESS;	
-	    } else {
-	    	logMsg(LOG_ERR, "stmtDeleteAlert failed: %d", rc);
-	    	status = FAIL;
-	    }
+        sqlite3_bind_int(stmtDeleteAlert, 1, id);
+        rc = sqlite3_step(stmtDeleteAlert);
+        if (rc == SQLITE_DONE){
+            status = SUCCESS;   
+        } else {
+            logMsg(LOG_ERR, "stmtDeleteAlert failed: %d", rc);
+            status = FAIL;
+        }
     }
     
     if (status == SUCCESS){
@@ -332,11 +333,11 @@ static int doRemoveAlert(int id){
         sqlite3_bind_int(stmtDeleteIntervalAlert, 1, id);
         rc = sqlite3_step(stmtDeleteIntervalAlert);
         if (rc == SQLITE_DONE){
-	    	status = SUCCESS;	
-	    } else {
-	    	logMsg(LOG_ERR, "stmtDeleteIntervalAlert failed: %d", rc);
-	    	status = FAIL;
-	    }
+            status = SUCCESS;   
+        } else {
+            logMsg(LOG_ERR, "stmtDeleteIntervalAlert failed: %d", rc);
+            status = FAIL;
+        }
     }
     
  // Tidy up
@@ -382,9 +383,9 @@ static struct Alert* alertForRow(sqlite3_stmt *stmtSelectAlerts,
     sqlite3_reset(stmtSelectIntervalIdsForAlert);
     
     if (rc != SQLITE_DONE){
-		logMsg(LOG_ERR, "stmtSelectIntervalIdsForAlert failed: %d.", rc);
-	}
-	
+        logMsg(LOG_ERR, "stmtSelectIntervalIdsForAlert failed: %d.", rc);
+    }
+    
     return alert;
 }
 
@@ -412,7 +413,7 @@ static struct DateCriteria* getIntervalForId(sqlite3_stmt *stmtSelectInterval, i
         result = makeDateCriteria(yearTxt, monthTxt, dayTxt, weekdayTxt, hourTxt);  
         
     } else if (rc != SQLITE_DONE) {
-		logMsg(LOG_ERR, "stmtSelectInterval failed: %d", rc);
+        logMsg(LOG_ERR, "stmtSelectInterval failed: %d", rc);
     }
     
     sqlite3_reset(stmtSelectInterval);
@@ -465,17 +466,17 @@ static int getHour(struct tm* t){
     return t->tm_hour;
 }
 static void setHour(struct tm* t, int hour){
- // Set the hour of the day in the struct	
+ // Set the hour of the day in the struct   
     t->tm_hour = hour;
     normaliseTm(t);
 }
 
 static void setDateCriteriaPart(struct DateCriteriaPart** part, struct DateCriteriaPart* newValue){
  // Change the 'part' pointer to reference the newValue argument, after freeing anything that it was previously referencing
-	if (*part != NULL){
-		freeDateCriteriaPart(*part);
-	}
-	*part = newValue;
+    if (*part != NULL){
+        freeDateCriteriaPart(*part);
+    }
+    *part = newValue;
 }
 
 /* Change the criteria struct by replacing any relative values with non-relateive values based 
@@ -561,8 +562,8 @@ int replaceRelativeValues(struct DateCriteria* criteria, time_t ts){
                 absoluteValue = getMonth(t) - relativeValue;
                 if (absoluteValue < 1){
                  /* The month value we calculated is either 0 or negative, so we are moving back
-                 	to a previous year - use 'setMonth' to normalise the month and year values and
-                 	then assign them to the struct */
+                    to a previous year - use 'setMonth' to normalise the month and year values and
+                    then assign them to the struct */
                     setMonth(t, getMonth(t) - relativeValue);
                     setDateCriteriaPart(&criteria->month, getNonRelativeValue(getMonth(t)));
                     setDateCriteriaPart(&criteria->year,  getNonRelativeValue(getYear(t)));
@@ -577,8 +578,8 @@ int replaceRelativeValues(struct DateCriteria* criteria, time_t ts){
                 absoluteValue = getDay(t) - relativeValue;
                 if (absoluteValue < 1){
                  /* The day value we calculated is either 0 or negative, so we are moving back
-                 	to a previous month - use 'setDay' to normalise the day, month and year values 
-                 	and then assign them to the struct */
+                    to a previous month - use 'setDay' to normalise the day, month and year values 
+                    and then assign them to the struct */
                     setDay(t, getDay(t) - relativeValue);
                     setDateCriteriaPart(&criteria->day,   getNonRelativeValue(getDay(t)));
                     setDateCriteriaPart(&criteria->month, getNonRelativeValue(getMonth(t)));
@@ -592,10 +593,10 @@ int replaceRelativeValues(struct DateCriteria* criteria, time_t ts){
              // Calculate the hour value
                 relativeValue = criteria->hour->val1;
                 absoluteValue = getHour(t) - relativeValue;
-               	if (absoluteValue < 0){
+                if (absoluteValue < 0){
                  /* The hour value we calculated is negative, so we are moving back to a previous day 
-                 	- use 'setHour' to normalise the hour, day, month and year values and then assign 
-                 	them to the struct */
+                    - use 'setHour' to normalise the hour, day, month and year values and then assign 
+                    them to the struct */
                     setHour(t, getHour(t) - relativeValue);
                     setDateCriteriaPart(&criteria->hour,  getNonRelativeValue(getHour(t)));
                     setDateCriteriaPart(&criteria->day,   getNonRelativeValue(getDay(t)));
@@ -606,7 +607,7 @@ int replaceRelativeValues(struct DateCriteria* criteria, time_t ts){
                 }
             }
         } else {
-        	logMsg(LOG_ERR, "replaceRelativeValues failed");
+            logMsg(LOG_ERR, "replaceRelativeValues failed");
             valuesOk = FALSE;   
         }
     }
@@ -614,9 +615,9 @@ int replaceRelativeValues(struct DateCriteria* criteria, time_t ts){
 }
 int findLowestMatch(struct DateCriteriaPart* part){
  // Return the lowest value that will match the DateCriteriaPart
-	if (part == NULL){
-		logMsg(LOG_ERR, "findLowestMatch called with NULL argument");
-	}
+    if (part == NULL){
+        logMsg(LOG_ERR, "findLowestMatch called with NULL argument");
+    }
     int lowestMatch = part->val1;
     while (part != NULL) {
         if (part->val1 < lowestMatch){
@@ -627,10 +628,10 @@ int findLowestMatch(struct DateCriteriaPart* part){
     return lowestMatch;
 }
 int findHighestMatch(struct DateCriteriaPart* part){
- // Return the highest value that will match the DateCriteriaPart	
-	if (part == NULL){
-		logMsg(LOG_ERR, "findHighestMatch called with NULL argument");
-	}
+ // Return the highest value that will match the DateCriteriaPart   
+    if (part == NULL){
+        logMsg(LOG_ERR, "findHighestMatch called with NULL argument");
+    }
     int highestMatch = part->val2;
     
     while (part != NULL) {
@@ -673,16 +674,16 @@ int findHighestMatchAtOrBelowLimit(struct DateCriteriaPart* part, int limit){
 
 time_t findFirstMatchingDate(struct DateCriteria* criteria, time_t now){
  // Find the earliest date that matches the criteria, ignorng any dates later than 'now'
-	struct tm* tmCandidate = localtime(&now);
-	tmCandidate->tm_min = 0;
-	tmCandidate->tm_sec = 0;
+    struct tm* tmCandidate = localtime(&now);
+    tmCandidate->tm_min = 0;
+    tmCandidate->tm_sec = 0;
 
  // Convert any relative parts of the criteria into concrete values, using the current date/time
     int valuesOk = replaceRelativeValues(criteria, now);
     if (!valuesOk){
         return -1;
     }
-	
+    
     int yearOk, monthOk, weekdayOk, dayOk, hourOk;
     yearOk = monthOk = weekdayOk = dayOk = hourOk = FALSE;
     
@@ -690,220 +691,220 @@ time_t findFirstMatchingDate(struct DateCriteria* criteria, time_t now){
     while (!(yearOk && monthOk && dayOk && hourOk)) {
         if (!yearOk){
          // Find the lowest matching year value
-        	if (criteria->year != NULL){
-        	 // Find the lowest year that matches the criteria
-    	        int lowestMatchingYear = findLowestMatch(criteria->year);
-        		if (getYear(tmCandidate) < lowestMatchingYear){
-        		 /* The lowest matching year is too high for out current candidate, so stop and return NULL
-        		    indicating that no match could be found (eg now='01/01/2010', criteria->year='2011-2012') */
-        		    tmCandidate = NULL;
-        		    break;
-        		} else {
-        		 // Find the highest year that matches the criteria but that is <= the candidate date's year
-        		    int highestMatchingYear = findHighestMatchAtOrBelowLimit(criteria->year, getYear(tmCandidate));
-        		    if (highestMatchingYear == getYear(tmCandidate)){
-        		        // The candidate's year is already the highest match, so leave it alone
-        		    } else {
-        		     /* The candidate year must be adjusted (reduced) so that it equals the highest 
-        		     	matching year of the criteria. We also need to change the month, day and hour
-        		     	values of the candidate so that the candidate now matches the very end of the
-        		     	new year. eg if the candidate was '10/05/2010' and the highestMatchingYear='2009'
-        		     	then we change the candidate to 31/12/2009 23:00' */
-        		        setDay(tmCandidate, 1);
-        		        setMonth(tmCandidate, 1);
-        		        setYear(tmCandidate, highestMatchingYear + 1);
-        		        setHour(tmCandidate, -1);// last hour of previous year
-        		        
-        		     /* We now need to set all these flags back to false because we just changed the month,
-        		     	day and hour values and we have no idea if they still satisfy the criteria. */
-        		        monthOk = weekdayOk = dayOk = hourOk = FALSE;
-        		    }
-        		    
-        		}
-        	}
-        	yearOk = TRUE;
+            if (criteria->year != NULL){
+             // Find the lowest year that matches the criteria
+                int lowestMatchingYear = findLowestMatch(criteria->year);
+                if (getYear(tmCandidate) < lowestMatchingYear){
+                 /* The lowest matching year is too high for out current candidate, so stop and return NULL
+                    indicating that no match could be found (eg now='01/01/2010', criteria->year='2011-2012') */
+                    tmCandidate = NULL;
+                    break;
+                } else {
+                 // Find the highest year that matches the criteria but that is <= the candidate date's year
+                    int highestMatchingYear = findHighestMatchAtOrBelowLimit(criteria->year, getYear(tmCandidate));
+                    if (highestMatchingYear == getYear(tmCandidate)){
+                        // The candidate's year is already the highest match, so leave it alone
+                    } else {
+                     /* The candidate year must be adjusted (reduced) so that it equals the highest 
+                        matching year of the criteria. We also need to change the month, day and hour
+                        values of the candidate so that the candidate now matches the very end of the
+                        new year. eg if the candidate was '10/05/2010' and the highestMatchingYear='2009'
+                        then we change the candidate to 31/12/2009 23:00' */
+                        setDay(tmCandidate, 1);
+                        setMonth(tmCandidate, 1);
+                        setYear(tmCandidate, highestMatchingYear + 1);
+                        setHour(tmCandidate, -1);// last hour of previous year
+                        
+                     /* We now need to set all these flags back to false because we just changed the month,
+                        day and hour values and we have no idea if they still satisfy the criteria. */
+                        monthOk = weekdayOk = dayOk = hourOk = FALSE;
+                    }
+                    
+                }
+            }
+            yearOk = TRUE;
         }
 
         if (!monthOk){
-        	if (criteria->month != NULL){
-        	 // Find the lowest month that matches the criteria
-    	        int lowestMatchingMonth = findLowestMatch(criteria->month);
-        		if (getMonth(tmCandidate) < lowestMatchingMonth){
-        		 /* The lowest matching month of the current year is too high for out current candidate, reduce the
-        		 	year by 1, and set the month to the highest one that matches. Also adjust the day and hour value 
-        		 	so that the candidate remains as high as possible. */
-        		    setYear(tmCandidate, getYear(tmCandidate) - 1);
-        		    setDay(tmCandidate, 1);
-        		    setMonth(tmCandidate, findHighestMatch(criteria->month) + 1);
-        		    setHour(tmCandidate, -1);
-        		    
-        		 /* These flags all get set to false because the corresponding values were changed and may no longer  
-        		 	satisfy the criteria. */
-        		    yearOk = weekdayOk = dayOk = hourOk = FALSE;
+            if (criteria->month != NULL){
+             // Find the lowest month that matches the criteria
+                int lowestMatchingMonth = findLowestMatch(criteria->month);
+                if (getMonth(tmCandidate) < lowestMatchingMonth){
+                 /* The lowest matching month of the current year is too high for out current candidate, reduce the
+                    year by 1, and set the month to the highest one that matches. Also adjust the day and hour value 
+                    so that the candidate remains as high as possible. */
+                    setYear(tmCandidate, getYear(tmCandidate) - 1);
+                    setDay(tmCandidate, 1);
+                    setMonth(tmCandidate, findHighestMatch(criteria->month) + 1);
+                    setHour(tmCandidate, -1);
+                    
+                 /* These flags all get set to false because the corresponding values were changed and may no longer  
+                    satisfy the criteria. */
+                    yearOk = weekdayOk = dayOk = hourOk = FALSE;
 
-        		} else {
-        		 // Find the highest month that matches the criteria but that is <= the candidate date's month
-        		    int highestMatchingMonth = findHighestMatchAtOrBelowLimit(criteria->month, getMonth(tmCandidate));
-        		    if (highestMatchingMonth == getMonth(tmCandidate)){
-        		     // The candidate's month is already the highest match, so leave it alone
-        		    } else {
-        		     /* The candidate month must be adjusted (reduced) so that it equals the highest 
-        		     	matching month of the criteria. We also need to change the day and hour
-        		     	values of the candidate so that the candidate now matches the very end of the
-        		     	new month. */
-        		        setDay(tmCandidate, 1);
-        		        setMonth(tmCandidate, highestMatchingMonth + 1);
-            		    setHour(tmCandidate, -1);
-            		    
-	        		 /* These flags all get set to false because the corresponding values were changed and may no longer  
-	        		 	satisfy the criteria. */
-            		    yearOk = weekdayOk = dayOk = hourOk = FALSE;
-        		    }
-        		}
-        	}
-        	monthOk = TRUE;
+                } else {
+                 // Find the highest month that matches the criteria but that is <= the candidate date's month
+                    int highestMatchingMonth = findHighestMatchAtOrBelowLimit(criteria->month, getMonth(tmCandidate));
+                    if (highestMatchingMonth == getMonth(tmCandidate)){
+                     // The candidate's month is already the highest match, so leave it alone
+                    } else {
+                     /* The candidate month must be adjusted (reduced) so that it equals the highest 
+                        matching month of the criteria. We also need to change the day and hour
+                        values of the candidate so that the candidate now matches the very end of the
+                        new month. */
+                        setDay(tmCandidate, 1);
+                        setMonth(tmCandidate, highestMatchingMonth + 1);
+                        setHour(tmCandidate, -1);
+                        
+                     /* These flags all get set to false because the corresponding values were changed and may no longer  
+                        satisfy the criteria. */
+                        yearOk = weekdayOk = dayOk = hourOk = FALSE;
+                    }
+                }
+            }
+            monthOk = TRUE;
         }
 
         if (!weekdayOk){
-        	if (criteria->weekday != NULL){
-        	 // Find the lowest weekday that matches the criteria
-    	        int lowestMatchingWeekday = findLowestMatch(criteria->weekday);
-        		if (getWeekday(tmCandidate) < lowestMatchingWeekday){
-        		 /* The lowest matching weekday is too high for out current candidate, reduce the day value (as little as 
-        		 	possible) so that the weekday is correct and set the hour to the highest allowable value for that day. */
-        		    int highestMatchingWeekday = findHighestMatch(criteria->weekday);
-        		    
-        		    setDay(tmCandidate, getDay(tmCandidate) - 7 + highestMatchingWeekday - getWeekday(tmCandidate));
-        		    setHour(tmCandidate, 23);
-        		    
-        		 /* These flags all get set to false because the adjustment made to the day value may have altered one or
-        		 	all of them, and so they may no longer match the criteria. */
-        		    yearOk = monthOk = dayOk = hourOk = FALSE;
-        		    
-        		} else {
-        		 // Find the highest weekday that matches the criteria but that is <= the candidate date's weekday
-        		    int highestMatchingWeekday = findHighestMatchAtOrBelowLimit(criteria->weekday, getWeekday(tmCandidate));
-        		    if (highestMatchingWeekday == getWeekday(tmCandidate)){
-        		     // The candidate's weekday is already the highest match, so leave it alone
-        		    } else {
-        		     /* The candidate day must be adjusted (reduced) so that its weekday value equals the highest 
-        		     	matching weekday of the criteria. We also need to change the hour value of the candidate 
-        		     	so that it now matches the very end of the day in question. */
-            		    setDay(tmCandidate, getDay(tmCandidate) - (getWeekday(tmCandidate) - highestMatchingWeekday));
-            		    setHour(tmCandidate, 23);
-            		    
-		    		 /* These flags all get set to false because the adjustment made to the day value may have altered one or
-		    		 	all of them, and so they may no longer match the criteria. */
-            		    yearOk = monthOk = dayOk = hourOk = FALSE;
-        		    }
-        		}
-        	}
-        	weekdayOk = TRUE;
+            if (criteria->weekday != NULL){
+             // Find the lowest weekday that matches the criteria
+                int lowestMatchingWeekday = findLowestMatch(criteria->weekday);
+                if (getWeekday(tmCandidate) < lowestMatchingWeekday){
+                 /* The lowest matching weekday is too high for out current candidate, reduce the day value (as little as 
+                    possible) so that the weekday is correct and set the hour to the highest allowable value for that day. */
+                    int highestMatchingWeekday = findHighestMatch(criteria->weekday);
+                    
+                    setDay(tmCandidate, getDay(tmCandidate) - 7 + highestMatchingWeekday - getWeekday(tmCandidate));
+                    setHour(tmCandidate, 23);
+                    
+                 /* These flags all get set to false because the adjustment made to the day value may have altered one or
+                    all of them, and so they may no longer match the criteria. */
+                    yearOk = monthOk = dayOk = hourOk = FALSE;
+                    
+                } else {
+                 // Find the highest weekday that matches the criteria but that is <= the candidate date's weekday
+                    int highestMatchingWeekday = findHighestMatchAtOrBelowLimit(criteria->weekday, getWeekday(tmCandidate));
+                    if (highestMatchingWeekday == getWeekday(tmCandidate)){
+                     // The candidate's weekday is already the highest match, so leave it alone
+                    } else {
+                     /* The candidate day must be adjusted (reduced) so that its weekday value equals the highest 
+                        matching weekday of the criteria. We also need to change the hour value of the candidate 
+                        so that it now matches the very end of the day in question. */
+                        setDay(tmCandidate, getDay(tmCandidate) - (getWeekday(tmCandidate) - highestMatchingWeekday));
+                        setHour(tmCandidate, 23);
+                        
+                     /* These flags all get set to false because the adjustment made to the day value may have altered one or
+                        all of them, and so they may no longer match the criteria. */
+                        yearOk = monthOk = dayOk = hourOk = FALSE;
+                    }
+                }
+            }
+            weekdayOk = TRUE;
         }
 
         if (!dayOk){
-        	if (criteria->day != NULL){
-        	 // Find the lowest day that matches the criteria
-    	        int lowestMatchingDay = findLowestMatch(criteria->day);
-        		if (getDay(tmCandidate) < lowestMatchingDay){
-        		 /* The lowest matching day is too high for out current candidate, reduce the month by 1 and set
-        		 	the day to be the highest one that matches the criteria. */
-        		    setDay(tmCandidate, findHighestMatch(criteria->day) + 1);
-        		    setMonth(tmCandidate, getMonth(tmCandidate) - 1);
-        		    setHour(tmCandidate, -1);
-        		    
-        		 /* These flags all get set to false because the adjustment made to the day value may have altered one or
-        		 	all of them, and so they may no longer match the criteria. */
-        		    yearOk = monthOk = weekdayOk = hourOk = FALSE;
-        		    
-        		} else {
-        		 // Find the highest day that matches the criteria but that is <= the candidate date's day
-        		    int highestMatchingDay = findHighestMatchAtOrBelowLimit(criteria->day, getDay(tmCandidate));
-        		    if (highestMatchingDay == getDay(tmCandidate)){
-					 // The candidate's day is already the highest match, so leave it alone
-        		    } else {
-        		     /* The candidate day must be adjusted (reduced) so that it equals the highest matching day 
-        		     	of the criteria. We also need to change the hour value so that it matches the very end 
-        		     	of the day in question. */
-        		        setDay(tmCandidate, highestMatchingDay + 1);
-        		        setHour(tmCandidate, -1);
-        		        
-	        		 /* These flags all get set to false because the adjustment made to the day value may have altered one or
-	        		 	all of them, and so they may no longer match the criteria. */
-            		    yearOk = monthOk = weekdayOk = hourOk = FALSE;
-        		    }
-        		}
-        	}
-        	dayOk = TRUE;
+            if (criteria->day != NULL){
+             // Find the lowest day that matches the criteria
+                int lowestMatchingDay = findLowestMatch(criteria->day);
+                if (getDay(tmCandidate) < lowestMatchingDay){
+                 /* The lowest matching day is too high for out current candidate, reduce the month by 1 and set
+                    the day to be the highest one that matches the criteria. */
+                    setDay(tmCandidate, findHighestMatch(criteria->day) + 1);
+                    setMonth(tmCandidate, getMonth(tmCandidate) - 1);
+                    setHour(tmCandidate, -1);
+                    
+                 /* These flags all get set to false because the adjustment made to the day value may have altered one or
+                    all of them, and so they may no longer match the criteria. */
+                    yearOk = monthOk = weekdayOk = hourOk = FALSE;
+                    
+                } else {
+                 // Find the highest day that matches the criteria but that is <= the candidate date's day
+                    int highestMatchingDay = findHighestMatchAtOrBelowLimit(criteria->day, getDay(tmCandidate));
+                    if (highestMatchingDay == getDay(tmCandidate)){
+                     // The candidate's day is already the highest match, so leave it alone
+                    } else {
+                     /* The candidate day must be adjusted (reduced) so that it equals the highest matching day 
+                        of the criteria. We also need to change the hour value so that it matches the very end 
+                        of the day in question. */
+                        setDay(tmCandidate, highestMatchingDay + 1);
+                        setHour(tmCandidate, -1);
+                        
+                     /* These flags all get set to false because the adjustment made to the day value may have altered one or
+                        all of them, and so they may no longer match the criteria. */
+                        yearOk = monthOk = weekdayOk = hourOk = FALSE;
+                    }
+                }
+            }
+            dayOk = TRUE;
         }
         
         if (!hourOk){
-        	if (criteria->hour != NULL){
-        	 // Find the lowest hour that matches the criteria
-    	        int lowestMatchingHour = findLowestMatch(criteria->hour);
-        		if (getHour(tmCandidate) < lowestMatchingHour){
-        		 /* The lowest matching hour is too high for out current candidate, reduce the day by 1 and set
-        		 	the hour to be the highest one that matches the criteria. */
-        		    setDay(tmCandidate, getDay(tmCandidate) - 1);
-        		    setHour(tmCandidate, findHighestMatch(criteria->hour));        		    
-        		    
-        		 /* These flags all get set to false because the adjustment made to the day value may have altered one or
-        		 	all of them, and so they may no longer match the criteria. */
-        		    yearOk = monthOk = weekdayOk = dayOk = FALSE;
-        		    
-        		} else {
-        		 // Find the highest hour that matches the criteria but that is <= the candidate date's hour
-        		    int highestMatchingHour = findHighestMatchAtOrBelowLimit(criteria->hour, getHour(tmCandidate));
-      		        setHour(tmCandidate, highestMatchingHour);
-        		}
-        	}
-        	hourOk = TRUE;
+            if (criteria->hour != NULL){
+             // Find the lowest hour that matches the criteria
+                int lowestMatchingHour = findLowestMatch(criteria->hour);
+                if (getHour(tmCandidate) < lowestMatchingHour){
+                 /* The lowest matching hour is too high for out current candidate, reduce the day by 1 and set
+                    the hour to be the highest one that matches the criteria. */
+                    setDay(tmCandidate, getDay(tmCandidate) - 1);
+                    setHour(tmCandidate, findHighestMatch(criteria->hour));                 
+                    
+                 /* These flags all get set to false because the adjustment made to the day value may have altered one or
+                    all of them, and so they may no longer match the criteria. */
+                    yearOk = monthOk = weekdayOk = dayOk = FALSE;
+                    
+                } else {
+                 // Find the highest hour that matches the criteria but that is <= the candidate date's hour
+                    int highestMatchingHour = findHighestMatchAtOrBelowLimit(criteria->hour, getHour(tmCandidate));
+                    setHour(tmCandidate, highestMatchingHour);
+                }
+            }
+            hourOk = TRUE;
         }
     }
 
-	if (tmCandidate == NULL){
-	 // No match could be found
-	    return -1;
-	} else {
-	    return mktime(tmCandidate);
-	}
+    if (tmCandidate == NULL){
+     // No match could be found
+        return -1;
+    } else {
+        return mktime(tmCandidate);
+    }
 }
 
 int isDateCriteriaMatch(struct DateCriteria* criteria, time_t ts){
  // Check if the specified date, when evaluated as a local time, matches the criteria
-	int result = FALSE;
-	struct tm* dt = localtime((time_t *) &ts);
-	while(criteria != NULL){
-		result = isDateCriteriaPartMatch(criteria->year, getYear(dt)) && 
-			isDateCriteriaPartMatch(criteria->month, getMonth(dt)) && 
-			isDateCriteriaPartMatch(criteria->day, getDay(dt)) && 
-			isDateCriteriaPartMatch(criteria->weekday, getWeekday(dt)) && 
-			isDateCriteriaPartMatch(criteria->hour, getHour(dt));
-		if (result == TRUE){
-		 // We found a DateCriteria that matched the date/time, so stop and return TRUE
-			break;
-		}
-		criteria = criteria->next;
-	}
-	return result;
+    int result = FALSE;
+    struct tm* dt = localtime((time_t *) &ts);
+    while(criteria != NULL){
+        result = isDateCriteriaPartMatch(criteria->year, getYear(dt)) && 
+            isDateCriteriaPartMatch(criteria->month, getMonth(dt)) && 
+            isDateCriteriaPartMatch(criteria->day, getDay(dt)) && 
+            isDateCriteriaPartMatch(criteria->weekday, getWeekday(dt)) && 
+            isDateCriteriaPartMatch(criteria->hour, getHour(dt));
+        if (result == TRUE){
+         // We found a DateCriteria that matched the date/time, so stop and return TRUE
+            break;
+        }
+        criteria = criteria->next;
+    }
+    return result;
 }
 
 int isDateCriteriaPartMatch(struct DateCriteriaPart* criteriaPart, int value){
  // Check if the specified value (which represents a date component), matches the criteria part
-	if (criteriaPart == NULL){
-		return TRUE; // it was a '*'
-	} else {
-		int foundMatch = FALSE;
-		while(criteriaPart != NULL){
-			if (criteriaPart->isRelative == TRUE){
-				//TODO error
-			}
-			if (criteriaPart->val1 <= value && criteriaPart->val2 >= value){
-				foundMatch = TRUE;
-				break;
-			}
-			criteriaPart = criteriaPart->next;
-		}
-		return foundMatch;
-	}
+    if (criteriaPart == NULL){
+        return TRUE; // it was a '*'
+    } else {
+        int foundMatch = FALSE;
+        while(criteriaPart != NULL){
+            if (criteriaPart->isRelative == TRUE){
+                //TODO error
+            }
+            if (criteriaPart->val1 <= value && criteriaPart->val2 >= value){
+                foundMatch = TRUE;
+                break;
+            }
+            criteriaPart = criteriaPart->next;
+        }
+        return foundMatch;
+    }
 }

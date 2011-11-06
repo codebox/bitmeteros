@@ -75,7 +75,7 @@ void testSetConfigText(void** state){
 void testRmConfigBadValue(void** state){
     assert_true(getConfigText("config.txt", TRUE) == NULL);
     rmConfigValue("config.txt");
-    assert_true(getConfigText("config.txt", TRUE) == NULL);	
+    assert_true(getConfigText("config.txt", TRUE) == NULL); 
     freeStmtList();
 }
 void testRmConfigOkValue(void** state){
@@ -85,59 +85,59 @@ void testRmConfigOkValue(void** state){
     assert_string_equal("text", val);
     free(val);
     rmConfigValue("config.txt");
-    assert_true(getConfigText("config.txt", TRUE) == NULL);	
+    assert_true(getConfigText("config.txt", TRUE) == NULL); 
     freeStmtList();
 }
 void testReadFiltersEmpty(void** state){
-	assert_true(readFilters() == NULL);
-	freeStmtList();
+    assert_true(readFilters() == NULL);
+    freeStmtList();
 }
 //void addFilterRow(int id, char* desc, char* name, char* expr, char* host)
 void testReadFiltersOk(void** state){
-	addFilterRow(1, "desc 1", "f1", "ex1", NULL);
-	addFilterRow(2, "desc 2", "f2", "ex2", "host1");
-	addFilterRow(3, "desc 3", "f3", "ex3", "host2");
-	
-	struct Filter* first;
-	struct Filter* filter = first = readFilters();
-	
-	checkFilter(filter, 1, "desc 1", "f1", "ex1", NULL);
-	filter = filter->next;
-	checkFilter(filter, 2, "desc 2", "f2", "ex2", "host1");
-	filter = filter->next;
-	checkFilter(filter, 3, "desc 3", "f3", "ex3", "host2");
-	
-	freeFilters(first);
-	freeStmtList();
+    addFilterRow(1, "desc 1", "f1", "ex1", NULL);
+    addFilterRow(2, "desc 2", "f2", "ex2", "host1");
+    addFilterRow(3, "desc 3", "f3", "ex3", "host2");
+    
+    struct Filter* first;
+    struct Filter* filter = first = readFilters();
+    
+    checkFilter(filter, 1, "desc 1", "f1", "ex1", NULL);
+    filter = filter->next;
+    checkFilter(filter, 2, "desc 2", "f2", "ex2", "host1");
+    filter = filter->next;
+    checkFilter(filter, 3, "desc 3", "f3", "ex3", "host2");
+    
+    freeFilters(first);
+    freeStmtList();
 }
 
 void testGetStmtSingleThreaded(void** state){
-	char* sql1 = "select * from data";
-	char* sql2 = "select * from config";
-	assert_true(stmtList == NULL);
-	
-	sqlite3_stmt *stmt1 = getStmtSingleThreaded(sql1);
-	assert_true(stmtList != NULL);
-	assert_string_equal(sql1, stmtList->sql);
-	assert_int_equal(stmt1, stmtList->stmt);
-	assert_true(stmtList->next == NULL);
-	
-	sqlite3_stmt *stmt2 = getStmtSingleThreaded(sql1);
-	assert_int_equal(stmt1, stmt2);
-	assert_string_equal(sql1, stmtList->sql);
-	assert_int_equal(stmt1, stmtList->stmt);
-	assert_true(stmtList->next == NULL);
-	
-	sqlite3_stmt *stmt3 = getStmtSingleThreaded(sql2);
-	assert_string_equal(sql2, stmtList->next->sql);
-	assert_int_equal(stmt3, stmtList->next->stmt);
-	assert_true(stmtList->next->next == NULL);
+    char* sql1 = "select * from data";
+    char* sql2 = "select * from config";
+    assert_true(stmtList == NULL);
+    
+    sqlite3_stmt *stmt1 = getStmtSingleThreaded(sql1);
+    assert_true(stmtList != NULL);
+    assert_string_equal(sql1, stmtList->sql);
+    assert_int_equal(stmt1, stmtList->stmt);
+    assert_true(stmtList->next == NULL);
+    
+    sqlite3_stmt *stmt2 = getStmtSingleThreaded(sql1);
+    assert_int_equal(stmt1, stmt2);
+    assert_string_equal(sql1, stmtList->sql);
+    assert_int_equal(stmt1, stmtList->stmt);
+    assert_true(stmtList->next == NULL);
+    
+    sqlite3_stmt *stmt3 = getStmtSingleThreaded(sql2);
+    assert_string_equal(sql2, stmtList->next->sql);
+    assert_int_equal(stmt3, stmtList->next->stmt);
+    assert_true(stmtList->next->next == NULL);
 
-	sqlite3_stmt *stmt4 = getStmtSingleThreaded(sql1);
-	assert_int_equal(stmt1, stmt4);
+    sqlite3_stmt *stmt4 = getStmtSingleThreaded(sql1);
+    assert_int_equal(stmt1, stmt4);
 
-	sqlite3_stmt *stmt5 = getStmtSingleThreaded(sql2);
-	assert_int_equal(stmt3, stmt5);
-	
-	freeStmtList();
+    sqlite3_stmt *stmt5 = getStmtSingleThreaded(sql2);
+    assert_int_equal(stmt3, stmt5);
+    
+    freeStmtList();
 }

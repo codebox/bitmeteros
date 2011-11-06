@@ -1,50 +1,50 @@
 #mobileLink{
-	display: block;	
+    display: block; 
 }
 body{
-	text-align: center;	
-	font-family: sans-serif;
+    text-align: center; 
+    font-family: sans-serif;
 }
 li{
-	list-style-type: none;	
-	padding: 0.4em;
+    list-style-type: none;  
+    padding: 0.4em;
 }
 .amt{
-	font-size: 2em;
+    font-size: 2em;
 }
 .filter{
-	font-size: 2em;
+    font-size: 2em;
 }
 .unit{
-	font-size: 0.8em;
+    font-size: 0.8em;
 }
 .dl{
-	color: red;
+    color: red;
 }
 .ul{
-	color: green;
+    color: green;
 }
 th{
-	font-size: 2em;	
+    font-size: 2em; 
 }
 .refreshLink{
-	color: blue;
-	text-decoration: none;
-	background-color: #ddddff;
-	border: 1px solid blue;
-	padding: 0.3em;	
+    color: blue;
+    text-decoration: none;
+    background-color: #ddddff;
+    border: 1px solid blue;
+    padding: 0.3em; 
 }
 table#monitor, table#summary{
-	margin-left: auto;
-	margin-right: auto;
+    margin-left: auto;
+    margin-right: auto;
 }
 td.amt{
-	padding-left: 1em;
-	text-align: right;	
+    padding-left: 1em;
+    text-align: right;  
 }
 td.filter{
-	text-align: left;	
+    text-align: left;   
 }
 table#summary{
-	padding: 3px;	
+    padding: 3px;   
 }

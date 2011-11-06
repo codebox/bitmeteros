@@ -63,6 +63,7 @@
 #define CONFIG_WEB_RSS_FREQ         "web.rss.freq"
 #define CONFIG_WEB_RSS_ITEMS        "web.rss.items"
 #define CONFIG_DB_WRITE_INTERVAL    "cap.write_interval"
+#define CONFIG_NO_HIPPY_TEXT        "txt.mono"
 
 #define ALLOW_LOCAL_CONNECT_ONLY 0
 #define ALLOW_REMOTE_CONNECT 1
@@ -78,12 +79,27 @@
 #define MAX_PATH_LEN    256
 #define MAC_ADDR_LEN 6
 // ----
-#define DL_FLAG 1
-#define UL_FLAG 2
+#ifdef _WIN32
+#define COLOUR_BLUE  FOREGROUND_BLUE | FOREGROUND_INTENSITY
+#define COLOUR_GREEN FOREGROUND_GREEN 
+#define COLOUR_RED   FOREGROUND_RED | FOREGROUND_INTENSITY
+#define COLOUR_YELLOW FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY
+#define COLOUR_WHITE_1 FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_INTENSITY
+#define COLOUR_WHITE_2 FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_BLUE
+#define COLOUR_DEFAULT -1
+#else
+#define COLOUR_BLUE  0
+#define COLOUR_GREEN 0
+#define COLOUR_RED   0
+#define COLOUR_YELLOW 0
+#define COLOUR_DEFAULT 0
+#endif
 // ----
 #if defined(__APPLE__) || defined(_WIN32)
 #define strdupa(s) strcpy(alloca(strlen(s)+1), s)
 #endif
+// ----
+#define FILTER_NAME_MAX_LENGTH 16
 // ----
 // These are very important, used everywhere
 #define TRUE  1
@@ -95,27 +111,27 @@
 typedef unsigned long long BW_INT;
 
 struct Data{
-	time_t ts;
-	int    dr;
-	BW_INT vl;
-	int    fl;
-	struct Data* next;
+    time_t ts;
+    int    dr;
+    BW_INT vl;
+    int    fl;
+    struct Data* next;
 };
 
 struct DateCriteriaPart{
-	int isRelative;
-	int val1;
-	int val2;
-	struct DateCriteriaPart* next; // used eg 1-2,3,6-10 is 3 separate DateCriteriaParts
+    int isRelative;
+    int val1;
+    int val2;
+    struct DateCriteriaPart* next; // used eg 1-2,3,6-10 is 3 separate DateCriteriaParts
 };
 
 struct DateCriteria{ 
-	struct DateCriteriaPart* year;
-	struct DateCriteriaPart* month;
-	struct DateCriteriaPart* day;
-	struct DateCriteriaPart* weekday;
-	struct DateCriteriaPart* hour;
-	struct DateCriteria* next;
+    struct DateCriteriaPart* year;
+    struct DateCriteriaPart* month;
+    struct DateCriteriaPart* day;
+    struct DateCriteriaPart* weekday;
+    struct DateCriteriaPart* hour;
+    struct DateCriteria* next;
 };
 
 struct Alert {
@@ -130,26 +146,26 @@ struct Alert {
 };
 
 struct Filter {
-	int   id;
-	char* desc;
-	char* name;
-	char* expr;
-	char* host;
-	struct Filter* next;
+    int   id;
+    char* desc;
+    char* name;
+    char* expr;
+    char* host;
+    struct Filter* next;
 };
 
 struct Total {
-	int count;
-	struct Filter* filter;
-	pcap_t *handle;
-	struct Total* next;
+    int count;
+    struct Filter* filter;
+    pcap_t *handle;
+    struct Total* next;
 };
 
 struct Adapter {
-	char* name;
-	char* ips;
-	struct Total* total;
-	struct Adapter* next;
+    char* name;
+    char* ips;
+    struct Total* total;
+    struct Adapter* next;
 };
 
 struct NameValuePair{
@@ -159,7 +175,7 @@ struct NameValuePair{
 };
 
 #ifndef _WIN32
-	typedef int SOCKET;
+    typedef int SOCKET;
 #endif
 
 // ----
@@ -227,6 +243,7 @@ struct Filter* getFilterFromName(struct Filter* , char*, char*);
 int getMaxFilterDescWidth(struct Filter* filter);
 int getMaxFilterNameWidth(struct Filter* filter);
 struct Filter* copyFilter(struct Filter* filter);
+int filterNameIsValid(char* name);
 // ----
 void doSleep(int interval);
 void getDbPath(char* path);
@@ -245,20 +262,7 @@ void logMsg(int level, char* msg, ...);
 void vlogMsg(int level, char* msg, va_list argp);
 void statusMsg(const char* msg, ...);
 void resetStatusMsg();
-#ifdef _WIN32
-	#include  <windows.h>
-	#define TEXT_DEFAULT FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_BLUE
-	#define TEXT_YELLOW  FOREGROUND_RED | FOREGROUND_GREEN
-	#define TEXT_RED     FOREGROUND_RED
-	#define TEXT_GREEN   FOREGROUND_GREEN
-	#define TEXT_BLUE    FOREGROUND_BLUE | FOREGROUND_GREEN
-#else
-	#define TEXT_DEFAULT 0
-	#define TEXT_YELLOW  0
-	#define TEXT_RED     0
-	#define TEXT_GREEN   0
-	#define TEXT_BLUE    0
-#endif
+void showCopyright();
 void setTextColour(int colour);
 // ----
 void formatAmount(const BW_INT amount, const int binary, const int abbrev, char* txt);
@@ -285,13 +289,13 @@ struct tm getLocalTime(time_t t);
 void normaliseTm(struct tm* t);
 // ----
 struct StmtList{
-	char* sql;
-	sqlite3_stmt* stmt;
-	struct StmtList* next;
+    char* sql;
+    sqlite3_stmt* stmt;
+    struct StmtList* next;
 } *stmtList;
 // -----
 struct TotalCalls {
-	void (*pcap_close)(pcap_t *);
+    void (*pcap_close)(pcap_t *);
 };
 struct TotalCalls mockTotalCalls;
 // ----
@@ -301,27 +305,29 @@ void freeNameValuePairs(struct NameValuePair* param);
 void appendNameValuePair(struct NameValuePair** earlierPair, struct NameValuePair* newPair);
 struct NameValuePair* makeNameValuePair(char* name, char* value);
 
-#ifdef UNIT_TESTING	
-	#define SET_LOG_LEVEL mockSetLogLevel
-	#define OPEN_DB mockOpenDb
-	#define CLOSE_DB mockCloseDb
-	#define DB_VERSION_CHECK mockDbVersionCheck
-	#define TO_TIME mockToTime
-	#define TO_DATE mockToDate
-	#define PCAP_CLOSE mockPcap_close
-	#define malloc(size)          _test_malloc(size, __FILE__, __LINE__) 
-	#define calloc(num, size)     _test_calloc(num, size, __FILE__, __LINE__) 
-	#define free(ptr)             _test_free(ptr, __FILE__, __LINE__) 
-	#define strdup(ptr)           _test_strdup(ptr, __FILE__, __LINE__) 
-	#define printf(fmt , args...) _test_printf(fmt , ##args) 
-	#define dbg(fmt , args...) fprintf(stdout , fmt , ##args) 
+#ifdef UNIT_TESTING 
+    #define SET_LOG_LEVEL mockSetLogLevel
+    #define OPEN_DB mockOpenDb
+    #define CLOSE_DB mockCloseDb
+    #define DB_VERSION_CHECK mockDbVersionCheck
+    #define TO_TIME mockToTime
+    #define TO_DATE mockToDate
+    #define PCAP_CLOSE mockPcap_close
+    #define malloc(size)          _test_malloc(size, __FILE__, __LINE__) 
+    #define calloc(num, size)     _test_calloc(num, size, __FILE__, __LINE__) 
+    #define free(ptr)             _test_free(ptr, __FILE__, __LINE__) 
+    #define strdup(ptr)           _test_strdup(ptr, __FILE__, __LINE__) 
+    #define printf(fmt , args...) _test_printf(fmt , ##args) 
+    #define PRINT(colour, msg , args...) _test_printOut(colour, msg , ##args) 
+    #define dbg(fmt , args...) fprintf(stdout , fmt , ##args) 
 #else
-	#define SET_LOG_LEVEL setLogLevel
-	#define OPEN_DB openDb
-	#define CLOSE_DB closeDb
-	#define DB_VERSION_CHECK dbVersionCheck
-	#define TO_TIME toTime
-	#define TO_DATE toDate
-	#define PCAP_CLOSE pcap_close
+    #define SET_LOG_LEVEL setLogLevel
+    #define OPEN_DB openDb
+    #define CLOSE_DB closeDb
+    #define DB_VERSION_CHECK dbVersionCheck
+    #define TO_TIME toTime
+    #define TO_DATE toDate
+    #define PCAP_CLOSE pcap_close
+    #define PRINT(colour, msg , args...) printOut(colour, msg , ##args) 
 #endif
 #endif //#ifndef COMMON_H

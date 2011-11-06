@@ -1,5 +1,5 @@
 #ifdef _WIN32
-	#define __USE_MINGW_ANSI_STDIO 1
+    #define __USE_MINGW_ANSI_STDIO 1
 #endif
 #include <stdio.h>
 #include <string.h>
@@ -13,36 +13,36 @@ Contains logging functions.
 int logToFile = FALSE;
 void setLogToFile(int toFile){
  // Determine whether we write log messages to a file, or to stdout
-	logToFile = toFile;
+    logToFile = toFile;
 }
 
 static int logLevel;
 void setLogLevel(int level){
  // Determine logging verbosity here
-	logLevel = level;
+    logLevel = level;
 }
 int isLogDebug(){
-	return logLevel == LOG_DEBUG;	
+    return logLevel == LOG_DEBUG;   
 }
 int isLogInfo(){
-	return (logLevel == LOG_DEBUG) || (logLevel == LOG_INFO);	
+    return (logLevel == LOG_DEBUG) || (logLevel == LOG_INFO);   
 }
 
 static char* appName = NULL;
 void setAppName(const char* thisAppName){
  // Set app name as it will appear in the log entries
-	appName = strdup(thisAppName);
+    appName = strdup(thisAppName);
 }
 void logMsg(int level, char* msg, ...){
-	va_list argp;
-	va_start(argp, msg);
-	vlogMsg(level, msg, argp);
-	va_end(argp);	
+    va_list argp;
+    va_start(argp, msg);
+    vlogMsg(level, msg, argp);
+    va_end(argp);   
 }
 void vlogMsg(int level, char* msg, va_list argp){
  // Log the specified message, if its level is high enough
-	if (level >= logLevel){
-	 // The level (importance) of this message is sufficiently high that we want to log it
+    if (level >= logLevel){
+     // The level (importance) of this message is sufficiently high that we want to log it
         FILE* logFile;
         if (logToFile == TRUE){
             char* logPath = malloc(MAX_PATH_LEN);
@@ -61,10 +61,10 @@ void vlogMsg(int level, char* msg, va_list argp){
 
         } else {
             if (level <= LOG_INFO){
-				logFile = stdout;
-			} else {
-				logFile = stderr;
-			}
+                logFile = stdout;
+            } else {
+                logFile = stderr;
+            }
         }
 
         if (logToFile == TRUE){
@@ -85,16 +85,16 @@ void vlogMsg(int level, char* msg, va_list argp){
             }
         }
 
-	 // Write out the message, substituting the optargs for any tokens in the text
-		vfprintf(logFile, msg, argp);
-		fprintf(logFile, EOL);
+     // Write out the message, substituting the optargs for any tokens in the text
+        vfprintf(logFile, msg, argp);
+        fprintf(logFile, EOL);
 
-		fflush(logFile);
+        fflush(logFile);
 
-		if (logToFile == TRUE){
-			fclose(logFile);
-		}
-	}
+        if (logToFile == TRUE){
+            fclose(logFile);
+        }
+    }
 }
 
 static int lastStatusMsgLen = 0;
@@ -117,12 +117,53 @@ void resetStatusMsg(){
 
 #ifdef _WIN32
 #include  <windows.h>
+static int showTextInColour = -1;
 void setTextColour(int colour){
-	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-	SetConsoleTextAttribute(hConsole,colour);
+    if (showTextInColour < 0) {
+        int dbConfigValue = getConfigInt(CONFIG_NO_HIPPY_TEXT, TRUE);
+     // Unless this config has been explicitly set, we allow coloured text
+        showTextInColour = (dbConfigValue != 1);
+    }
+    
+    if (showTextInColour){
+        HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+        SetConsoleTextAttribute(hConsole,colour);
+    }
+}
+int getTextColour(){
+    CONSOLE_SCREEN_BUFFER_INFO csbiInfo; 
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+
+	GetConsoleScreenBufferInfo(hConsole,&csbiInfo);
+    return csbiInfo.wAttributes & (FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY);
 }
 #else
 void setTextColour(int colour){
-	
+    //TODO
+}
+int getTextColour(){
+    return 0;   
 }
 #endif
+
+void printOut(int colour, const char* msg, ...){
+    int previousColour;
+    if (colour != COLOUR_DEFAULT){
+        previousColour = getTextColour();
+        setTextColour(colour);
+    }
+ // Write out the message, substituting the optargs for any tokens in the text
+    va_list argp;
+    va_start(argp, msg);
+    vprintf(msg, argp);
+    va_end(argp);
+    fflush(stdout);
+    
+    if (colour != COLOUR_DEFAULT){
+        setTextColour(previousColour);
+    }
+}
+
+void showCopyright(){
+    PRINT(COLOUR_GREEN, COPYRIGHT);   
+}

@@ -1,5 +1,5 @@
 #ifdef _WIN32
-	#define __USE_MINGW_ANSI_STDIO 1
+    #define __USE_MINGW_ANSI_STDIO 1
 #endif
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,46 +40,46 @@ static int insertDataPartial(int dr, struct Data* data);
 static int compressDbStage(int secKeepInterval, int oldDr, int newDr, int (*fnRoundUp)(int) );
 
 void setupDb(){
-	logMsg(LOG_DEBUG, "Starting db setup");
-	
+    logMsg(LOG_DEBUG, "Starting db setup");
+    
  // Read various values out of the 'config' table
-	keepPerSecLimit  = getConfigInt(CONFIG_CAP_KEEP_SEC_LIMIT, FALSE);
-	keepPerMinLimit  = getConfigInt(CONFIG_CAP_KEEP_MIN_LIMIT, FALSE);
-	compressInterval = getConfigInt(CONFIG_CAP_COMPRESS_INTERVAL, FALSE);
-	
-	logMsg(LOG_DEBUG, "db setup complete");
+    keepPerSecLimit  = getConfigInt(CONFIG_CAP_KEEP_SEC_LIMIT, FALSE);
+    keepPerMinLimit  = getConfigInt(CONFIG_CAP_KEEP_MIN_LIMIT, FALSE);
+    compressInterval = getConfigInt(CONFIG_CAP_COMPRESS_INTERVAL, FALSE);
+    
+    logMsg(LOG_DEBUG, "db setup complete");
 }
 
 int updateDb(int dr, struct Data* diffList){
     int status = SUCCESS;
 
  // Insert all the Data structs into the d/b, stopping if there are any failures
-	while (diffList != NULL) {
-		status = insertDataPartial(dr, diffList);
-		if (status == FAIL){
+    while (diffList != NULL) {
+        status = insertDataPartial(dr, diffList);
+        if (status == FAIL){
             break;
-		}
-		diffList = diffList->next;
-	}
-	return status;
+        }
+        diffList = diffList->next;
+    }
+    return status;
 }
 
 int compressDb(){
-	logMsg(LOG_DEBUG, "Starting db compression");
-	
+    logMsg(LOG_DEBUG, "Starting db compression");
+    
     int status;
 
  // Compresses per-second values that are older than 1 minute into per-minute values
-	status = compressDbStage(keepPerSecLimit, POLL_INTERVAL, SECS_PER_MIN, (int(*)(int))getNextMinForTs);
-	logMsg(LOG_DEBUG, "After first stage of db compression, result=%d", status);
+    status = compressDbStage(keepPerSecLimit, POLL_INTERVAL, SECS_PER_MIN, (int(*)(int))getNextMinForTs);
+    logMsg(LOG_DEBUG, "After first stage of db compression, result=%d", status);
     if (status == FAIL){
         return FAIL;
     }
 
  // Compresses per-minute values that are older than 1 day into per-hour values
-	status = compressDbStage(keepPerMinLimit, SECS_PER_MIN, SECS_PER_HOUR, (int(*)(int))getNextHourForTs);
-	logMsg(LOG_DEBUG, "After second stage of db compression, result=%d", status);
-	if (status == FAIL){
+    status = compressDbStage(keepPerMinLimit, SECS_PER_MIN, SECS_PER_HOUR, (int(*)(int))getNextHourForTs);
+    logMsg(LOG_DEBUG, "After second stage of db compression, result=%d", status);
+    if (status == FAIL){
         return FAIL;
     } else {
         return SUCCESS;
@@ -88,40 +88,40 @@ int compressDb(){
 
 int getNextCompressTime(){
  // This calculates when the next call to compressDb is due.
-	return getTime() + compressInterval;
+    return getTime() + compressInterval;
 }
 
 
 static int doInsert(int ts, int dr, int fl, BW_INT vl){
  // Inserts a row with the specified values into the 'data' table
- 	sqlite3_stmt* stmt = getStmt(SQL_INSERT_INTO_DATA);
-	sqlite3_bind_int(stmt,    1, ts);
-	sqlite3_bind_int(stmt,    2, dr);
-	sqlite3_bind_int64(stmt,  3, vl);
-	sqlite3_bind_int(stmt,    4, fl);
+    sqlite3_stmt* stmt = getStmt(SQL_INSERT_INTO_DATA);
+    sqlite3_bind_int(stmt,    1, ts);
+    sqlite3_bind_int(stmt,    2, dr);
+    sqlite3_bind_int64(stmt,  3, vl);
+    sqlite3_bind_int(stmt,    4, fl);
 
-	int status;
-  	int rc = sqlite3_step(stmt);
-  	if (rc != SQLITE_DONE){
-  		logMsg(LOG_ERR, "doInsert() failed to insert values %d,%d,%d,%llu into db rc=%d error=%s", ts, dr, fl, vl, rc, getDbError());
-  		status = FAIL;
-  	} else {
-  		logMsg(LOG_INFO, "doInsert() ok: %d,%d,%d,%llu", ts, dr, fl, vl);//TODO
+    int status;
+    int rc = sqlite3_step(stmt);
+    if (rc != SQLITE_DONE){
+        logMsg(LOG_ERR, "doInsert() failed to insert values %d,%d,%d,%llu into db rc=%d error=%s", ts, dr, fl, vl, rc, getDbError());
+        status = FAIL;
+    } else {
+        logMsg(LOG_INFO, "doInsert() ok: %d,%d,%d,%llu", ts, dr, fl, vl);//TODO
         status = SUCCESS;
-  	}
-  	finishedStmt(stmt);
+    }
+    finishedStmt(stmt);
 
-  	return status;
+    return status;
 }
 
 static int insertDataPartial(int dr, struct Data* data){
  // Inserts the data for a single Data struct into the 'data' table
-	return doInsert(data->ts, dr, data->fl, data->vl);
+    return doInsert(data->ts, dr, data->fl, data->vl);
 }
 
 int insertData(struct Data* data){
  // Inserts the data for a single Data struct into the 'data' table
-	return doInsert(data->ts, data->dr, data->fl, data->vl);
+    return doInsert(data->ts, data->dr, data->fl, data->vl);
 }
 
 static int doDelete(int ts, int dr){
@@ -129,105 +129,105 @@ static int doDelete(int ts, int dr){
  /* Removes all rows with the specified 'dr' value, and with a 'ts' value less than or equal to the given one. This
     gets called during a compressDb operation, to remove the old rows that have been amalgamated into a single row. */
     sqlite3_stmt* stmt = getStmt(SQL_DELETE_COMPRESSED);
-	sqlite3_bind_int(stmt, 1, ts);
-	sqlite3_bind_int(stmt, 2, dr);
+    sqlite3_bind_int(stmt, 1, ts);
+    sqlite3_bind_int(stmt, 2, dr);
 
-	int rc = sqlite3_step(stmt);
-	if (rc != SQLITE_DONE){
-		logMsg(LOG_ERR, "Failed to delete compressed rows for ts=%d dr=%d rc=%d error=%s", ts, dr, rc, getDbError());
-		status = FAIL;
-	} else {
+    int rc = sqlite3_step(stmt);
+    if (rc != SQLITE_DONE){
+        logMsg(LOG_ERR, "Failed to delete compressed rows for ts=%d dr=%d rc=%d error=%s", ts, dr, rc, getDbError());
+        status = FAIL;
+    } else {
         status = SUCCESS;
-	}
+    }
 
-	finishedStmt(stmt);
+    finishedStmt(stmt);
 
-	return status;
+    return status;
 }
 
 static int doCompress(int ts, int oldDr, int newDr){
  // For each adapter, compresses rows older than 'ts' and with a 'dr' of oldDr, into a single row with 'dr' of newDr.
-	logMsg(LOG_DEBUG, "doCompress(%d,%d,%d)", ts, oldDr, newDr);
-	
-	sqlite3_stmt* stmt = getStmt(SQL_SELECT_FOR_COMPRESS);
+    logMsg(LOG_DEBUG, "doCompress(%d,%d,%d)", ts, oldDr, newDr);
+    
+    sqlite3_stmt* stmt = getStmt(SQL_SELECT_FOR_COMPRESS);
 
-	sqlite3_bind_int(stmt, 1, ts);
-	sqlite3_bind_int(stmt, 2, oldDr);
+    sqlite3_bind_int(stmt, 1, ts);
+    sqlite3_bind_int(stmt, 2, oldDr);
 
-	int rc;
-	BW_INT total;
-	int filter;
+    int rc;
+    BW_INT total;
+    int filter;
     int status = SUCCESS;
     int insertedOk, deletedOk;
 
-	while((rc=sqlite3_step(stmt)) == SQLITE_ROW){
+    while((rc=sqlite3_step(stmt)) == SQLITE_ROW){
      // We get 1 row back for each filter
-		filter = sqlite3_column_int(stmt,   0);
-		total  = sqlite3_column_int64(stmt, 1);
+        filter = sqlite3_column_int(stmt,   0);
+        total  = sqlite3_column_int64(stmt, 1);
 
-		logMsg(LOG_DEBUG, "doCompress loop: vl=%llu fl=%d", total, filter);
+        logMsg(LOG_DEBUG, "doCompress loop: vl=%llu fl=%d", total, filter);
 
-		insertedOk = doInsert(ts, newDr, filter, total);
-		if (insertedOk){
+        insertedOk = doInsert(ts, newDr, filter, total);
+        if (insertedOk){
          // Only remove the old rows if we succeeded in inserting the new one
-			deletedOk = doDelete(ts, oldDr);
-			if (!deletedOk){
+            deletedOk = doDelete(ts, oldDr);
+            if (!deletedOk){
                 status = FAIL;
                 break;
-			}
-		} else {
+            }
+        } else {
             status = FAIL;
             break;
-		}
-	}
+        }
+    }
 
-  	finishedStmt(stmt);
+    finishedStmt(stmt);
 
-  	return status;
+    return status;
 }
 
 static int getMinTs(int dr){
  // Find the smallest 'ts' in the data table having the specified 'dr'
-	sqlite3_stmt* stmt = getStmt(SQL_SELECT_MIN_TS);
-	sqlite3_bind_int(stmt, 1, dr);
+    sqlite3_stmt* stmt = getStmt(SQL_SELECT_MIN_TS);
+    sqlite3_bind_int(stmt, 1, dr);
 
-	int minTs;
-	int rc = sqlite3_step(stmt);
-	if (rc == SQLITE_ROW){
-		minTs = sqlite3_column_int(stmt, 0);
-	} else {
+    int minTs;
+    int rc = sqlite3_step(stmt);
+    if (rc == SQLITE_ROW){
+        minTs = sqlite3_column_int(stmt, 0);
+    } else {
      // We found no rows with the specified 'dr' value
-		minTs = 0;
-	}
+        minTs = 0;
+    }
 
-	finishedStmt(stmt);
+    finishedStmt(stmt);
 
-	return minTs;
+    return minTs;
 }
 
 static int compressDbStage(int secKeepInterval, int oldDr, int newDr, int (*fnRoundUp)(int) ){
  // Performs a single stage of compression process, amalgamating old rows with a given 'dr' value into newer rows with a larger 'dr'
 
  // Calculate the largest 'ts' value that we will compress
-	int keepBoundary = getTime() - secKeepInterval;
+    int keepBoundary = getTime() - secKeepInterval;
 
  // Find the smallest 'ts' value in the 'data' table (having the 'dr' value that we are interested in)
-	int minTs = getMinTs(oldDr);
+    int minTs = getMinTs(oldDr);
 
  // Round the smallest 'ts' value up to the nearest sensible interval (minute/hour)
-	int minTsRoundedUp = (*fnRoundUp)(minTs);
+    int minTsRoundedUp = (*fnRoundUp)(minTs);
 
     int status = SUCCESS;
     int compressOk;
 
-	logMsg(LOG_DEBUG, "In compressDbStage(%d,%d,%d), keep=%d, minTs=%d, minRounded=%d",
-			secKeepInterval, oldDr, newDr, keepBoundary, minTs, minTsRoundedUp);
+    logMsg(LOG_DEBUG, "In compressDbStage(%d,%d,%d), keep=%d, minTs=%d, minRounded=%d",
+            secKeepInterval, oldDr, newDr, keepBoundary, minTs, minTsRoundedUp);
 
  // Make sure the compression operation is atomic (this includes the deletion of old rows)
-	beginTrans(FALSE);
+    beginTrans(FALSE);
     while((minTs != 0) && (minTsRoundedUp <= keepBoundary)){
-    	logMsg(LOG_DEBUG, "compressDbStage loop: keep=%d, minTs=%d, minRounded=%d", keepBoundary, minTs, minTsRoundedUp);
-    	
+        logMsg(LOG_DEBUG, "compressDbStage loop: keep=%d, minTs=%d, minRounded=%d", keepBoundary, minTs, minTsRoundedUp);
+        
      // We have rows that need to be compressed, ie that have the correct 'dr' value and are older than the boundary we established earlier
         compressOk = doCompress(minTsRoundedUp, oldDr, newDr);
         if (!compressOk){

@@ -1,5 +1,5 @@
 #ifdef _WIN32
-	#include <winsock2.h>
+    #include <winsock2.h>
 #endif
 #define OPT_HELP    'h'
 #define OPT_VERSION 'v'
@@ -23,19 +23,19 @@
 #define MSG_CONNECTED  "Connected"
 
 struct SyncPrefs{
-	int version;
-	int help;
-	char** hosts;
-	int hostCount;
-	int port;
-	char* alias;
-	char* errMsg;
+    int version;
+    int help;
+    char** hosts;
+    int hostCount;
+    int port;
+    char* alias;
+    char* errMsg;
 };
 
 struct RemoteFilter{
-	int remoteId;
-	int localId;
-	struct RemoteFilter* next;
+    int remoteId;
+    int localId;
+    struct RemoteFilter* next;
 };
 
 int parseSyncArgs(int argc, char **argv, struct SyncPrefs *prefs);
@@ -55,10 +55,10 @@ int parseData(SOCKET fd, char* alias, int* rowCount);
 int sendRequest(SOCKET fd, time_t ts, char* host, int port);
 
 // ----
-#ifdef UNIT_TESTING	
-	#define SEND mockSend
-	#define RECV mockRecv
+#ifdef UNIT_TESTING 
+    #define SEND mockSend
+    #define RECV mockRecv
 #else
-	#define SEND send
-	#define RECV recv
+    #define SEND send
+    #define RECV recv
 #endif

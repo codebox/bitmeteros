@@ -1,5 +1,5 @@
 /*global $,config*/
-/*jslint onevar: true, undef: true, nomen: true, eqeqeq: true, bitwise: true, regexp: true, newcap: true, immed: true, strict: false */
+/*jslint sloppy: true, white: true, plusplus: true, unparam: true */
 
 var BITMETER = {};
 
@@ -77,13 +77,13 @@ BITMETER.model = (function(){
         return Number(get('queryResultsPage'));
     };
     model.setQueryResultsPage = function(queryResultsPage){
-        return set('queryResultsPage', '' + queryResultsPage, false);
+        return set('queryResultsPage', String(queryResultsPage), false);
     };
  
 
  // Monitor peak values
     model.getMonitorPeak = function(filter){
-    	return get('monitorPeak_' + filter) || 0;
+        return get('monitorPeak_' + filter) || 0;
     };
     model.setMonitorPeak = function(filter, peakValue){
         set('monitorPeak_' + filter, peakValue, false);
@@ -94,7 +94,7 @@ BITMETER.model = (function(){
         return get('monitorSpeedInTitle') === 'true';
     };
     model.setMonitorSpeedInTitle = function(showFlag){
-        set('monitorSpeedInTitle', '' + showFlag, true);
+        set('monitorSpeedInTitle', String(showFlag), true);
     };
     
  // Scales for the Monitor and History graphs
@@ -102,35 +102,35 @@ BITMETER.model = (function(){
         return Number(get('monitorScale'));
     };
     model.setMonitorScale = function(scale){
-        set('monitorScale', '' + scale, true);
+        set('monitorScale', String(scale), true);
     };
     
     model.getHistoryMinScale = function(){
         return Number(get('historyMinScale'));
     };
     model.setHistoryMinScale = function(scale){
-        set('historyMinScale', '' + scale, true);
+        set('historyMinScale', String(scale), true);
     };
 
     model.getHistoryHourScale = function(){
         return Number(get('historyHourScale'));
     };
     model.setHistoryHourScale = function(scale){
-        set('historyHourScale', '' + scale, true);
+        set('historyHourScale', String(scale), true);
     };
 
     model.getHistoryDayScale = function(){
         return Number(get('historyDayScale'));
     };
     model.setHistoryDayScale = function(scale){
-        set('historyDayScale', '' + scale, true);
+        set('historyDayScale', String(scale), true);
     };
 
     model.getQueryResultsPerPage = function(){
         return Number(get('queryResultsPerPage'));
     };
     model.setQueryResultsPerPage = function(resultsPerPage){
-        set('queryResultsPerPage', '' + resultsPerPage, true);
+        set('queryResultsPerPage', String(resultsPerPage), true);
     };
     
  // Colours for the plots on graphs
@@ -154,7 +154,7 @@ BITMETER.model = (function(){
         return get('binaryUnits') === 'true';
     };
     model.setBinaryUnits = function(binaryUnits){
-        set('binaryUnits', '' + binaryUnits, true);
+        set('binaryUnits', String(binaryUnits), true);
     };
 
  // Interval, in milliseconds, between updates on the Monitor page
@@ -180,7 +180,7 @@ BITMETER.model = (function(){
     model.setSummaryRefresh = function(summaryRefresh){
         set('summaryRefresh', summaryRefresh, true);
     };
-	
+    
     return model;
 }());
 

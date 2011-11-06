@@ -1,5 +1,5 @@
 #ifdef _WIN32
-	#include <winsock2.h>
+    #include <winsock2.h>
 #endif
 #include <stdlib.h>
 #include <stdio.h>
@@ -18,45 +18,45 @@
 
 struct Filter* parseFilterRow(char* row, char* host){
  // Parse a single row from the response into a Filter struct
-	int id;
-	char filterName[SMALL_BUFSIZE];
-	char filterDesc[SMALL_BUFSIZE];
-	char filterExpr[BUFSIZE];
+    int id;
+    char filterName[SMALL_BUFSIZE];
+    char filterDesc[SMALL_BUFSIZE];
+    char filterExpr[BUFSIZE];
 
  // Row format is: filter:id,name,desc,expr
-	int args = sscanf(row, FILTER_ROW_PREFIX "%d,%[^,],%[^,],%s", &id, filterName, filterDesc, filterExpr);
-	if (args == 4){
-		return allocFilter(id, filterDesc, filterName, filterExpr, host);
-	} else {
-		return NULL;
-	}
+    int args = sscanf(row, FILTER_ROW_PREFIX "%d,%[^,],%[^,],%s", &id, filterName, filterDesc, filterExpr);
+    if (args == 4){
+        return allocFilter(id, filterDesc, filterName, filterExpr, host);
+    } else {
+        return NULL;
+    }
 }
 
 struct Data* parseDataRow(char* row){
  // Parse a single row from the response into a Data struct
-	char addr[MAX_ADDR_LEN];
-	
-	struct Data* data = allocData();
+    char addr[MAX_ADDR_LEN];
+    
+    struct Data* data = allocData();
 
- // Row format is: 	ts,dr,vl,fl
-	int args = sscanf(row, "%d,%d,%llu,%d", (int*)&(data->ts), &(data->dr), &(data->vl), &(data->fl));
-	if (args == 4){
-		return data;
-	} else {
-		freeData(data);
-		return NULL;	
-	}
+ // Row format is:  ts,dr,vl,fl
+    int args = sscanf(row, "%d,%d,%llu,%d", (int*)&(data->ts), &(data->dr), &(data->vl), &(data->fl));
+    if (args == 4){
+        return data;
+    } else {
+        freeData(data);
+        return NULL;    
+    }
 }
 
 time_t getMaxTsForHost(char* alias){
  // Look for rows in the local database for this particular alias, return the ts value of the newest one (or 0)
- 	sqlite3_stmt* stmt;
- 	if (alias == NULL){
- 		stmt = getStmt(SELECT_MAX_TS_FOR_LOCAL);
- 	} else {
- 		stmt = getStmt(SELECT_MAX_TS_FOR_HOST);
-		sqlite3_bind_text(stmt, 1, alias, -1, SQLITE_TRANSIENT);
- 	}
+    sqlite3_stmt* stmt;
+    if (alias == NULL){
+        stmt = getStmt(SELECT_MAX_TS_FOR_LOCAL);
+    } else {
+        stmt = getStmt(SELECT_MAX_TS_FOR_HOST);
+        sqlite3_bind_text(stmt, 1, alias, -1, SQLITE_TRANSIENT);
+    }
     struct Data* result = runSelect(stmt);
     finishedStmt(stmt);
 
@@ -80,47 +80,47 @@ int startsWith(char* txt, char* start){
 }
 
 int getLocalId(struct RemoteFilter* remoteFilter, int filterId){
-	while (remoteFilter != NULL) {
-		if (remoteFilter->remoteId == filterId){
-			return remoteFilter->localId;
-		}
-		remoteFilter = remoteFilter->next;
-	}
-	return 0;
+    while (remoteFilter != NULL) {
+        if (remoteFilter->remoteId == filterId){
+            return remoteFilter->localId;
+        }
+        remoteFilter = remoteFilter->next;
+    }
+    return 0;
 }
 
 int getLocalFilter(struct Filter *remoteFilter){
-	struct Filter* matchingFilter = getFilter(remoteFilter->name, remoteFilter->host);
-	
-	int localFilterId;
-	if (matchingFilter == NULL){
-		localFilterId = addFilter(remoteFilter);
-	} else {
-		localFilterId = matchingFilter->id;
-		freeFilters(matchingFilter);
-	}
-	
-	return localFilterId;
+    struct Filter* matchingFilter = getFilter(remoteFilter->name, remoteFilter->host);
+    
+    int localFilterId;
+    if (matchingFilter == NULL){
+        localFilterId = addFilter(remoteFilter);
+    } else {
+        localFilterId = matchingFilter->id;
+        freeFilters(matchingFilter);
+    }
+    
+    return localFilterId;
 }
 
 struct RemoteFilter* allocRemoteFilter(int localId, int remoteId){
-	struct RemoteFilter* remoteFilter = malloc(sizeof(struct RemoteFilter));
-	
-	remoteFilter->localId  = localId;
-	remoteFilter->remoteId = remoteId;
-	remoteFilter->next = NULL;
-	
-	return remoteFilter;
+    struct RemoteFilter* remoteFilter = malloc(sizeof(struct RemoteFilter));
+    
+    remoteFilter->localId  = localId;
+    remoteFilter->remoteId = remoteId;
+    remoteFilter->next = NULL;
+    
+    return remoteFilter;
 }
 void freeRemoteFilters(struct RemoteFilter* remoteFilter){
-	while(remoteFilter != NULL){
-		struct RemoteFilter* next = remoteFilter->next;
-		free(remoteFilter);
-		remoteFilter = next;
-	}
+    while(remoteFilter != NULL){
+        struct RemoteFilter* next = remoteFilter->next;
+        free(remoteFilter);
+        remoteFilter = next;
+    }
 }
 void appendRemoteFilter(struct RemoteFilter** remoteFilters, struct RemoteFilter* newRemoteFilter){
-	if (*remoteFilters == NULL){
+    if (*remoteFilters == NULL){
         *remoteFilters = newRemoteFilter;
     } else {
         struct RemoteFilter* curr = *remoteFilters;
@@ -128,38 +128,38 @@ void appendRemoteFilter(struct RemoteFilter** remoteFilters, struct RemoteFilter
             curr = curr->next;
         }
         curr->next = newRemoteFilter;
-    }	
+    }   
 }
 
 void removeDataForDeletedFiltersFromThisHost(char* host, struct RemoteFilter* remoteFilter){
-	struct Filter* filtersForHost = readFiltersForHost(host);
-	while(remoteFilter != NULL){
-	 /* Take a copy of all the filters that currently exist for this host in the database
-	 	and blank out the name of each one that came through in the data from the current
-	 	sync. We will use these in a moment when deciding which filters can be deleted 
-	 	because they no longer exist on the remote host. */
-		struct Filter* filter = getFilterFromId(filtersForHost, remoteFilter->localId);		
-		if (filter != NULL){
-			free(filter->name);
-			filter->name = NULL;
-		}
-		remoteFilter = remoteFilter->next;	
-	}
-	struct Filter* filter = filtersForHost;
-	while (filter != NULL) {
-		if (filter->name != NULL){
-			int result = removeFilter(filter->name, host);
-			if (result == FAIL){
-			 // continue with the others if one fails - we can try again on the next sync
-			 	statusMsg("Failed to delete obsolete remote filter '%s' for host %s\n", filter->name, host);
-			}
-		}		
-		filter = filter->next;	
-	}
-	
-	if (filtersForHost != NULL){
-		freeFilters(filtersForHost);
-	}
+    struct Filter* filtersForHost = readFiltersForHost(host);
+    while(remoteFilter != NULL){
+     /* Take a copy of all the filters that currently exist for this host in the database
+        and blank out the name of each one that came through in the data from the current
+        sync. We will use these in a moment when deciding which filters can be deleted 
+        because they no longer exist on the remote host. */
+        struct Filter* filter = getFilterFromId(filtersForHost, remoteFilter->localId);     
+        if (filter != NULL){
+            free(filter->name);
+            filter->name = NULL;
+        }
+        remoteFilter = remoteFilter->next;  
+    }
+    struct Filter* filter = filtersForHost;
+    while (filter != NULL) {
+        if (filter->name != NULL){
+            int result = removeFilter(filter->name, host);
+            if (result == FAIL){
+             // continue with the others if one fails - we can try again on the next sync
+                statusMsg("Failed to delete obsolete remote filter '%s' for host %s\n", filter->name, host);
+            }
+        }       
+        filter = filter->next;  
+    }
+    
+    if (filtersForHost != NULL){
+        freeFilters(filtersForHost);
+    }
 }
 
 int readLine(SOCKET fd, char* line){
@@ -170,7 +170,7 @@ int readLine(SOCKET fd, char* line){
         thisChar = line[lineIndex++];
         if (thisChar== '\n' && prevChar == '\r'){
          // We found an HTTP end-of-line sequence, so the current line has been read. Insert a string terminator and return.
-        	line[lineIndex] = 0;
+            line[lineIndex] = 0;
             return TRUE;
 
         } else {
@@ -187,18 +187,18 @@ int readLine(SOCKET fd, char* line){
     }
     if (rc < 0 && errno > 0){
      // There was a problem reading from the socket
-    	statusMsg("ERR %d %d %s\r\n", rc, errno, strerror(errno));
+        statusMsg("ERR %d %d %s\r\n", rc, errno, strerror(errno));
     }
 
-	return FALSE;
+    return FALSE;
 }
 
 int httpHeadersOk(SOCKET fd){
-	char line[MAX_LINE_LEN + 1];
+    char line[MAX_LINE_LEN + 1];
 
  // First read all the HTTP headers
-	while(readLine(fd, line)) {
-	    if (startsWith(line, "HTTP")) {
+    while(readLine(fd, line)) {
+        if (startsWith(line, "HTTP")) {
          // Check the server returned an HTTP 200 response code
             char responseCode[4];
             sscanf(line, "%*s %s %*s", responseCode);
@@ -207,56 +207,56 @@ int httpHeadersOk(SOCKET fd){
                 return FAIL;
             }
 
-	    } else if (startsWith(line, HEADER_CONTENT_TYPE)) {
+        } else if (startsWith(line, HEADER_CONTENT_TYPE)) {
          // Check that the content-type is what we expect
             if (strstr(line, SYNC_CONTENT_TYPE) == NULL){
                 statusMsg("Bad content type: %s", line);
                 return FAIL;
             }
 
-	    } else if (startsWith(line, HTTP_EOL)) {
+        } else if (startsWith(line, HTTP_EOL)) {
          // Reached the end of the headers
             break;
-	    }
-	}	
+        }
+    }   
 
-	return SUCCESS;
+    return SUCCESS;
 }
 
 int parseData(SOCKET fd, char* alias, int* rowCount){
  // Handle the response that is returned from the host
-	int result = httpHeadersOk(fd);
-	if (result == FAIL){
+    int result = httpHeadersOk(fd);
+    if (result == FAIL){
      // There was a problem with the headers, so stop now
         return FAIL;
-	}
-
-	struct RemoteFilter* remoteFilters = NULL;
-	char line[MAX_LINE_LEN + 1];
-	
-	//TODO check correct version of bm
- // Next read the filters
- 	while(readLine(fd, line)) {
- 		if (startsWith(line, FILTER_ROW_PREFIX)){
-        	struct Filter* filterFromRow = parseFilterRow(line, alias);
-        	int localFilterId = getLocalFilter(filterFromRow);
-        	
-        	struct RemoteFilter* remoteFilter = allocRemoteFilter(localFilterId, filterFromRow->id);
-        	appendRemoteFilter(&remoteFilters, remoteFilter);
-        	freeFilters(filterFromRow);
-        	
-		} else {
-			break;	
-		}
     }
 
-	removeDataForDeletedFiltersFromThisHost(alias, remoteFilters);
+    struct RemoteFilter* remoteFilters = NULL;
+    char line[MAX_LINE_LEN + 1];
+    
+    //TODO check correct version of bm
+ // Next read the filters
+    while(readLine(fd, line)) {
+        if (startsWith(line, FILTER_ROW_PREFIX)){
+            struct Filter* filterFromRow = parseFilterRow(line, alias);
+            int localFilterId = getLocalFilter(filterFromRow);
+            
+            struct RemoteFilter* remoteFilter = allocRemoteFilter(localFilterId, filterFromRow->id);
+            appendRemoteFilter(&remoteFilters, remoteFilter);
+            freeFilters(filterFromRow);
+            
+        } else {
+            break;  
+        }
+    }
+
+    removeDataForDeletedFiltersFromThisHost(alias, remoteFilters);
 
  // Read the data one row at a time
-	struct Data* data;
-	int resultCount = 0, rc;
+    struct Data* data;
+    int resultCount = 0, rc;
 
- 	do {
+    do {
         data = parseDataRow(line);
         if (data == NULL){
             statusMsg("Malformed data returned from host");
@@ -266,11 +266,11 @@ int parseData(SOCKET fd, char* alias, int* rowCount){
 
         int localFilterId = getLocalId(remoteFilters, data->fl);
         if (localFilterId == 0){
-        	statusMsg("Unknown filter id in host data"); //TODO display id
-        	result = FAIL;
-        	break;
+            statusMsg("Unknown filter id in host data"); //TODO display id
+            result = FAIL;
+            break;
         } else {
-        	data->fl = localFilterId;
+            data->fl = localFilterId;
         }
         
         rc = insertData(data);
@@ -282,35 +282,35 @@ int parseData(SOCKET fd, char* alias, int* rowCount){
         freeData(data);
         data = NULL;
         resultCount++;
-	} while(readLine(fd, line));
-	
-	if (data != NULL){
-		freeData(data);	
-	}
-	if (remoteFilters != NULL){
-		freeRemoteFilters(remoteFilters);
-	}
+    } while(readLine(fd, line));
+    
+    if (data != NULL){
+        freeData(data); 
+    }
+    if (remoteFilters != NULL){
+        freeRemoteFilters(remoteFilters);
+    }
 
-	*rowCount = resultCount;
+    *rowCount = resultCount;
 
-	return result;
+    return result;
 }
 
 int sendRequest(SOCKET fd, time_t ts, char* host, int port){
  // Send an HTTP request to the specified host/port asking for any data newer than 'ts'
-	char buffer[MAX_REQUEST_LEN];
+    char buffer[MAX_REQUEST_LEN];
     sprintf(buffer, "GET /sync?ts=%d HTTP/1.1" HTTP_EOL, (int)ts);
 
     SEND(fd, buffer, strlen(buffer), 0);
 
-	if (port == DEFAULT_HTTP_PORT){
-		sprintf(buffer, "Host: %s", host);
-	} else {
-		sprintf(buffer, "Host: %s:%d", host, port);
-	}
-	SEND(fd, buffer, strlen(buffer), 0);
+    if (port == DEFAULT_HTTP_PORT){
+        sprintf(buffer, "Host: %s", host);
+    } else {
+        sprintf(buffer, "Host: %s:%d", host, port);
+    }
+    SEND(fd, buffer, strlen(buffer), 0);
     
-	sprintf(buffer, HTTP_EOL HTTP_EOL);
+    sprintf(buffer, HTTP_EOL HTTP_EOL);
     SEND(fd, buffer, strlen(buffer), 0);
 
     return SUCCESS;

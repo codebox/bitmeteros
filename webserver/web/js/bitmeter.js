@@ -1,5 +1,5 @@
 /*global $,BITMETER,window,config*/
-/*jslint onevar: true, undef: true, nomen: true, eqeqeq: true, bitwise: true, regexp: true, newcap: true, immed: true, strict: false */
+/*jslint sloppy: true, white: true, plusplus: true, unparam: true */
 
 $.ajaxSetup({
     cache: false,
@@ -24,7 +24,7 @@ $.ajaxSetup({
         }
         BITMETER.errorDialog.show(msg);
     },
-    dataFilter : function (data, dataType) {
+    dataFilter : function (data) {
         if (!data) {
          // If the server goes down we get an empty 'data' parameter
             throw "No data returned";
@@ -121,7 +121,10 @@ BITMETER.infoFloat = (function() {
     };
 
     float.getBox = function(){
-        return guiBox ? guiBox : (guiBox = $('#floater'));
+        if (!guiBox){
+            guiBox = $('#floater');
+        }
+        return guiBox;
     };
 
     return float;
@@ -187,7 +190,7 @@ BITMETER.zeroPad = function(val){
     } else if (val < 10) {
         return '0' + val;
     } else {
-        return '' + val;
+        return String(val);
     }
 };
 
@@ -218,15 +221,15 @@ BITMETER.addFiltersToRequest = function(req){
 };
 
 BITMETER.isFilterActive = function(id){
-	return ($.inArray('' + id, BITMETER.model.getFilters().split(',')) >= 0);
+    return ($.inArray(String(id), BITMETER.model.getFilters().split(',')) >= 0);
 };
 
 BITMETER.forEachFilter = function(fn, activeOnly) {
-	$.each(config.filters, function(i, filterObj){
-		if (!activeOnly || BITMETER.isFilterActive(filterObj.id)){
-			return fn(filterObj);	
-		}
-	});
+    $.each(config.filters, function(i, filterObj){
+        if (!activeOnly || BITMETER.isFilterActive(filterObj.id)){
+            return fn(filterObj);   
+        }
+    });
 };
 
 BITMETER.confirmDialog = (function(){
@@ -514,6 +517,7 @@ BITMETER.makeYAxisIntervalFn = function(targetTickCount){
 };
 
 $(function(){
+	var datePickerFormat, serverNameSuffix;
  // Set up the event handlers for the tabs across the top of the screen
     $("#tabs").tabs({
             show: function(event, ui) {
@@ -550,15 +554,15 @@ $(function(){
 
  // If the host serving this page has a name then display it in the appropriate places
     if (config.serverName) {
-        var serverNameSuffix = ' - ' + config.serverName;
+        serverNameSuffix = ' - ' + config.serverName;
         $('h1').append(serverNameSuffix);
         window.document.title += serverNameSuffix;
     }
 
-	BITMETER.restoreDocTitle = (function(title){
-		 // Create a function that knows what the original title of the page was, and will restore it when called
-		    return function(){window.document.title = title;};
-		}(window.document.title));
+    BITMETER.restoreDocTitle = (function(title){
+         // Create a function that knows what the original title of the page was, and will restore it when called
+            return function(){window.document.title = title;};
+        }(window.document.title));
 
  // External links open new windows
     $("a[href^='http'], #donateForm, .popup").attr('target','_blank');
@@ -566,7 +570,7 @@ $(function(){
     $("noscript").hide(); // Needed for IE8
     $("#errorDialog, #dialogModalBackground").hide();
     
-    var datePickerFormat = $('#createAlertStartFixedDate').datepicker("option", "dateFormat");
+    datePickerFormat = $('#createAlertStartFixedDate').datepicker("option", "dateFormat");
     $('#createAlertStartDetailsFormat').html("(" + datePickerFormat + ")");
     
     //$.getJSON("http://updates.codebox.org.uk/version/bitmeteros/version2.js?callback=?", BITMETER.showVersion);
@@ -605,7 +609,7 @@ BITMETER.setAdminOnlyHandlers = function(){
  // Disable admin functions if this client is not allowed to perform them (don't worry, they get blocked server-side as well)
     if (!config.allowAdmin) {
         $('.adminOnly').addClass('forbidden');
-        $('a.adminOnly, button.adminOnly').unbind('click').click(function(e){
+        $('a.adminOnly, button.adminOnly').unbind('click').click(function(){
             BITMETER.errorDialog.show('This feature cannot be used when accessing the web interface remotely.<br><br> ' +
                 'To use this feature you must either access the interface locally (using <em>localhost</em> ' +
                 'as the host name in the url), or change the access permissions to allow remote ' +

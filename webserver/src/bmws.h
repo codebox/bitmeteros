@@ -1,6 +1,6 @@
 #include "common.h"
 #ifdef _WIN32
-	#include <winsock2.h>
+    #include <winsock2.h>
 #endif
 #ifndef BMWS_H
 #define BMWS_H
@@ -36,7 +36,7 @@ struct HttpResponse{
 };
 
 struct Request{
-	char* method;
+    char* method;
     char* path;
     struct NameValuePair* params;
     struct NameValuePair* headers;
@@ -45,19 +45,19 @@ struct Request* parseRequest(char* requestTxt);
 void freeRequest(struct Request* request);
 
 struct MimeType{
-	char* fileExt;
-	char* contentType;
-	int binary;
+    char* fileExt;
+    char* contentType;
+    int binary;
 };
 
 #ifdef _WIN32
-	void initMutex();
-	void waitForMutex();
-	void releaseMutex();
-	void setupWeb();
-	void shutdownWeb();
-	void processWeb();
-	#define WEB_SERVICE_NAME "BitMeterWebService"
+    void initMutex();
+    void waitForMutex();
+    void releaseMutex();
+    void setupWeb();
+    void shutdownWeb();
+    void processWeb();
+    #define WEB_SERVICE_NAME "BitMeterWebService"
 #endif
 
 void processMonitorRequest(SOCKET fd, struct Request* req);
@@ -94,35 +94,35 @@ void processRequest(SOCKET fd, char* buffer, int allowAdmin);
 void getWebRoot(char* path);
 
 #ifdef UNIT_TESTING
-	#define WRITE_HEADERS_SERVER_ERROR mockWriteHeadersServerError
-	#define WRITE_HEADERS_FORBIDDEN mockWriteHeadersForbidden
-	#define WRITE_HEADERS_OK mockWriteHeadersOk
-	#define WRITE_TEXT mockWriteText
-	#define WRITE_NUM_VALUE_TO_JSON mockWriteNumValueToJson
-	#define WRITE_TEXT_VALUE_TO_JSON mockWriteTextValueToJson
-	#define WRITE_TEXT_ARRAY_TO_JSON mockWriteTextArrayToJson
-	#define WRITE_HEADER mockWriteHeader
-	#define WRITE_END_OF_HEADERS mockWriteEndOfHeaders
-	#define WRITE_DATA_TO_JSON mockWriteDataToJson
-	#define FREAD mockFread
-	#define WRITE_DATA mockWriteData
-	#define WRITE_FILTER_DATA mockWriteFilterData
-	#define WRITE_SYNC_DATA mockWriteSyncData
+    #define WRITE_HEADERS_SERVER_ERROR mockWriteHeadersServerError
+    #define WRITE_HEADERS_FORBIDDEN mockWriteHeadersForbidden
+    #define WRITE_HEADERS_OK mockWriteHeadersOk
+    #define WRITE_TEXT mockWriteText
+    #define WRITE_NUM_VALUE_TO_JSON mockWriteNumValueToJson
+    #define WRITE_TEXT_VALUE_TO_JSON mockWriteTextValueToJson
+    #define WRITE_TEXT_ARRAY_TO_JSON mockWriteTextArrayToJson
+    #define WRITE_HEADER mockWriteHeader
+    #define WRITE_END_OF_HEADERS mockWriteEndOfHeaders
+    #define WRITE_DATA_TO_JSON mockWriteDataToJson
+    #define FREAD mockFread
+    #define WRITE_DATA mockWriteData
+    #define WRITE_FILTER_DATA mockWriteFilterData
+    #define WRITE_SYNC_DATA mockWriteSyncData
 #else
-	#define WRITE_HEADERS_SERVER_ERROR writeHeadersServerError
-	#define WRITE_HEADERS_FORBIDDEN writeHeadersForbidden
-	#define WRITE_HEADERS_OK writeHeadersOk
-	#define WRITE_TEXT writeText
-	#define WRITE_NUM_VALUE_TO_JSON writeNumValueToJson
-	#define WRITE_TEXT_VALUE_TO_JSON writeTextValueToJson
-	#define WRITE_TEXT_ARRAY_TO_JSON writeTextArrayToJson
-	#define WRITE_HEADER writeHeader
-	#define WRITE_END_OF_HEADERS writeEndOfHeaders
-	#define WRITE_DATA_TO_JSON writeDataToJson
-	#define FREAD fread
-	#define WRITE_DATA writeData
-	#define WRITE_FILTER_DATA writeFilterData
-	#define WRITE_SYNC_DATA writeSyncData
+    #define WRITE_HEADERS_SERVER_ERROR writeHeadersServerError
+    #define WRITE_HEADERS_FORBIDDEN writeHeadersForbidden
+    #define WRITE_HEADERS_OK writeHeadersOk
+    #define WRITE_TEXT writeText
+    #define WRITE_NUM_VALUE_TO_JSON writeNumValueToJson
+    #define WRITE_TEXT_VALUE_TO_JSON writeTextValueToJson
+    #define WRITE_TEXT_ARRAY_TO_JSON writeTextArrayToJson
+    #define WRITE_HEADER writeHeader
+    #define WRITE_END_OF_HEADERS writeEndOfHeaders
+    #define WRITE_DATA_TO_JSON writeDataToJson
+    #define FREAD fread
+    #define WRITE_DATA writeData
+    #define WRITE_FILTER_DATA writeFilterData
+    #define WRITE_SYNC_DATA writeSyncData
 #endif
 
 #endif

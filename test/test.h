@@ -42,8 +42,8 @@ int mockPcap_setnonblock(pcap_t* h, int i, char * c);
 int mockPcap_compile(pcap_t *h, struct bpf_program *p, const char *c, int i, bpf_u_int32 b);
 int mockPcap_setfilter(pcap_t *h, struct bpf_program *p);
 void mockPcap_freecode(struct bpf_program *p);
-#ifdef STATS_MODE	
-	int mockPcap_setmode(pcap_t *h, int mode);
+#ifdef STATS_MODE   
+    int mockPcap_setmode(pcap_t *h, int mode);
 #endif
 int mockPcap_close(pcap_t *h);
 int mockPcap_dispatch(pcap_t *h, int i, pcap_handler fn, u_char *u);
@@ -101,6 +101,7 @@ void testAppendFilter(void **state);
 void testGetTotalForFilter(void **state);
 void testGetMaxFilterDescWidth(void **state);
 void testGetMaxFilterNameWidth(void **state);
+void testFilterNameIsValid(void **state);
 
 // adapter.c
 void testAllocAdapter(void **state);

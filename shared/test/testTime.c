@@ -13,22 +13,22 @@ Contains unit tests for the 'time' module.
 */
 
 void makeTm(struct tm *t, int year, int month, int day, int hour, int min, int sec){
-	t->tm_sec  = sec;
-	t->tm_min  = min;
-	t->tm_hour = hour;
-	t->tm_mday = day;
-	t->tm_mon  = month - 1;
-	t->tm_year = year - 1900;
-	t->tm_isdst = -1;
+    t->tm_sec  = sec;
+    t->tm_min  = min;
+    t->tm_hour = hour;
+    t->tm_mday = day;
+    t->tm_mon  = month - 1;
+    t->tm_year = year - 1900;
+    t->tm_isdst = -1;
 }
 void testTimeGm(void** state){
-	struct tm t;
-	
-	makeTm(&t, 2010, 1, 1, 0, 0, 0);
-	assert_int_equal(1262304000, timegm(&t));
+    struct tm t;
+    
+    makeTm(&t, 2010, 1, 1, 0, 0, 0);
+    assert_int_equal(1262304000, timegm(&t));
 
-	makeTm(&t, 2010, 7, 1, 0, 0, 0);
-	assert_int_equal(1277942400, timegm(&t));
+    makeTm(&t, 2010, 7, 1, 0, 0, 0);
+    assert_int_equal(1277942400, timegm(&t));
 }
 
 void testGetCurrentYearForTs(void** state){
@@ -104,45 +104,45 @@ void testAddToDate(void** state){
 }
 
 void testNormaliseTm(void** state){
-	struct tm t;
-	
+    struct tm t;
+    
  // Month overflows
-	makeTm(&t, 2011, 13, 30, 10, 0, 0);
-	assert_int_equal(13   - 1, t.tm_mon);
-	assert_int_equal(2011 - 1900, t.tm_year);
-	normaliseTm(&t);
-	assert_int_equal(1    - 1, t.tm_mon);
-	assert_int_equal(2012 - 1900, t.tm_year);
-	
+    makeTm(&t, 2011, 13, 30, 10, 0, 0);
+    assert_int_equal(13   - 1, t.tm_mon);
+    assert_int_equal(2011 - 1900, t.tm_year);
+    normaliseTm(&t);
+    assert_int_equal(1    - 1, t.tm_mon);
+    assert_int_equal(2012 - 1900, t.tm_year);
+    
  // Day overflows
-	makeTm(&t, 2011, 10, 32, 10, 0, 0);
-	assert_int_equal(32,     t.tm_mday);
-	assert_int_equal(10 - 1, t.tm_mon);
-	normaliseTm(&t);
-	assert_int_equal(1,     t.tm_mday);
-	assert_int_equal(11 - 1, t.tm_mon);
-	
+    makeTm(&t, 2011, 10, 32, 10, 0, 0);
+    assert_int_equal(32,     t.tm_mday);
+    assert_int_equal(10 - 1, t.tm_mon);
+    normaliseTm(&t);
+    assert_int_equal(1,     t.tm_mday);
+    assert_int_equal(11 - 1, t.tm_mon);
+    
  // Hour overflows
-	makeTm(&t, 2011, 10, 12, 24, 0, 0);
-	assert_int_equal(24, t.tm_hour);
-	assert_int_equal(12, t.tm_mday);
-	normaliseTm(&t);
-	assert_int_equal(0,  t.tm_hour);
-	assert_int_equal(13, t.tm_mday);
-	
+    makeTm(&t, 2011, 10, 12, 24, 0, 0);
+    assert_int_equal(24, t.tm_hour);
+    assert_int_equal(12, t.tm_mday);
+    normaliseTm(&t);
+    assert_int_equal(0,  t.tm_hour);
+    assert_int_equal(13, t.tm_mday);
+    
  // Minute overflows
-	makeTm(&t, 2011, 10, 12, 22, 60, 0);
-	assert_int_equal(22, t.tm_hour);
-	assert_int_equal(60, t.tm_min);
-	normaliseTm(&t);
-	assert_int_equal(23, t.tm_hour);
-	assert_int_equal(0,  t.tm_min);
+    makeTm(&t, 2011, 10, 12, 22, 60, 0);
+    assert_int_equal(22, t.tm_hour);
+    assert_int_equal(60, t.tm_min);
+    normaliseTm(&t);
+    assert_int_equal(23, t.tm_hour);
+    assert_int_equal(0,  t.tm_min);
 
  // Second overflows
-	makeTm(&t, 2011, 10, 12, 22, 30, 60);
-	assert_int_equal(60, t.tm_sec);
-	assert_int_equal(30, t.tm_min);
-	normaliseTm(&t);
-	assert_int_equal(0,  t.tm_sec);
-	assert_int_equal(31, t.tm_min);
+    makeTm(&t, 2011, 10, 12, 22, 30, 60);
+    assert_int_equal(60, t.tm_sec);
+    assert_int_equal(30, t.tm_min);
+    normaliseTm(&t);
+    assert_int_equal(0,  t.tm_sec);
+    assert_int_equal(31, t.tm_min);
 }

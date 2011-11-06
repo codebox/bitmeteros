@@ -11,9 +11,9 @@ Help text is read from the helpText.c file which is generated during the build p
 extern char* helpTxt;
 
 void doHelp(){
-	printf(helpTxt);
+    printf(helpTxt);
 }
 
 void doVersion(){
-	printf("%s v%s\n", SYNC_NAME, VERSION);
+    printf("%s v%s\n", SYNC_NAME, VERSION);
 }

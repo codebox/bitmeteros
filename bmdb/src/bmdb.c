@@ -54,33 +54,33 @@ struct Action actions[] = {
 };
 
 int main(int argc, char **argv){
-	setTextColour(TEXT_BLUE);
-    printf(COPYRIGHT);
-    setTextColour(TEXT_DEFAULT);
+    openDb();
+    showCopyright();
     setLogLevel(LOG_INFO);
-
-	if (argc == 1){
+    
+    int status;
+    
+    if (argc == 1){
      // If the utility is called without an action argument then display the list of available actions
         dumpActions();
-        return SUCCESS;
+        status = SUCCESS;
 
-	} else {
+    } else {
      // Find the Action struct that matches the command-line argument
         char* name = argv[1];
         struct Action* action = getActionForName(name);
         if (action == NULL){
          // Never heard of it
-            printf(ERR_BAD_ACTION "\n");
-            return FAIL;
+            PRINT(COLOUR_RED, ERR_BAD_ACTION "\n");
+            status = FAIL;
 
         } else {
          // We found a match
-            openDb();
-            int status = (*action->fn)(stdout, argc-2, argv+2);
-            closeDb();
-            return status;
+            status = (*action->fn)(stdout, argc-2, argv+2);
         }
-	}
+    }
+    closeDb();
+    return status;
 }
 
 static struct Action* getActionForName(char* name){
@@ -88,16 +88,16 @@ static struct Action* getActionForName(char* name){
     struct Action* namedAction = NULL;
     struct Action* action = actions;
 
-	while(action->name != NULL){
+    while(action->name != NULL){
         if (strcmp(name, action->name) == 0){
          // Found it
             namedAction = action;
             break;
         }
         action++;
-	}
+    }
 
-	return namedAction;
+    return namedAction;
 }
 
 static int doPurge(){
@@ -107,49 +107,49 @@ static int doPurge(){
     int status = SUCCESS;
     int c = getchar();
     if (c == 'y' || c == 'Y'){
-    	status = executeSql("DELETE FROM data", NULL);
-    	if (status == SUCCESS){
-    		printf("Data deleted.");
-    	} else {
-    		printf("Unable to delete data.");
-    	}
+        status = executeSql("DELETE FROM data", NULL);
+        if (status == SUCCESS){
+            printf("Data deleted.");
+        } else {
+            PRINT(COLOUR_RED, "Unable to delete data.");
+        }
     } else {
-    	printf("Action aborted, no data deleted.");
+        printf("Action aborted, no data deleted.");
     }
 
-	return status;
+    return status;
 }
 
 static int doVacuum(){
  // Frees any unused space occupied by the database file
- 	int dbFileSize1 = getDbFileSize();
+    int dbFileSize1 = getDbFileSize();
     printf("Database is currently %dk in size, vacuuming...", dbFileSize1/1024);
-	int status = executeSql("VACUUM", NULL);
-	printf("finished.\n");
-	
-	int dbFileSize2 = getDbFileSize();
-	int diff = dbFileSize1 - dbFileSize2;
+    int status = executeSql("VACUUM", NULL);
+    printf("finished.\n");
+    
+    int dbFileSize2 = getDbFileSize();
+    int diff = dbFileSize1 - dbFileSize2;
 
-	if (diff == 0){
-		printf("The database file could not be compressed any further - no space was saved.\n");	
-	} else {
-		printf("Compressed database to %dk, saving ", dbFileSize2/1024);
-		if (diff < 1024) {
-			printf("%d bytes\n", diff);			
-		} else {
-			printf("%dk\n", diff/1024);
-		}
-	}
+    if (diff == 0){
+        printf("The database file could not be compressed any further - no space was saved.\n");    
+    } else {
+        printf("Compressed database to %dk, saving ", dbFileSize2/1024);
+        if (diff < 1024) {
+            printf("%d bytes\n", diff);         
+        } else {
+            printf("%dk\n", diff/1024);
+        }
+    }
 
-	return status;
+    return status;
 }
 
 static int getDbFileSize(){
-	char dbPath[MAX_PATH_LEN];
-	getDbPath(dbPath);
-	
-	FILE* dbFile = fopen(dbPath, "r");
-	int fd = fileno(dbFile);
+    char dbPath[MAX_PATH_LEN];
+    getDbPath(dbPath);
+    
+    FILE* dbFile = fopen(dbPath, "r");
+    int fd = fileno(dbFile);
     struct stat buf;
     fstat(fd, &buf);
     int size = buf.st_size;
@@ -162,7 +162,7 @@ static int setAccessLevel(int level, char* successMsg, char* failMsg){
     int currentAccessLevel = getConfigInt(CONFIG_WEB_ALLOW_REMOTE, 0);
     int status;
     if (currentAccessLevel == level){
-        printf(failMsg);
+        PRINT(COLOUR_RED, failMsg);
         status = FAIL;
     } else {
         setConfigIntValue(CONFIG_WEB_ALLOW_REMOTE, level);
@@ -175,41 +175,39 @@ static int setAccessLevel(int level, char* successMsg, char* failMsg){
 static int doWebLocal(FILE* file, int argc, char** argv){
  // Disallow all remote access to the web interface
     return setAccessLevel(ALLOW_LOCAL_CONNECT_ONLY,
-	    "Remote access to the web interface will be disabled next time the bmws utility is started.",
-	    "Remote access to the web interface is already disabled\n");
+        "Remote access to the web interface will be disabled next time the bmws utility is started.",
+        "Remote access to the web interface is already disabled\n");
 }
 
 static int doWebRemote(FILE* file, int argc, char** argv){
  // Allow non-administrative remote access to the web interface
     return setAccessLevel(ALLOW_REMOTE_CONNECT, 
-	    "Non-administrative remote access to the web interface will be enabled next time the bmws utility is started.",
-	    "Non-administrative remote access to the web interface is already enabled\n");
+        "Non-administrative remote access to the web interface will be enabled next time the bmws utility is started.",
+        "Non-administrative remote access to the web interface is already enabled\n");
 }
 
 static int doWebRemoteAdmin(FILE* file, int argc, char** argv){
  // Allow administrative remote access to the web interface
     return setAccessLevel(ALLOW_REMOTE_ADMIN,
-    	"Administrative remote access to the web interface will be enabled next time the bmws utility is started.",
-    	"Administrative remote access to the web interface is already enabled\n");
+        "Administrative remote access to the web interface will be enabled next time the bmws utility is started.",
+        "Administrative remote access to the web interface is already enabled\n");
 }
 
 extern char* helpTxt;
 static int doHelp(){
-	printf(helpTxt);
-	return SUCCESS;
+    printf(helpTxt);
+    return SUCCESS;
 }
 
 static int dumpActions(){
  // Display a list of the available actions
     printf("The following actions are available:" EOL EOL);
-	struct Action* action = actions;
-	while(action->name != NULL){
-		setTextColour(TEXT_YELLOW);
-		printf(" %-14s", action->name);
-		setTextColour(TEXT_DEFAULT);
-        printf(" - %s\n", action->description);
+    struct Action* action = actions;
+    while(action->name != NULL){
+        PRINT(BMDB_COL_1, " %-14s", action->name);
+        PRINT(BMDB_COL_2, " - %s\n", action->description);
         action++;
-	}
+    }
 
-	return SUCCESS;
+    return SUCCESS;
 }

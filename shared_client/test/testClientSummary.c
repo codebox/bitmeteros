@@ -138,9 +138,9 @@ void testSummaryMultipleEntries(void** state) {
     addDbRow(makeTsUtc("2008-12-31 10:00:00"), 3600, 1, FILTER);
     addDbRow(makeTsUtc("2007-01-01 11:00:00"), 3600, 1, FILTER3);
     
-	struct Summary summary;
-	char* hosts[2] = {"host1", "host2"};
-	summary = getSummaryValues();
+    struct Summary summary;
+    char* hosts[2] = {"host1", "host2"};
+    summary = getSummaryValues();
     checkSummaryMain(summary, makeTsUtc("2007-01-01 11:00:00"), makeTsUtc("2009-03-02 10:00:00"), 2, &hosts);
     checkSummaryFilter(summary, FILTER,  4, 5, 5, 6);
     checkSummaryFilter(summary, FILTER2, 2, 2, 4, 4);
@@ -212,7 +212,7 @@ static void checkSummaryMain(struct Summary summary, time_t tsMin, time_t tsMax,
 }
 
 static void checkSummaryFilter(struct Summary summary, int fl, BW_INT todayVal, 
-		BW_INT monthVal, BW_INT yearVal, BW_INT totalVal){
+        BW_INT monthVal, BW_INT yearVal, BW_INT totalVal){
  // Helper function used to verify the contents of a Summary struct
     assert_int_equal(todayVal, getValueForFilterId(summary.today, fl));
     assert_int_equal(monthVal, getValueForFilterId(summary.month, fl));

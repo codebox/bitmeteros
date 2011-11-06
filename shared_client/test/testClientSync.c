@@ -21,7 +21,7 @@ void testSyncNoMatchingData(void** state) {
     addFilterRow(FILTER,  "1", "1", "", NULL);
     addFilterRow(FILTER2, "2", "2", "", NULL);
     addFilterRow(FILTER3, "3", "3", "", "host");
-	
+    
  // Check that we behave correctly when the data table contains rows but none meet our criterion
     addDbRow(0, 1, 123, FILTER);
     addDbRow(1, 1, 123, FILTER2);
@@ -46,7 +46,7 @@ void testSyncDataOnAndAfterTs(void** state) {
     addFilterRow(FILTER2, "2", "2", "", NULL);
     addFilterRow(FILTER3, "3", "3", "", "host");
 
-	struct Data* first;
+    struct Data* first;
     struct Data* data = first = getSyncValues(9);
     checkData(data, 10, 1, 1, FILTER2);
 

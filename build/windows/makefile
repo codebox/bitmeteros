@@ -278,7 +278,7 @@ bmwsExe.res: $(RESOURCE_FILES)\bmwsExe.rc $(SHARED_SRC)\common.h
 
 #### bmws service
 bmwsService: bmwsWin32Service.o $(OBJS_BMWS) bmwsService.res $(SHARED_SRC)\common.h
-	$(CC)    bmwsWin32Service.o $(OBJS_BMWS) bmwsService.res -o $(EXE_WEB_SRV) $(LIBS)
+	$(CC)	bmwsWin32Service.o $(OBJS_BMWS) bmwsService.res -o $(EXE_WEB_SRV) $(LIBS)
 
 bmwsService.res: $(RESOURCE_FILES)\bmwsService.rc $(SHARED_SRC)\common.h
 	-windres $(RESOURCE_FILES)\bmwsService.rc $(INCLUDE_DIRS) -O coff -o bmwsService.res

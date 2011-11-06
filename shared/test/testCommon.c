@@ -133,46 +133,46 @@ void testStrToLong(void **state){
 }
 
 static void checkReplace(char* expected, char* src, char* target, char* replacement){
-	char* result = replace(src, target, replacement);
-	if (result != NULL){
-		assert_string_equal(expected, result);
-		free(result);	
-	} else {
-		assert_true(expected == NULL);	
-	}
+    char* result = replace(src, target, replacement);
+    if (result != NULL){
+        assert_string_equal(expected, result);
+        free(result);   
+    } else {
+        assert_true(expected == NULL);  
+    }
 }
 void testReplace(void** state){
-	checkReplace(NULL,  NULL,  "a",  "b");
-	
-	checkReplace("abc", "abc", NULL, "x");
-	
-	checkReplace("bc", "abc", "a",  NULL);
-	checkReplace("ac", "abc", "b",  NULL);
-	checkReplace("ab", "abc", "c",  NULL);
-	
-	checkReplace("x",   "abc", "abc",  "x");
-	checkReplace("abc", "abc", "X",  "b");
-	checkReplace("aabbccdd", "abc", "abc",  "aabbccdd");
+    checkReplace(NULL,  NULL,  "a",  "b");
+    
+    checkReplace("abc", "abc", NULL, "x");
+    
+    checkReplace("bc", "abc", "a",  NULL);
+    checkReplace("ac", "abc", "b",  NULL);
+    checkReplace("ab", "abc", "c",  NULL);
+    
+    checkReplace("x",   "abc", "abc",  "x");
+    checkReplace("abc", "abc", "X",  "b");
+    checkReplace("aabbccdd", "abc", "abc",  "aabbccdd");
 }
 
 void testStrAppend(void** state){
-	char* result;
-	
-	result = strAppend("text", NULL);
-	assert_string_equal("text", result);
-	free(result);
-	
-	result = strAppend("1", "2", NULL);
-	assert_string_equal("12", result);
-	free(result);
-	
-	result = strAppend("123", "", "4", "56789", NULL);
-	assert_string_equal("123456789", result);
-	free(result);
+    char* result;
+    
+    result = strAppend("text", NULL);
+    assert_string_equal("text", result);
+    free(result);
+    
+    result = strAppend("1", "2", NULL);
+    assert_string_equal("12", result);
+    free(result);
+    
+    result = strAppend("123", "", "4", "56789", NULL);
+    assert_string_equal("123456789", result);
+    free(result);
 
-	char* txt = strdup("sat");
-	result = strAppend("", "the cat ", "", txt, " on the mat", NULL);
-	free(txt);
-	assert_string_equal("the cat sat on the mat", result);
-	free(result);
+    char* txt = strdup("sat");
+    result = strAppend("", "the cat ", "", txt, " on the mat", NULL);
+    free(txt);
+    assert_string_equal("the cat sat on the mat", result);
+    free(result);
 }

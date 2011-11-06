@@ -2,38 +2,38 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML Basic 1.1//EN"
     "http://www.w3.org/TR/xhtml-basic/xhtml-basic11.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
-	<head>
-		<title>BitMeter OS - Mobile Interface</title>
-		<link type="text/css" href="/m/css/bitmeter_mobile.css" rel="stylesheet" />
-	</head>
-	<body>
-		<h1>About</h1>
-		<p>
-			This is the mobile interface for <strong>BitMeter OS v<!--[version]--></strong>. To access the
-			full interface <a href="/">click here</a>.
-		</p>
-		<p>
-			Copyright &#169; 2010 Rob Dawson
-		</p>
-		<p>
-			Licensed under the <a href="http://www.gnu.org/licenses/gpl.txt">GNU General Public License</a>
-		</p>
+    <head>
+        <title>BitMeter OS - Mobile Interface</title>
+        <link type="text/css" href="/m/css/bitmeter_mobile.css" rel="stylesheet" />
+    </head>
+    <body>
+        <h1>About</h1>
+        <p>
+            This is the mobile interface for <strong>BitMeter OS v<!--[version]--></strong>. To access the
+            full interface <a href="/">click here</a>.
+        </p>
+        <p>
+            Copyright &#169; 2010 Rob Dawson
+        </p>
+        <p>
+            Licensed under the <a href="http://www.gnu.org/licenses/gpl.txt">GNU General Public License</a>
+        </p>
 
-		<p>
-			BitMeterOS is free software: you can redistribute it and/or modify
-			it under the terms of the GNU General Public License as published by
-			the Free Software Foundation, either version 3 of the License, or
-			(at your option) any later version.
-		</p>
+        <p>
+            BitMeterOS is free software: you can redistribute it and/or modify
+            it under the terms of the GNU General Public License as published by
+            the Free Software Foundation, either version 3 of the License, or
+            (at your option) any later version.
+        </p>
 
-		<p>
-			BitMeterOS is distributed in the hope that it will be useful,
-			but WITHOUT ANY WARRANTY; without even the implied warranty of
-			MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-			GNU General Public License for more details.
-		</p>
-		<p>
-			<a href="/m">Home</a>
-		</p>
-	</body>
+        <p>
+            BitMeterOS is distributed in the hope that it will be useful,
+            but WITHOUT ANY WARRANTY; without even the implied warranty of
+            MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+            GNU General Public License for more details.
+        </p>
+        <p>
+            <a href="/m">Home</a>
+        </p>
+    </body>
 </html>

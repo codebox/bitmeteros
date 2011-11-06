@@ -45,7 +45,7 @@ void testQueryDataInRangeHours(void** status) {
     addDbRow(makeTsUtc("2009-03-03 11:00:00"), 3600, 3, FILTER);  // covers 10:00-11:00 so in range
     addDbRow(makeTsUtc("2009-03-03 12:00:00"), 3600, 4, FILTER);  // covers 11:00-12:00 so out of range
 
-	struct Data* first;
+    struct Data* first;
     struct Data* data = first = getQueryValues(makeTsUtc("2009-03-03 08:00:00"), makeTsUtc("2009-03-03 11:00:00"), QUERY_GROUP_HOURS, FILTER);
 
     checkData(data, makeTsUtc("2009-03-03 09:00:00"), 3600, 2, FILTER);
@@ -74,7 +74,7 @@ void testQueryDataInRangeDays(void** status) {
 
     addDbRow(makeTsUtc("2009-03-05 01:00:00"), 3600, 8, FILTER);  // out of range
 
-	struct Data* first;
+    struct Data* first;
     struct Data* data = first = getQueryValues(makeTsUtc("2009-03-03 00:00:00"), makeTsUtc("2009-03-05 00:00:00"), QUERY_GROUP_DAYS, FILTER);
 
     checkData(data, makeTsUtc("2009-03-04 00:00:00"), 3600 * 24, 9, FILTER); // data for the 3rd, remember ts is the END of the interval
@@ -104,7 +104,7 @@ void testQueryDataInRangeMonths(void** status) {
     addDbRow(makeTsUtc("2009-05-01 01:00:00"), 3600, 8, FILTER);  // out of range
 
  // Query for March and April...
-	struct Data* first;
+    struct Data* first;
     struct Data* data = first = getQueryValues(makeTsUtc("2009-03-01 00:00:00"), makeTsUtc("2009-05-01 00:00:00"), QUERY_GROUP_MONTHS, FILTER);
 
     checkData(data, makeTsUtc("2009-04-01 00:00:00"), (31 * 24) * 3600, 9, FILTER); // data for March, remember ts is the END of the interval
@@ -134,7 +134,7 @@ void testQueryDataInRangeYears(void** status) {
     addDbRow(makeTsUtc("2009-01-01 01:00:00"), 3600, 8, FILTER2); // out of range and wrong filter
 
  // Query for 2007 and 2008
-	struct Data* first;
+    struct Data* first;
     struct Data* data = first = getQueryValues(makeTsUtc("2007-01-01 00:00:00"), makeTsUtc("2009-01-01 00:00:00"), QUERY_GROUP_YEARS, FILTER);
 
     checkData(data, makeTsUtc("2008-01-01 00:00:00"), 365 * 3600 * 24, 9, FILTER); // data for 2007, remember ts is the END of the interval
@@ -155,7 +155,7 @@ void testQueryDataNarrowValueRangeSingleResult(void** status) {
     addDbRow(makeTsUtc("2008-03-31 23:00:00"), 3600, 2, FILTER2);
     addDbRow(makeTsUtc("2008-04-01 00:00:00"), 3600, 3, FILTER);
 
-	struct Data* first;
+    struct Data* first;
     struct Data* data = first = getQueryValues(makeTsUtc("2008-01-01 00:00:00"), makeTsUtc("2009-01-01 00:00:00"), QUERY_GROUP_YEARS, FILTER);
 
     checkData(data, makeTsUtc("2008-04-01 00:00:00"), ((29 + 31) * 24) * 3600, 6, FILTER);
@@ -177,7 +177,7 @@ void testQueryDataNarrowValueRangeMultiResults(void** status) {
                                                         
     addDbRow(makeTsUtc("2009-05-01 01:00:00"), 3600, 5, FILTER);
 
-	struct Data* first;
+    struct Data* first;
     struct Data* data = first = getQueryValues(makeTsUtc("2006-01-01 00:00:00"), makeTsUtc("2011-01-01 00:00:00"), QUERY_GROUP_YEARS, FILTER);
 
     checkData(data, makeTsUtc("2008-01-01 00:00:00"), 245 * 24 * 60 * 60, 1, FILTER); 
@@ -203,7 +203,7 @@ void testQueryLargeQueryRange(void** status) {
     addDbRow(makeTsUtc("2009-03-03 12:00:00"), 3600, 4, FILTER);
     addDbRow(makeTsUtc("2009-03-03 13:00:00"), 3600, 5, FILTER2);
 
-	struct Data* first;
+    struct Data* first;
     struct Data* data = first = getQueryValues(makeTsUtc("2000-01-01 00:00:00"), makeTsUtc("2019-01-01 00:00:00"), QUERY_GROUP_TOTAL, FILTER);
 
     checkData(data, makeTsUtc("2009-03-03 12:00:00"), 18000, 10, FILTER);

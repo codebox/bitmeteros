@@ -18,9 +18,9 @@ static void testConfigUpdateErr(char* name, char* value);
 Contains unit tests for the handleConfig module.
 */
 void testConfigWithAdmin(void** state) {
- 	addFilterRow(1, "Filter 1", "f1", "", "host1");
- 	addFilterRow(2, "Filter 2", "f2", "", "host2");
- 	addFilterRow(3, "Filter 3", "f3", "", "host3");
+    addFilterRow(1, "Filter 1", "f1", "", "host1");
+    addFilterRow(2, "Filter 2", "f2", "", "host2");
+    addFilterRow(3, "Filter 3", "f3", "", "host3");
     
     addConfigRow(CONFIG_WEB_MONITOR_INTERVAL, "1");
     addConfigRow(CONFIG_WEB_SUMMARY_INTERVAL, "2");
@@ -120,7 +120,7 @@ void testConfigWithAdmin(void** state) {
 
 void testConfigWithoutAdmin(void** state) {
     addFilterRow(1, "Filter 1", "f1", "", NULL);
- 	addFilterRow(2, "Filter 2", "f2", "", NULL);
+    addFilterRow(2, "Filter 2", "f2", "", NULL);
     
     addConfigRow(CONFIG_WEB_MONITOR_INTERVAL, "1");
     addConfigRow(CONFIG_WEB_SUMMARY_INTERVAL, "2");
@@ -211,69 +211,69 @@ void testConfigUpdateWithoutAdmin(void** state) {
     
     expect_string(mockWriteHeadersForbidden, msg, "config update");
     processConfigRequest(0, &req, FALSE);
-	freeStmtList();
+    freeStmtList();
 }
 
 void testConfigUpdateServerName(void** state) {
-	testConfigUpdateOk("web.server_name", "newname");
-	testConfigUpdateOk("web.server_name", "12345678901234567890123456789012");
-	testConfigUpdateErr("web.server_name", "123456789012345678901234567890123");
-	testConfigUpdateErr("web.server_name", "<script></script>");
-	freeStmtList();
+    testConfigUpdateOk("web.server_name", "newname");
+    testConfigUpdateOk("web.server_name", "12345678901234567890123456789012");
+    testConfigUpdateErr("web.server_name", "123456789012345678901234567890123");
+    testConfigUpdateErr("web.server_name", "<script></script>");
+    freeStmtList();
 }
 
 void testConfigUpdateMonitorInterval(void** state) {
-	testConfigUpdateErr("web.monitor_interval", "999");
-	testConfigUpdateOk("web.monitor_interval", "1000");
-	testConfigUpdateOk("web.monitor_interval", "30000");
-	testConfigUpdateErr("web.monitor_interval", "30001");
-	testConfigUpdateErr("web.monitor_interval", "x");
-	freeStmtList();
+    testConfigUpdateErr("web.monitor_interval", "999");
+    testConfigUpdateOk("web.monitor_interval", "1000");
+    testConfigUpdateOk("web.monitor_interval", "30000");
+    testConfigUpdateErr("web.monitor_interval", "30001");
+    testConfigUpdateErr("web.monitor_interval", "x");
+    freeStmtList();
 }
 
 void testConfigUpdateHistoryInterval(void** state) {
-	testConfigUpdateErr("web.history_interval", "4999");
-	testConfigUpdateOk("web.history_interval", "5000");
-	testConfigUpdateOk("web.history_interval", "60000");
-	testConfigUpdateErr("web.history_interval", "60001");
-	testConfigUpdateErr("web.history_interval", "x");
-	freeStmtList();
+    testConfigUpdateErr("web.history_interval", "4999");
+    testConfigUpdateOk("web.history_interval", "5000");
+    testConfigUpdateOk("web.history_interval", "60000");
+    testConfigUpdateErr("web.history_interval", "60001");
+    testConfigUpdateErr("web.history_interval", "x");
+    freeStmtList();
 }
 
 void testConfigUpdateSummaryInterval(void** state) {
-	testConfigUpdateErr("web.summary_interval", "999");
-	testConfigUpdateOk("web.summary_interval", "1000");
-	testConfigUpdateOk("web.summary_interval", "60000");
-	testConfigUpdateErr("web.summary_interval", "60001");
-	testConfigUpdateErr("web.summary_interval", "x");
-	freeStmtList();
+    testConfigUpdateErr("web.summary_interval", "999");
+    testConfigUpdateOk("web.summary_interval", "1000");
+    testConfigUpdateOk("web.summary_interval", "60000");
+    testConfigUpdateErr("web.summary_interval", "60001");
+    testConfigUpdateErr("web.summary_interval", "x");
+    freeStmtList();
 }
 
 void testConfigUpdateRssFreq(void** state) {
-	testConfigUpdateErr("web.rss.freq", "0");
-	testConfigUpdateOk("web.rss.freq", "1");
-	testConfigUpdateOk("web.rss.freq", "2");
-	testConfigUpdateErr("web.rss.freq", "3");
-	testConfigUpdateErr("web.rss.freq", "x");
-	freeStmtList();
+    testConfigUpdateErr("web.rss.freq", "0");
+    testConfigUpdateOk("web.rss.freq", "1");
+    testConfigUpdateOk("web.rss.freq", "2");
+    testConfigUpdateErr("web.rss.freq", "3");
+    testConfigUpdateErr("web.rss.freq", "x");
+    freeStmtList();
 }
 
 void testConfigUpdateRssItems(void** state) {
-	testConfigUpdateErr("web.rss.items", "0");
-	testConfigUpdateOk("web.rss.items", "1");
-	testConfigUpdateOk("web.rss.items", "20");
-	testConfigUpdateErr("web.rss.items", "21");
-	testConfigUpdateErr("web.rss.items", "x");
-	freeStmtList();
+    testConfigUpdateErr("web.rss.items", "0");
+    testConfigUpdateOk("web.rss.items", "1");
+    testConfigUpdateOk("web.rss.items", "20");
+    testConfigUpdateErr("web.rss.items", "21");
+    testConfigUpdateErr("web.rss.items", "x");
+    freeStmtList();
 }
 
 void testConfigUpdateDisallowedParam(void** state) {
-	testConfigUpdateErr("db.version", "1");
-	freeStmtList();
+    testConfigUpdateErr("db.version", "1");
+    freeStmtList();
 }
 
 static void testConfigUpdateOk(char* name, char* value) {
-	testConfigUpdateOkChanged(name, value, value);
+    testConfigUpdateOkChanged(name, value, value);
 }
 
 static void testConfigUpdateOkChanged(char* name, char* valueIn, char* valueOut) {
@@ -287,8 +287,8 @@ static void testConfigUpdateOkChanged(char* name, char* valueIn, char* valueOut)
     
     expect_string(mockWriteHeadersOk, contentType, "application/json");
     expect_value(mockWriteHeadersOk, endHeaders, TRUE);
-	expect_string(mockWriteText, txt, "{}");
-	
+    expect_string(mockWriteText, txt, "{}");
+    
     processConfigRequest(0, &req, TRUE);
     
     char* val = getConfigText(name, FALSE);
@@ -313,9 +313,9 @@ static void testConfigUpdateErr(char* name, char* value) {
     //
     //CuAssertStrEquals(tc,
     //    "HTTP/1.0 500 Bad/missing parameter" HTTP_EOL
-	//	"Server: BitMeterOS " VERSION " Web Server" HTTP_EOL
-	//	"Date: Sun, 08 Nov 2009 10:00:00 +0000" HTTP_EOL
-	//	"Connection: Close" HTTP_EOL HTTP_EOL
+    //  "Server: BitMeterOS " VERSION " Web Server" HTTP_EOL
+    //  "Date: Sun, 08 Nov 2009 10:00:00 +0000" HTTP_EOL
+    //  "Connection: Close" HTTP_EOL HTTP_EOL
     //, result);
     //
     //CuAssertStrEquals(tc, "", getConfigText(name, FALSE));

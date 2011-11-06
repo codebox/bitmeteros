@@ -11,38 +11,38 @@ Contains functions for creating and updating Data struts.
 
 struct Data* allocData(){
  // Create a Data struct on the heap
-	struct Data* data = (struct Data*) malloc( sizeof( struct Data ) );
+    struct Data* data = (struct Data*) malloc( sizeof( struct Data ) );
 
-	data->ts = 0;
-	data->vl = 0;
-	data->fl = 0;
-	data->dr = 0;
-	data->next = NULL;
+    data->ts = 0;
+    data->vl = 0;
+    data->fl = 0;
+    data->dr = 0;
+    data->next = NULL;
 
-	return data;
+    return data;
 }
 
 struct Data makeData(){
  // Create a Data struct on the stack
-	struct Data data;
+    struct Data data;
 
-	data.ts = 0;
-	data.vl = 0;
-	data.fl = 0;
-	data.dr = 0;
-	data.next = NULL;
+    data.ts = 0;
+    data.vl = 0;
+    data.fl = 0;
+    data.dr = 0;
+    data.next = NULL;
 
-	return data;
+    return data;
 }
 
 void freeData(struct Data* data){
  // Free up the memory used by this Data struct, and all others that can be reached through the 'next' pointer chain
-	struct Data* next;
-	while(data != NULL){
-		next = data->next;
-		free(data);
-		data = next;
-	}
+    struct Data* next;
+    while(data != NULL){
+        next = data->next;
+        free(data);
+        data = next;
+    }
 }
 
 void appendData(struct Data** earlierData, struct Data* newData){

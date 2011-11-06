@@ -1,5 +1,5 @@
 /*global $,BITMETER,window,config*/
-/*jslint onevar: true, undef: true, nomen: true, eqeqeq: true, bitwise: true, regexp: true, newcap: true, immed: true, strict: false */
+/*jslint sloppy: true, white: true, plusplus: true, unparam: true */
 
 /*
 Contains code that manages the History page.
@@ -19,32 +19,31 @@ BITMETER.updateHistory = function(){
  /* Redraws one of the bar graphs with new data. jsonData is just an array of standard data objects like this:
         {ts: 1234567, dr: 1, vl: 100, fl: 2} */
     function updateGraph(jsonData,  graphObj, fnTsToXValue){
-    	var jsonData = jsonData.sort(function(a,b){
-    		return a.ts - b.ts;
-    	});
-    	
-        var allData = {};
-        var valuesForCurrentTs = {};
+        var allData = {}, valuesForCurrentTs = {}, currentTs = 0, graphData = [];
+        
+        jsonData = jsonData.sort(function(a,b){
+            return a.ts - b.ts;
+        });
+        
         BITMETER.forEachFilter(function(f){
-	        	allData[f.id] = [];
-	        	valuesForCurrentTs[f.id] = 0;
-	        }, true);
+                allData[f.id] = [];
+                valuesForCurrentTs[f.id] = 0;
+            }, true);
 
-		function appendValuesForTsToAllData(ts){
-			var xValue = fnTsToXValue ? fnTsToXValue(ts) : ts;
-    		BITMETER.forEachFilter(function(f){
-    			allData[f.id].push([xValue, valuesForCurrentTs[f.id]]);
-    			valuesForCurrentTs[f.id] = 0;
-    		}, true);			
-		}
+        function appendValuesForTsToAllData(ts){
+            var xValue = fnTsToXValue ? fnTsToXValue(ts) : ts;
+            BITMETER.forEachFilter(function(f){
+                allData[f.id].push([xValue, valuesForCurrentTs[f.id]]);
+                valuesForCurrentTs[f.id] = 0;
+            }, true);           
+        }
 
      // Split the data into arrays, one for each filter
-     	var currentTs = 0;
         $.each(jsonData, function(i,o){
-        	if (currentTs && (o.ts !== currentTs)){
-        		appendValuesForTsToAllData(currentTs);
-        	}
-        	
+            if (currentTs && (o.ts !== currentTs)){
+                appendValuesForTsToAllData(currentTs);
+            }
+            
             valuesForCurrentTs[o.fl] += o.vl;
             currentTs = o.ts;
         });
@@ -52,13 +51,11 @@ BITMETER.updateHistory = function(){
         
         graphObj.getOptions().xaxis.min = 0;
         
-        var graphData = [];
-
         BITMETER.forEachFilter(function(o){
-	        	graphData.push(
-	        		{label : o.desc, data: allData[o.id], color: BITMETER.model.getColour(o.name)}
-	        	);
-	        }, true);
+                graphData.push(
+                    {label : o.desc, data: allData[o.id], color: BITMETER.model.getColour(o.name)}
+                );
+            }, true);
         
         graphObj.setData(graphData);
         graphObj.setupGrid();
@@ -105,8 +102,8 @@ BITMETER.updateHistory = function(){
                     new entry in the minuteBuckets object, settings the value to 0. */
                     minuteBuckets[roundedTs] = {};
                     BITMETER.forEachFilter(function(o){
-	                    	minuteBuckets[roundedTs][o.id] = {ts: roundedTs, dr: 60, vl: 0, fl: o.id};	
-	                    }, true);
+                            minuteBuckets[roundedTs][o.id] = {ts: roundedTs, dr: 60, vl: 0, fl: o.id};  
+                        }, true);
                 }
                 
              // Add the ul/dl values onto the totals for the appropriate minute in the minuteBucket object
@@ -115,9 +112,9 @@ BITMETER.updateHistory = function(){
             
          // Now extract the totals from the minuteBuckets object into an array and send it to the graph
             $.each(minuteBuckets, function(k,v){
-            	BITMETER.forEachFilter(function(o){
-	                	roundedJsonData.push(v[o.id]);
-	                }, true);
+                BITMETER.forEachFilter(function(o){
+                        roundedJsonData.push(v[o.id]);
+                    }, true);
             });
             
             updateGraph(roundedJsonData, BITMETER.historyDisplayMinutes, function(ts){
@@ -179,21 +176,21 @@ $(function(){
             if (BITMETER.infoFloat.isDisplayed()){
                 if (item) {
                  // Get the values corresponding to the bar we are hovering over
-                    var idx = item.dataIndex, tick, time, valObj = [];
+                    var idx = item.dataIndex, tick, time, valObj = [], data, i;
 
-                    var data = graph.getData(),
+                    data = graph.getData();
                     
                  // Calculate the date/time for this bar
                     tick = item.datapoint[0];
                     time = fnGetTime(tick);
 
-					var i=0;
-					BITMETER.forEachFilter(function(f){
-							var dataArrayForFilter = data[i].data;
-							var dataPair = dataArrayForFilter ? dataArrayForFilter[idx] : null;
-							valObj[i] = dataPair ? dataPair[1] : 0;
-							i++;
-						}, true);
+                    i=0;
+                    BITMETER.forEachFilter(function(f){
+                            var dataArrayForFilter = data[i].data, dataPair;
+                            dataPair = dataArrayForFilter ? dataArrayForFilter[idx] : null;
+                            valObj[i] = dataPair ? dataPair[1] : 0;
+                            i++;
+                        }, true);
     
                  // Populate the hover box with the date/time and totals
                     BITMETER.infoFloat.setHTML(fnFormatter(time, valObj));
@@ -216,18 +213,16 @@ $(function(){
         return BITMETER.zeroPad(fromHour) + ':' + BITMETER.zeroPad(fromMin) + ' - ' + BITMETER.zeroPad(toHour) + ':' + BITMETER.zeroPad(toMin);
     }
 
-	function buildHoverTable(dateTimeTxt, valObj, intervalInSecs){
-        var arrHtml = [
+    function buildHoverTable(dateTimeTxt, valObj, intervalInSecs){
+        var i=0, arrHtml = [
             '<table>',
                 '<tr><td class="historyHoverTime" colspan="2">', dateTimeTxt, '</td></tr>',
                 '<tr>'];
         
-        var i=0;
         BITMETER.forEachFilter(function(filter){
-        	var cssColour = BITMETER.model.getColour(filter.name);
-        	var v = valObj[i];
-        	
-        	arrHtml.push('<tr>');
+            var cssColour = BITMETER.model.getColour(filter.name), v = valObj[i];
+            
+            arrHtml.push('<tr>');
             arrHtml.push(    '<td style="color: ' + cssColour + '" class="historyHoverDir">' + filter.desc + '</td>');
             arrHtml.push(    '<td style="color: ' + cssColour + '" class="historyHoverData">', BITMETER.formatAmount(v), '</td>');
             arrHtml.push(    '<td style="color: ' + cssColour + '" class="historyHoverData">[ ', BITMETER.formatAmount(v/intervalInSecs), '/s ]</td>');
@@ -235,7 +230,7 @@ $(function(){
             i++;
         }, true);        
 
-		arrHtml.push('</tr></table>');
+        arrHtml.push('</tr></table>');
         
         return arrHtml.join('');
     }

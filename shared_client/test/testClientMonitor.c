@@ -90,7 +90,7 @@ void testMonitorDataOnAndLongAfterTs(void** state) {
     addDbRow(then,        3600, 6, FILTER);
     addDbRow(then - 3600, 3600, 7, FILTER);
                                 
-	struct Data* first;
+    struct Data* first;
     struct Data* data = first = getMonitorValues(then, FILTER);
     checkData(data, now, 1, 3, FILTER);
     

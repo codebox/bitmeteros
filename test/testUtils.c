@@ -18,27 +18,35 @@
 void* _test_strdup(char* s, const char* file, const int line){
     char *result = (char*) _test_malloc(strlen(s) + 1, __FILE__, __LINE__);
     if (result == (char*)0){
-		return (char*) 0;
-	} else {
-	    strcpy(result, s);
-	    return result;
-	}
+        return (char*) 0;
+    } else {
+        strcpy(result, s);
+        return result;
+    }
 }
 
 void printf_output(char* msg){
-	check_expected(msg);	
+    check_expected(msg);    
 }
 
 void _test_printf(char* fmt, ...){
-	va_list argp;
-	va_start(argp, fmt);
-	
-	char msg[MAX_MSG_SIZE];
-	vsprintf(&msg, fmt, argp);
-	printf_output(msg);	
-	va_end(argp);	
+    va_list argp;
+    va_start(argp, fmt);
+    
+    char msg[MAX_MSG_SIZE];
+    vsprintf(&msg, fmt, argp);
+    printf_output(msg); 
+    va_end(argp);   
 }
-
+void _test_printOut(int colour, char* fmt, ...){
+    va_list argp;
+    va_start(argp, fmt);
+    
+    char msg[MAX_MSG_SIZE];
+    vsprintf(&msg, fmt, argp);
+    printf_output(msg); 
+    va_end(argp);   
+}
 void checkDateCriteriaPart(struct DateCriteriaPart* part, int isRelative, int val1, int val2, int next){
     assert_int_equal(part->isRelative, isRelative);
     assert_int_equal(part->val1, val1);
@@ -69,19 +77,19 @@ void checkData(struct Data* data, time_t ts, int dr, int vl, int fl) {
 }
 
 void checkFilter(struct Filter* filter, int id, char* desc, char* name, char* expr, char* host){
-	if (filter == NULL){
-		fail();	
-	} else {
-		assert_int_equal(id, filter->id);
-		assert_string_equal(desc, filter->desc);	
-		assert_string_equal(name, filter->name);
-		assert_string_equal(expr, filter->expr);
-		if (host == NULL){
-			assert_true(filter->host == NULL);	
-		} else {
-			assert_string_equal(host, filter->host);
-		}
-	}
+    if (filter == NULL){
+        fail(); 
+    } else {
+        assert_int_equal(id, filter->id);
+        assert_string_equal(desc, filter->desc);    
+        assert_string_equal(name, filter->name);
+        assert_string_equal(expr, filter->expr);
+        if (host == NULL){
+            assert_true(filter->host == NULL);  
+        } else {
+            assert_string_equal(host, filter->host);
+        }
+    }
 }
 
 void setupTestDb(void** state){
@@ -99,7 +107,7 @@ void setupTestDb(void** state){
 }
 
 void tearDownTestDb(void** state){
-	closeDb();
+    closeDb();
 }
 
 void emptyDb(){
@@ -110,15 +118,15 @@ void emptyDb(){
 }
 
 int getRowCount(char* sql){
-	sqlite3_stmt *stmt;
-	prepareSql(&stmt, sql);
-	
-	int rc, counter=0;
-	
-	while((rc=sqlite3_step(stmt)) == SQLITE_ROW){
-		counter++;
-	}
-	return counter;
+    sqlite3_stmt *stmt;
+    prepareSql(&stmt, sql);
+    
+    int rc, counter=0;
+    
+    while((rc=sqlite3_step(stmt)) == SQLITE_ROW){
+        counter++;
+    }
+    return counter;
 }
 
 void addDbRow(time_t ts, int dr, int vl, int fl){
@@ -130,9 +138,9 @@ void addDbRow(time_t ts, int dr, int vl, int fl){
 void addFilterRow(int id, char* desc, char* name, char* expr, char* host){
     char sql[200];
     if (host == NULL){
-		sprintf(sql, "INSERT INTO filter (id, desc, name, expr) values (%d, '%s', '%s', '%s')", id, desc, name, expr);
+        sprintf(sql, "INSERT INTO filter (id, desc, name, expr) values (%d, '%s', '%s', '%s')", id, desc, name, expr);
     } else {
-    	sprintf(sql, "INSERT INTO filter (id, desc, name, expr, host) values (%d, '%s', '%s', '%s', '%s')", id, desc, name, expr, host);
+        sprintf(sql, "INSERT INTO filter (id, desc, name, expr, host) values (%d, '%s', '%s', '%s', '%s')", id, desc, name, expr, host);
     }
     executeSql(sql, NULL);
 }
@@ -162,42 +170,42 @@ void addConfigRow(char* key, char* value){
 }
 
 void checkTableContents(struct Data* expectedData){
-	sqlite3_stmt* stmt = getStmt("SELECT ts AS ts, dr AS dr, vl As vl, fl AS fl FROM data ORDER BY ts DESC, fl ASC");
+    sqlite3_stmt* stmt = getStmt("SELECT ts AS ts, dr AS dr, vl As vl, fl AS fl FROM data ORDER BY ts DESC, fl ASC");
 
-	int rc;
-	while((rc=sqlite3_step(stmt)) == SQLITE_ROW){
-		assert_true(expectedData != NULL);
+    int rc;
+    while((rc=sqlite3_step(stmt)) == SQLITE_ROW){
+        assert_true(expectedData != NULL);
         assert_int_equal(expectedData->ts, sqlite3_column_int(stmt, 0));
         assert_int_equal(expectedData->dr, sqlite3_column_int(stmt, 1));
         assert_int_equal(expectedData->vl, sqlite3_column_int64(stmt, 2));
         assert_int_equal(expectedData->fl, sqlite3_column_int(stmt, 3));
         expectedData = expectedData->next;
-	}
+    }
 
     finishedStmt(stmt);
 }
 
 void dumpDataTable(){
-	sqlite3_stmt* stmt = getStmt("select ts as ts, dr as dr, vl as vl, fl as fl from data");
-	
-	dbg("==================\n");
-	while(sqlite3_step(stmt) == SQLITE_ROW){
-		dbg("%d %d %llu %d\n", sqlite3_column_int(stmt, 0), sqlite3_column_int(stmt, 1), sqlite3_column_int64(stmt, 2), sqlite3_column_int(stmt, 3));
-	}
-	dbg("==================\n");
-	finishedStmt(stmt);
+    sqlite3_stmt* stmt = getStmt("select ts as ts, dr as dr, vl as vl, fl as fl from data");
+    
+    dbg("==================\n");
+    while(sqlite3_step(stmt) == SQLITE_ROW){
+        dbg("%d %d %llu %d\n", sqlite3_column_int(stmt, 0), sqlite3_column_int(stmt, 1), sqlite3_column_int64(stmt, 2), sqlite3_column_int(stmt, 3));
+    }
+    dbg("==================\n");
+    finishedStmt(stmt);
 }
 
 void parseCommandLine(char* cmdLineTxt, char*** argv, int* argc){
     int count = 1;
 
-	char *cmdLineCopy = strdupa(cmdLineTxt);
-	char* match = strtok(cmdLineCopy, " ");
+    char *cmdLineCopy = strdupa(cmdLineTxt);
+    char* match = strtok(cmdLineCopy, " ");
  // First, count the number of arguments
-	while(match != NULL){
+    while(match != NULL){
         count++;
         match = strtok(NULL, " ");
-	}
+    }
 
     *argv = malloc(sizeof(char*) * (count+1));
     (*argv)[count] = 0;
@@ -217,26 +225,26 @@ void parseCommandLine(char* cmdLineTxt, char*** argv, int* argc){
 }
 
 int tableHasColumn(char* table, char* column){
-	char sql[32];
-	sprintf(sql, "pragma table_info(%s)", table);
-	sqlite3_stmt* stmt = getStmt(sql);
-	
-	int found = FALSE;
-	while(sqlite3_step(stmt) == SQLITE_ROW){
-		if (strcmp(sqlite3_column_text(stmt, 1), column) == 0){
-			found = TRUE;
-			break;
-		}
-	}
-	finishedStmt(stmt);
-	
-	return found;
+    char sql[32];
+    sprintf(sql, "pragma table_info(%s)", table);
+    sqlite3_stmt* stmt = getStmt(sql);
+    
+    int found = FALSE;
+    while(sqlite3_step(stmt) == SQLITE_ROW){
+        if (strcmp(sqlite3_column_text(stmt, 1), column) == 0){
+            found = TRUE;
+            break;
+        }
+    }
+    finishedStmt(stmt);
+    
+    return found;
 }
 
 int tableExists(char* tableName){
-	char sql[100];
-	sprintf(sql, "SELECT name FROM sqlite_master WHERE type='table' AND name='%s'", tableName);
-	return getRowCount(sql);
+    char sql[100];
+    sprintf(sql, "SELECT name FROM sqlite_master WHERE type='table' AND name='%s'", tableName);
+    return getRowCount(sql);
 }
 
 void addDbRowBinaryAddress(time_t ts, int dr, int dl, int ul, char* ad, int adLen){
@@ -246,8 +254,8 @@ void addDbRowBinaryAddress(time_t ts, int dr, int dl, int ul, char* ad, int adLe
     prepareSql(&stmt, sql);
     sqlite3_bind_blob(stmt, 1, ad, adLen, SQLITE_STATIC);
     int rc = sqlite3_step(stmt);
-	if (rc != SQLITE_DONE){
-		logMsg(LOG_ERR, "addDbRowBinaryAddress caused sqlite3_step to return %d.", rc);
-	}
-	sqlite3_reset(stmt);
+    if (rc != SQLITE_DONE){
+        logMsg(LOG_ERR, "addDbRowBinaryAddress caused sqlite3_step to return %d.", rc);
+    }
+    sqlite3_reset(stmt);
 }

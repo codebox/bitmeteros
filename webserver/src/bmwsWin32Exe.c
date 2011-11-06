@@ -6,11 +6,11 @@
 static void sigHandler();
 
 int main(){
-	setupWeb();	
-	signal(SIGINT, sigHandler);	// Trap Ctrl-C
-	printf(COPYRIGHT);
-	printf("Web Server running, press Ctrl-C to quit..." EOL);
-	
+    setupWeb(); 
+    signal(SIGINT, sigHandler); // Trap Ctrl-C
+    printf(COPYRIGHT);
+    printf("Web Server running, press Ctrl-C to quit..." EOL);
+    
     while (TRUE){
         processWeb();
     }
@@ -19,7 +19,7 @@ int main(){
 }
 
 static void sigHandler(){
-	shutdownWeb();
-	printf("Web Server stopped." EOL);
-	exit(0);
+    shutdownWeb();
+    printf("Web Server stopped." EOL);
+    exit(0);
 }

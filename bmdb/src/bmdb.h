@@ -7,6 +7,9 @@
 
 #define MAX_UPGRADE_LEVEL 8
 
+#define BMDB_COL_1 COLOUR_WHITE_1
+#define BMDB_COL_2 COLOUR_WHITE_2
+
 int doVersion();
 int convertAddrValues();
 int doListConfig(FILE* file, int argc, char** argv);

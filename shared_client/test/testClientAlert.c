@@ -1,5 +1,5 @@
 #ifdef _WIN32
-	#define __USE_MINGW_ANSI_STDIO 1
+    #define __USE_MINGW_ANSI_STDIO 1
 #endif
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,26 +14,26 @@
 
 static time_t makeTsFromParts(int y, int m, int d, int h){
  /*struct tm {
-    	int	tm_sec;		Seconds: 0-59 (K&R says 0-61?) 
-    	int	tm_min;		Minutes: 0-59 
-    	int	tm_hour;	Hours since midnight: 0-23 
-    	int	tm_mday;	Day of the month: 1-31 
-    	int	tm_mon;		Months *since* january: 0-11 
-    	int	tm_year;	Years since 1900 
-    	int	tm_wday;	Days since Sunday (0-6) 
-    	int	tm_yday;	Days since Jan. 1: 0-365 
-    	int	tm_isdst;	+1 Daylight Savings Time, 0 No DST, * -1 don't know 
+        int tm_sec;     Seconds: 0-59 (K&R says 0-61?) 
+        int tm_min;     Minutes: 0-59 
+        int tm_hour;    Hours since midnight: 0-23 
+        int tm_mday;    Day of the month: 1-31 
+        int tm_mon;     Months *since* january: 0-11 
+        int tm_year;    Years since 1900 
+        int tm_wday;    Days since Sunday (0-6) 
+        int tm_yday;    Days since Jan. 1: 0-365 
+        int tm_isdst;   +1 Daylight Savings Time, 0 No DST, * -1 don't know 
     };*/ 
     struct tm t = {0, 0, h, d, m-1, y-1900, 0, 0, -1};   
     return mktime(&t);
 }
 
 void printDateCriteria(struct DateCriteria* criteria){
-	printf("%d %d %d %d\n", 
-		criteria->year == NULL ? -1 : criteria->year->val1, 
-		criteria->month == NULL ? -1 : criteria->month->val1, 
-		criteria->day  == NULL ? -1 : criteria->day->val1, 
-		criteria->hour == NULL ? -1 : criteria->hour->val1);	
+    printf("%d %d %d %d\n", 
+        criteria->year == NULL ? -1 : criteria->year->val1, 
+        criteria->month == NULL ? -1 : criteria->month->val1, 
+        criteria->day  == NULL ? -1 : criteria->day->val1, 
+        criteria->hour == NULL ? -1 : criteria->hour->val1);    
 }
 void checkReplaceRelativeValues(int tsY, int tsM, int tsD, int tsH, 
         char* yTxt, char* mTxt, char* dTxt, char* hTxt, 
@@ -43,9 +43,9 @@ void checkReplaceRelativeValues(int tsY, int tsM, int tsD, int tsH,
     time_t ts = makeTsFromParts(tsY, tsM, tsD, tsH);
     
     int resultOk = replaceRelativeValues(criteria, ts);
-	//printDateCriteria(criteria);
+    //printDateCriteria(criteria);
     assert_true(resultOk);
-	
+    
     int yearOk  = ((criteria->year  == NULL) && (exY == -1)) || ((criteria->year  != NULL) && (criteria->year->val1  == exY));
     assert_true(yearOk);
     
@@ -103,9 +103,9 @@ int callback(void* a, int b, char** c, char** d);
 int count = 0;
 
 void testRemoveAlertsDb(void** state){
-	emptyDb();
-	
-	struct Alert* alert = allocAlert();
+    emptyDb();
+    
+    struct Alert* alert = allocAlert();
     alert->active = 1;
     alert->filter = 1;
     alert->amount = 100000000000;
@@ -228,7 +228,7 @@ void testAddGetRemoveAlerts(void** state){
     assert_true(NULL == resultAlert->next);
     
  // Test update of existing alert
- 	freeAlert(firstAlert);
+    freeAlert(firstAlert);
     resultAlert = getAlerts();
     assert_int_equal(alertId1, resultAlert->id);
     resultAlert->amount = 1000;
@@ -238,11 +238,11 @@ void testAddGetRemoveAlerts(void** state){
     firstAlert = resultAlert = getAlerts();
     int found = FALSE;
     while(resultAlert != NULL){
-    	if (resultAlert->id == alertId1){
-    		assert_int_equal(1000, resultAlert->amount);
-    		found = TRUE;	
-    	}
-    	resultAlert = resultAlert->next;
+        if (resultAlert->id == alertId1){
+            assert_int_equal(1000, resultAlert->amount);
+            found = TRUE;   
+        }
+        resultAlert = resultAlert->next;
     }
     assert_true(found);
     
@@ -263,8 +263,8 @@ void testAddGetRemoveAlerts(void** state){
     
     resultAlert = getAlerts();
     assert_true(NULL == resultAlert);
-	freeAlert(resultAlert);
-	freeStmtList();
+    freeAlert(resultAlert);
+    freeStmtList();
 }
 void testIsDateCriteriaPartMatch(void** state){
     assert_int_equal(1, isDateCriteriaPartMatch(NULL, 0));
@@ -311,7 +311,7 @@ void testIsDateCriteriaMatch(void** state){
     assert_int_equal(1, isDateCriteriaMatch(criteria1, makeTsFromParts(2010, 11, 20, 5)));
     assert_int_equal(1, isDateCriteriaMatch(criteria1, makeTsFromParts(2011, 5, 20, 5)));
     assert_int_equal(1, isDateCriteriaMatch(criteria1, makeTsFromParts(1980, 5, 20, 5)));
-	freeDateCriteria(criteria1);    
+    freeDateCriteria(criteria1);    
     
     struct DateCriteria* criteria2 = makeDateCriteria("*", "4,5", "*", "4", "*");
     assert_int_equal(0, isDateCriteriaMatch(criteria2, makeTsFromParts(2010, 5,  5, 0)));
@@ -377,9 +377,9 @@ void testGetNonRelativeValue(void** state){
     freeDateCriteriaPart(nonRelPart);
 }
 static int replaceRelativeValuesAndFree(struct DateCriteria* criteria, time_t ts){
-	int val = replaceRelativeValues(criteria, ts);
-	freeDateCriteria(criteria);
-	return val;
+    int val = replaceRelativeValues(criteria, ts);
+    freeDateCriteria(criteria);
+    return val;
 }
 void testReplaceRelativeValues(void** state){
     checkReplaceRelativeValues(2010, 5, 26, 3, "*", "*", "*", "-0", -1, -1, -1,  3);

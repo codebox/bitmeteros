@@ -6,8 +6,8 @@
 #include "common.h"
 
 static void checkPartToText(char* txt){
-	struct DateCriteriaPart* part = makeDateCriteriaPart(txt);
-	char* result = dateCriteriaPartToText(part);
+    struct DateCriteriaPart* part = makeDateCriteriaPart(txt);
+    char* result = dateCriteriaPartToText(part);
     assert_string_equal(txt, result);
     free(result);
     freeDateCriteriaPart(part);
@@ -28,7 +28,7 @@ void testAllocAlert(void **state){
 }
 
 void testSetAlertName(void **state){     
-	struct Alert* alert = allocAlert();   
+    struct Alert* alert = allocAlert();   
     setAlertName(alert, "test");
     assert_string_equal("test", alert->name);
     setAlertName(alert, "  test2 ");
@@ -70,7 +70,7 @@ static void checkDateCriteriaPartIsNull(char* txt){
 
 void checkDateCriteriaPartNotNull(char* txt, int isRelative, int val1, int val2, int next){
     struct DateCriteriaPart* part = makeDateCriteriaPart(txt);
-	checkDateCriteriaPart(part, isRelative, val1, val2, next);
+    checkDateCriteriaPart(part, isRelative, val1, val2, next);
     freeDateCriteriaPart(part);
 }    
 
@@ -88,7 +88,7 @@ void testMakeDateCriteriaPart(void **state){
     checkDateCriteriaPartNotNull("12-12", 0, 12, 12, 0);
     checkDateCriteriaPartIsNull("12-11");
     checkDateCriteriaPartIsNull("x-12");
-   	checkDateCriteriaPartIsNull("11-x");
+    checkDateCriteriaPartIsNull("11-x");
     
     checkDateCriteriaPartIsNull("1,2,x");
     checkDateCriteriaPartIsNull("1,2-x,3");
@@ -100,13 +100,13 @@ void testMakeDateCriteriaPart(void **state){
     checkDateCriteriaPart(part, 0, 2, 3, 1);
     part = part->next;
     checkDateCriteriaPart(part, 0, 3, 3, 0);
-	freeDateCriteriaPart(firstPart);
+    freeDateCriteriaPart(firstPart);
     
     firstPart = part = makeDateCriteriaPart("1,2,");
     checkDateCriteriaPart(part, 0, 1, 1, 1);
     part = part->next;
     checkDateCriteriaPart(part, 0, 2, 2, 0);
-	freeDateCriteriaPart(firstPart);
+    freeDateCriteriaPart(firstPart);
     
     firstPart = part = makeDateCriteriaPart(",1,2");
     checkDateCriteriaPart(part, 0, 1, 1, 1);

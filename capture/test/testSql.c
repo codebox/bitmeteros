@@ -12,7 +12,7 @@ Contains unit tests for the sql module.
 void setup();
 
 static int getDataRowCount(){
-	return getRowCount("SELECT * FROM data");	
+    return getRowCount("SELECT * FROM data");   
 }
 void testUpdateDbNull(void** state) {
  // Check that nothing is added to the d/b if we pass in a NULL list
@@ -82,8 +82,8 @@ void testCompressSecMultiFilters(void** state){
     struct Data row4 = {3600, 60,   72, 1, &row5};
     struct Data row3 = {3601, 1,     4, 3, &row4};
     struct Data row2 = {3601, 1,     2, 2, &row3};
-	struct Data row1 = {3601, 1,     1, 1, &row2};        
-	
+    struct Data row1 = {3601, 1,     1, 1, &row2};        
+    
     checkTableContents(&row1);
     freeStmtList();
 }

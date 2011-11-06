@@ -1,18 +1,18 @@
 <?xml version="1.0"?>
 <rss version="2.0">
-	<channel>
-		<title><!--[title]--></title>
-		<link><!--[link]--></link>
-		<image>
-			<url><!--[link]-->/favicon.ico</url>
-			<title><!--[title]--></title>
-			<link><!--[link]--></link>
-		</image>
-		<language>en-gb</language>
-		<generator>BitMeter OS</generator>
-		<ttl><!--[ttl]--></ttl>
-		<description>BitMeter OS event notifications, updated on a <!--[freq]--> basis.</description>
-		<pubDate><!--[pubdate]--></pubDate>
-		<!--[items]-->
-	</channel>
+    <channel>
+        <title><!--[title]--></title>
+        <link><!--[link]--></link>
+        <image>
+            <url><!--[link]-->/favicon.ico</url>
+            <title><!--[title]--></title>
+            <link><!--[link]--></link>
+        </image>
+        <language>en-gb</language>
+        <generator>BitMeter OS</generator>
+        <ttl><!--[ttl]--></ttl>
+        <description>BitMeter OS event notifications, updated on a <!--[freq]--> basis.</description>
+        <pubDate><!--[pubdate]--></pubDate>
+        <!--[items]-->
+    </channel>
 </rss>

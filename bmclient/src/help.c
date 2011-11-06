@@ -11,10 +11,10 @@ Help text is read from the helpText.c file which is generated during the build p
 extern char* helpTxt;
 
 void doHelp(){
-	doBmClientVersion();
-	printf(helpTxt);
+    doBmClientVersion();
+    printf(helpTxt);
 }
 
 void doBmClientVersion(){
-	printf("%s v%s\n", CLIENT_NAME, VERSION);	
+    printf("%s v%s\n", CLIENT_NAME, VERSION);   
 }

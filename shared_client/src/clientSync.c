@@ -10,13 +10,13 @@ Contains a helper function for use by clients that need to retrieve data to be s
 struct Data* getSyncValues(time_t ts){
  // A list of Data structs will be returned, once for each db entry with a timestamp > ts
 
-   	sqlite3_stmt *stmt = getStmt(CLIENT_SYNC_SQL);
+    sqlite3_stmt *stmt = getStmt(CLIENT_SYNC_SQL);
 
-	sqlite3_bind_int(stmt, 1, ts);
-	struct Data* result = runSelect(stmt);
+    sqlite3_bind_int(stmt, 1, ts);
+    struct Data* result = runSelect(stmt);
 
-	finishedStmt(stmt);
+    finishedStmt(stmt);
 
-	return result;
+    return result;
 }
 

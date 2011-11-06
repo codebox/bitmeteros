@@ -9,13 +9,13 @@ replaced by another containing test-friendly implementations of these functions.
 */
 
 #ifdef UNIT_TESTING
-	void getDbPath(char* path){
-	    strcpy(path, IN_MEMORY_DB);
-	}
-	
-	void getLogPath(char* path){
-	    strcpy(path, "");
-	}
+    void getDbPath(char* path){
+        strcpy(path, IN_MEMORY_DB);
+    }
+    
+    void getLogPath(char* path){
+        strcpy(path, "");
+    }
 #endif
 
 #ifdef _WIN32
@@ -75,19 +75,19 @@ replaced by another containing test-friendly implementations of these functions.
      // Need to ensure we end on a folder delimiter character, so we can prevent directory-traversal attacks
         int pathLen = strlen(path);
         if (path[pathLen-1] != '\\'){
-        	path[pathLen] = '\\';
-        	path[pathLen + 1] = (char) 0;
+            path[pathLen] = '\\';
+            path[pathLen + 1] = (char) 0;
         }
     }
 
-	void logWin32ErrMsg(char* msg, int rc) {
-	    LPVOID lpMsgBuf;
+    void logWin32ErrMsg(char* msg, int rc) {
+        LPVOID lpMsgBuf;
 
-		FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-	            NULL, rc, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR) &lpMsgBuf, 0, NULL );
-		logMsg(LOG_ERR, "%s. Code=%d Msg=%s", msg, rc, lpMsgBuf);
-	    LocalFree(lpMsgBuf);
-	}
+        FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                NULL, rc, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR) &lpMsgBuf, 0, NULL );
+        logMsg(LOG_ERR, "%s. Code=%d Msg=%s", msg, rc, lpMsgBuf);
+        LocalFree(lpMsgBuf);
+    }
 
 #endif
 

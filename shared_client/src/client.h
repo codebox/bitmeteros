@@ -19,19 +19,19 @@
 #define ALERT_ID_FAIL -1
 // ----
 struct Summary{
-	struct Data* today;
-	struct Data* month;
-	struct Data* year;
-	struct Data* total;
-	time_t tsMin;
-	time_t tsMax;
-	char** hostNames;
-	int    hostCount;
+    struct Data* today;
+    struct Data* month;
+    struct Data* year;
+    struct Data* total;
+    time_t tsMin;
+    time_t tsMax;
+    char** hostNames;
+    int    hostCount;
 };
 // ----
 struct ValueBounds{
-	BW_INT min;
-	BW_INT max;
+    BW_INT min;
+    BW_INT max;
 };
 // ----
 struct HostAdapter{
@@ -58,9 +58,9 @@ struct Data* calcTotalsForHsSince(int ts, char* hs);
 struct Data* calcTotalsForHsAdSince(int ts, char* hs);
 void formatAmountByUnits(const BW_INT vl, char* vlTxt, int units);
 
-#ifdef UNIT_TESTING	
-	#define FORMAT_AMOUNT_BY_UNITS mockFormatAmountByUnits
+#ifdef UNIT_TESTING 
+    #define FORMAT_AMOUNT_BY_UNITS mockFormatAmountByUnits
 #else
-	#define FORMAT_AMOUNT_BY_UNITS formatAmountByUnits
+    #define FORMAT_AMOUNT_BY_UNITS formatAmountByUnits
 #endif
 #endif

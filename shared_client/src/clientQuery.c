@@ -39,7 +39,7 @@ struct Data* getQueryValues(time_t tsFrom, time_t tsTo, int group, int fl){
         time_t minFrom = (minInDb > tsFrom ? minInDb - 3600 : tsFrom);
         time_t maxTo   = (maxInDb < tsTo   ? maxInDb : tsTo);
 
-	 // Decide how the results should be grouped
+     // Decide how the results should be grouped
         switch(group){
             case QUERY_GROUP_HOURS:
                 result = doQuery(stmt, minFrom, maxTo, &getNextHourForTs, &addToDateH, fl);
@@ -62,11 +62,11 @@ struct Data* getQueryValues(time_t tsFrom, time_t tsTo, int group, int fl){
                 break;
 
             default:
-            	assert(FALSE);
+                assert(FALSE);
         }
     }
 
-	finishedStmt(stmt);
+    finishedStmt(stmt);
 
     return result;
 }
@@ -79,23 +79,23 @@ static struct Data* doQuery(sqlite3_stmt *stmt, time_t minFrom, time_t maxTo, ti
     range is performed by the 'getNext' function. */
     time_t from, to;
 
-	from = minFrom;
-	to   = getNext(minFrom); // Work out the end of the first range that we will return
+    from = minFrom;
+    to   = getNext(minFrom); // Work out the end of the first range that we will return
 
-	to = (to > maxTo) ? maxTo : to;
+    to = (to > maxTo) ? maxTo : to;
 
     struct Data* result = NULL;
     struct Data* current;
 
-	while(TRUE){
-	    current = doQueryForInterval(stmt, from, to, fl);
-	    if (current->vl > 0){
-	     // Only return the struct if it contains some data
+    while(TRUE){
+        current = doQueryForInterval(stmt, from, to, fl);
+        if (current->vl > 0){
+         // Only return the struct if it contains some data
             appendData(&result, current);
-	    } else {
-	     // No data was found for this interval
-	    	freeData(current);
-	    }
+        } else {
+         // No data was found for this interval
+            freeData(current);
+        }
 
         if (to >= maxTo){
             break;
@@ -105,9 +105,9 @@ static struct Data* doQuery(sqlite3_stmt *stmt, time_t minFrom, time_t maxTo, ti
             to   = addTo(to);
             //to = (to > maxTo) ? maxTo : to;
         }
-	}
+    }
 
-	return result;
+    return result;
 }
 
 static time_t addToDateY(time_t ts){
@@ -132,23 +132,23 @@ static time_t addToDateH(time_t ts){
 
 static struct Data* doQueryForInterval(sqlite3_stmt *stmt, time_t tsFrom, time_t tsTo, int fl){
  // Perform a SQL SELECT for the specified interval
-	bindQueryParams(stmt, tsFrom, tsTo, fl);
+    bindQueryParams(stmt, tsFrom, tsTo, fl);
 
-	struct Data* data = runSelect(stmt);
-	sqlite3_reset(stmt);
+    struct Data* data = runSelect(stmt);
+    sqlite3_reset(stmt);
 
-	data->ts = tsTo;
-	data->dr = tsTo - tsFrom;
-	data->fl = fl;
+    data->ts = tsTo;
+    data->dr = tsTo - tsFrom;
+    data->fl = fl;
 
-	assert(data->next == NULL); // We should only ever have 1 row
+    assert(data->next == NULL); // We should only ever have 1 row
 
-	return data;
+    return data;
 }
 
 static void bindQueryParams(sqlite3_stmt* stmt, time_t tsFrom, time_t tsTo, int fl) {
-	sqlite3_bind_int(stmt, 1, fl);
-	sqlite3_bind_int(stmt, 2, tsFrom);
-	sqlite3_bind_int(stmt, 3, tsTo);
+    sqlite3_bind_int(stmt, 1, fl);
+    sqlite3_bind_int(stmt, 2, tsFrom);
+    sqlite3_bind_int(stmt, 3, tsTo);
 }
 

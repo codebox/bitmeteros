@@ -100,18 +100,18 @@
 #define OPT_HOST 'a'
 // ----
 struct Prefs{
-	unsigned int mode;
-	unsigned int dumpFormat;
-	unsigned int units;
-	unsigned int help;
-	unsigned int version;
-	unsigned int rangeFrom;
-	unsigned int rangeTo;
-	unsigned int group;
-	unsigned int barChars;
-	unsigned int maxAmount;
-	unsigned int monitorType;
-	char* filter;
+    unsigned int mode;
+    unsigned int dumpFormat;
+    unsigned int units;
+    unsigned int help;
+    unsigned int version;
+    unsigned int rangeFrom;
+    unsigned int rangeTo;
+    unsigned int group;
+    unsigned int barChars;
+    unsigned int maxAmount;
+    unsigned int monitorType;
+    char* filter;
     char* errorMsg;
 };
 // ----
@@ -123,21 +123,21 @@ void doSummary();
 void doHelp();
 void doBmClientVersion();
 
-#ifdef UNIT_TESTING	
-	#define DO_HELP mockDoHelp
-	#define DO_VERSION mockDoBmClientVersion
-	#define DO_DUMP mockDoDump
-	#define DO_MONITOR mockDoMonitor
-	#define DO_SUMMARY mockDoSummary
-	#define DO_QUERY mockDoQuery
-	#define PARSE_ARGS mockParseArgs
+#ifdef UNIT_TESTING 
+    #define DO_HELP mockDoHelp
+    #define DO_VERSION mockDoBmClientVersion
+    #define DO_DUMP mockDoDump
+    #define DO_MONITOR mockDoMonitor
+    #define DO_SUMMARY mockDoSummary
+    #define DO_QUERY mockDoQuery
+    #define PARSE_ARGS mockParseArgs
 #else
-	#define DO_HELP doHelp
-	#define DO_VERSION doBmClientVersion	
-	#define DO_DUMP doDump	
-	#define DO_MONITOR doMonitor	
-	#define DO_SUMMARY doSummary
-	#define DO_QUERY doBmClientQuery
-	#define PARSE_ARGS parseArgs
+    #define DO_HELP doHelp
+    #define DO_VERSION doBmClientVersion    
+    #define DO_DUMP doDump  
+    #define DO_MONITOR doMonitor    
+    #define DO_SUMMARY doSummary
+    #define DO_QUERY doBmClientQuery
+    #define PARSE_ARGS parseArgs
 #endif
 #endif
