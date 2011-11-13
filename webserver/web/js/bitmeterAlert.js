@@ -497,6 +497,7 @@ BITMETER.resetAlertView = function(){
  // Name
     $('#createAlertName').val('');
 
+    $('#createAlertBox select').attr('selectedIndex', -1);
 };
 
 BITMETER.updateCreateAlertViewFromModel = function(isUserEdit){
@@ -999,8 +1000,9 @@ $(function(){
         $('#createAlertPeriodTimesTxt').html(BITMETER.zeroPad(t1) + ':00 - ' +BITMETER.zeroPad(t2) + ':00');
     }
     
+ // Browser detection workaround below for http://bugs.jqueryui.com/ticket/6750   
     sliderDiv.slider({
-        animate: true,
+        animate: !$.browser.msie,
         range: true,
         values: [6,18],
         orientation : 'horizontal',
