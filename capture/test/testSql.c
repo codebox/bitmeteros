@@ -11,6 +11,15 @@ Contains unit tests for the sql module.
 
 void setup();
 
+void setupForSqlTest(void** state){
+    setupTestDb(state);
+    emptyDb();
+    //setConfigIntValue(CONFIG_DB_VERSION, DB_VERSION);
+    //setConfigIntValue(CONFIG_CAP_KEEP_SEC_LIMIT, 3600);   
+    //setConfigIntValue(CONFIG_CAP_KEEP_MIN_LIMIT, 86400);   
+    //setConfigIntValue(CONFIG_CAP_COMPRESS_INTERVAL, 3600);
+}
+
 static int getDataRowCount(){
     return getRowCount("SELECT * FROM data");   
 }
@@ -65,7 +74,6 @@ void testCompressSecMultiFilters(void** state){
  // Check that database second->minute compression is performed correctly for multiple filter
     int now = 7200;
     setTime(now);
-    emptyDb();
     addDbRow(3601, 1,   1, 1);
     addDbRow(3601, 1,   2, 2);
     addDbRow(3601, 1,   4, 3);
@@ -76,7 +84,7 @@ void testCompressSecMultiFilters(void** state){
     addDbRow(3598, 1, 128, 2);
     addDbRow(3597, 1, 256, 3);
     compressDb();
-
+    
     struct Data row6 = {3600, 60,  288, 3, NULL};
     struct Data row5 = {3600, 60,  144, 2, &row6};
     struct Data row4 = {3600, 60,   72, 1, &row5};
@@ -94,7 +102,6 @@ void testCompressSecMultiIterations(void** state){
     filter will result. */
     int now = 7200;
     setTime(now);
-    emptyDb();
     addDbRow(3601, 1,     1, 0);
     addDbRow(3601, 1,     2, 1);
     addDbRow(3601, 1,     4, 2);
@@ -130,7 +137,6 @@ void testCompressMin1Filter(void** state){
  // Check that database minute->hour compression is performed correctly for a single filter
     int now = 86400 + 3600;
     setTime(now);
-    emptyDb();
     addDbRow(3601, 60,  1, 1);
     addDbRow(3600, 60,  2, 1);
     addDbRow(3599, 60,  4, 1);
@@ -149,7 +155,6 @@ void testCompressMinMultiFilters(void** state){
  // Check that database minute->hour compression is performed correctly for multiple adapters
     int now = 86400 + 3600;
     setTime(now);
-    emptyDb();
     addDbRow(3601, 60,   1, 0);
     addDbRow(3601, 60,   2, 1);
     addDbRow(3601, 60,   4, 2);

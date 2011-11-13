@@ -73,7 +73,6 @@ static int addInterval(struct DateCriteria* interval){
 }
 
 static int addAlertInterval(int alertId, int intervalId){
-    printf("addAlertInterval\n");
  // Inserts a row into the 'alert_interval' table
     sqlite3_stmt *stmtInsertAlertInterval = getStmt(ALERT_SQL_INSERT_ALERT_INTERVAL);
     sqlite3_bind_int(stmtInsertAlertInterval, 1, alertId);

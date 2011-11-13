@@ -53,12 +53,3 @@ int readLine(SOCKET fd, char* line);
 int httpHeadersOk(SOCKET fd);
 int parseData(SOCKET fd, char* alias, int* rowCount);
 int sendRequest(SOCKET fd, time_t ts, char* host, int port);
-
-// ----
-#ifdef UNIT_TESTING 
-    #define SEND mockSend
-    #define RECV mockRecv
-#else
-    #define SEND send
-    #define RECV recv
-#endif

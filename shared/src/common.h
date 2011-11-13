@@ -320,6 +320,8 @@ struct NameValuePair* makeNameValuePair(char* name, char* value);
     #define printf(fmt , args...) _test_printf(fmt , ##args) 
     #define PRINT(colour, msg , args...) _test_printOut(colour, msg , ##args) 
     #define dbg(fmt , args...) fprintf(stdout , fmt , ##args) 
+    #define SEND mockSend
+    #define RECV mockRecv
 #else
     #define SET_LOG_LEVEL setLogLevel
     #define OPEN_DB openDb
@@ -329,5 +331,8 @@ struct NameValuePair* makeNameValuePair(char* name, char* value);
     #define TO_DATE toDate
     #define PCAP_CLOSE pcap_close
     #define PRINT(colour, msg , args...) printOut(colour, msg , ##args) 
+    #define SEND send
+    #define RECV recv
 #endif
+
 #endif //#ifndef COMMON_H

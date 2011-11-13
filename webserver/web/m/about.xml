@@ -33,7 +33,7 @@
             GNU General Public License for more details.
         </p>
         <p>
-            <a href="/m">Home</a>
+            <a class="homeLink" href="index">Home</a>
         </p>
     </body>
 </html>

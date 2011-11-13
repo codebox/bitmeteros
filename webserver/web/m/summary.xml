@@ -16,6 +16,9 @@
             <!--[summary]-->
         </table>
         <br/>
-        <a class="refreshLink" href="/m/summary">Refresh Now</a>
+        <a class="refreshLink" href="summary">Refresh Now</a>
+        <br/><br/>
+        <a class="homeLink" href="index">Home</a>
+        
     </body>
 </html>

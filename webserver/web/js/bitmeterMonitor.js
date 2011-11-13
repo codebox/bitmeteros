@@ -37,21 +37,18 @@ BITMETER.updateMonitor = function(){
         graphObj.draw();
     }   
         
- // Updates the Current, Peak and Average figures displayed to the right of the graph
+ // Updates the Current and Average figures displayed to the right of the graph
     function updateFigures(jsonData){
         var ts, filterStats = {}, titleTxtArr = [];
         BITMETER.forEachFilter(function(o){
-                filterStats[o.id] = {filterName : o.name, total : 0, peak : 0, curr: 0, bestTs : 5};
+                filterStats[o.id] = {filterName : o.name, total : 0, curr: 0, bestTs : 5};
             }, true);
         
-     // Loop through all the data currently displayed on the graph and accumulate totals, peaks and best-fit current values
+     // Loop through all the data currently displayed on the graph and accumulate totals and best-fit current values
         $.each(jsonData, function(i,o){
             var stats = filterStats[o.fl];
             
             stats.total += o.vl;
-            if (o.vl > stats.peak){
-                stats.peak = o.vl;
-            }
             
          /* Use the most recent values to display in the 'Current' fields to the right of the graph, but ignore
             any values which have timestamps in the future (this can happen if we have synchronised with another
@@ -64,18 +61,12 @@ BITMETER.updateMonitor = function(){
             }
         });
         
-     // Store the peak values, we will need them again later
-        BITMETER.forEachFilter(function(o){
-                BITMETER.model.setMonitorPeak(o.id, filterStats[o.id].peak);
-            }, true);
-        
      // Format the values and display them
         ts = BITMETER.getMonitorTs();
         
         $.each(filterStats, function(filterId, stats){
             $("#monitorCurrent_" + stats.filterName).html(BITMETER.formatAmount(stats.curr)     + '/s');
             $("#monitorAverage_" + stats.filterName).html(BITMETER.formatAmount(stats.total/ts) + '/s');
-            $("#monitorPeak_"    + stats.filterName).html(BITMETER.formatAmount(stats.peak)     + '/s');
         });
         
         if (BITMETER.model.getMonitorSpeedInTitle()){
@@ -92,8 +83,8 @@ BITMETER.updateMonitor = function(){
             /* The response is formatted as follows, with the 'ts' values being offsets from the serverTime:
                 { serverTime : 123456, 
                       data : [
-                        {ts: 0, dr: 1, dl: 100, ul: 200},
-                        {ts: 1, dr: 1, dl: 101, ul: 201},
+                        {ts: 0, dr: 1, vl: 100, fl: 1},
+                        {ts: 1, dr: 1, vl: 101, fl: 2},
                            etc
                     ]}
             */
@@ -140,7 +131,7 @@ BITMETER.updateMonitor = function(){
 
 BITMETER.tabShowMonitor = function(){
  // Build the readout containing entries for each filter that we are displaying
-    var currentReadoutHtml, averageReadoutHtml, peakReadoutHtml, hrHtml, activeFilterCount = 0, i=0;
+    var currentReadoutHtml, averageReadoutHtml, hrHtml, activeFilterCount = 0, i=0;
     
     BITMETER.forEachFilter(function(){
             activeFilterCount++;
@@ -150,17 +141,15 @@ BITMETER.tabShowMonitor = function(){
             if (i++ === 0){
                 currentReadoutHtml = "<tr class='monitorReadoutRow'><td rowspan='" + activeFilterCount + "' class='monitorLabel'>Current</td><td class='monitorCurrent' id='monitorCurrent_" + o.name + "'></td></tr>";
                 averageReadoutHtml = "<tr class='monitorReadoutRow'><td rowspan='" + activeFilterCount + "' class='monitorLabel'>Average</td><td class='monitorAverage' id='monitorAverage_" + o.name + "'></td></tr>";
-                peakReadoutHtml    = "<tr class='monitorReadoutRow'><td rowspan='" + activeFilterCount + "' class='monitorLabel'>Peak</td>   <td class='monitorPeak'    id='monitorPeak_" + o.name + "'></td></tr>";
             } else {
                 currentReadoutHtml += "<tr class='monitorReadoutRow'><td class='monitorCurrent' id='monitorCurrent_" + o.name + "'></td></tr>";
                 averageReadoutHtml += "<tr class='monitorReadoutRow'><td class='monitorAverage' id='monitorAverage_" + o.name + "'></td></tr>";
-                peakReadoutHtml    += "<tr class='monitorReadoutRow'><td class='monitorPeak'    id='monitorPeak_" + o.name + "'></td></tr>";
             }   
         }, true);
 
     hrHtml = "<tr class='monitorReadoutRow'><td colspan='2'><hr/></td</tr>";    
     $('#monitorReadout table tr.monitorReadoutRow').remove();
-    $('#monitorReadout table').prepend(currentReadoutHtml + hrHtml + averageReadoutHtml + hrHtml + peakReadoutHtml);
+    $('#monitorReadout table').prepend(currentReadoutHtml + hrHtml + averageReadoutHtml);
     
     BITMETER.updateMonitor();
     BITMETER.refreshTimer.set(BITMETER.updateMonitor, BITMETER.model.getMonitorRefresh());  
@@ -168,7 +157,7 @@ BITMETER.tabShowMonitor = function(){
  // Make sure the readout values are coloured correctly
     BITMETER.forEachFilter(function(o){
             var colour = BITMETER.model.getColour(o.name);
-            $('#monitorCurrent_' + o.name + ', #monitorPeak_' + o.name + ', #monitorAverage_' + o.name).css('color', colour);
+            $('#monitorCurrent_' + o.name + ', #monitorAverage_' + o.name).css('color', colour);
         }, true);
 
     BITMETER.onTabHide.set(function(){
@@ -180,9 +169,16 @@ BITMETER.tabShowMonitor = function(){
 };
 
 BITMETER.stopwatch = (function(){
-    var sw = {}, timer, time, dlTotal, ulTotal, dlAvg, ulAvg, dlMax, ulMax, dlMin, ulMin, 
-        isRunning = false, latestServerTime = 0;
-        
+    var sw = {}, values, timer, time = 0, isRunning = false, latestServerTime = 0;
+    
+    function initValues(){
+        values = {};
+        time = 0;
+        BITMETER.forEachFilter(function(f){
+            values[f.id] = {'current' : 0, 'total' : 0};    
+        }, true);
+    }
+    
     sw.start = function(){
         if (!timer){
             timer = window.setInterval(function(){
@@ -205,8 +201,7 @@ BITMETER.stopwatch = (function(){
         return isRunning;  
     };
     sw.reset = function(){
-        time = dlTotal = ulTotal = dlAvg = ulAvg = dlMax = ulMax = 0;  
-        dlMin = ulMin = Number.MAX_VALUE;
+        initValues();
         latestServerTime = 0;
         if (sw.handler){
             sw.handler(sw);
@@ -216,26 +211,27 @@ BITMETER.stopwatch = (function(){
         this.handler = callback;
     };
     function getTotalsAfterTs(ts, data){
-        var dlTotal = 0, ulTotal = 0;
+        var totals = {};
         $.each(data, function(i,o){
             if (o.ts < ts) {
-                dlTotal += o.dl;   
-                ulTotal += o.ul;
+                if (!totals[o.fl]){
+                    totals[o.fl] = 0;
+                }
+                totals[o.fl] += o.vl;
             } else {
                 return false; // data is sorted on ts so stop looping   
             }
         });
-        return [dlTotal, ulTotal];
+        return totals;
     }
-    function updateTotals(dl, ul){
-        dlTotal += dl;
-        ulTotal += ul;
-        dlAvg = (time === 0 ? 0 : (dlTotal / time));
-        ulAvg = (time === 0 ? 0 : (ulTotal / time)); 
-        dlMax = (dl > dlMax ? dl : dlMax);
-        ulMax = (ul > ulMax ? ul : ulMax);
-        dlMin = (dl < dlMin ? dl : dlMin); 
-        ulMin = (ul < ulMin ? ul : ulMin);
+    function updateTotals(currentValues){
+        BITMETER.forEachFilter(function(f){
+            var currentValue = currentValues[f.id], valueEntry = values[f.id];
+            if (valueEntry && (currentValue !== undefined)){
+                valueEntry.current = currentValue;
+                valueEntry.total  += currentValue;
+            }
+        }, true);
     }
     sw.newData = function(serverTime, data){
         var totals, secondsSinceLastData;
@@ -247,38 +243,18 @@ BITMETER.stopwatch = (function(){
                 secondsSinceLastData = serverTime - latestServerTime;
             }
             totals = getTotalsAfterTs(secondsSinceLastData, data);
-            updateTotals(totals[0], totals[1]);
+            updateTotals(totals);
             latestServerTime = serverTime - data[0].ts;
         }
     };
     sw.getTime = function(){
         return time;
     };
-    sw.getDlTotal = function(){
-        return dlTotal;
+    
+    sw.getValues = function() {
+        return values;
     };
-    sw.getUlTotal = function(){
-        return ulTotal;
-    };
-    sw.getDlAvg = function(){
-        return dlAvg;
-    };
-    sw.getUlAvg = function(){
-        return ulAvg;
-    };
-    sw.getDlMax = function(){
-        return dlMax;
-    };
-    sw.getUlMax = function(){
-        return ulMax;
-    };
-    sw.getDlMin = function(){
-        return dlMin === Number.MAX_VALUE ? 0 : dlMin;
-    };
-    sw.getUlMin = function(){
-        return ulMin === Number.MAX_VALUE ? 0 : ulMin;
-    };
-    sw.reset();
+    
     return sw;
 }());
 
@@ -302,14 +278,7 @@ $(function(){
         panel = $('#monitor'),
         swDialog, monitorDialog,
         swReadout = $('#swReadout'),
-        swDlTotal = $('#swDlTotal'),
-        swUlTotal = $('#swUlTotal'),
-        swDlAvg   = $('#swDlAvg'),
-        swUlAvg   = $('#swUlAvg'),
-        swDlMax   = $('#swDlMax'),
-        swUlMax   = $('#swUlMax'),
-        swDlMin   = $('#swDlMin'),
-        swUlMin   = $('#swUlMin');
+        swValues = $('#swValues tbody')
 
     function setupGraph(){
         var arrData = [];
@@ -376,6 +345,15 @@ $(function(){
         close : function(){
             BITMETER.stopwatch.stop();
             BITMETER.stopwatch.reset();
+        },
+        open : function(){
+            var html = [];
+            BITMETER.forEachFilter(function(f){
+                var colourForFilter = BITMETER.model.getColour(f.name);
+                html.push('<tr style="color: ' + colourForFilter + '"><td class="swDesc" >' + f.desc + '</td><td class="swValue" id="swTotal' + f.id + '"></td><td class="swValue" id="swAverage' + f.id + '"></td></tr>');
+            }, true);
+            swValues.html(html.join(''));
+            BITMETER.stopwatch.reset();
         }
     });
     
@@ -388,22 +366,18 @@ $(function(){
     }
     
     $('#monitorStopwatchIcon').click(function(){
-            //$('.swDlValue').css('color', BITMETER.model.getDownloadColour());
-            //$('.swUlValue').css('color', BITMETER.model.getUploadColour());
             swDialog.dialog("open");
             setSwButtonState();
         });
 
     BITMETER.stopwatch.setHandler(function(sw){
         swReadout.html(BITMETER.formatInterval(sw.getTime(), BITMETER.formatInterval.TINY));
-        swDlTotal.html(BITMETER.formatAmount(sw.getDlTotal()));
-        swUlTotal.html(BITMETER.formatAmount(sw.getUlTotal()));
-        swDlAvg.html(BITMETER.formatAmount(sw.getDlAvg()) + '/s');
-        swUlAvg.html(BITMETER.formatAmount(sw.getUlAvg()) + '/s');
-        swDlMax.html(BITMETER.formatAmount(sw.getDlMax()) + '/s');
-        swUlMax.html(BITMETER.formatAmount(sw.getUlMax()) + '/s');
-        swDlMin.html(BITMETER.formatAmount(sw.getDlMin()) + '/s');
-        swUlMin.html(BITMETER.formatAmount(sw.getUlMin()) + '/s');                                    
+        var swValues = sw.getValues(), swTime = sw.getTime();
+        $.each(swValues, function(k,v){
+            var average = (swTime ? v.total/swTime : 0);
+            $('#swTotal' + k).text(BITMETER.formatAmount(v.current));
+            $('#swAverage' + k).text(BITMETER.formatAmount(average));
+        });
     });
     $('#swReset').button({ icons: {primary: 'ui-icon-seek-first'}});
     $('#swStopGo').button({ icons: {primary: 'ui-icon-play'}});

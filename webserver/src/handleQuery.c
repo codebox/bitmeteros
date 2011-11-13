@@ -93,7 +93,7 @@ static void writeCsvRow(SOCKET fd, struct Data* row, struct Filter* filters){
         char timePart[9];
         toTime(timePart, row->ts - row->dr);
 
-        char rowTxt[256]; //TODO long filter names will break this
+        char rowTxt[256];
         sprintf(rowTxt, "%s %s,%llu,%s\n", datePart, timePart, row->vl, filter->name);  
         WRITE_TEXT(fd, rowTxt);
     }

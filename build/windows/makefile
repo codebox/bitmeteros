@@ -45,11 +45,11 @@ INCLUDE_DIRS=-I$(SHARED_SRC) -I$(SHARED_CLIENT_SRC) -I$(CLIENT_SRC) -I$(CAPTURE_
 LIBS=C:\windows\system32\sqlite3.dll -lws2_32 -lmswsock -ladvapi32 -lshlwapi -liphlpapi C:\rob\code\winpcap\Lib\Packet.lib C:\WINDOWS\system32\wpcap.dll
 OBJS_BMSYNC=bmsync.o syncHelp.o syncHelpText.o syncOptions.o sql.o common.o data.o db.o log.o platform.o time.o filter.o nameValuePair.o clientFilter.o sync.o bmsync.res
 OBJS_BMDB=bmdb.o bmdbConfig.o upgrade.o bmdbVersion.o bmdbHelpText.o log.o db.o common.o platform.o data.o admin.o filter.o adapter.o filters.o total.o time.o nameValuePair.o clientFilter.o bmdb.res
-OBJS_BMWS=bmwsWin32.o handleConfig.o handleFile.o handleMonitor.o handleQuery.o handleSync.o handleAlert.o handleSummary.o handleRss.o http.o httpRequest.o data.o common.o log.o platform.o dbMultiThreaded.o alert.o clientMonitor.o clientSummary.o clientSync.o clientQuery.o clientDump.o clientAlert.o clientUtil.o time.o filter.o nameValuePair.o clientFilter.o
+OBJS_BMWS=bmwsWin32.o handleConfig.o handleExport.o handleFile.o handleMonitor.o handleQuery.o handleSync.o handleAlert.o handleSummary.o handleRss.o http.o httpRequest.o data.o common.o log.o platform.o dbMultiThreaded.o alert.o clientMonitor.o clientSummary.o clientSync.o clientQuery.o clientDump.o clientAlert.o clientUtil.o time.o filter.o nameValuePair.o clientFilter.o
 OBJS_CAP=sql.o time.o process.o common.o db.o log.o platform.o data.o adapter.o filter.o total.o nameValuePair.o clientFilter.o
 OBJS_CLIENT=bmclient.o options.o monitor.o summary.o query.o dump.o help.o helpText.o time.o timeSupport.o common.o db.o log.o platform.o clientDump.o clientMonitor.o clientSummary.o clientQuery.o clientUtil.o data.o filter.o nameValuePair.o clientFilter.o bmclient.res
 
-OBJS_TEST=cmockery.o alltests.o filter.o testFilter.o adapter.o testAdapter.o nameValuePair.o total.o db.o log.o testUtils.o data.o timeSupport.o common.o platform.o time.o alert.o testAlert.o testCommon.o clientDump.o testClientDump.o bmclient.o testBmClient.o dump.o testDump.o clientUtil.o testData.o clientAlert.o testClientAlert.o clientMonitor.o testClientMonitor.o clientQuery.o testClientQuery.o clientSummary.o testClientSummary.o clientSync.o testClientSync.o testClientUtil.o bmdbConfig.o testConfig.o testDb.o handleConfig.o testHandleConfig.o testTime.o process.o testProcess.o sql.o monitor.o summary.o query.o help.o options.o http.o handleMonitor.o httpRequest.o handleSummary.o handleQuery.o handleSync.o handleAlert.o handleRss.o handleFile.o bmwsWin32.o helpText.o testSql.o testClientOptions.o testSyncOptions.o syncOptions.o upgrade.o testUpgrade.o testHandleSummary.o testHandleFile.o testHttpRequest.o testHandleQuery.o testHandleMonitor.o testHandleAlert.o testHandleRss.o testNameValuePair.o testTotal.o testHandleSync.o testClientFilter.o clientFilter.o testSync.o sync.o mocks.o
+OBJS_TEST=cmockery.o alltests.o filter.o testFilter.o adapter.o testAdapter.o nameValuePair.o total.o db.o log.o testUtils.o data.o timeSupport.o common.o platform.o time.o alert.o testAlert.o testCommon.o clientDump.o testClientDump.o bmclient.o testBmClient.o dump.o testDump.o clientUtil.o testData.o clientAlert.o testClientAlert.o clientMonitor.o testClientMonitor.o clientQuery.o testClientQuery.o clientSummary.o testClientSummary.o clientSync.o testClientSync.o testClientUtil.o bmdbConfig.o testConfig.o testDb.o handleConfig.o handleExport.o testHandleConfig.o testTime.o process.o testProcess.o sql.o monitor.o summary.o query.o help.o options.o http.o handleMonitor.o httpRequest.o handleSummary.o handleQuery.o handleSync.o handleAlert.o handleRss.o handleFile.o bmwsWin32.o helpText.o testSql.o testClientOptions.o testSyncOptions.o syncOptions.o upgrade.o testUpgrade.o testHandleSummary.o testHandleFile.o testHttpRequest.o testHandleQuery.o testHandleMonitor.o testHandleAlert.o testHandleRss.o testNameValuePair.o testTotal.o testHandleSync.o testClientFilter.o clientFilter.o testSync.o sync.o mocks.o testHandleExport.o testHttp.o
 
 CC=gcc -DUNIT_TESTING -DHAVE_DECL_OPTRESET -DSTATS_MODE
 //CC=gcc -DSTATS_MODE
@@ -173,6 +173,9 @@ testClientUtil.o: $(SHARED_CLIENT_TEST)\testClientUtil.c $(SHARED_SRC)\common.h 
 testHttpRequest.o: $(WEB_TEST)\testHttpRequest.c $(SHARED_SRC)\common.h $(TEST)\test.h $(TEST)\cmockery.h $(SHARED_CLIENT_SRC)\client.h $(WEB_SRC)\bmws.h
 	$(CC) -c $(WEB_TEST)\testHttpRequest.c -o testHttpRequest.o $(INCLUDE_DIRS)
 
+testHttp.o: $(WEB_TEST)\testHttp.c $(SHARED_SRC)\common.h $(TEST)\test.h $(TEST)\cmockery.h $(SHARED_CLIENT_SRC)\client.h $(WEB_SRC)\bmws.h
+	$(CC) -c $(WEB_TEST)\testHttp.c -o testHttp.o $(INCLUDE_DIRS)
+
 testHandleConfig.o: $(WEB_TEST)\testHandleConfig.c $(SHARED_SRC)\common.h $(TEST)\test.h $(TEST)\cmockery.h $(SHARED_CLIENT_SRC)\client.h $(WEB_SRC)\bmws.h
 	$(CC) -c $(WEB_TEST)\testHandleConfig.c -o testHandleConfig.o $(INCLUDE_DIRS)
 
@@ -190,6 +193,9 @@ testHandleQuery.o: $(WEB_TEST)\testHandleQuery.c $(SHARED_SRC)\common.h $(TEST)\
 
 testHandleSummary.o: $(WEB_TEST)\testHandleSummary.c $(SHARED_SRC)\common.h $(TEST)\test.h $(TEST)\cmockery.h $(SHARED_CLIENT_SRC)\client.h $(WEB_SRC)\bmws.h
 	$(CC) -c $(WEB_TEST)\testHandleSummary.c -o testHandleSummary.o $(INCLUDE_DIRS)
+
+testHandleExport.o: $(WEB_TEST)\testHandleExport.c $(SHARED_SRC)\common.h $(TEST)\test.h $(TEST)\cmockery.h $(SHARED_CLIENT_SRC)\client.h $(WEB_SRC)\bmws.h
+	$(CC) -c $(WEB_TEST)\testHandleExport.c -o testHandleExport.o $(INCLUDE_DIRS)
 
 testHandleSync.o: $(WEB_TEST)\testHandleSync.c $(SHARED_SRC)\common.h $(TEST)\test.h $(TEST)\cmockery.h $(SHARED_CLIENT_SRC)\client.h $(WEB_SRC)\bmws.h
 	$(CC) -c $(WEB_TEST)\testHandleSync.c -o testHandleSync.o $(INCLUDE_DIRS)
@@ -306,9 +312,12 @@ handleSync.o: $(WEB_SRC)\handleSync.c $(WEB_SRC)\bmws.h $(SHARED_SRC)\common.h $
 	
 handleAlert.o: $(WEB_SRC)\handleAlert.c $(WEB_SRC)\bmws.h $(SHARED_SRC)\common.h $(SHARED_CLIENT_SRC)\client.h
 	$(CC) -c $(WEB_SRC)\handleAlert.c -o handleAlert.o $(INCLUDE_DIRS)
-	
+
 handleQuery.o: $(WEB_SRC)\handleQuery.c $(WEB_SRC)\bmws.h $(SHARED_SRC)\common.h $(SHARED_CLIENT_SRC)\client.h
 	$(CC) -c $(WEB_SRC)\handleQuery.c -o handleQuery.o $(INCLUDE_DIRS)
+
+handleExport.o: $(WEB_SRC)\handleExport.c $(WEB_SRC)\bmws.h $(SHARED_SRC)\common.h $(SHARED_CLIENT_SRC)\client.h
+	$(CC) -c $(WEB_SRC)\handleExport.c -o handleExport.o $(INCLUDE_DIRS)                                         	
 
 handleSummary.o: $(WEB_SRC)\handleSummary.c $(WEB_SRC)\bmws.h $(SHARED_SRC)\common.h $(SHARED_CLIENT_SRC)\client.h
 	$(CC) -c $(WEB_SRC)\handleSummary.c -o handleSummary.o $(INCLUDE_DIRS)

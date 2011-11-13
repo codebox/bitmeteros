@@ -10,7 +10,7 @@ BITMETER.tabShowSummary = function(){
     function updateSummary(){
         function populateSummary(){
          // Take the current Summary values out of the Model and display them
-            var summary = BITMETER.model.getSummary(), sinceDate, sinceDateTxt, html = [], hostsTxt;
+            var summary = BITMETER.model.getSummary(), sinceDate, sinceDateTxt, html = [], hostsArray, hostsTxt;
             
             html.push('<tr><th class="filterNameContainer">&nbsp;</th><th>Today</th><th>Month</th><th>Year</th><th>Total</th></tr>');
 
@@ -40,17 +40,16 @@ BITMETER.tabShowSummary = function(){
                     BITMETER.consts.months[sinceDate.getMonth()] + ' ' + (1900 + sinceDate.getYear()) + ' ' + sinceDate.getHours() + ':00:00';
             html.push('<tr><td class="name">Since</td><td colspan="4" class="value">' + sinceDateTxt + '</td></tr>');
             
-            if (BITMETER.model.getSummary().hosts){
-                if (BITMETER.model.getSummary().hosts.length === 0){
-                    hostsTxt = 'No data from other hosts';
-                } else {
-                    hostsTxt = '';
-                    $.each(BITMETER.model.getSummary().hosts, function(i,o){
-                        hostsTxt += (o + '<br>');   
-                    });
-                }
-                html.push('<tr><td class="name">Hosts</td><td colspan="4" class="value">' + hostsTxt + '</td></tr>');               
+            hostsArray = BITMETER.model.getSummary().hosts;
+            if (hostsArray && hostsArray.length){
+                hostsTxt = '';
+                $.each(BITMETER.model.getSummary().hosts, function(i,o){
+                    hostsTxt += (o + '<br>');   
+                });
+            } else {
+                hostsTxt = 'No data from other hosts';
             }
+            html.push('<tr><td class="name">Hosts</td><td colspan="4" class="value">' + hostsTxt + '</td></tr>');               
             table.html(html.join(''));
         }
         

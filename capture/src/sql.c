@@ -166,23 +166,24 @@ static int doCompress(int ts, int oldDr, int newDr){
         total  = sqlite3_column_int64(stmt, 1);
 
         logMsg(LOG_DEBUG, "doCompress loop: vl=%llu fl=%d", total, filter);
-
+ 
         insertedOk = doInsert(ts, newDr, filter, total);
-        if (insertedOk){
-         // Only remove the old rows if we succeeded in inserting the new one
-            deletedOk = doDelete(ts, oldDr);
-            if (!deletedOk){
-                status = FAIL;
-                break;
-            }
-        } else {
+        if (!insertedOk){
             status = FAIL;
             break;
         }
     }
-
+    if (rc != SQLITE_DONE){
+        logMsg(LOG_ERR, "sqlite3_step in doCompress returned %d", rc);
+        status = FAIL;   
+    }
     finishedStmt(stmt);
-
+    
+ // Only remove the old rows if we succeeded in inserting the new one    
+    if (status == SUCCESS){
+        status = doDelete(ts, oldDr);
+    }
+    
     return status;
 }
 

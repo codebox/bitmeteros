@@ -27,7 +27,6 @@ static void processMonitorAjaxRequest(SOCKET fd, int ts, int* fl){
         appendData(&result, getMonitorValues(queryTs, *fl));
         fl++;
     }
-    //struct Data* result = getMonitorValues(queryTs, fl);
 
  /* The database may contain values with timestamps that lie in the future, relative to the current system time. This
     can happen as a result of changes to/from GMT, or if the system clock is altered manually or accidentally. We don't

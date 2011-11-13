@@ -22,7 +22,7 @@ static struct HttpResponse HTTP_SERVER_ERROR = {500, "Bad/missing parameter"};
 static void writeHeaders(SOCKET fd, struct HttpResponse response, char* contentType, int endHeaders);
     
 // These are the different operations that we can perform on behalf of the client
-enum OpType{File, Monitor, Summary, Query, Sync, Config, Alert, RSS, MobileMonitor, MobileSummary, MobileAbout};
+enum OpType{File, Monitor, Summary, Query, Export, Sync, Config, Alert, RSS, MobileMonitor, MobileSummary, MobileAbout};
 
 void writeHeader(SOCKET fd, char* name, char* value){
  // Helper function, writes out a single HTTP header with the appropriate separator and line terminator
@@ -123,6 +123,9 @@ void processRequest(SOCKET fd, char* buffer, int allowAdmin){
         } else if (strcmp(req->path, "/config") == 0){
             op = Config;
 
+        } else if (strcmp(req->path, "/export") == 0){
+            op = Export;
+
         } else if (strcmp(req->path, "/alert") == 0){
             op = Alert;
 
@@ -167,6 +170,9 @@ void processRequest(SOCKET fd, char* buffer, int allowAdmin){
 
         } else if (op == Config){
             processConfigRequest(fd, req, allowAdmin);
+
+        } else if (op == Export){
+            processExportRequest(fd, req);
 
         } else if (op == Alert){
             processAlertRequest(fd, req, allowAdmin);
@@ -214,14 +220,7 @@ void writeText(SOCKET fd, char* txt){
 }
 
 void writeData(SOCKET fd, char* data, int len){
-    #ifdef TESTING
-        write(fd, data, len);
-        #ifndef _WIN32
-            fsync(fd);
-        #endif
-    #else
-        send(fd, data, len, 0);
-    #endif
+    send(fd, data, len, 0);
 }
 
 void writeDataToJson(SOCKET fd, struct Data* data){

@@ -11,6 +11,8 @@
         <h1>Monitor</h1>
         <!--[monitor]-->
         <br/>
-        <a class="refreshLink" href="/m/monitor">Refresh Now</a>
+        <a class="refreshLink" href="monitor">Refresh Now</a>
+        <br/><br/>
+        <a class="homeLink" href="index">Home</a>
     </body>
 </html>

@@ -265,6 +265,7 @@ void testNormaliseTm(void** state);
 void testProcess(void** state);
 
 // sql.c
+void setupForSqlTest(void** state);
 void testUpdateDbNull(void** state);
 void testUpdateDbMultiple(void** state);
 void testCompressSec1Filter(void** state);
@@ -361,6 +362,9 @@ void testAlertUpdateOk(void** state);
 void testAlertUpdateForbidden(void** state);
 void testProcessAlertStatus(void** state);
 
+// handleExport.c
+void testHandleExport(void** state);
+
 // handleRss.c
 void testRssHourlyNoAlerts(void** state);
 void testRssWithAlertOk(void** state);
@@ -385,4 +389,8 @@ void testFilterExprIsValid(void** state);
 void testAddFilter(void** state);
 void testRemoveFilter(void** state);
 void testReadFiltersForHost(void** state);
+
+// http.c
+void testWriteHeader(void** state);
+
 #endif

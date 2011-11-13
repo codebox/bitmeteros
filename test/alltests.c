@@ -140,14 +140,14 @@ int main(int argc, char* argv[]) {
         unit_test(testAddToDate),
         unit_test(testNormaliseTm),
         unit_test(testProcess),
-        unit_test_setup_teardown(testUpdateDbNull, setupTestDb, tearDownTestDb),
-        unit_test_setup_teardown(testUpdateDbMultiple, setupTestDb, tearDownTestDb),
-        unit_test_setup_teardown(testCompressSec1Filter, setupTestDb, tearDownTestDb),
-        unit_test_setup_teardown(testCompressSecMultiFilters, setupTestDb, tearDownTestDb),
-        unit_test_setup_teardown(testCompressSecMultiIterations, setupTestDb, tearDownTestDb),
-        unit_test_setup_teardown(testCompressMin1Filter, setupTestDb, tearDownTestDb),
-        unit_test_setup_teardown(testCompressMinMultiFilters, setupTestDb, tearDownTestDb),
-        unit_test_setup_teardown(testGetNextCompressTime, setupTestDb, tearDownTestDb),
+        unit_test_setup_teardown(testUpdateDbNull, setupForSqlTest, tearDownTestDb),
+        unit_test_setup_teardown(testUpdateDbMultiple, setupForSqlTest, tearDownTestDb),
+        unit_test_setup_teardown(testCompressSec1Filter, setupForSqlTest, tearDownTestDb),
+        unit_test_setup_teardown(testCompressSecMultiFilters, setupForSqlTest, tearDownTestDb),
+        unit_test_setup_teardown(testCompressSecMultiIterations, setupForSqlTest, tearDownTestDb),
+        unit_test_setup_teardown(testCompressMin1Filter, setupForSqlTest, tearDownTestDb),
+        unit_test_setup_teardown(testCompressMinMultiFilters, setupForSqlTest, tearDownTestDb),
+        unit_test_setup_teardown(testGetNextCompressTime, setupForSqlTest, tearDownTestDb),
         unit_test(testQueryMode),
         unit_test(testSummaryMode),
         unit_test(testDumpMode),
@@ -172,6 +172,7 @@ int main(int argc, char* argv[]) {
         unit_test_setup_teardown(testUpgradeFrom7To8, setupTestDb, tearDownTestDb),
         unit_test_setup_teardown(testConvertAddrValues, setupTestDb, tearDownTestDb),
         unit_test_setup_teardown(testHandleSummary, setupTestDb, tearDownTestDb),
+        unit_test_setup_teardown(testHandleExport, setupTestDb, tearDownTestDb),
         unit_test_setup_teardown(testCharSubstitution, setupTestDb, tearDownTestDb),
         unit_test(testGetMimeTypeForFile),
         unit_test(testParseRequest),
@@ -228,7 +229,8 @@ int main(int argc, char* argv[]) {
         unit_test_setup_teardown(testBuildFilterPairs, setupTestDb, tearDownTestDb),
         unit_test(testFreeNameValuePairs),
         unit_test(testAppendNameValuePair),
-        unit_test(testMakeHtmlFromData)
+        unit_test(testMakeHtmlFromData),
+        unit_test(testWriteHeader)
 
     }; 
     return run_tests(tests); 

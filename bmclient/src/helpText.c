@@ -46,11 +46,11 @@ char* helpTxt=
 "        yyyymmddhh  - a year, month and day, followed by a 2 digit hour" EOL
 " " EOL
 "    Some examples:" EOL
-"        Show all data recorded during the year 2009:" EOL
+"        Show all data recorded for the filter 'dl' during the year 2009:" EOL
 "            bmclient -m query -f dl -r2009" EOL
-"        Show all data recorded between April 2008 and June 2008, inclusive" EOL
+"        Show all data recorded for the filter 'dl' between April 2008 and June 2008, inclusive" EOL
 "            bmclient -m query -f dl -r200804-200806" EOL
-"        Show all data recorded between 4AM and 5AM on 1st January 2002" EOL
+"        Show all data recorded for the filter 'dl' between 4AM and 5AM on 1st January 2002" EOL
 "            bmclient -m query -f dl -r2002010104" EOL
 "                OR" EOL
 "            bmclient -m query -f dl -r2002010104-2002010105" EOL

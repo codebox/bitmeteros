@@ -68,6 +68,7 @@ void processMobileSummaryRequest(SOCKET fd, struct Request* req);
 void processQueryRequest(SOCKET fd, struct Request* req);
 void processSyncRequest(SOCKET fd, struct Request* req);
 void processConfigRequest(SOCKET fd, struct Request* req, int allowAdmin);
+void processExportRequest(SOCKET fd, struct Request* req);
 void processAlertRequest(SOCKET fd, struct Request* req, int allowAdmin);
 void processFileRequest(SOCKET fd, struct Request* req, struct NameValuePair* substPairs);
 void processRssRequest(SOCKET fd, struct Request* req);
@@ -125,4 +126,4 @@ void getWebRoot(char* path);
     #define WRITE_SYNC_DATA writeSyncData
 #endif
 
-#endif
+#endif // ifndef BMWS_H

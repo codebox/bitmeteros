@@ -21,9 +21,6 @@ void setupCapture();
 int processCapture();
 void shutdownCapture();
 void logData(struct Data*);
-#ifdef TESTING
-void setPrevData(struct Data* data);
-#endif
 
 int getTotalForFilter(struct Adapter* adapters, int filterId);
 

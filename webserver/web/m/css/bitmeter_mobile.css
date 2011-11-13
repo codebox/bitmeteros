@@ -34,6 +34,13 @@ th{
     border: 1px solid blue;
     padding: 0.3em; 
 }
+.homeLink{
+    color: green;
+    text-decoration: none;
+    background-color: #ccffcc;
+    border: 1px solid green;
+    padding: 0.3em; 
+}
 table#monitor, table#summary{
     margin-left: auto;
     margin-right: auto;

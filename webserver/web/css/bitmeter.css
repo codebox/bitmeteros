@@ -462,9 +462,13 @@ h3#calcHowMuch{
 #swStopGo{
     margin-left: 0.5em;
 }
-.swDlValue, .swUlValue{
+#swValues tbody td.swValue{
     text-align: right;
-    width: 40%;    
+    width: 7em;
+}
+#swValues tbody td.swDesc{
+    font-weight: bold;
+    width: 20em;
 }
 .swLabel{
     font-weight: bold;   

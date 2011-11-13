@@ -9,9 +9,9 @@
     <body>
         <h1></h1>
         <ul>
-            <li><a href="/m/monitor">Monitor</a></li>
-            <li><a href="/m/summary">Summary</a></li>
-            <li><a href="/m/about">About</a></li>
+            <li><a href="m/monitor">Monitor</a></li>
+            <li><a href="m/summary">Summary</a></li>
+            <li><a href="m/about">About</a></li>
         </ul>
     </body>
 </html>

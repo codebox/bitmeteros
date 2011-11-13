@@ -37,12 +37,12 @@
             <p>
                 You must enable JavaScript in your browser to use the BitMeter OS Web Interface.<br>
             <span id="noscriptMobile">
-                The <a href="m/index.html">Mobile Interface</a> provides limited functionality, 
+                The <a href="m">Mobile Interface</a> provides limited functionality, 
                 but does not require JavaScript.
             </span>
             </p>
         </noscript>
-        <p id="mobileLink"><a href="m/index.html">Click here to use the Mobile Interface</a></p>
+        <p id="mobileLink"><a href="/m/index.html">Click here to use the Mobile Interface</a></p>
         <div id="tabs">
             <ul>
                 <li><a href="#monitor"><span>Monitor</span></a></li>
@@ -98,7 +98,7 @@
                         Selecting the <em>Show Speeds in Title</em> option displays the current transfer speeds in the title of the browser window, allowing them to be monitored while the browser is minimised, or obscured by other applications.
                     </p>
                     <p>
-                        The <em>Stopwatch</em> utility, displayed by clicking the circular icon in the lower right part of the screen, can be used to check total, peak and average speeds over any time interval that you choose.
+                        The <em>Stopwatch</em> utility, displayed by clicking the circular icon in the lower right part of the page, can be used to check total and average speeds over any time interval that you choose.
                     </p>
                 </div>
                 <div class="dialog" id="swDialog" title="Stopwatch">
@@ -110,31 +110,14 @@
                         </div> 
                     </div>
                     <table id="swValues">
-                        <tr>
-                            <th></th>
-                            <th class="swDlValue">Download</th>
-                            <th class="swUlValue">Upload</th>
-                        </tr>
-                        <tr>
-                            <td class="swLabel">Total</td>
-                            <td class="swDlValue" id="swDlTotal">0</td>
-                            <td class="swUlValue" id="swUlTotal">0</td>
-                        </tr>
-                        <tr>
-                            <td class="swLabel">Average</td>
-                            <td class="swDlValue" id="swDlAvg">0</td>
-                            <td class="swUlValue" id="swUlAvg">0</td>
-                        </tr>
-                        <tr>
-                            <td class="swLabel">Max</td>
-                            <td class="swDlValue" id="swDlMax">0</td>
-                            <td class="swUlValue" id="swUlMax">0</td>
-                        </tr>
-                        <tr>
-                            <td class="swLabel">Min</td>
-                            <td class="swDlValue" id="swDlMin">0</td>
-                            <td class="swUlValue" id="swUlMin">0</td>
-                        </tr>
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>Current</th>
+                                <th>Average</th>
+                            </tr>
+                        </thead>
+                        <tbody/>
                     </table>
                 </div>
             </div>
@@ -207,11 +190,8 @@
                         <li><em>Date</em> - The date on which the row's values were recorded</li>
                         <li><em>Start Time</em> - The start of the time interval covered by the row</li>
                         <li><em>End Time</em> - The end of the time interval covered by the row</li>
-                        <li><em>Download</em> - The number of bytes downloaded during this time interval</li>
-                        <li><em>Upload</em> - The number of bytes uploaded during this time interval</li>
-                        <li><em>Host</em> - If the row represents data retrieved from BitMeter OS running on another computer (using the synchronisation feature),
-                        then the name of the computer will appear here, otherwise this value will be empty.</li>
-                        <li><em>Adapter</em> - The name of the network adapter used to upload/download the data</li>
+                        <li><em>Value</em> - The number of bytes transferred during this time interval that matched a specific filter</li>
+                        <li><em>Filter</em> - The name of the filter to which the value relates</li>
                     </ul>
                 </div>
             </div>
@@ -224,15 +204,13 @@
                 </div>
                 <div class="dialog" title="Help">
                     <p>
-                        The <strong>Summary</strong> page displays a basic summary of your connection usage, showing how much data has been uploaded
-                        and downloaded today, this month, this year, and in total. 
+                        The <strong>Summary</strong> page displays a basic summary of your connection usage, showing how much data has been matched by each filter today, this month, this year, and in total. 
                     </p>
                     <p>
                         The date and time when BitMeter began recording your connection usage is shown next to the <strong>Since</strong> label.
                     </p>
                     <p>
-                        If the database includes data imported from other hosts via the <strong>bmsync</strong> utility, then a list of these hosts will
-                        be shown at the bottom of the summary.
+                        If the database includes data imported from other hosts via the <strong>bmsync</strong> utility, then a list of these hosts will be shown at the bottom of the summary.
                     </p>    
                 </div>
             </div>
@@ -305,10 +283,7 @@
                         Specify how you would like the results of your query grouped, by selecting one of the options from the <em>Display</em> list.
                     </p>
                     <p>
-                        Clicking the <em>Go</em> button will display the results of your query in the grid on the right of the page. If a large number
-                        of results are returned then they may be split into pages, you can navigate through the pages of results by using the blue left 
-                        and right arrows underneath the grid. You can sort the results by date, or by upload or download amounts, by clicking the column 
-                        headings in the grid. Clicking a column heading a second time will reverse the order of the sort.
+                        Clicking the <em>Go</em> button will display the results of your query in the grid on the right of the page. If a large number of results are returned then they may be split into pages, you can navigate through the pages of results by using the blue left- and right-arrows underneath the grid. You can sort the results by date, or by the values of any filter, by clicking the column headings in the grid. Clicking a column heading a second time will reverse the order of the sort.
                     </p>    
                     <p>
                         When a set of results are displayed in the grid an <em>Export Results</em> link will appear on the left of the page, clicking this link exports the values currently shown in the grid in CSV format, the resulting file can be viewed in any spreadsheet application or text-editor.
@@ -490,7 +465,7 @@
                         To create a new Alert, click the <em>Create</em> link, which will launch the <em>Alert Editor</em>. The Alert Editor dialog is divided into 5 sections, each of which must be completed before a new Alert can be saved:
                     </p>
                     <p>
-                        The <em>Direction</em> section prompts you to choose whether the Alert should count uploaded data, downloaded data, or both, towards its total.
+                        The <em>Filter</em> section prompts you to choose the filter which the Alert should use when calculating its total.
                     </p>
                     <p>
                         The <em>Amount</em> section asks you indicate how much data can be transferred before the Alert's limit is reached. Enter an amount using the standard abbreviations <em>kB</em> (kilobytes), <em>MB</em> (megabytes), <em>GB</em> (gigabytes), or <em>TB</em> (terabytes).
@@ -719,8 +694,7 @@
                 </div>
                 <div id="prefsHelp" class="dialog" title="Help">
                     <p>
-                        The <strong>Preferences</strong> page displays various configuration values that can be changed to alter
-                        the appearance or behavior of BitMeter OS. 
+                        The <strong>Preferences</strong> page displays various configuration values that can be changed to alter the appearance or behavior of BitMeter OS. 
                     </p>
                     <p>
                         Once a value has been altered it must be saved before the change will take effect. 
