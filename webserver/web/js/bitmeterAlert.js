@@ -1049,6 +1049,7 @@ $(function(){
         var bytes, amountTxt, txtValue = $('#createAlertAmount').val();
         bytes = BITMETER.parseAmountValue(txtValue);
         bytes = bytes || 0;
+        bytes = Math.round(bytes);
         amountTxt = BITMETER.formatAmount(bytes);
         $('#createAlertAmountDesc').html(amountTxt);
         BITMETER.createAlertModel.setAmount(bytes);
