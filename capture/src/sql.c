@@ -152,7 +152,7 @@ static int doInsert(int ts, int dr, const char* addr, BW_INT dl, BW_INT ul, cons
   		logMsg(LOG_ERR, "doInsert() failed to insert values %d,%d,%s,%llu,%llu,%s into db rc=%d error=%s", ts, dr, addr, dl, ul, host, rc, getDbError());
   		status = FAIL;
   	} else {
-  		logMsg(LOG_INFO, "doInsert() ok: %d,%d,%s,%llu,%llu,%s", ts, dr, addr, dl, ul, host);//TODO
+  		logMsg(LOG_DEBUG, "doInsert() ok: %d,%d,%s,%llu,%llu,%s", ts, dr, addr, dl, ul, host);//TODO
         status = SUCCESS;
   	}
   	sqlite3_reset(stmtInsertData);
@@ -255,13 +255,15 @@ static int compressDbStage(int secKeepInterval, int oldDr, int newDr, int (*fnRo
 
  // Calculate the largest 'ts' value that we will compress
 	int keepBoundary = getTime() - secKeepInterval;
-
+    int minTsRoundedUp = 0;
+    
  // Find the smallest 'ts' value in the 'data' table (having the 'dr' value that we are interested in)
 	int minTs = getMinTs(oldDr);
-
- // Round the smallest 'ts' value up to the nearest sensible interval (minute/hour)
-	int minTsRoundedUp = (*fnRoundUp)(minTs);
-
+    if (minTs != 0){
+     // Round the smallest 'ts' value up to the nearest sensible interval (minute/hour)
+    	minTsRoundedUp = (*fnRoundUp)(minTs);
+    }
+    
     int status = SUCCESS;
     int compressOk;
 
@@ -281,8 +283,18 @@ static int compressDbStage(int secKeepInterval, int oldDr, int newDr, int (*fnRo
         }
 
      // Check what the oldest 'ts' value is now, after the previous compression
+        int prevMinTs = minTs;
         minTs = getMinTs(oldDr);
-        minTsRoundedUp = (*fnRoundUp)(minTs);
+        if (minTs != 0){
+            if (minTs <= prevMinTs){
+             // Should never happen, but sometimes does - I don't know why. Results in nasty CPU-intensive infinite looping
+                status = FAIL;
+                logMsg(LOG_ERR, "getMinTs() error: oldDr=%d, prevMinTs=%d, minTs=%d,",
+                        oldDr, prevMinTs, minTs);
+                break;    
+            } 
+            minTsRoundedUp = (*fnRoundUp)(minTs);
+        }
     }
 
     if (status == SUCCESS){
