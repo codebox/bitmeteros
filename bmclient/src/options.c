@@ -298,6 +298,7 @@ static int setRange(struct Prefs *prefs, char* rangeTxt){
 			prefs->rangeTo   = adjustForEndOfRange(tsTo, strlen(rangeTo));
 		}
 	}
+
 	return SUCCESS;
 }
 

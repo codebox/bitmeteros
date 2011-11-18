@@ -1,32 +1,6 @@
-/*
- * BitMeterOS
- * http://codebox.org.uk/bitmeterOS
- *
- * Copyright (c) 2011 Rob Dawson
- *
- * Licensed under the GNU General Public License
- * http://www.gnu.org/licenses/gpl.txt
- *
- * This file is part of BitMeterOS.
- *
- * BitMeterOS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * BitMeterOS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with BitMeterOS.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-#include "common.h"
-char* helpTxt=
+#include "common.h" 
+char* helpTxt= 
 "Provides command-line access to the BitMeterOS database" EOL
-" " EOL
 "Usage:" EOL
 "    bmclient -h|-v|-m<mode> <mode specific options>" EOL
 " " EOL
@@ -39,8 +13,8 @@ char* helpTxt=
 "        f - values displayed with full units" EOL
 " " EOL
 "    Values allowed for 'format' are:" EOL
-"        c - CSV format, suitable for import into a spreadsheet" EOL
-"        f - fixed width format, easier to read" EOL
+"    	c - CSV format, suitable for import into a spreadsheet" EOL
+"    	f - fixed width format, easier to read" EOL
 " " EOL
 "Display a database summary using '-ms' or '-m summary':" EOL
 "    bmclient -m summary [-a <host/adapter>]" EOL
@@ -72,8 +46,8 @@ char* helpTxt=
 "    The 'max bar value' argument is ignored unless a display type of 'b' (bar graph) is selected." EOL
 "        A numeric value must be supplied with this option, to indicate the maximum upload/download value (in bytes) that can be displayed before the bar reaches the maximum width specified by the 'max bar width' argument (default value is 100000)" EOL
 " " EOL
-"    The 'host/adapter' argument is explained above, in the Summary section." EOL
-" " EOL
+"    The 'host/adapter' argument is explained above, in the 'summary' section." EOL
+"    " EOL
 "Query the database using '-mq' or '-m query':" EOL
 "    bmclient -m query -r <range> [-g <grouping>] [-u <units>] [-a <host/adapter>]" EOL
 " " EOL
@@ -101,8 +75,8 @@ char* helpTxt=
 "        y - group results by year" EOL
 " " EOL
 "    The 'units' argument is explained above, in the 'dump' section." EOL
-"     " EOL
-"    The 'host/adapter' argument is explained above, in the Summary section." EOL
+"    " EOL
+"    The 'host/adapter' argument is explained above, in the 'summary' section." EOL
 " " EOL
 "Display version information" EOL
 "    bmclient -v" EOL
@@ -111,6 +85,5 @@ char* helpTxt=
 "    bmclient -h" EOL
 " " EOL
 "Email: rob@codebox.org.uk" EOL
-"Web:   http://codebox.org.uk/bitmeteros" EOL
-" " EOL
-;
+"Web:   http://codebox.org.uk/bitmeterOs" EOL
+; 
