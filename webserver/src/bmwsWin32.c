@@ -117,7 +117,7 @@ static void readDbConfig(){
 }
 
 void setupWeb(){
-	setLogLevel(LOG_ERR);
+	setLogLevel(LOG_WARN);
 	setAppName("WEB");
 	setLogToFile(TRUE);
 	initMutex();

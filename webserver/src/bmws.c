@@ -166,7 +166,7 @@ int main(){
     socklen_t length;
     static struct sockaddr_in clientAddress;
 
-	setLogLevel(LOG_ERR);
+	setLogLevel(LOG_WARN);
 	setAppName("WEB");
 	setLogToFile(TRUE);
 
