@@ -1,6 +1,10 @@
 #!/bin/sh
 
-VERSION=0.7.5
+export VERSION=0.7.5
+
+./makeHelpTextC.sh
+./makeManPage.sh
+
 WORK_DIR=./work
 WEB_DIR=../../webserver/web
 DB_FILE=../bitmeter.db
@@ -16,12 +20,17 @@ make bmws
 make bmdb
 make bmsync
 
+mkdir -p ./debian/usr/bin/
 mv ./bmcapture ./debian/usr/bin/
 mv ./bmclient  ./debian/usr/bin/
 mv ./bmws      ./debian/usr/bin/
 mv ./bmdb      ./debian/usr/bin/
 mv ./bmsync    ./debian/usr/bin/
 
+mkdir -p ./debian/var/www/bitmeter/css/images/
+mkdir -p ./debian/var/www/bitmeter/js/
+mkdir -p ./debian/var/www/bitmeter/m/js/
+mkdir -p ./debian/var/www/bitmeter/m/css/
 cp $WEB_DIR/index.html       ./debian/var/www/bitmeter/
 cp $WEB_DIR/rss.xml          ./debian/var/www/bitmeter/
 cp $WEB_DIR/favicon.ico      ./debian/var/www/bitmeter/
@@ -55,7 +64,5 @@ if [ $IS_64 = 1 ]; then
 else
 	mv $WORK_DIR/debian.deb bitmeteros_$VERSION-i386.deb
 fi
-
-
 
 make clean
