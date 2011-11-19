@@ -111,8 +111,7 @@ Section "Main"
   blankDb:
     SetOutPath $APPDATA\BitMeterOS
     SetOverwrite off
-    File "..\..\capture\blankDb.db"
-    Rename blankDb.db bitmeter.db
+    File "..\bitmeter.db"
     Goto afterDb
   
   afterDb:
@@ -164,7 +163,7 @@ Section "Main"
   !insertmacro SERVICE "create"    "BitMeterWebService" "path=$INSTDIR\BitMeterWebService.exe;autostart=1;interact=0;depend=;display=BitMeter Web Service;description=BitMeter Web Interface Service;"
   !insertmacro SERVICE "start"     "BitMeterWebService" ""
 
-  ExecShell "open" "http://codebox.org.uk/bitmeteros/installed?version=0.7.4&platform=windows"
+  ExecShell "open" "http://codebox.org.uk/bitmeteros/installed?version=0.7.5&platform=windows"
 SectionEnd
 
 
