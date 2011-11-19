@@ -1,0 +1,12 @@
+Package: bitmeteros
+Version: 0.7.5
+Priority: optional
+Section: net
+Architecture: amd64
+Depends: libsqlite3-0 (>= 3.4.2)
+Conflicts: bitmeter
+Replaces: bitmeter
+Installed-Size: 49912
+Maintainer: rob <rob@codebox.org.uk>
+Description: Bandwidth monitor
+ A bandwidth monitor that records network usage information in a local database, and allows that information to be queried by the user.
