@@ -174,6 +174,16 @@ Contains platform-specific code for obtaining the network stats that we need.
 	#include <ws2tcpip.h>
 	#include <iphlpapi.h>
 
+    /*static void dumpRow(MIB_IFROW* pIfRow){
+        logMsg(LOG_ERR, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d", 
+                time(NULL),
+                pIfRow->dwIndex, pIfRow->dwType, pIfRow->dwMtu, pIfRow->dwSpeed, 
+                pIfRow->dwPhysAddrLen, pIfRow->dwAdminStatus, pIfRow->dwOperStatus, pIfRow->dwLastChange, 
+                pIfRow->dwInOctets, pIfRow->dwInUcastPkts, pIfRow->dwInNUcastPkts, pIfRow->dwInDiscards,
+                pIfRow->dwInErrors, pIfRow->dwInUnknownProtos, pIfRow->dwOutOctets, pIfRow->dwOutUcastPkts,
+                pIfRow->dwOutNUcastPkts, pIfRow->dwOutDiscards, pIfRow->dwOutErrors, pIfRow->dwOutQLen,
+                pIfRow->dwDescrLen);
+    }*/
 	struct Data* getData(){
 		MIB_IFTABLE* pIfTable = (MIB_IFTABLE *) malloc(sizeof (MIB_IFTABLE));
 		unsigned long dwSize = sizeof (MIB_IFTABLE);
@@ -224,6 +234,7 @@ Contains platform-specific code for obtaining the network stats that we need.
                     }
 
                     if (isDuplicate == FALSE){
+                        //dumpRow(pIfRow);
                         appendData(&firstData, thisData);
                     } else {
                         freeData(thisData);
