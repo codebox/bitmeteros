@@ -38,7 +38,7 @@ void doMonitor(){
     
     if ((filter = getFilterFromName(filters, prefs.filter, NULL)) == NULL) {
         if (prefs.filter == NULL){
-            PRINT(COLOUR_RED, "No filter name has been specified, use -n <filter name>, or use '-h' to display help.\n");
+            PRINT(COLOUR_RED, "No filter name has been specified, use -f <filter name>, or use '-h' to display help.\n");
         } else {
             PRINT(COLOUR_RED, "No filter named '%s' was found, used 'bmdb showfilters' to display the list.", prefs.filter); 
         }
@@ -116,7 +116,7 @@ static void printBar(BW_INT vl){
 
  // Display the numeric value
     PRINT(COLOUR_WHITE_1, "%10s", vlTxt);
-    PRINT(COLOUR_RED, "|");
+    PRINT(COLOUR_YELLOW, "|");
 
  // Draw the bar
     int i;

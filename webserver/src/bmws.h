@@ -50,6 +50,12 @@ struct MimeType{
     int binary;
 };
 
+struct WebConnectionConfig {
+    int port;
+    int allowRemoteConnect;
+    int allowRemoteAdmin;
+};
+
 #ifdef _WIN32
     void initMutex();
     void waitForMutex();
@@ -93,6 +99,9 @@ void writeEndOfHeaders(SOCKET fd);
 void processRequest(SOCKET fd, char* buffer, int allowAdmin);
 
 void getWebRoot(char* path);
+int getPort();
+int isLocalConnection(SOCKET socket);
+struct WebConnectionConfig readDbConfig();
 
 #ifdef UNIT_TESTING
     #define WRITE_HEADERS_SERVER_ERROR mockWriteHeadersServerError

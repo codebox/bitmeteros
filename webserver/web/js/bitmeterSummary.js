@@ -37,7 +37,7 @@ BITMETER.tabShowSummary = function(){
             
             sinceDate = new Date(BITMETER.model.getSummary().since * 1000);
             sinceDateTxt = BITMETER.consts.weekdays[sinceDate.getDay()] + ', ' + sinceDate.getDate() + ' ' + 
-                    BITMETER.consts.months[sinceDate.getMonth()] + ' ' + (1900 + sinceDate.getYear()) + ' ' + sinceDate.getHours() + ':00:00';
+                    BITMETER.consts.months[sinceDate.getMonth()] + ' ' + sinceDate.getFullYear() + ' ' + sinceDate.getHours() + ':00:00';
             html.push('<tr><td class="name">Since</td><td colspan="4" class="value">' + sinceDateTxt + '</td></tr>');
             
             hostsArray = BITMETER.model.getSummary().hosts;

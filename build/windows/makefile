@@ -1,23 +1,33 @@
 # Folders
-CLIENT_SRC=..\..\bmclient\src
-CAPTURE_SRC=..\..\capture\src
-SHARED_SRC=..\..\shared\src
-SHARED_CLIENT_SRC=..\..\shared_client\src
-WEB_SRC=..\..\webserver\src
-BMDB_SRC=..\..\bmdb\src
-SYNC_SRC=..\..\bmsync\src
+ifdef TESTING
+CC=gcc -DSTATS_MODE -DHAVE_DECL_OPTRESET -DUNIT_TESTING
+PATH_TO_ROOT=..\..\..
+else
+CC=gcc -DSTATS_MODE 
+PATH_TO_ROOT=..\..
+endif
 
-CLIENT_TEST=..\..\bmclient\test
-CAPTURE_TEST=..\..\capture\test
-SHARED_TEST=..\..\shared\test
-SHARED_CLIENT_TEST=..\..\shared_client\test
-WEB_TEST=..\..\webserver\test
-BMDB_TEST=..\..\bmdb\test
-SYNC_TEST=..\..\bmsync\test
-TEST=..\..\test
+CLIENT_SRC=$(PATH_TO_ROOT)\bmclient\src
+CAPTURE_SRC=$(PATH_TO_ROOT)\capture\src
+SHARED_SRC=$(PATH_TO_ROOT)\shared\src
+SHARED_CLIENT_SRC=$(PATH_TO_ROOT)\shared_client\src
+WEB_SRC=$(PATH_TO_ROOT)\webserver\src
+BMDB_SRC=$(PATH_TO_ROOT)\bmdb\src
+SYNC_SRC=$(PATH_TO_ROOT)\bmsync\src
+BUILD_TEST_DIR=test
+BUILD_TEST=$(PATH_TO_ROOT)\build\windows\${BUILD_TEST_DIR}
 
-RESOURCE_FILES=.\resources
-SUP_SRC=.\support
+CLIENT_TEST=$(PATH_TO_ROOT)\bmclient\test
+CAPTURE_TEST=$(PATH_TO_ROOT)\capture\test
+SHARED_TEST=$(PATH_TO_ROOT)\shared\test
+SHARED_CLIENT_TEST=$(PATH_TO_ROOT)\shared_client\test
+WEB_TEST=$(PATH_TO_ROOT)\webserver\test
+BMDB_TEST=$(PATH_TO_ROOT)\bmdb\test
+SYNC_TEST=$(PATH_TO_ROOT)\bmsync\test
+TEST=$(PATH_TO_ROOT)\test
+
+RESOURCE_FILES=$(PATH_TO_ROOT)\build\windows\resources
+SUP_SRC=$(PATH_TO_ROOT)\build\windows\support
 
 # Target files for Help
 CLIENT_HELP=$(CLIENT_SRC)\helpText.c
@@ -45,14 +55,11 @@ INCLUDE_DIRS=-I$(SHARED_SRC) -I$(SHARED_CLIENT_SRC) -I$(CLIENT_SRC) -I$(CAPTURE_
 LIBS=C:\windows\system32\sqlite3.dll -lws2_32 -lmswsock -ladvapi32 -lshlwapi -liphlpapi C:\rob\code\winpcap\Lib\Packet.lib C:\WINDOWS\system32\wpcap.dll
 OBJS_BMSYNC=bmsync.o syncHelp.o syncHelpText.o syncOptions.o sql.o common.o data.o db.o log.o platform.o time.o filter.o nameValuePair.o clientFilter.o sync.o bmsync.res
 OBJS_BMDB=bmdb.o bmdbConfig.o upgrade.o bmdbVersion.o bmdbHelpText.o log.o db.o common.o platform.o data.o admin.o filter.o adapter.o filters.o total.o time.o nameValuePair.o clientFilter.o bmdb.res
-OBJS_BMWS=bmwsWin32.o handleConfig.o handleExport.o handleFile.o handleMonitor.o handleQuery.o handleSync.o handleAlert.o handleSummary.o handleRss.o http.o httpRequest.o data.o common.o log.o platform.o dbMultiThreaded.o alert.o clientMonitor.o clientSummary.o clientSync.o clientQuery.o clientDump.o clientAlert.o clientUtil.o time.o filter.o nameValuePair.o clientFilter.o
+OBJS_BMWS=bmwsWin32.o handleConfig.o handleExport.o handleFile.o handleMonitor.o handleQuery.o handleSync.o handleAlert.o handleSummary.o handleRss.o http.o httpRequest.o data.o common.o log.o platform.o dbMultiThreaded.o alert.o clientMonitor.o clientSummary.o clientSync.o clientQuery.o clientDump.o clientAlert.o clientUtil.o time.o filter.o nameValuePair.o clientFilter.o bmwsCommon.o
 OBJS_CAP=sql.o time.o process.o common.o db.o log.o platform.o data.o adapter.o filter.o total.o nameValuePair.o clientFilter.o
 OBJS_CLIENT=bmclient.o options.o monitor.o summary.o query.o dump.o help.o helpText.o time.o timeSupport.o common.o db.o log.o platform.o clientDump.o clientMonitor.o clientSummary.o clientQuery.o clientUtil.o data.o filter.o nameValuePair.o clientFilter.o bmclient.res
 
-OBJS_TEST=cmockery.o alltests.o filter.o testFilter.o adapter.o testAdapter.o nameValuePair.o total.o db.o log.o testUtils.o data.o timeSupport.o common.o platform.o time.o alert.o testAlert.o testCommon.o clientDump.o testClientDump.o bmclient.o testBmClient.o dump.o testDump.o clientUtil.o testData.o clientAlert.o testClientAlert.o clientMonitor.o testClientMonitor.o clientQuery.o testClientQuery.o clientSummary.o testClientSummary.o clientSync.o testClientSync.o testClientUtil.o bmdbConfig.o testConfig.o testDb.o handleConfig.o handleExport.o testHandleConfig.o testTime.o process.o testProcess.o sql.o monitor.o summary.o query.o help.o options.o http.o handleMonitor.o httpRequest.o handleSummary.o handleQuery.o handleSync.o handleAlert.o handleRss.o handleFile.o bmwsWin32.o helpText.o testSql.o testClientOptions.o testSyncOptions.o syncOptions.o upgrade.o testUpgrade.o testHandleSummary.o testHandleFile.o testHttpRequest.o testHandleQuery.o testHandleMonitor.o testHandleAlert.o testHandleRss.o testNameValuePair.o testTotal.o testHandleSync.o testClientFilter.o clientFilter.o testSync.o sync.o mocks.o testHandleExport.o testHttp.o
-
-CC=gcc -DUNIT_TESTING -DHAVE_DECL_OPTRESET -DSTATS_MODE
-//CC=gcc -DSTATS_MODE
+OBJS_TEST=cmockery.o alltests.o filter.o testFilter.o adapter.o testAdapter.o nameValuePair.o total.o db.o log.o testUtils.o data.o timeSupport.o common.o platform.o time.o alert.o testAlert.o testCommon.o clientDump.o testClientDump.o bmclient.o testBmClient.o dump.o testDump.o clientUtil.o testData.o clientAlert.o testClientAlert.o clientMonitor.o testClientMonitor.o clientQuery.o testClientQuery.o clientSummary.o testClientSummary.o clientSync.o testClientSync.o testClientUtil.o bmdbConfig.o testConfig.o testDb.o handleConfig.o handleExport.o testHandleConfig.o testTime.o process.o testProcess.o sql.o monitor.o summary.o query.o help.o options.o http.o handleMonitor.o httpRequest.o handleSummary.o handleQuery.o handleSync.o handleAlert.o handleRss.o handleFile.o bmwsWin32.o helpText.o testSql.o testClientOptions.o testSyncOptions.o syncOptions.o upgrade.o testUpgrade.o testHandleSummary.o testHandleFile.o testHttpRequest.o testHandleQuery.o testHandleMonitor.o testHandleAlert.o testHandleRss.o testNameValuePair.o testTotal.o testHandleSync.o testClientFilter.o clientFilter.o testSync.o sync.o mocks.o testHandleExport.o testHttp.o bmwsCommon.o testBmwsCommon.o
 
 #### Install or reinstall
 install: all
@@ -78,10 +85,15 @@ install: all
 all: bmsync bmdb bmwsExe bmwsService bmcaptureExe bmcaptureService bmclient 
 
 #### run the unit tests
-test: $(OBJS_TEST)
+    
+_test: $(OBJS_TEST)
 	$(CC) $(OBJS_TEST) -o $(EXE_TEST) $(LIBS)
 	cls
 	$(EXE_TEST)
+
+.PHONY: test
+test: 
+	make TESTING=1 -e -C ${BUILD_TEST_DIR} -f ../makefile _test
 
 cmockery.o: $(TEST)\cmockery.c $(TEST)\cmockery.h 
 	$(CC) -c $(TEST)\cmockery.c -o cmockery.o $(INCLUDE_DIRS)
@@ -203,6 +215,9 @@ testHandleSync.o: $(WEB_TEST)\testHandleSync.c $(SHARED_SRC)\common.h $(TEST)\te
 testHandleAlert.o: $(WEB_TEST)\testHandleAlert.c $(SHARED_SRC)\common.h $(TEST)\test.h $(TEST)\cmockery.h $(SHARED_CLIENT_SRC)\client.h $(WEB_SRC)\bmws.h
 	$(CC) -c $(WEB_TEST)\testHandleAlert.c -o testHandleAlert.o $(INCLUDE_DIRS)
 
+testBmwsCommon.o: $(WEB_TEST)\testBmwsCommon.c $(SHARED_SRC)\common.h $(TEST)\test.h $(TEST)\cmockery.h $(SHARED_CLIENT_SRC)\client.h $(WEB_SRC)\bmws.h
+	$(CC) -c $(WEB_TEST)\testBmwsCommon.c -o testBmwsCommon.o $(INCLUDE_DIRS)
+
 testTotal.o: $(SHARED_TEST)\testTotal.c $(SHARED_SRC)\common.h $(TEST)\test.h $(TEST)\cmockery.h 
 	$(CC) -c $(SHARED_TEST)\testTotal.c -o testTotal.o $(INCLUDE_DIRS)
 
@@ -297,6 +312,9 @@ bmwsWin32.o: $(WEB_SRC)\bmwsWin32.c $(WEB_SRC)\bmws.h $(SHARED_SRC)\common.h
 
 bmwsWin32Service.o: $(WEB_SRC)\bmwsWin32Service.c $(WEB_SRC)\bmws.h $(SHARED_SRC)\common.h
 	$(CC) -c $(WEB_SRC)\bmwsWin32Service.c -o bmwsWin32Service.o $(INCLUDE_DIRS)
+
+bmwsCommon.o: $(WEB_SRC)\bmwsCommon.c $(WEB_SRC)\bmws.h $(SHARED_SRC)\common.h
+	$(CC) -c $(WEB_SRC)\bmwsCommon.c  -o bmwsCommon.o $(INCLUDE_DIRS)
 
 handleConfig.o: $(WEB_SRC)\handleConfig.c $(WEB_SRC)\bmws.h $(SHARED_SRC)\common.h $(SHARED_CLIENT_SRC)\client.h
 	$(CC) -c $(WEB_SRC)\handleConfig.c -o handleConfig.o $(INCLUDE_DIRS)
@@ -458,5 +476,6 @@ nameValuePair.o: $(SHARED_SRC)\nameValuePair.c $(SHARED_SRC)\common.h
 	$(CC) -c $(SHARED_SRC)\nameValuePair.c -o nameValuePair.o $(INCLUDE_DIRS)
 
 clean:
-	del *.o
-	del *.res
+	-del *.o
+	-del *.res
+	-del ${BUILD_TEST_DIR}\*.o

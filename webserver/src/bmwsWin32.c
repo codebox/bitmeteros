@@ -9,15 +9,11 @@
 #include "common.h"
 #include "bmws.h"
 
-#define CONNECTION_BACKLOG 10
-#define DEFAULT_PORT 2605
 #define MIN_PORT 1
 #define MAX_PORT 65535
-#define LOCAL_ONLY htonl(0x7f000001L)
 
 static SOCKET listener;
-static int allowRemoteConnect, allowRemoteAdmin;
-static int isLocalConnection(SOCKET socket);
+static struct WebConnectionConfig config;
 
 static void web(void* fdVoid){
     SOCKET fd = (SOCKET) fdVoid;
@@ -27,13 +23,13 @@ static void web(void* fdVoid){
     rc = recv(fd, buffer, BUFSIZE, 0);
     
     if (rc < 0){
-        logMsg(LOG_ERR, "read() returned %d, %s", rc, strerror(errno));
+        logMsg(LOG_ERR, "recv() returned %d, %s", rc, strerror(errno));
     } else if (rc == 0){
-        logMsg(LOG_ERR, "read() returned 0");
+        logMsg(LOG_ERR, "recv() returned 0");
     } else if(rc >= BUFSIZE){
-        logMsg(LOG_ERR, "read() returned %d which is larger than buffer size of %d", rc, BUFSIZE);
+        logMsg(LOG_ERR, "recv() return value indicates request too large for buffer size of %d", BUFSIZE);
     } else {
-        int allowAdmin = isLocalConnection(fd) || allowRemoteAdmin;
+        int allowAdmin = isLocalConnection(fd) || config.allowRemoteAdmin;
         processRequest(fd, buffer, allowAdmin); 
     }
     
@@ -42,61 +38,13 @@ static void web(void* fdVoid){
 
 }
 
-static int port;
-static int getPort(){
- // This returns the TCP port that we listen on
-    int configValue;
-    if ((configValue = getConfigInt(CONFIG_WEB_PORT, TRUE)) < 0){
-     /* If a value hasn't been specified in the db config table then we just use the default. */
-        return DEFAULT_PORT;
-
-    } else {
-     // A value was specified in the db, so use that port instead, assuming it is valid.
-        if (configValue >= MIN_PORT && configValue <= MAX_PORT){
-            return configValue;
-
-        } else {
-            logMsg(LOG_ERR, "The db config value %s contained an invalid port number of %s, using default of %d instead.",
-                    CONFIG_WEB_PORT, configValue, DEFAULT_PORT);
-            return DEFAULT_PORT;
-        }
-    }
-}
-
-static char webRoot[MAX_PATH_LEN];
-void getWebRoot(char* path){
-    strcpy(path, webRoot);
-}
-
-static void setCustomLogLevel(){
- // If a custom logging level for the web server process has been set in the db then use it
-    int dbLogLevel = getConfigInt(CONFIG_WEB_LOG_LEVEL, TRUE);
-    if (dbLogLevel > 0) {
-        setLogLevel(dbLogLevel);
-    }
-}
-
-static void readDbConfig(){
- // Read in some config parameters from the database
-    openDb();
-    setCustomLogLevel();
-    dbVersionCheck();
-    
-    int allowRemote = getConfigInt(CONFIG_WEB_ALLOW_REMOTE, 0);
-    allowRemoteConnect = (allowRemote >= ALLOW_REMOTE_CONNECT);
-    allowRemoteAdmin   = (allowRemote == ALLOW_REMOTE_ADMIN);
-
-    port = getPort();
-    getWebRootPath(webRoot);    
-    closeDb();
-}
-
 void setupWeb(){
     setLogLevel(LOG_ERR);
     setAppName("WEB");
     setLogToFile(TRUE);
     initMutex();
-    readDbConfig();
+    
+    config = readDbConfig();
     
     WSADATA wsaData;
     WORD socketsVersion = MAKEWORD(2, 2);
@@ -113,45 +61,13 @@ void setupWeb(){
         exit(1);
     }
     
-    listener = socket(AF_INET, SOCK_STREAM, 0);
-    if (listener == INVALID_SOCKET){
-        logWin32ErrMsg("socket() returned an error.", WSAGetLastError());
-        exit(1);
-    }
-    
-    SOCKADDR_IN serverAddress;
-    serverAddress.sin_family = AF_INET;
-    serverAddress.sin_addr.s_addr = (allowRemoteConnect ? INADDR_ANY : LOCAL_ONLY);
-    serverAddress.sin_port = htons(port);
-
-    rc = bind(listener, (struct sockaddr *) &serverAddress, sizeof(SOCKADDR_IN));
-    if (rc == SOCKET_ERROR){
-        logWin32ErrMsg("bind() returned an error.", WSAGetLastError());
-        exit(1);
-    }
-    
-    rc = listen(listener, CONNECTION_BACKLOG);
-    if (rc == SOCKET_ERROR){
-        logWin32ErrMsg("listen() returned an error.", WSAGetLastError());
-        exit(1);
-    }
+    listener = setupListener(config);
 }
 
 void shutdownWeb(){
  // Shut down the listener and stop
     close(listener);
     WSACleanup();
-}
-
-int isLocalConnection(SOCKET socket){
-    struct sockaddr_in sa;
-    int sa_len = sizeof(sa);
-    if (getsockname(socket, (struct sockaddr*)&sa, &sa_len) == -1) {
-        logWin32ErrMsg("getsockname() returned an error.", WSAGetLastError());
-        return FALSE;
-    }
- // Local access means any IP in the 127.x.x.x range
-    return (sa.sin_addr.s_addr & 0xff) == 127;
 }
 
 void processWeb(){

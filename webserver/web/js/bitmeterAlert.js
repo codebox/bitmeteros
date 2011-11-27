@@ -159,6 +159,8 @@ BITMETER.tabShowAlerts = function(){
             $('#noAlerts').show();
         }
     });
+    
+    BITMETER.refreshTimer.set(BITMETER.updateAlertProgressBars, BITMETER.model.getAlertsRefresh());      
 };
 
 BITMETER.updateAlertProgressBars = function(){
@@ -497,6 +499,7 @@ BITMETER.resetAlertView = function(){
  // Name
     $('#createAlertName').val('');
 
+    $('#createAlertBox select').attr('selectedIndex', -1);
 };
 
 BITMETER.updateCreateAlertViewFromModel = function(isUserEdit){
@@ -1012,8 +1015,9 @@ $(function(){
         $('#createAlertPeriodTimesTxt').html(BITMETER.zeroPad(t1) + ':00 - ' +BITMETER.zeroPad(t2) + ':00');
     }
     
+ // Browser detection workaround below for http://bugs.jqueryui.com/ticket/6750   
     sliderDiv.slider({
-        animate: true,
+        animate: !$.browser.msie,
         range: true,
         values: [6,18],
         orientation : 'horizontal',
@@ -1060,6 +1064,7 @@ $(function(){
         var bytes, amountTxt, txtValue = $('#createAlertAmount').val();
         bytes = BITMETER.parseAmountValue(txtValue);
         bytes = bytes || 0;
+        bytes = Math.round(bytes);
         amountTxt = BITMETER.formatAmount(bytes);
         $('#createAlertAmountDesc').html(amountTxt);
         BITMETER.createAlertModel.setAmount(bytes);

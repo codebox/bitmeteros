@@ -114,6 +114,7 @@ int mockPcap_findalldevs_ex(char *source, struct pcap_rmtauth *auth, pcap_if_t *
     *alldevs = device1;
 }
 pcap_t* mockPcap_open(const char *source, int snaplen, int flags, int read_timeout, struct pcap_rmtauth *auth, char *errbuf){
+    check_expected(flags);
     return (pcap_t*)mock();
 }
 int mockPcap_setnonblock(pcap_t* h, int i, char * c){

@@ -16,6 +16,7 @@
 /*
 Contains unit tests for the process module.
 */
+static void testProcess(void** state, int promiscFlag);
 
 void setupForProcessTest(void** state){
     setupTestDb(state);
@@ -29,8 +30,20 @@ void teardownForProcessTest(void** state){
     tearDownTestDb(state);
 }
 
-void testProcess(void** state){
-    setupForProcessTest(0);            
+void testProcessNonPromisc(void** state){
+    setupForProcessTest(0);
+    setConfigIntValue(CONFIG_CAP_PROMISCUOUS, 0);
+    testProcess(state, 0);
+    teardownForProcessTest(0);
+}
+void testProcessPromisc(void** state){
+    setupForProcessTest(0);
+    setConfigIntValue(CONFIG_CAP_PROMISCUOUS, 1);
+    testProcess(state, 1);
+    teardownForProcessTest(0);
+}
+
+static void testProcess(void** state, int promiscFlag){
     char* filter1 = "port 80";
     char* filter2 = "port 90";
     addFilterRow(1, "Filter 1", "f1", filter1, NULL);
@@ -47,6 +60,11 @@ void testProcess(void** state){
     will_return(mockPcap_open, pcapOpenHandle4);
     expect_call(mockOpenDb);
     //expect_call(_compressDb);
+    
+    expect_value(mockPcap_open, flags, promiscFlag);
+    expect_value(mockPcap_open, flags, promiscFlag);
+    expect_value(mockPcap_open, flags, promiscFlag);
+    expect_value(mockPcap_open, flags, promiscFlag);
     
     expect_value(mockPcap_setnonblock, h, pcapOpenHandle1);
     expect_value(mockPcap_setnonblock, h, pcapOpenHandle2);
@@ -86,11 +104,9 @@ void testProcess(void** state){
     expect_value(mockPcap_dispatch, h, pcapOpenHandle4);
 
     expect_call(mockCloseDb);
-
     setupCapture();
     processCapture();
     shutdownCapture();
     freeStmtList();
-    tearDownTestDb(0);
 }
 

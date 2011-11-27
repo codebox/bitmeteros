@@ -19,6 +19,7 @@ int main(int argc, char* argv[]) {
         unit_test(testGetMaxFilterDescWidth),
         unit_test(testGetMaxFilterNameWidth),
         unit_test(testFilterNameIsValid),
+        unit_test(testFilterDescIsValid),
         unit_test(testAllocAdapter),
         unit_test(testFreeAdapters),
         unit_test(testAppendAdapter),
@@ -139,7 +140,8 @@ int main(int argc, char* argv[]) {
         unit_test(testGetNextMinForTs),
         unit_test(testAddToDate),
         unit_test(testNormaliseTm),
-        unit_test(testProcess),
+        unit_test(testProcessPromisc),
+        unit_test(testProcessNonPromisc),
         unit_test_setup_teardown(testUpdateDbNull, setupForSqlTest, tearDownTestDb),
         unit_test_setup_teardown(testUpdateDbMultiple, setupForSqlTest, tearDownTestDb),
         unit_test_setup_teardown(testCompressSec1Filter, setupForSqlTest, tearDownTestDb),
@@ -230,8 +232,12 @@ int main(int argc, char* argv[]) {
         unit_test(testFreeNameValuePairs),
         unit_test(testAppendNameValuePair),
         unit_test(testMakeHtmlFromData),
-        unit_test(testWriteHeader)
-
+        unit_test(testWriteHeader),
+        unit_test_setup_teardown(testGetPortNoConfig, setupTestDb, tearDownTestDb),
+        unit_test_setup_teardown(testGetPortConfigTooSmall, setupTestDb, tearDownTestDb),
+        unit_test_setup_teardown(testGetPortConfigTooBig, setupTestDb, tearDownTestDb),
+        unit_test_setup_teardown(testGetPortConfigOk, setupTestDb, tearDownTestDb),
+        unit_test_setup_teardown(testReadDbConfig, setupTestDb, tearDownTestDb)
     }; 
     return run_tests(tests); 
 }

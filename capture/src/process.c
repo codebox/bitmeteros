@@ -21,10 +21,10 @@ initialisation, and termination steps.
 static int tsCompress;
 static int dbWriteInterval;
 static pcap_if_t *allDevices;
-struct Adapter* adapters = NULL;
+struct Adapter* adapters;
 struct Filter* filters;
 void packet_handler(u_char *param, const struct pcap_pkthdr *header, const u_char *pkt_data);
-static pcap_t* getFilterHandle(char* dev, char* filter);
+static pcap_t* getFilterHandle(char* dev, char* filter, int promiscuousMode);
 
 static void setCustomLogLevel(){
  // If a custom logging level for the capture process has been set in the db then use it
@@ -35,6 +35,8 @@ static void setCustomLogLevel(){
 }
 
 void setupCapture(){
+    adapters = NULL;
+    
  // Called once when the application starts - setup up the various db related things...
     OPEN_DB();
     setCustomLogLevel();
@@ -60,12 +62,19 @@ void setupCapture(){
         exit(1); //TODO
     }
     
+ // Are we capturing in promiscuous mode?
+    int promiscuousMode;
+    if (getConfigInt(CONFIG_CAP_PROMISCUOUS, TRUE) == TRUE) {
+        promiscuousMode = PCAP_OPENFLAG_PROMISCUOUS;
+    } else {
+        promiscuousMode = NON_PROMISCUOUS_MODE;
+    }
+
  // Build the Adapter structs - one for each device
     pcap_if_t *device = allDevices;
     while (device != NULL) {
         if (device->addresses != NULL){
             struct Adapter* adapter = allocAdapter(device);
-            
          // Each Adapter has a Total struct for each Filter
             struct Total*  totals = NULL;
             struct Filter* filter = filters;
@@ -76,7 +85,7 @@ void setupCapture(){
                 char* filterTxt = getFilterTxt(filter->expr, adapter);
                 logMsg(LOG_INFO, "Adding filter '%s' to device %s", filterTxt, adapter->name);
 
-                pcap_t* handle = getFilterHandle(adapter->name, filterTxt);
+                pcap_t* handle = getFilterHandle(adapter->name, filterTxt, promiscuousMode);
                 if (handle != NULL) {
                     total->handle = handle;
                     appendTotal(&totals, total);
@@ -86,7 +95,6 @@ void setupCapture(){
                 free(filterTxt);
                 filter = filter->next;  
             }
-            
             appendTotal(&(adapter->total), totals); 
             appendAdapter(&adapters, adapter);
         }
@@ -95,11 +103,11 @@ void setupCapture(){
     }
 }
 
-static pcap_t* getFilterHandle(char* dev, char* filter){ 
+static pcap_t* getFilterHandle(char* dev, char* filter, int promiscuousMode){ 
     pcap_t *adhandle;
     char errbuf[PCAP_ERRBUF_SIZE];
-    
-    if ((adhandle = PCAP_OPEN(dev, 100, NON_PROMISCUOUS_MODE, 1000, NULL, errbuf)) == NULL) {
+
+    if ((adhandle = PCAP_OPEN(dev, 100, promiscuousMode, 1000, NULL, errbuf)) == NULL) {
         logMsg(LOG_ERR, "Unable to open the device %s", dev);
         return NULL;
     }

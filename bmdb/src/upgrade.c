@@ -353,6 +353,11 @@ static int upgrade8(){
     if (status == FAIL){
         return FAIL;
     }
+    
+    status = setConfigIntValue(CONFIG_WEB_ALERTS_INTERVAL, 10000);
+    if (status == FAIL){
+        return FAIL;
+    }
 
  // Create the new filter table
     status = executeSql("CREATE TABLE filter (id INTEGER PRIMARY KEY AUTOINCREMENT, desc, name, expr, host)", NULL);

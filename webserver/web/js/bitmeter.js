@@ -517,7 +517,7 @@ BITMETER.makeYAxisIntervalFn = function(targetTickCount){
 };
 
 $(function(){
-	var datePickerFormat, serverNameSuffix;
+    var datePickerFormat, serverNameSuffix;
  // Set up the event handlers for the tabs across the top of the screen
     $("#tabs").tabs({
             show: function(event, ui) {

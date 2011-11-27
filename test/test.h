@@ -102,6 +102,7 @@ void testGetTotalForFilter(void **state);
 void testGetMaxFilterDescWidth(void **state);
 void testGetMaxFilterNameWidth(void **state);
 void testFilterNameIsValid(void **state);
+void testFilterDescIsValid(void **state);
 
 // adapter.c
 void testAllocAdapter(void **state);
@@ -262,7 +263,8 @@ void testAddToDate(void** state);
 void testNormaliseTm(void** state);
 
 // process.c
-void testProcess(void** state);
+void testProcessPromisc(void** state);
+void testProcessNonPromisc(void** state);
 
 // sql.c
 void setupForSqlTest(void** state);
@@ -392,5 +394,12 @@ void testReadFiltersForHost(void** state);
 
 // http.c
 void testWriteHeader(void** state);
+
+// bmwsCommon.c
+void testGetPortNoConfig(void** state);
+void testGetPortConfigTooSmall(void** state);
+void testGetPortConfigTooBig(void** state);
+void testGetPortConfigOk(void** state);
+void testReadDbConfig(void** state);
 
 #endif

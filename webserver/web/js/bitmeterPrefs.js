@@ -128,10 +128,12 @@ $(function(){
     $('#prefMonitorInterval').val(BITMETER.model.getMonitorRefresh()/1000);
     $('#prefHistoryInterval').val(BITMETER.model.getHistoryRefresh()/1000);
     $('#prefSummaryInterval').val(BITMETER.model.getSummaryRefresh()/1000);
+    $('#prefAlertsInterval').val(BITMETER.model.getAlertsRefresh()/1000);
     
     $('#prefMonitorInterval').keypress(BITMETER.makeKeyPressHandler(0,8,45,46,'0-9'));
     $('#prefHistoryInterval').keypress(BITMETER.makeKeyPressHandler(0,8,45,46,'0-9'));
     $('#prefSummaryInterval').keypress(BITMETER.makeKeyPressHandler(0,8,45,46,'0-9'));
+    $('#prefAlertsInterval').keypress(BITMETER.makeKeyPressHandler(0,8,45,46,'0-9'));
     
  // Populate the Filters table from the list of filter data held in the config object
     function setFiltersCheckboxes(){
@@ -291,8 +293,9 @@ $(function(){
         var refreshMonitor = Number($('#prefMonitorInterval').val()),
             refreshHistory = Number($('#prefHistoryInterval').val()),
             refreshSummary = Number($('#prefSummaryInterval').val()),
+            refreshAlerts  = Number($('#prefAlertsInterval').val()),
             validationOk = true,
-            monitorMin, monitorMax, historyMin, historyMax, summaryMin, summaryMax;
+            monitorMin, monitorMax, historyMin, historyMax, summaryMin, summaryMax, alertsMin, alertsMax;
         
      // Validate the monitor interval
         if (validationOk){
@@ -339,10 +342,26 @@ $(function(){
             }
         }
 
+     // Validate the alerts interval
+        if (validationOk){
+            alertsMin = config.alertsIntervalMin / 1000;
+            alertsMax = config.alertsIntervalMax / 1000;
+            
+            if (!refreshAlerts || refreshAlerts < alertsMin || refreshAlerts > alertsMax){
+                validationOk = false;
+                BITMETER.errorDialog.show("Please enter a numeric value between " + alertsMin + 
+                        " and " + alertsMax + " in the Alerts interval box.",
+                        function(){
+                            $('#prefAlertsInterval').focus();  
+                        });
+            }
+        }
+
         if (validationOk){
             BITMETER.model.setMonitorRefresh(refreshMonitor * 1000);
             BITMETER.model.setHistoryRefresh(refreshHistory * 1000);
             BITMETER.model.setSummaryRefresh(refreshSummary * 1000);
+            BITMETER.model.setAlertsRefresh(refreshAlerts * 1000);
         }
         return validationOk;
     }
@@ -351,7 +370,8 @@ $(function(){
         if (setIntervalsOnModelOk()){
             var url = 'config?web.monitor_interval=' + BITMETER.model.getMonitorRefresh() + 
                     '&web.history_interval=' + BITMETER.model.getHistoryRefresh() + 
-                    '&web.summary_interval=' + BITMETER.model.getSummaryRefresh(); 
+                    '&web.summary_interval=' + BITMETER.model.getSummaryRefresh() + 
+                    '&web.alerts_interval=' + BITMETER.model.getAlertsRefresh();
             $('#prefsRefreshSaveStatus').html('Saving Refresh Intervals... <img src="css/images/working.gif" />');
             $.ajax({
                 url : url, 

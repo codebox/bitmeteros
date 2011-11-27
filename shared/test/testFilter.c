@@ -216,3 +216,11 @@ void testFilterNameIsValid(void **state){
     assert_true(filterNameIsValid("abcdefghijklmnop"));
     assert_false(filterNameIsValid("abcdefghijklmnopq"));
 }
+
+void testFilterDescIsValid(void **state){
+    assert_false(filterDescIsValid(""));
+    assert_true(filterDescIsValid("F"));
+    assert_true(filterDescIsValid("f1"));
+    assert_true(filterDescIsValid("1234567890123456789012345678901234567890123456789012345678901234"));
+    assert_false(filterDescIsValid("12345678901234567890123456789012345678901234567890123456789012345"));
+}

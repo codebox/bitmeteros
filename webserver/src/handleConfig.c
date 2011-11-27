@@ -19,6 +19,8 @@
 #define HISTORY_INTERVAL_MAX 60000
 #define SUMMARY_INTERVAL_MIN 1000
 #define SUMMARY_INTERVAL_MAX 60000
+#define ALERTS_INTERVAL_MIN  5000
+#define ALERTS_INTERVAL_MAX  60000
 
 /*
 Handles '/config' requests received by the web server.
@@ -38,6 +40,7 @@ static int updateColour(char* name, char* value);
 static int updateMonitorInterval(char* value);
 static int updateHistoryInterval(char* value);
 static int updateSummaryInterval(char* value);
+static int updateAlertsInterval(char* value);
 
 void processConfigRequest(SOCKET fd, struct Request* req, int allowAdmin){
     struct NameValuePair* params = req->params;
@@ -66,6 +69,9 @@ void processConfigRequest(SOCKET fd, struct Request* req, int allowAdmin){
 
                 } else if (strcmp(CONFIG_WEB_SUMMARY_INTERVAL, params->name) == 0){
                     status = updateSummaryInterval(params->value);
+
+                } else if (strcmp(CONFIG_WEB_ALERTS_INTERVAL, params->name) == 0){
+                    status = updateAlertsInterval(params->value);
 
                 } else if (strcmp(CONFIG_WEB_RSS_FREQ, params->name) == 0){
                     status = updateRssFreq(params->value);
@@ -193,6 +199,16 @@ static int updateSummaryInterval(char* value){
     }
 }
 
+static int updateAlertsInterval(char* value){
+    if (isNumericOk(value, ALERTS_INTERVAL_MIN, ALERTS_INTERVAL_MAX)) {
+        setConfigTextValue(CONFIG_WEB_ALERTS_INTERVAL, value);
+        return SUCCESS;
+
+    } else {
+        return FAIL;
+    }
+}
+
 static int updateColour(char* name, char* value){
     if (isColourOk(value)) {
         char* filterName = name + strlen(CONFIG_WEB_COLOUR) + 1;
@@ -272,6 +288,11 @@ static void writeConfig(SOCKET fd, int allowAdmin){
     free(val);
 
     WRITE_TEXT(fd, ", ");
+    val = getConfigText(CONFIG_WEB_ALERTS_INTERVAL, FALSE);
+    writeNumConfigValue(fd, "alertsInterval", val);
+    free(val);
+
+    WRITE_TEXT(fd, ", ");
     writeNumConfigNumValue(fd, "monitorIntervalMin", MONITOR_INTERVAL_MIN);
     WRITE_TEXT(fd, ", ");
     writeNumConfigNumValue(fd, "monitorIntervalMax", MONITOR_INTERVAL_MAX);
@@ -283,6 +304,10 @@ static void writeConfig(SOCKET fd, int allowAdmin){
     writeNumConfigNumValue(fd, "summaryIntervalMin", SUMMARY_INTERVAL_MIN);
     WRITE_TEXT(fd, ", ");
     writeNumConfigNumValue(fd, "summaryIntervalMax", SUMMARY_INTERVAL_MAX);
+    WRITE_TEXT(fd, ", ");
+    writeNumConfigNumValue(fd, "alertsIntervalMin",  ALERTS_INTERVAL_MIN);
+    WRITE_TEXT(fd, ", ");
+    writeNumConfigNumValue(fd, "alertsIntervalMax",  ALERTS_INTERVAL_MAX);
 
     WRITE_TEXT(fd, ", ");
     val = getConfigText(CONFIG_WEB_SERVER_NAME, FALSE);
