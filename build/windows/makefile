@@ -16,6 +16,8 @@ BMDB_TEST=..\..\bmdb\test
 SYNC_TEST=..\..\bmsync\test
 TEST=..\..\test
 
+WEB_UI=..\..\webserver\web
+
 SUP_SRC=.\support
 
 # Target files for Help
@@ -29,6 +31,9 @@ WEB_SERVICE_NAME=BitMeterWebService
 
 # Install location for EXEs
 EXE_DIR=$(ProgramFiles)\Codebox\BitMeterOS
+
+# Install location for db and web files
+APP_DATA_DIR=${ALLUSERSPROFILE}\Application Data\BitMeterOS
 
 # Names of EXEs
 EXE_BMCLIENT=bmclient.exe
@@ -53,7 +58,7 @@ OBJS_TEST=CuTest.o alltests.o testUtils.o db.o log.o data.o timeSupport.o common
 CC=gcc -DHAVE_DECL_OPTRESET 
 
 #### Install or reinstall
-install: all
+install: 
 	-sc stop   $(CAP_SERVICE_NAME)
 	-sc delete $(CAP_SERVICE_NAME)
 	-sc stop   $(WEB_SERVICE_NAME)
@@ -63,8 +68,12 @@ install: all
 	-taskkill /f /im $(EXE_BMDB)
 	-taskkill /f /im $(EXE_BMSYNC)
 	
+	-mkdir "$(APP_DATA_DIR)"
+	copy /y ..\bitmeter.db "$(APP_DATA_DIR)"
+	xcopy /s /i /y "$(WEB_UI)" "$(APP_DATA_DIR)\web"
+	
 	-mkdir "$(EXE_DIR)"
-	move *.exe "$(EXE_DIR)"
+	copy /y *.exe "$(EXE_DIR)"
 	
 	sc create $(CAP_SERVICE_NAME) binpath= "$(EXE_DIR)\$(EXE_CAP_SRV)" start= auto
 	sc create $(WEB_SERVICE_NAME) binpath= "$(EXE_DIR)\$(EXE_WEB_SRV)" start= auto
