@@ -94,6 +94,8 @@
 #define COLOUR_GREEN 0
 #define COLOUR_RED   0
 #define COLOUR_YELLOW 0
+#define COLOUR_WHITE_1 0
+#define COLOUR_WHITE_2 0
 #define COLOUR_DEFAULT 0
 #endif
 // ----

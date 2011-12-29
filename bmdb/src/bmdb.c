@@ -22,6 +22,7 @@ static int doWebRemoteAdmin(FILE* file, int argc, char** argv);
 static int doWebLocal(FILE* file, int argc, char** argv);
 static int doHelp();
 static int doPurge();
+static int getDbFileSize();
 
 // This struct represents an action that can be performed by this utility
 struct Action{

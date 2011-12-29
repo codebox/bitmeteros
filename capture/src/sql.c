@@ -4,9 +4,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "common.h"
 #include "capture.h"
 #include <sqlite3.h>
-#include "common.h"
 
 #define SQL_INSERT_INTO_DATA    "INSERT INTO data (ts,dr,vl,fl) VALUES (?,?,?,?)"
 #define SQL_SELECT_FOR_COMPRESS "SELECT fl, SUM(vl) FROM (SELECT * FROM data WHERE ts<=? AND dr=?) GROUP BY fl;"

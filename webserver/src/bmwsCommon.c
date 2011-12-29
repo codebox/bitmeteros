@@ -7,6 +7,9 @@
 #include <sys/types.h>
 #include "common.h"
 #include "bmws.h"
+#ifndef _WIN32
+	#include <netinet/in.h>
+#endif
 
 #define DEFAULT_PORT 2605
 #define LOCAL_ONLY htonl(0x7f000001L)

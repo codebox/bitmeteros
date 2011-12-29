@@ -1,16 +1,17 @@
 #ifdef _WIN32
     #define __USE_MINGW_ANSI_STDIO 1
 #endif
-#define HAVE_REMOTE 1
 #include <stdio.h>
 #include <stdlib.h>
-#include "capture.h"
 #include "common.h"
+#include "capture.h"
 #include <string.h>
+#include <pcap/pcap.h>
 #include "pcap.h"
 #include "remote-ext.h"
 
 #define NON_PROMISCUOUS_MODE 0
+#define SNAP_LEN 65535
 
 /*
 Contains the high-level code that is invoked by the main processing loop of the application. The code
@@ -57,10 +58,17 @@ void setupCapture(){
     char errbuf[PCAP_ERRBUF_SIZE];
 
  // See what network devices are available
-    if (PCAP_FINDALLDEVS_EX(PCAP_SRC_IF_STRING, NULL, &allDevices, errbuf) == -1) {
-        logMsg(LOG_ERR, "Error in pcap_findalldevs_ex: %s", errbuf);
-        exit(1); //TODO
-    }
+ 	#ifdef _WIN32
+	    if (PCAP_FINDALLDEVS_EX(PCAP_SRC_IF_STRING, NULL, &allDevices, errbuf) == -1) {
+    	    logMsg(LOG_ERR, "Error in pcap_findalldevs_ex: %s", errbuf);
+        	exit(1); //TODO
+	    }
+    #else
+	    if (PCAP_FINDALLDEVS(&allDevices, errbuf) == -1) {
+    	    logMsg(LOG_ERR, "Error in pcap_findalldevs: %s", errbuf);
+        	exit(1); //TODO
+	    }
+    #endif
     
  // Are we capturing in promiscuous mode?
     int promiscuousMode;
@@ -72,8 +80,11 @@ void setupCapture(){
 
  // Build the Adapter structs - one for each device
     pcap_if_t *device = allDevices;
+
     while (device != NULL) {
-        if (device->addresses != NULL){
+    	int isLoopback = (device->flags & PCAP_IF_LOOPBACK);
+
+        if (device->addresses != NULL && !isLoopback){
             struct Adapter* adapter = allocAdapter(device);
          // Each Adapter has a Total struct for each Filter
             struct Total*  totals = NULL;
@@ -107,11 +118,18 @@ static pcap_t* getFilterHandle(char* dev, char* filter, int promiscuousMode){
     pcap_t *adhandle;
     char errbuf[PCAP_ERRBUF_SIZE];
 
-    if ((adhandle = PCAP_OPEN(dev, 100, promiscuousMode, 1000, NULL, errbuf)) == NULL) {
-        logMsg(LOG_ERR, "Unable to open the device %s", dev);
-        return NULL;
-    }
-
+	#ifdef _WIN32
+	    if ((adhandle = PCAP_OPEN(dev, SNAP_LEN, promiscuousMode, 1000, NULL, errbuf)) == NULL) {
+    	    logMsg(LOG_ERR, "Unable to open the device %s", dev);
+        	return NULL;
+	    }
+	#else
+	    if ((adhandle = PCAP_OPEN_LIVE(dev, SNAP_LEN, promiscuousMode, 1000, errbuf)) == NULL) {
+    	    logMsg(LOG_ERR, "Unable to open the device %s", dev);
+        	return NULL;
+	    }
+	#endif
+	pcap_set_buffer_size(adhandle, 1000);
     if (PCAP_SETNONBLOCK(adhandle, 1, errbuf) < 0) {
         logMsg(LOG_ERR, "Unable to set non-blocking mode on device %s: %s", dev, errbuf);
         return NULL;
@@ -153,6 +171,7 @@ int processCapture(){
             PCAP_DISPATCH(total->handle, -1, packet_handler, (u_char *)total);
             total = total->next;    
         }
+		
         adapter = adapter->next;
     } 
     
@@ -231,6 +250,7 @@ void packet_handler(u_char *param, const struct pcap_pkthdr *header, const u_cha
         total->count += *(LONGLONG*)(pkt_data + 8);
     #else
         struct Total* total = (struct Total*)param;
+        printf("len=%d caplen=%d\n", header->len, header->caplen);
         total->count += header->len;
     #endif
 }

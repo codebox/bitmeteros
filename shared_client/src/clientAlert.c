@@ -24,7 +24,6 @@
 #define ALERT_SQL_SELECT_ROWS                "SELECT ts AS ts, dr AS dr, vl AS vl FROM data WHERE ts >=? AND fl=?;"
 #define ALERT_SQL_TOTAL_BETWEEN              "SELECT SUM(vl) AS vl FROM data WHERE ts>? AND ts <=? AND fl=?"
 
-static int getNextId(char* sql);
 static struct Alert* alertForRow(sqlite3_stmt *stmtSelectAlerts, sqlite3_stmt *stmtSelectInterval, sqlite3_stmt *stmtSelectIntervalIdsForAlert);    
 static struct DateCriteria* getIntervalForId(sqlite3_stmt *stmtSelectInterval, int id);
 static int doAddAlert(struct Alert* alert, int alertId);

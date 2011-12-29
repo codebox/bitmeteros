@@ -12,6 +12,7 @@
 #define DEFAULT_PORT 2605
 #define MIN_PORT 1
 #define MAX_PORT 65535
+#define INVALID_SOCKET -1
 
 #define MIME_JSON "application/json"
 #define MIME_HTML "text/html"
