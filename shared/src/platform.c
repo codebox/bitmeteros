@@ -1,6 +1,7 @@
-#include "common.h"
-#include <time.h>
 #include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include "common.h"
 
 /*
 Contains functions that must be replaced according to OS/platform, and according

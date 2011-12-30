@@ -1,11 +1,11 @@
-#include "test.h"
-#include "common.h"
 #include <string.h>
 #include <stdarg.h> 
 #include <stddef.h> 
 #include <setjmp.h> 
-#include <cmockery.h> 
 #include <stdlib.h>
+#include <cmockery.h> 
+#include "test.h"
+#include "common.h"
 
 /*
 Contains unit tests for the 'data' module.

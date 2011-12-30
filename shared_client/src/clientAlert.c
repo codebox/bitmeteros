@@ -507,7 +507,7 @@ int replaceRelativeValues(struct DateCriteria* criteria, time_t ts){
     int relativeHour    = (!nullHour    && criteria->hour->isRelative);
     
     int hasRelativeValues = (relativeYear || relativeMonth || relativeWeekday || relativeDay || relativeHour);
-    
+
     if (hasRelativeValues){
         int relativeValuesOk = TRUE;
         
@@ -546,6 +546,8 @@ int replaceRelativeValues(struct DateCriteria* criteria, time_t ts){
         if (relativeValuesOk){      
          // We are satisfied that the struct's relative values are sensible, so we carry on
             struct tm* t = localtime((time_t *) &ts);
+            t->tm_isdst = -1;
+
             int relativeValue, absoluteValue;
             
             if (relativeYear){
@@ -671,7 +673,7 @@ int findHighestMatchAtOrBelowLimit(struct DateCriteriaPart* part, int limit){
 }
 
 time_t findFirstMatchingDate(struct DateCriteria* criteria, time_t now){
- // Find the earliest date that matches the criteria, ignorng any dates later than 'now'
+ // Find the earliest date that matches the criteria, ignoring any dates later than 'now'
     struct tm* tmCandidate = localtime(&now);
     tmCandidate->tm_min = 0;
     tmCandidate->tm_sec = 0;
@@ -872,6 +874,7 @@ int isDateCriteriaMatch(struct DateCriteria* criteria, time_t ts){
  // Check if the specified date, when evaluated as a local time, matches the criteria
     int result = FALSE;
     struct tm* dt = localtime((time_t *) &ts);
+
     while(criteria != NULL){
         result = isDateCriteriaPartMatch(criteria->year, getYear(dt)) && 
             isDateCriteriaPartMatch(criteria->month, getMonth(dt)) && 

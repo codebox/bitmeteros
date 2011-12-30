@@ -1,9 +1,9 @@
 #define _GNU_SOURCE
-#include "common.h"
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <malloc.h>
+#include "common.h"
 
 /*
 Contains functions for creating and updating Data struts.

@@ -1,13 +1,13 @@
 #define _GNU_SOURCE
 #include <stdlib.h>
-#include "common.h"
 #include "string.h"
 #include <stdarg.h> 
 #include <stddef.h> 
+#include "getopt.h"
+#include "common.h"
 #include <setjmp.h> 
 #include <cmockery.h> 
 #include "test.h"
-#include "getopt.h"
 #include "client.h"
 #include "bmclient.h"
 

@@ -180,7 +180,8 @@ struct NameValuePair{
 };
 
 #ifndef _WIN32
-    typedef int SOCKET;
+    //typedef int SOCKET; // replaced - causes compile errors on OSX, not sure why
+    #define SOCKET int 
 #endif
 
 // ----

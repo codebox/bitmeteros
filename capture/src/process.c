@@ -3,9 +3,9 @@
 #endif
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "common.h"
 #include "capture.h"
-#include <string.h>
 #include <pcap/pcap.h>
 #include "pcap.h"
 #include "remote-ext.h"
@@ -129,7 +129,7 @@ static pcap_t* getFilterHandle(char* dev, char* filter, int promiscuousMode){
         	return NULL;
 	    }
 	#endif
-	pcap_set_buffer_size(adhandle, 1000);
+
     if (PCAP_SETNONBLOCK(adhandle, 1, errbuf) < 0) {
         logMsg(LOG_ERR, "Unable to set non-blocking mode on device %s: %s", dev, errbuf);
         return NULL;
@@ -181,8 +181,6 @@ int processCapture(){
     while(filter != NULL){
         int total = getTotalForFilter(adapters, filter->id);
         if (total > 0){
-            printf("%s: %d\n", filter->name, total);
-            
             struct Data data = makeData();
             data.ts = ts;
             data.vl = total;
@@ -250,7 +248,6 @@ void packet_handler(u_char *param, const struct pcap_pkthdr *header, const u_cha
         total->count += *(LONGLONG*)(pkt_data + 8);
     #else
         struct Total* total = (struct Total*)param;
-        printf("len=%d caplen=%d\n", header->len, header->caplen);
         total->count += header->len;
     #endif
 }
