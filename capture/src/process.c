@@ -204,6 +204,8 @@ int processCapture(){
         }
         tsCompress = GET_NEXT_COMPRESS_TIME();
     }
+
+    return SUCCESS;
 }
 
 void shutdownCapture(){

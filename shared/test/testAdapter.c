@@ -19,7 +19,7 @@ void testAllocAdapter(void **state) {
     char* name = ADAPTER_NAME;
     char* desc = ADAPTER_DESC;
     
-    #ifdef _WIN32
+    #if (defined _WIN32 || defined __linux__ )
 	    struct sockaddr ip2 = {1, "005678"}; // IP 53.54.55.56
     	struct pcap_addr addr2 = {NULL, &ip2, NULL, NULL, NULL};
 
