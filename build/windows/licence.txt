@@ -1,8 +1,8 @@
-BitMeterOS v0.7.0
+BitMeterOS v0.8.0
 
 http://codebox.org.uk/bitmeterOS
 
-Copyright (c) 2010 Rob Dawson
+Copyright (c) 2012 Rob Dawson
 
 Licensed under the GNU General Public License
 http://www.gnu.org/licenses/gpl.txt
