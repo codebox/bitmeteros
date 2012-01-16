@@ -3,13 +3,13 @@
 #include <stdarg.h> 
 #include <stddef.h> 
 #include <setjmp.h> 
+#include <string.h>
 #include <cmockery.h> 
 #include "common.h"
 #include "capture.h"
 #include <time.h>
 #include <stdio.h>
 #include <assert.h>
-#include <string.h>
 #include "test.h"
 
 #define MAX_MSG_SIZE 512

@@ -12,6 +12,7 @@
 #define DEFAULT_PORT 2605
 #define MIN_PORT 1
 #define MAX_PORT 65535
+#define INVALID_SOCKET -1
 
 #define MIME_JSON "application/json"
 #define MIME_HTML "text/html"
@@ -48,6 +49,12 @@ struct MimeType{
     char* fileExt;
     char* contentType;
     int binary;
+};
+
+struct WebConnectionConfig {
+    int port;
+    int allowRemoteConnect;
+    int allowRemoteAdmin;
 };
 
 #ifdef _WIN32
@@ -93,6 +100,9 @@ void writeEndOfHeaders(SOCKET fd);
 void processRequest(SOCKET fd, char* buffer, int allowAdmin);
 
 void getWebRoot(char* path);
+int getPort();
+int isLocalConnection(SOCKET socket);
+struct WebConnectionConfig readDbConfig();
 
 #ifdef UNIT_TESTING
     #define WRITE_HEADERS_SERVER_ERROR mockWriteHeadersServerError

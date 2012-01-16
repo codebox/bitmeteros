@@ -18,7 +18,7 @@
         <br/>
         <a class="refreshLink" href="summary">Refresh Now</a>
         <br/><br/>
-        <a class="homeLink" href="index">Home</a>
+        <a class="homeLink" href="/m/index">Home</a>
         
     </body>
 </html>

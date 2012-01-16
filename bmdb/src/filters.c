@@ -102,6 +102,14 @@ int addNewFilter(FILE* file, int argc, char** argv){
             }
         }
         
+     // Check that the filter description is valid
+        if (!filterDescIsValid(filterDesc)){
+            PRINT(COLOUR_RED, "Error - the specified filter description '%s' is not valid - please enter a value between 1 and %d characters in length.", filterDesc, FILTER_DESC_MAX_LENGTH);  
+            status = FAIL;
+        } else {
+            status = SUCCESS;
+        }
+
         if (status == SUCCESS){
          // Check that the filter expression is valid
             if (!filterExprIsValid(filterTxt)){
@@ -111,6 +119,8 @@ int addNewFilter(FILE* file, int argc, char** argv){
                 status = SUCCESS;
             }
         }
+        
+        
 
         if (status == SUCCESS){
             struct Filter filter = {0, filterDesc, filterName, filterTxt, NULL, NULL};

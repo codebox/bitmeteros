@@ -1,12 +1,12 @@
 #define _GNU_SOURCE
-#include <test.h> 
-#include <stdarg.h> 
+#include <stdarg.h>
+#include "string.h"
 #include <stddef.h> 
 #include <setjmp.h> 
-#include <cmockery.h> 
-#include "common.h"
-#include "string.h"
 #include "getopt.h"
+#include "common.h"
+#include <cmockery.h> 
+#include <test.h> 
 #include "bmsync.h"
 
 /*

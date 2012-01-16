@@ -25,7 +25,8 @@ BITMETER.model = (function(){
         'showFilterWarning' : 'true',
         'monitorRefresh' : config.monitorInterval,
         'historyRefresh' : config.historyInterval,
-        'summaryRefresh' : config.summaryInterval
+        'summaryRefresh' : config.summaryInterval,
+        'alertsRefresh'  : config.alertsInterval
     };
     
     function get(key){
@@ -179,6 +180,14 @@ BITMETER.model = (function(){
     };
     model.setSummaryRefresh = function(summaryRefresh){
         set('summaryRefresh', summaryRefresh, true);
+    };
+
+ // Interval, in milliseconds, between updates on the Alerts page
+    model.getAlertsRefresh = function(){
+        return Number(get('alertsRefresh'));
+    };
+    model.setAlertsRefresh = function(alertsRefresh){
+        set('alertsRefresh', alertsRefresh, true);
     };
     
     return model;

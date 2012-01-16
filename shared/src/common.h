@@ -56,6 +56,7 @@
 #define CONFIG_WEB_MONITOR_INTERVAL "web.monitor_interval"
 #define CONFIG_WEB_SUMMARY_INTERVAL "web.summary_interval"
 #define CONFIG_WEB_HISTORY_INTERVAL "web.history_interval"
+#define CONFIG_WEB_ALERTS_INTERVAL  "web.alerts_interval"
 #define CONFIG_WEB_SERVER_NAME      "web.server_name"
 #define CONFIG_WEB_COLOUR           "web.colour"
 #define CONFIG_WEB_ALLOW_REMOTE     "web.allow_remote"
@@ -64,6 +65,7 @@
 #define CONFIG_WEB_RSS_ITEMS        "web.rss.items"
 #define CONFIG_DB_WRITE_INTERVAL    "cap.write_interval"
 #define CONFIG_NO_HIPPY_TEXT        "txt.mono"
+#define CONFIG_CAP_PROMISCUOUS      "cap.floozy"
 
 #define ALLOW_LOCAL_CONNECT_ONLY 0
 #define ALLOW_REMOTE_CONNECT 1
@@ -92,6 +94,8 @@
 #define COLOUR_GREEN 0
 #define COLOUR_RED   0
 #define COLOUR_YELLOW 0
+#define COLOUR_WHITE_1 0
+#define COLOUR_WHITE_2 0
 #define COLOUR_DEFAULT 0
 #endif
 // ----
@@ -100,6 +104,7 @@
 #endif
 // ----
 #define FILTER_NAME_MAX_LENGTH 16
+#define FILTER_DESC_MAX_LENGTH 64
 // ----
 // These are very important, used everywhere
 #define TRUE  1
@@ -175,7 +180,8 @@ struct NameValuePair{
 };
 
 #ifndef _WIN32
-    typedef int SOCKET;
+    //typedef int SOCKET; // replaced - causes compile errors on OSX, not sure why
+    #define SOCKET int 
 #endif
 
 // ----
@@ -244,6 +250,7 @@ int getMaxFilterDescWidth(struct Filter* filter);
 int getMaxFilterNameWidth(struct Filter* filter);
 struct Filter* copyFilter(struct Filter* filter);
 int filterNameIsValid(char* name);
+int filterDescIsValid(char* desc);
 // ----
 void doSleep(int interval);
 void getDbPath(char* path);

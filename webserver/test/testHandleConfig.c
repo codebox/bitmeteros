@@ -25,6 +25,7 @@ void testConfigWithAdmin(void** state) {
     addConfigRow(CONFIG_WEB_MONITOR_INTERVAL, "1");
     addConfigRow(CONFIG_WEB_SUMMARY_INTERVAL, "2");
     addConfigRow(CONFIG_WEB_HISTORY_INTERVAL, "3");
+    addConfigRow(CONFIG_WEB_ALERTS_INTERVAL,  "4");
     addConfigRow(CONFIG_WEB_SERVER_NAME,      "server");
     addConfigRow(CONFIG_WEB_RSS_HOST,         "rsshost");
     addConfigRow(CONFIG_WEB_RSS_FREQ,         "1");
@@ -44,6 +45,8 @@ void testConfigWithAdmin(void** state) {
     expect_string(mockWriteText, txt, ", ");
     expect_string(mockWriteText, txt, "\"historyInterval\" : 3");
     expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"alertsInterval\" : 4");
+    expect_string(mockWriteText, txt, ", ");
     expect_string(mockWriteText, txt, "\"monitorIntervalMin\" : 1000");
     expect_string(mockWriteText, txt, ", ");
     expect_string(mockWriteText, txt, "\"monitorIntervalMax\" : 30000");
@@ -55,6 +58,10 @@ void testConfigWithAdmin(void** state) {
     expect_string(mockWriteText, txt, "\"summaryIntervalMin\" : 1000");
     expect_string(mockWriteText, txt, ", ");
     expect_string(mockWriteText, txt, "\"summaryIntervalMax\" : 60000");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"alertsIntervalMin\" : 5000");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"alertsIntervalMax\" : 60000");
     expect_string(mockWriteText, txt, ", ");
     expect_string(mockWriteText, txt, "\"serverName\" : \"server\"");
     expect_string(mockWriteText, txt, ", ");
@@ -125,6 +132,7 @@ void testConfigWithoutAdmin(void** state) {
     addConfigRow(CONFIG_WEB_MONITOR_INTERVAL, "1");
     addConfigRow(CONFIG_WEB_SUMMARY_INTERVAL, "2");
     addConfigRow(CONFIG_WEB_HISTORY_INTERVAL, "3");
+    addConfigRow(CONFIG_WEB_ALERTS_INTERVAL,  "4");
     addConfigRow(CONFIG_WEB_SERVER_NAME,      "server");
     addConfigRow(CONFIG_WEB_RSS_HOST,         "rsshost");
     addConfigRow(CONFIG_WEB_RSS_FREQ,         "1");
@@ -145,6 +153,8 @@ void testConfigWithoutAdmin(void** state) {
     expect_string(mockWriteText, txt, ", ");
     expect_string(mockWriteText, txt, "\"historyInterval\" : 3");
     expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"alertsInterval\" : 4");
+    expect_string(mockWriteText, txt, ", ");
     expect_string(mockWriteText, txt, "\"monitorIntervalMin\" : 1000");
     expect_string(mockWriteText, txt, ", ");
     expect_string(mockWriteText, txt, "\"monitorIntervalMax\" : 30000");
@@ -156,6 +166,10 @@ void testConfigWithoutAdmin(void** state) {
     expect_string(mockWriteText, txt, "\"summaryIntervalMin\" : 1000");
     expect_string(mockWriteText, txt, ", ");
     expect_string(mockWriteText, txt, "\"summaryIntervalMax\" : 60000");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"alertsIntervalMin\" : 5000");
+    expect_string(mockWriteText, txt, ", ");
+    expect_string(mockWriteText, txt, "\"alertsIntervalMax\" : 60000");
     expect_string(mockWriteText, txt, ", ");
     expect_string(mockWriteText, txt, "\"serverName\" : \"server\"");
     expect_string(mockWriteText, txt, ", ");

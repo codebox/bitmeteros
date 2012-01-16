@@ -2,10 +2,11 @@
 #include <stdarg.h>
 #include <stddef.h> 
 #include <setjmp.h> 
+#include <string.h>
 #include <cmockery.h> 
 #include "test.h"
 #include "common.h"
-#include <string.h>
+
 
 /*
 Contains unit tests for the 'db' module.

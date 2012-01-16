@@ -2,13 +2,13 @@
     #define __USE_MINGW_ANSI_STDIO 1
 #endif
 #include <stdlib.h>
-#include "sqlite3.h"
-#include "bmws.h"
-#include "common.h"
-#include "client.h"
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
+#include "sqlite3.h"
+#include "common.h"
+#include "bmws.h"
+#include "client.h"
 
 #define BAD_PARAM -1
 

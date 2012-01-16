@@ -109,23 +109,14 @@ time_t getNextDayForTs(time_t ts){
 
 time_t getNextHourForTs(time_t ts){
  // Returns a timestamp value representing the start of the hour following the one in which 'ts' occurs
-    struct tm *t = gmtime(&ts);
-
-    t->tm_sec  = 0;
-    t->tm_min  = 0;
-    t->tm_hour += 1;
-
-    return timegm(t);
+    int modValue = (int)ts % 3600;
+    return (time_t)(ts + 3600 - modValue);
 }
 
 time_t getNextMinForTs(time_t ts){
  // Returns a timestamp value representing the start of the minute following the one in which 'ts' occurs
-    struct tm *t = gmtime(&ts);
-
-    t->tm_sec = 0;
-    t->tm_min += 1;
-
-    return timegm(t);
+    int modValue = (int)ts % 60;
+    return (time_t)(ts + 60 - modValue);
 }
 
 time_t addToDate(time_t ts, char unit, int num){

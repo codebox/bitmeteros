@@ -4,6 +4,9 @@
 #include <setjmp.h> 
 #include <cmockery.h> 
 #include "common.h"
+#ifndef _WIN32
+#include <netinet/in.h>
+#endif
 
 /*
 Contains unit tests for the 'adapter' module.
@@ -16,11 +19,20 @@ void testAllocAdapter(void **state) {
     char* name = ADAPTER_NAME;
     char* desc = ADAPTER_DESC;
     
-    struct sockaddr ip2 = {1, "005678"}; // IP 53.54.55.56
-    struct pcap_addr addr2 = {NULL, &ip2, NULL, NULL, NULL};
+    #if (defined _WIN32 || defined __linux__ )
+	    struct sockaddr ip2 = {1, "005678"}; // IP 53.54.55.56
+    	struct pcap_addr addr2 = {NULL, &ip2, NULL, NULL, NULL};
 
-    struct sockaddr ip1 = {1, "001234"}; // IP 49.50.51.52
-    struct pcap_addr addr1 = {&addr2, &ip1, NULL, NULL, NULL};
+	    struct sockaddr ip1 = {1, "001234"}; // IP 49.50.51.52
+    	struct pcap_addr addr1 = {&addr2, &ip1, NULL, NULL, NULL};
+	#else
+	    struct sockaddr ip2 = {16, AF_INET, "005678"}; // IP 53.54.55.56
+	    struct pcap_addr addr2 = {NULL, &ip2, NULL, NULL, NULL};
+
+    	struct sockaddr ip1 = {16, AF_INET, "001234"}; // IP 49.50.51.52
+	    struct pcap_addr addr1 = {&addr2, &ip1, NULL, NULL, NULL};
+
+	#endif
     
     struct pcap_if pcapif = {NULL, name, desc, &addr1, 0};
     struct Adapter* adapter = allocAdapter(&pcapif);

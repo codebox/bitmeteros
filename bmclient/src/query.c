@@ -37,7 +37,7 @@ void doBmClientQuery(){
 
     } else if (prefs.filter == NULL) {
      // Need a valid filter name
-        PRINT(COLOUR_RED, "No filter name has been specfied.\n"); //TODO put proper msg in #define
+        PRINT(COLOUR_RED, "No filter name has been specified, use -f <filter name>, or use '-h' to display help.\n");
 
     } else {
         struct Filter* filters = readFilters();

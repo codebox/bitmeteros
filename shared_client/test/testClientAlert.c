@@ -29,7 +29,7 @@ static time_t makeTsFromParts(int y, int m, int d, int h){
 }
 
 void printDateCriteria(struct DateCriteria* criteria){
-    printf("%d %d %d %d\n", 
+    dbg("%d %d %d %d\n", 
         criteria->year == NULL ? -1 : criteria->year->val1, 
         criteria->month == NULL ? -1 : criteria->month->val1, 
         criteria->day  == NULL ? -1 : criteria->day->val1, 
@@ -75,8 +75,8 @@ void checkFirstMatchingDate(int tsY, int tsM, int tsD, int tsH,
     struct DateCriteria* criteria = makeDateCriteria(yTxt, mTxt, dTxt, wTxt, hTxt);
     time_t ts = makeTsFromParts(tsY, tsM, tsD, tsH);
     time_t result = findFirstMatchingDate(criteria, ts);
-    
     struct tm* t = localtime(&result);
+
     assert_int_equal(exY, t->tm_year + 1900);
     assert_int_equal(exM, t->tm_mon + 1);
     assert_int_equal(exD, t->tm_mday);
@@ -382,9 +382,10 @@ static int replaceRelativeValuesAndFree(struct DateCriteria* criteria, time_t ts
     return val;
 }
 void testReplaceRelativeValues(void** state){
-    checkReplaceRelativeValues(2010, 5, 26, 3, "*", "*", "*", "-0", -1, -1, -1,  3);
-    checkReplaceRelativeValues(2010, 5, 26, 3, "*", "*", "*", "-1", -1, -1, -1,  2);
+	checkReplaceRelativeValues(2010, 5, 26, 3, "*", "*", "*", "-0", -1, -1, -1,  3);
+	checkReplaceRelativeValues(2010, 5, 26, 3, "*", "*", "*", "-1", -1, -1, -1,  2);
     checkReplaceRelativeValues(2010, 5, 26, 3, "*", "*", "*", "-5", 2010, 5, 25, 22);
+    
     checkReplaceRelativeValuesInvalid(2010, 5, 26, 3, "1", "*", "*", "-1");
     checkReplaceRelativeValuesInvalid(2010, 5, 26, 3, "*", "1", "*", "-1");
     checkReplaceRelativeValuesInvalid(2010, 5, 26, 3, "*", "*", "1", "-1");
@@ -397,7 +398,7 @@ void testReplaceRelativeValues(void** state){
     checkReplaceRelativeValuesInvalid(2010, 5, 26, 3, "*", "*", "-1",  "*");
     checkReplaceRelativeValuesInvalid(2010, 5, 26, 3, "*", "1", "-1",  "0");
     checkReplaceRelativeValuesInvalid(2010, 5, 26, 3, "1", "*", "-1",  "0");
-    
+
     checkReplaceRelativeValues(2010, 5, 26, 3, "*", "-0",   "1",  "0", -1,  5,  1, 0);
     checkReplaceRelativeValues(2010, 5, 26, 3, "*", "-1",   "1",  "0", -1,  4,  1, 0);
     checkReplaceRelativeValues(2010, 5, 26, 3, "*", "-6",   "1",  "0", 2009, 11,  1, 0);
@@ -417,7 +418,7 @@ void testReplaceRelativeValues(void** state){
     checkReplaceRelativeValuesInvalid(2010, 5, 26, 3, "-1", "-1",   "1",  "1");
     checkReplaceRelativeValuesInvalid(2010, 5, 26, 3, "-1",  "1",  "-1",  "1");
     checkReplaceRelativeValuesInvalid(2010, 5, 26, 3, "-1",  "1",   "1", "-1");
-    
+
     struct tm t1 = {0, 0, 3, 26, 4, 72, 0, 0, -1};
     assert_int_equal(0, replaceRelativeValuesAndFree(makeDateCriteria("1990",  "*",  "*", "*", "-1"), mktime(&t1))); 
     assert_int_equal(0, replaceRelativeValuesAndFree(makeDateCriteria("*",    "12",  "*", "*", "-1"), mktime(&t1))); 
@@ -431,7 +432,7 @@ void testReplaceRelativeValues(void** state){
     assert_int_equal(0, replaceRelativeValuesAndFree(makeDateCriteria("-1",  "*",  "1", "*", "0"), mktime(&t1))); 
     assert_int_equal(0, replaceRelativeValuesAndFree(makeDateCriteria("*",  "-1",  "1", "*", "*"), mktime(&t1))); 
     assert_int_equal(0, replaceRelativeValuesAndFree(makeDateCriteria("*",  "-1",  "*", "*", "0"), mktime(&t1))); 
-    assert_int_equal(0, replaceRelativeValuesAndFree(makeDateCriteria("*",  "*",  "-1", "*", "*"), mktime(&t1))); 
+    assert_int_equal(0, replaceRelativeValuesAndFree(makeDateCriteria("*",  "*",  "-1", "*", "*"), mktime(&t1)));
 }
 void testFindFirstMatchingDate(void** state){    
     checkFirstMatchingDate(2010, 5, 12, 0, "*", "*", "*", "*", "*", 2010, 5, 12, 0); 
@@ -499,7 +500,7 @@ void testFindFirstMatchingDate(void** state){
     checkFirstMatchingDate(2010, 1,  1,  0, "*", "*", "*", "*",    "16", 2009, 12, 31, 16); 
     
     checkFirstMatchingDate(2010, 5, 12, 15, "2010", "5", "*",  "*",  "*", 2010, 5, 12, 15); 
-    checkFirstMatchingDate(2010, 5, 12, 15, "2008", "5", "*",  "*",  "*", 2008, 5, 31, 23); 
+    checkFirstMatchingDate(2010, 5, 12, 15, "2008", "5", "*",  "*",  "*", 2008, 5, 31, 23); //TODO fails on OSX
     checkFirstMatchingDate(2010, 5, 12, 15, "2008", "5", "*", "31",  "*", 2008, 5, 31, 23); 
     checkFirstMatchingDate(2010, 5, 12, 15, "2008", "5", "*", "31", "23", 2008, 5, 31, 23); 
     checkNoMatchingDates(2010, 5, 12,  0, "2010", "6", "*",  "*",     "*");

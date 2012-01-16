@@ -1,6 +1,9 @@
 #ifdef _WIN32
     #include <winsock2.h>
 #endif
+#include <time.h>
+#include "common.h"
+
 #define OPT_HELP    'h'
 #define OPT_VERSION 'v'
 #define OPT_PORT    'p'

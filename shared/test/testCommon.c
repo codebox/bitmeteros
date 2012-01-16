@@ -69,10 +69,6 @@ static void doTestFormatAmount(BW_INT amount, char* binaryShort, char* binaryLon
 
 void testToTime(void **state){
  // Check that the 'toTime' function correctly extracts the time component from various timestamps
-    doTestToTime(0,  "00:00:00");
-    doTestToTime(1,  "00:00:01");
-    doTestToTime(60, "00:01:00");
-
     doTestToTime(makeTs("2000-01-01 00:00:00"), "00:00:00");
     doTestToTime(makeTs("2000-01-01 00:00:01"), "00:00:01");
     doTestToTime(makeTs("2000-01-01 00:02:01"), "00:02:01");

@@ -1,15 +1,18 @@
 #define _GNU_SOURCE
-#include <test.h> 
 #include <stdarg.h> 
 #include <stdio.h>
-#include "common.h"
 #include <stdlib.h> 
 #include <stdarg.h>
-#include <setjmp.h> 
+#ifndef _WIN32
+	#include <netinet/in.h>
+#endif
+#define HAVE_REMOTE 1
+#include "pcap.h"
+#include "common.h"
+#include <test.h> 
+#include <setjmp.h>
 #include <cmockery.h> 
 #include <bmclient.h> 
-#include "pcap.h"
-#include "remote-ext.h"
 
 void mockDoHelp(int dummy){
     check_expected(dummy);
@@ -79,6 +82,7 @@ int mockCompressDb(int dummy){
 int mockGetNextCompressTime(){
     return 100;
 }
+
 int mockPcap_findalldevs_ex(char *source, struct pcap_rmtauth *auth, pcap_if_t **alldevs, char *errbuf){
     pcap_if_t* device1 = malloc(sizeof(pcap_if_t));
     pcap_if_t* device2 = malloc(sizeof(pcap_if_t));
@@ -113,7 +117,17 @@ int mockPcap_findalldevs_ex(char *source, struct pcap_rmtauth *auth, pcap_if_t *
 
     *alldevs = device1;
 }
+
+int mockPcap_findalldevs(pcap_if_t **alldevs, char *errbuf){
+	return mockPcap_findalldevs_ex(NULL, NULL, alldevs, errbuf);
+}
+
 pcap_t* mockPcap_open(const char *source, int snaplen, int flags, int read_timeout, struct pcap_rmtauth *auth, char *errbuf){
+    check_expected(flags);
+    return (pcap_t*)mock();
+}
+pcap_t* mockPcap_open_live(const char *source, int snaplen, int flags, int read_timeout, char *errbuf){
+    check_expected(flags);
     return (pcap_t*)mock();
 }
 int mockPcap_setnonblock(pcap_t* h, int i, char * c){

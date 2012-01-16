@@ -1,12 +1,12 @@
 #include <stdlib.h>
-#include <test.h> 
 #include <stdarg.h> 
 #include <stddef.h> 
 #include <setjmp.h> 
-#include <cmockery.h> 
-#include "common.h"
 #include <string.h>
 #include <time.h>
+#include <test.h> 
+#include <cmockery.h> 
+#include "common.h"
 
 /*
 Contains unit tests for the 'time' module.

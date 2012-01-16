@@ -24,7 +24,6 @@
 #define ALERT_SQL_SELECT_ROWS                "SELECT ts AS ts, dr AS dr, vl AS vl FROM data WHERE ts >=? AND fl=?;"
 #define ALERT_SQL_TOTAL_BETWEEN              "SELECT SUM(vl) AS vl FROM data WHERE ts>? AND ts <=? AND fl=?"
 
-static int getNextId(char* sql);
 static struct Alert* alertForRow(sqlite3_stmt *stmtSelectAlerts, sqlite3_stmt *stmtSelectInterval, sqlite3_stmt *stmtSelectIntervalIdsForAlert);    
 static struct DateCriteria* getIntervalForId(sqlite3_stmt *stmtSelectInterval, int id);
 static int doAddAlert(struct Alert* alert, int alertId);
@@ -508,7 +507,7 @@ int replaceRelativeValues(struct DateCriteria* criteria, time_t ts){
     int relativeHour    = (!nullHour    && criteria->hour->isRelative);
     
     int hasRelativeValues = (relativeYear || relativeMonth || relativeWeekday || relativeDay || relativeHour);
-    
+
     if (hasRelativeValues){
         int relativeValuesOk = TRUE;
         
@@ -547,6 +546,8 @@ int replaceRelativeValues(struct DateCriteria* criteria, time_t ts){
         if (relativeValuesOk){      
          // We are satisfied that the struct's relative values are sensible, so we carry on
             struct tm* t = localtime((time_t *) &ts);
+            t->tm_isdst = -1;
+
             int relativeValue, absoluteValue;
             
             if (relativeYear){
@@ -672,7 +673,7 @@ int findHighestMatchAtOrBelowLimit(struct DateCriteriaPart* part, int limit){
 }
 
 time_t findFirstMatchingDate(struct DateCriteria* criteria, time_t now){
- // Find the earliest date that matches the criteria, ignorng any dates later than 'now'
+ // Find the earliest date that matches the criteria, ignoring any dates later than 'now'
     struct tm* tmCandidate = localtime(&now);
     tmCandidate->tm_min = 0;
     tmCandidate->tm_sec = 0;
@@ -873,6 +874,7 @@ int isDateCriteriaMatch(struct DateCriteria* criteria, time_t ts){
  // Check if the specified date, when evaluated as a local time, matches the criteria
     int result = FALSE;
     struct tm* dt = localtime((time_t *) &ts);
+
     while(criteria != NULL){
         result = isDateCriteriaPartMatch(criteria->year, getYear(dt)) && 
             isDateCriteriaPartMatch(criteria->month, getMonth(dt)) && 

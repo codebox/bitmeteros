@@ -32,8 +32,16 @@ char* getFilterTxt(char* filterTxt, struct Adapter* adapter);
 #ifdef UNIT_TESTING
     #define COMPRESS_DB mockCompressDb
     #define GET_NEXT_COMPRESS_TIME getNextCompressTime
-    #define PCAP_FINDALLDEVS_EX mockPcap_findalldevs_ex
-    #define PCAP_OPEN mockPcap_open
+	#ifdef _WIN32
+    	#define PCAP_FINDALLDEVS_EX mockPcap_findalldevs_ex
+    #else
+    	#define PCAP_FINDALLDEVS mockPcap_findalldevs
+    #endif
+    #ifdef _WIN32
+    	#define PCAP_OPEN mockPcap_open
+    #else
+	    #define PCAP_OPEN_LIVE mockPcap_open_live
+    #endif
     #define PCAP_SETNONBLOCK mockPcap_setnonblock
     #define PCAP_COMPILE mockPcap_compile
     #define PCAP_SETFILTER mockPcap_setfilter
@@ -46,8 +54,16 @@ char* getFilterTxt(char* filterTxt, struct Adapter* adapter);
 #else
     #define COMPRESS_DB compressDb
     #define GET_NEXT_COMPRESS_TIME getNextCompressTime
-    #define PCAP_FINDALLDEVS_EX pcap_findalldevs_ex
-    #define PCAP_OPEN pcap_open
+    #ifdef _WIN32
+    	#define PCAP_FINDALLDEVS_EX pcap_findalldevs_ex
+    #else
+    	#define PCAP_FINDALLDEVS pcap_findalldevs
+    #endif
+    #ifdef _WIN32
+	    #define PCAP_OPEN pcap_open
+	#else
+		#define PCAP_OPEN_LIVE pcap_open_live
+	#endif
     #define PCAP_SETNONBLOCK pcap_setnonblock
     #define PCAP_COMPILE pcap_compile
     #define PCAP_SETFILTER pcap_setfilter

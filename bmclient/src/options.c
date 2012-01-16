@@ -20,6 +20,7 @@ static int setDirection(struct Prefs*, char* );
 static int setBarChars(struct Prefs*, char*);
 static int setMaxAmount(struct Prefs*, char* );
 static int setMonitorType(struct Prefs*, char* );
+static int setFilter(struct Prefs *prefs, char* filter);
 static time_t makeTsFromRange(char* rangePart);
 static time_t adjustForEndOfRange(time_t, int );
 static void setErrMsg(struct Prefs *, char*);

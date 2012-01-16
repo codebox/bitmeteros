@@ -1,6 +1,6 @@
 #include <signal.h>
-#include "capture.h"
 #include "common.h"
+#include "capture.h"
 
 /*
 Contains the entry point for the data capture application, when run as an unmanaged executable.

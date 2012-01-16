@@ -1,5 +1,8 @@
 #include "common.h"
 #include "pcap.h"
+#ifndef _WIN32
+#include <netinet/in.h>
+#endif
 
 static char* makeAdapterIpList(pcap_if_t *device);
 

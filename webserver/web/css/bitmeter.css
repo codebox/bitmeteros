@@ -678,7 +678,7 @@ div.createAlertStartRepeatingTxt{
 #rssCount{
     width: 3em; 
 }
-#prefMonitorInterval, #prefHistoryInterval, #prefSummaryInterval{
+#prefMonitorInterval, #prefHistoryInterval, #prefSummaryInterval, #prefAlertsInterval{
     width: 2em; 
 }
 #prefs h4{

@@ -153,7 +153,6 @@ int getMaxFilterDescWidth(struct Filter* filters){
     return maxLen;
 }
 
-
 int getMaxFilterNameWidth(struct Filter* filters){
     int maxLen = 0;
     struct Filter* filter = filters;
@@ -184,4 +183,10 @@ int filterNameIsValid(char* name) {
         }
         return SUCCESS;
     }
+}
+
+int filterDescIsValid(char* desc) {
+    int len = strlen(desc);
+    
+    return (len < 1 || len > FILTER_DESC_MAX_LENGTH) ? FAIL : SUCCESS;
 }
