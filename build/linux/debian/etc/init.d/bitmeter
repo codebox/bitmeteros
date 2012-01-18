@@ -1,5 +1,15 @@
 #!/bin/sh
 
+### BEGIN INIT INFO
+# Provides:          BitMeter_Capture_Daemon
+# Required-Start:    $all
+# Required-Stop:     $all
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: starts instance of BitMeter Capture Daemon
+# Description:       starts instance of BitMeter Capture Daemon using start-stop-daemon
+### END INIT INFO
+
 # http://www.debian.org/doc/debian-policy/ch-opersys.html
 DAEMON=/usr/bin/bmcapture
 PROC=bmcapture
