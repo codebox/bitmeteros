@@ -211,13 +211,16 @@ void doSubs(SOCKET fd, FILE* fp, struct NameValuePair* substPairs){
 void processFileRequest(SOCKET fd, struct Request* req, struct NameValuePair* substPairs){
     setupEnv();
 
+	int redirect = 0;
 	char* path = req->path;
  // Default page is index.html, send this if no other file is specified
 	if (strcmp("/", path) == 0){
+	redirect = 1;
         //free(req->path);
         path = strdup("/index.html");
         
 	} else if ((strcmp("/m", path) == 0) || (strcmp("/m/", path) == 0)){
+	redirect = 1;
         //free(req->path);
         path = strdup("/m/index.xml");
 
@@ -244,7 +247,12 @@ void processFileRequest(SOCKET fd, struct Request* req, struct NameValuePair* su
 
     } else {
      // We got the file, write out the headers and then send the content
-        writeHeadersOk(fd, mimeType->contentType, TRUE);
+	if ( redirect ){
+	// Was the initial request only for "/" ?
+		writeHeadersSeeOther(fd, path, TRUE);
+	} else {
+        	writeHeadersOk(fd, mimeType->contentType, TRUE);
+	}
         if (substPairs == NULL){
 	        int rc;
 	        char buffer[BUFSIZE];
