@@ -129,7 +129,6 @@ void writeHeader(SOCKET fd, char* name, char* value);
 void writeEndOfHeaders(SOCKET fd);
 void processRequest(SOCKET fd, char* buffer, int allowAdmin);
 
-static int getPort();
 void getWebRoot(char* path);
 
 #endif
