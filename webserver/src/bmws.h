@@ -65,6 +65,7 @@ struct NameValuePair{
     char* value;
     struct NameValuePair* next;
 };
+
 long getValueNumForName(char* name, struct NameValuePair* pair, long defaultValue);
 char* getValueForName(char* name, struct NameValuePair* pair, char* defaultValue);
 void freeNameValuePairs(struct NameValuePair* param);
@@ -113,6 +114,7 @@ void writeTextArrayToJson(SOCKET fd, char* key, char** values);
 void writeNumValueToJson(SOCKET fd, char* key, BW_INT value);
 void writeSyncData(SOCKET fd, struct Data* data);
 void writeHeadersOk(SOCKET fd, char* contentType, int endHeaders);
+void writeHeadersSeeOther(SOCKET fd, struct Request* req, int endHeaders);
 void writeHeadersNotFound(SOCKET fd, char* file);
 void writeHeadersForbidden(SOCKET fd, char* request);
 void writeHeadersNotAllowed(SOCKET fd, char* httpMethod);
