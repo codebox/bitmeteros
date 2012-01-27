@@ -47,8 +47,6 @@ static struct HttpResponse HTTP_SERVER_ERROR = {500, "Bad/missing parameter"};
 
 static void writeHeaders(SOCKET fd, struct HttpResponse response, char* contentType, int endHeaders);
 
-extern struct serverInfo ServerInfo;
-
 // These are the different operations that we can perform on behalf of the client
 enum OpType{File, Monitor, Summary, Query, Sync, Config, Alert, Export, RSS, MobileMonitor, MobileSummary, MobileAbout};
 
@@ -114,7 +112,15 @@ void writeHeadersOk(SOCKET fd, char* contentType, int endHeaders){
 	writeHeaders(fd, HTTP_OK, contentType, endHeaders);
 }
 
-void writeHeadersSeeOther(SOCKET fd, char* newPath, int endHeaders){
+void writeHeadersSeeOther(SOCKET fd, struct Request* req, int endHeaders){
+        char *newPath;
+        struct NameValuePair* param = req->headers;
+        while (param != NULL){
+	    if( strcmp(param->name, "Host") == 0 ) {
+                sprintf(newPath,"http://%s/index.html",param->value);
+	    }
+            param = param->next;
+        }
 	writeHeaders(fd, HTTP_SEE_OTHER, newPath, endHeaders);
 }
 
@@ -128,11 +134,8 @@ static void writeHeaders(SOCKET fd, struct HttpResponse response, char* contentT
     }
 
     if (response.code == HTTP_SEE_OTHER.code && contentType != NULL){
-	char newLocation[SMALL_BUFSIZE];
-
-	sprintf(newLocation, "http://%s:%d%s", ServerInfo.hostname, ServerInfo.port, contentType);
-
-	writeHeader(fd, "Location", newLocation);
+        logMsg(LOG_INFO,"Redirect Location: %s",contentType);
+	writeHeader(fd, "Location", contentType);
     }
 
     writeCommonHeaders(fd);

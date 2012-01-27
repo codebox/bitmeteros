@@ -246,22 +246,28 @@ void processFileRequest(SOCKET fd, struct Request* req, struct NameValuePair* su
         }
 
     } else {
-     // We got the file, write out the headers and then send the content
-	if ( redirect ){
-	// Was the initial request only for "/" ?
-		writeHeadersSeeOther(fd, path, TRUE);
-	} else {
-        	writeHeadersOk(fd, mimeType->contentType, TRUE);
-	}
+        // We got the file, write out the headers and then send the content
+        if ( redirect ){
+            // Was the initial request only for "/" ?
+            struct NameValuePair* param = req->headers;
+            while (param != NULL){
+                if( strcmp(param->name, "Host") == 0 ) {
+                    writeHeadersSeeOther(fd, req, TRUE);
+                }
+                param = param->next;
+	    }
+        } else {
+            writeHeadersOk(fd, mimeType->contentType, TRUE);
+        }
         if (substPairs == NULL){
 	        int rc;
 	        char buffer[BUFSIZE];
 	        while ( (rc = fread(buffer, 1, BUFSIZE, fp)) > 0 ) {
 	           	writeData(fd, buffer, rc);
 	        }
-	    } else {
+        } else {
 	    	doSubs(fd, fp, substPairs);
-	    }
+     }
         fclose(fp);
     }
 

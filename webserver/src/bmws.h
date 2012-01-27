@@ -55,12 +55,6 @@
 #define HEADER_CONTENT_TYPE "Content-Type"
 #define HTTP_EOL "\r\n"
 
-struct serverInfo{
-    char* hostname;
-    int port;
-};
-extern struct serverInfo ServerInfo;
-
 struct HttpResponse{
     int   code;
     char* msg;
@@ -120,7 +114,7 @@ void writeTextArrayToJson(SOCKET fd, char* key, char** values);
 void writeNumValueToJson(SOCKET fd, char* key, BW_INT value);
 void writeSyncData(SOCKET fd, struct Data* data);
 void writeHeadersOk(SOCKET fd, char* contentType, int endHeaders);
-void writeHeadersSeeOther(SOCKET fd, char* newPath, int endHeaders);
+void writeHeadersSeeOther(SOCKET fd, struct Request* req, int endHeaders);
 void writeHeadersNotFound(SOCKET fd, char* file);
 void writeHeadersForbidden(SOCKET fd, char* request);
 void writeHeadersNotAllowed(SOCKET fd, char* httpMethod);

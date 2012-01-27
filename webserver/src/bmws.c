@@ -42,7 +42,6 @@
 static void sigHandler();
 static int allowRemoteConnect, allowRemoteAdmin;
 static int isLocalConnection(SOCKET socket);
-struct serverInfo ServerInfo;
 
 static void web(SOCKET fd){
  // This gets run after we fork() for the client request
@@ -176,16 +175,6 @@ int main(){
 	signal(SIGTERM, sigHandler);	// Trap termination requests from the system
 
     readDbConfig();
-
-    // Save who we are
-    ServerInfo.port = port;
-    if( allowRemoteConnect ){
-        char hostname[SMALL_BUFSIZE];
-        gethostname(hostname,SMALL_BUFSIZE);
-        ServerInfo.hostname = strdup(hostname);
-    } else {
-        ServerInfo.hostname = strdup("localhost");
-    }
 
     listener = setupListener();
 
