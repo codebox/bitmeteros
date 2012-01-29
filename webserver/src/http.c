@@ -39,13 +39,14 @@ Contains HTTP-related functions, mostly for reading in requests and writing out 
 */
 
 static struct HttpResponse HTTP_OK           = {200, "OK"};
+static struct HttpResponse HTTP_SEE_OTHER    = {303, "See Other"};
 static struct HttpResponse HTTP_NOT_FOUND    = {404, "Not Found"};
 static struct HttpResponse HTTP_FORBIDDEN    = {403, "Forbidden"};
 static struct HttpResponse HTTP_NOT_ALLOWED  = {405, "Method not allowed"};
 static struct HttpResponse HTTP_SERVER_ERROR = {500, "Bad/missing parameter"};
 
 static void writeHeaders(SOCKET fd, struct HttpResponse response, char* contentType, int endHeaders);
-	
+
 // These are the different operations that we can perform on behalf of the client
 enum OpType{File, Monitor, Summary, Query, Sync, Config, Alert, Export, RSS, MobileMonitor, MobileSummary, MobileAbout};
 
@@ -111,6 +112,18 @@ void writeHeadersOk(SOCKET fd, char* contentType, int endHeaders){
 	writeHeaders(fd, HTTP_OK, contentType, endHeaders);
 }
 
+void writeHeadersSeeOther(SOCKET fd, struct Request* req, int endHeaders){
+        char *newPath;
+        struct NameValuePair* param = req->headers;
+        while (param != NULL){
+	    if( strcmp(param->name, "Host") == 0 ) {
+                sprintf(newPath,"http://%s/index.html",param->value);
+	    }
+            param = param->next;
+        }
+	writeHeaders(fd, HTTP_SEE_OTHER, newPath, endHeaders);
+}
+
 static void writeHeaders(SOCKET fd, struct HttpResponse response, char* contentType, int endHeaders){
  // Writes out a full set of headers including the specified HTTP response and, if appropriate, the MIME type
     writeResponseCode(fd, response);
@@ -118,6 +131,11 @@ static void writeHeaders(SOCKET fd, struct HttpResponse response, char* contentT
     if (response.code == HTTP_OK.code && contentType != NULL){
      // Only need this if we are returning some content
         writeMimeType(fd, contentType);
+    }
+
+    if (response.code == HTTP_SEE_OTHER.code && contentType != NULL){
+        logMsg(LOG_INFO,"Redirect Location: %s",contentType);
+	writeHeader(fd, "Location", contentType);
     }
 
     writeCommonHeaders(fd);
@@ -174,7 +192,8 @@ void processRequest(SOCKET fd, char* buffer, int allowAdmin){
 			waitForMutex();
 		#endif
 
-        int needsDb = (op != File);
+        int needsDb = ((op != File) || (strcmp(req->path, "/") == 0));
+	// Special handling if someone only requested the index dir
         if (needsDb){
          // The client isn't asking for a file, so we will need a database connection to complete the request
             openDb();
