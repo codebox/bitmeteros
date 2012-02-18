@@ -28,7 +28,7 @@ CLIENT_HELP=$(CLIENT_SRC)/helpText.c
 BMDB_HELP=$(BMDB_SRC)/helpText.c
 SYNC_HELP=$(SYNC_SRC)/helpText.c
 
-INCLUDE_DIRS=-I$(SHARED_SRC) -I$(SHARED_CLIENT_SRC) -I$(CLIENT_SRC) -I$(CAPTURE_SRC) -I$(WEB_SRC) -I$(BMDB_SRC) -I$(SYNC_SRC) -I$(SUP_SRC) -I$(TEST) -I/usr/include/malloc
+INCLUDE_DIRS=-I$(SHARED_SRC) -I$(SHARED_CLIENT_SRC) -I$(CLIENT_SRC) -I$(CAPTURE_SRC) -I$(WEB_SRC) -I$(BMDB_SRC) -I$(SYNC_SRC) -I$(TEST) -I/usr/include/malloc
 LIBS=-lsqlite3 -lm
 OBJS_BMSYNC=bmsync.o syncHelp.o syncHelpText.o syncOptions.o sql.o common.o data.o db.o log.o platform.o time.o
 OBJS_BMDB=bmdb.o bmdbConfig.o upgrade.o bmdbVersion.o bmdbHelpText.o log.o db.o common.o platform.o data.o admin.o
@@ -36,9 +36,10 @@ OBJS_BMWS=bmws.o handleConfig.o handleFile.o handleMonitor.o handleQuery.o handl
 OBJS_CAP=captureDaemon.o net.o sql.o time.o process.o common.o db.o log.o platform.o data.o
 OBJS_CLIENT=bmclient.o options.o monitor.o summary.o query.o dump.o help.o helpText.o time.o common.o db.o log.o platform.o clientDump.o clientMonitor.o clientSummary.o clientQuery.o clientUtil.o data.o
 
-OBJS_TEST=CuTest.o alltests.o testUtils.o db.o log.o data.o common.o options.o clientUtil.o testClientOptions.o testConfig.o bmdbConfig.o testUpgrade.o upgrade.o testSyncOptions.o syncOptions.o testProcess.o process.o sql.o net.o time.o testSql.o testCommon.o testTime.o testDb.o testData.o testClientSummary.o clientSummary.o testClientMonitor.o clientMonitor.o testClientDump.o clientDump.o clientAlert.o testClientQuery.o clientQuery.o testClientSync.o clientSync.o testClientUtil.o testHttpRequest.o httpRequest.o testHandleConfig.o handleConfig.o httpTesting.o handleMonitor.o handleSummary.o handleQuery.o handleSync.o handleAlert.o handleExport.o handleFile.o testHandleMonitor.o testHandleQuery.o testHandleSummary.o testHandleFile.o testHandleSync.o testHandleAlert.o alert.o testAlert.o testClientAlert.o
+OBJS_TEST=CuTest.o alltests.o testUtils.o db.o log.o data.o common.o options.o clientUtil.o testClientOptions.o testConfig.o bmdbConfig.o testUpgrade.o upgrade.o testSyncOptions.o syncOptions.o testProcess.o process.o sql.o time.o testSql.o testCommon.o testTime.o testDb.o testData.o testClientSummary.o clientSummary.o testClientMonitor.o clientMonitor.o testClientDump.o clientDump.o clientAlert.o testClientQuery.o clientQuery.o testClientSync.o clientSync.o testClientUtil.o testHttpRequest.o httpRequest.o testHandleConfig.o handleConfig.o httpTesting.o handleMonitor.o handleSummary.o handleQuery.o handleSync.o handleAlert.o handleExport.o handleFile.o handleRss.o testHandleMonitor.o testHandleQuery.o testHandleSummary.o testHandleFile.o testHandleSync.o testHandleAlert.o alert.o testAlert.o testClientAlert.o testHandleRss.o
 
 CC=gcc -Wall -arch i386 -arch ppc -arch ppc64
+#CC=gcc -DTESTING -Wall -arch i386 -arch ppc -arch ppc64
 
 #### Install or reinstall
 install: all
@@ -60,8 +61,8 @@ all: bmsync bmdb bmws bmcapture bmclient
 #### run the unit tests
 test: $(OBJS_BMSYNC) $(OBJS_BMDB) $(OBJS_BMWS) $(OBJS_CAP) $(OBJS_CLIENT) $(OBJS_TEST)
 	$(CC) $(OBJS_TEST) -o $(EXE_TEST) $(LIBS)
-	cls
-	$(EXE_TEST)
+	clear
+	./$(EXE_TEST)
 
 CuTest.o: $(TEST)/CuTest.c $(TEST)/CuTest.h
 	$(CC) -c $(TEST)/CuTest.c -o CuTest.o $(INCLUDE_DIRS)
