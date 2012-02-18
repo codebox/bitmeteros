@@ -140,7 +140,7 @@ struct Request* parseRequest(char* requestTxt){
     char httpHeader[BUFSIZE];
 
     if (isLogDebug()){
-	logMsg(LOG_DEBUG, "Request: %s", requestTxt);
+		logMsg(LOG_DEBUG, "Request: %s", requestTxt);
     }
 
  // Extract the HTTP method and resource
@@ -180,7 +180,7 @@ struct Request* parseRequest(char* requestTxt){
             	if (paramEquals == NULL){
             	 // There was no '=' sign in this part, so ignore it
             		continue;
-          	} else {
+				} else {
             	 // Get the part before the '=' character
             		paramNameLen = paramEquals - paramPair;
             		paramName = malloc(paramNameLen + 1);
@@ -212,7 +212,7 @@ struct Request* parseRequest(char* requestTxt){
     char* headers = strtok(requestTxt,HTTP_EOL);
     // Extract the headers one at a time, and store them
     while(1){
-	headerName = strtok(NULL, ": ");
+		headerName = strtok(NULL, ": ");
         headerValue = strtok(NULL, HTTP_EOL);
 
         if( headerName == NULL || headerValue == NULL ){
@@ -227,7 +227,7 @@ struct Request* parseRequest(char* requestTxt){
     }
 
     if (isLogInfo()){
-	logRequest(request);
+		logRequest(request);
     }
     return request;
 }
@@ -240,10 +240,10 @@ static void logRequest(struct Request* request){
 		param = param->next;
 	}
 	param = request->headers;
-        while (param != NULL){
-                logMsg(LOG_INFO, "        %s=%s", param->name, param->value);
-                param = param->next;
-        }
+	while (param != NULL){
+		logMsg(LOG_INFO, "        %s=%s", param->name, param->value);
+		param = param->next;
+	}
 }
 
 void freeRequest(struct Request* request){

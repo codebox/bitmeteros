@@ -113,14 +113,14 @@ void writeHeadersOk(SOCKET fd, char* contentType, int endHeaders){
 }
 
 void writeHeadersSeeOther(SOCKET fd, struct Request* req, int endHeaders){
-        char *newPath;
-        struct NameValuePair* param = req->headers;
-        while (param != NULL){
-	    if( strcmp(param->name, "Host") == 0 ) {
-                sprintf(newPath,"http://%s/index.html",param->value);
+	char *newPath;
+	struct NameValuePair* param = req->headers;
+	while (param != NULL){
+	    if (strcmp(param->name, "Host") == 0) {
+			sprintf(newPath,"http://%s/index.html", param->value);
 	    }
-            param = param->next;
-        }
+		param = param->next;
+	}
 	writeHeaders(fd, HTTP_SEE_OTHER, newPath, endHeaders);
 }
 
@@ -135,7 +135,7 @@ static void writeHeaders(SOCKET fd, struct HttpResponse response, char* contentT
 
     if (response.code == HTTP_SEE_OTHER.code && contentType != NULL){
         logMsg(LOG_INFO,"Redirect Location: %s",contentType);
-	writeHeader(fd, "Location", contentType);
+		writeHeader(fd, "Location", contentType);
     }
 
     writeCommonHeaders(fd);
@@ -193,7 +193,7 @@ void processRequest(SOCKET fd, char* buffer, int allowAdmin){
 		#endif
 
         int needsDb = ((op != File) || (strcmp(req->path, "/") == 0));
-	// Special handling if someone only requested the index dir
+	 // Special handling if someone only requested the index dir
         if (needsDb){
          // The client isn't asking for a file, so we will need a database connection to complete the request
             openDb();
