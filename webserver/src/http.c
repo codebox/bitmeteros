@@ -24,7 +24,7 @@
  */
 
 #ifdef _WIN32
-	#define __USE_MINGW_ANSI_STDIO 1
+    #define __USE_MINGW_ANSI_STDIO 1
 #endif
 #include <assert.h>
 #include <unistd.h>
@@ -52,13 +52,13 @@ enum OpType{File, Monitor, Summary, Query, Sync, Config, Alert, Export, RSS, Mob
 
 void writeHeader(SOCKET fd, char* name, char* value){
  // Helper function, writes out a single HTTP header with the appropriate separator and line terminator
-	char buffer[SMALL_BUFSIZE];
+    char buffer[SMALL_BUFSIZE];
     sprintf(buffer, "%s: %s" HTTP_EOL, name, value);
     writeText(fd, buffer);
 }
 
 static void writeMimeType(SOCKET fd, char* contentType){
-	writeHeader(fd, HEADER_CONTENT_TYPE, contentType);
+    writeHeader(fd, HEADER_CONTENT_TYPE, contentType);
 }
 
 static void writeResponseCode(SOCKET fd, struct HttpResponse response){
@@ -70,14 +70,14 @@ static void writeResponseCode(SOCKET fd, struct HttpResponse response){
 
 static void writeCommonHeaders(SOCKET fd){
  // We send these out on every response
- 	writeHeader(fd, "Server", "BitMeterOS " VERSION " Web Server");
+	writeHeader(fd, "Server", "BitMeterOS " VERSION " Web Server");
 
     char dateTxt[32];
-	time_t now = getTime();
-	strftime(dateTxt, sizeof(dateTxt), "%a, %d %b %Y %H:%M:%S +0000", gmtime(&now));
-	writeHeader(fd, "Date", dateTxt);
+    time_t now = getTime();
+    strftime(dateTxt, sizeof(dateTxt), "%a, %d %b %Y %H:%M:%S +0000", gmtime(&now));
+    writeHeader(fd, "Date", dateTxt);
 
-	writeHeader(fd, "Connection", "Close");
+    writeHeader(fd, "Connection", "Close");
 }
 
 void writeEndOfHeaders(SOCKET fd){
@@ -86,42 +86,42 @@ void writeEndOfHeaders(SOCKET fd){
 }
 
 void writeHeadersNotFound(SOCKET fd, char* file){
-	logMsg(LOG_ERR, "%s: %s", HTTP_NOT_FOUND.msg, file);
-	writeHeaders(fd, HTTP_NOT_FOUND, NULL, TRUE);
+    logMsg(LOG_ERR, "%s: %s", HTTP_NOT_FOUND.msg, file);
+    writeHeaders(fd, HTTP_NOT_FOUND, NULL, TRUE);
 }
 
 void writeHeadersForbidden(SOCKET fd, char* request){
-	logMsg(LOG_ERR, "%s: %s", HTTP_FORBIDDEN.msg, request);
-	writeHeaders(fd, HTTP_FORBIDDEN, NULL, TRUE);
+    logMsg(LOG_ERR, "%s: %s", HTTP_FORBIDDEN.msg, request);
+    writeHeaders(fd, HTTP_FORBIDDEN, NULL, TRUE);
 }
 
 void writeHeadersNotAllowed(SOCKET fd, char* httpMethod){
-	logMsg(LOG_ERR, "%s: %s", HTTP_NOT_ALLOWED.msg, httpMethod);
-	writeHeaders(fd, HTTP_NOT_ALLOWED, NULL, FALSE);
+    logMsg(LOG_ERR, "%s: %s", HTTP_NOT_ALLOWED.msg, httpMethod);
+    writeHeaders(fd, HTTP_NOT_ALLOWED, NULL, FALSE);
 }
 
 void writeHeadersServerError(SOCKET fd, char* msg, ...){
-	va_list argp;
-	va_start(argp, msg);
-	vlogMsg(LOG_ERR, msg, argp);
-	va_end(argp);
-	writeHeaders(fd, HTTP_SERVER_ERROR, NULL, TRUE);
+    va_list argp;
+    va_start(argp, msg);
+    vlogMsg(LOG_ERR, msg, argp);
+    va_end(argp);
+    writeHeaders(fd, HTTP_SERVER_ERROR, NULL, TRUE);
 }
 
 void writeHeadersOk(SOCKET fd, char* contentType, int endHeaders){
-	writeHeaders(fd, HTTP_OK, contentType, endHeaders);
+    writeHeaders(fd, HTTP_OK, contentType, endHeaders);
 }
 
 void writeHeadersSeeOther(SOCKET fd, struct Request* req, int endHeaders){
-	char *newPath;
-	struct NameValuePair* param = req->headers;
-	while (param != NULL){
-	    if (strcmp(param->name, "Host") == 0) {
-			sprintf(newPath,"http://%s/index.html", param->value);
-	    }
-		param = param->next;
-	}
-	writeHeaders(fd, HTTP_SEE_OTHER, newPath, endHeaders);
+    char *newPath;
+    struct NameValuePair* param = req->headers;
+    while (param != NULL){
+        if (strcmp(param->name, "Host") == 0) {
+            sprintf(newPath,"http://%s/index.html", param->value);
+        }
+        param = param->next;
+    }
+    writeHeaders(fd, HTTP_SEE_OTHER, newPath, endHeaders);
 }
 
 static void writeHeaders(SOCKET fd, struct HttpResponse response, char* contentType, int endHeaders){
@@ -135,13 +135,13 @@ static void writeHeaders(SOCKET fd, struct HttpResponse response, char* contentT
 
     if (response.code == HTTP_SEE_OTHER.code && contentType != NULL){
         logMsg(LOG_INFO,"Redirect Location: %s",contentType);
-		writeHeader(fd, "Location", contentType);
+        writeHeader(fd, "Location", contentType);
     }
 
     writeCommonHeaders(fd);
     
     if (endHeaders){
-    	writeEndOfHeaders(fd);
+        writeEndOfHeaders(fd);
     }
 }
 
@@ -154,46 +154,46 @@ void processRequest(SOCKET fd, char* buffer, int allowAdmin){
         if (strcmp(req->path, "/monitor") == 0){
             op = Monitor;
 
-		} else if (strcmp(req->path, "/summary") == 0){
+        } else if (strcmp(req->path, "/summary") == 0){
             op = Summary;
 
-		} else if (strcmp(req->path, "/query") == 0){
+        } else if (strcmp(req->path, "/query") == 0){
             op = Query;
 
-		} else if (strcmp(req->path, "/sync") == 0){
+        } else if (strcmp(req->path, "/sync") == 0){
             op = Sync;
 
-		} else if (strcmp(req->path, "/config") == 0){
+        } else if (strcmp(req->path, "/config") == 0){
             op = Config;
 
-		} else if (strcmp(req->path, "/export") == 0){
+        } else if (strcmp(req->path, "/export") == 0){
             op = Export;
 
-		} else if (strcmp(req->path, "/alert") == 0){
+        } else if (strcmp(req->path, "/alert") == 0){
             op = Alert;
 
-		} else if (strcmp(req->path, "/rss.xml") == 0){
+        } else if (strcmp(req->path, "/rss.xml") == 0){
             op = RSS;
 
-		} else if (strcmp(req->path, "/m/monitor") == 0) {
-			op = MobileMonitor;
-			
-		} else if (strcmp(req->path, "/m/summary") == 0) {
-			op = MobileSummary;
-			
-		} else if (strcmp(req->path, "/m/about") == 0) {
-			op = MobileAbout;
-			
+        } else if (strcmp(req->path, "/m/monitor") == 0) {
+            op = MobileMonitor;
+            
+        } else if (strcmp(req->path, "/m/summary") == 0) {
+            op = MobileSummary;
+            
+        } else if (strcmp(req->path, "/m/about") == 0) {
+            op = MobileAbout;
+            
         } else {
             op = File;
         }
 
-		#ifdef _WIN32
-			waitForMutex();
-		#endif
+        #ifdef _WIN32
+            waitForMutex();
+        #endif
 
         int needsDb = ((op != File) || (strcmp(req->path, "/") == 0));
-	 // Special handling if someone only requested the index dir
+     // Special handling if someone only requested the index dir
         if (needsDb){
          // The client isn't asking for a file, so we will need a database connection to complete the request
             openDb();
@@ -203,36 +203,36 @@ void processRequest(SOCKET fd, char* buffer, int allowAdmin){
         if (op == Monitor){
             processMonitorRequest(fd, req);
 
-		} else if (op == Summary){
+        } else if (op == Summary){
             processSummaryRequest(fd, req);
 
-		} else if (op == Query){
+        } else if (op == Query){
             processQueryRequest(fd, req);
 
-		} else if (op == Sync){
+        } else if (op == Sync){
             processSyncRequest(fd, req);
 
-		} else if (op == Config){
+        } else if (op == Config){
             processConfigRequest(fd, req, allowAdmin);
 
-		} else if (op == Export){
+        } else if (op == Export){
             processExportRequest(fd, req);
 
-		} else if (op == Alert){
+        } else if (op == Alert){
             processAlertRequest(fd, req, allowAdmin);
-			
-		} else if (op == RSS){
+            
+        } else if (op == RSS){
             processRssRequest(fd, req);
 
         } else if (op == MobileMonitor){
-			processMobileMonitorRequest(fd, req);
-			
+            processMobileMonitorRequest(fd, req);
+            
         } else if (op == MobileSummary){
-			processMobileSummaryRequest(fd, req);
-			
+            processMobileSummaryRequest(fd, req);
+            
         } else if (op == MobileAbout){
-			struct NameValuePair pair = {"version", VERSION, NULL};
-		    processFileRequest(fd, req, &pair);
+            struct NameValuePair pair = {"version", VERSION, NULL};
+            processFileRequest(fd, req, &pair);
 
         } else if (op == File){
             processFileRequest(fd, req, NULL);
@@ -245,9 +245,9 @@ void processRequest(SOCKET fd, char* buffer, int allowAdmin){
          // Clean up
             closeDb();
         }
-		#ifdef _WIN32
-			releaseMutex();
-		#endif
+        #ifdef _WIN32
+            releaseMutex();
+        #endif
     } else {
      // Only GET requests are allowed - send an error
         writeHeadersNotAllowed(fd, req->method);
@@ -260,14 +260,14 @@ void processRequest(SOCKET fd, char* buffer, int allowAdmin){
 
 void writeText(SOCKET fd, char* txt){
  // Helper function, computes the length of the text for us
-   	writeData(fd, txt, strlen(txt));
+       writeData(fd, txt, strlen(txt));
 }
 
 void writeData(SOCKET fd, char* data, int len){
     #ifdef TESTING
         write(fd, data, len);
         #ifndef _WIN32
-        	fsync(fd);
+            fsync(fd);
         #endif
     #else
         send(fd, data, len, 0);
@@ -276,49 +276,49 @@ void writeData(SOCKET fd, char* data, int len){
 
 void writeDataToJson(SOCKET fd, struct Data* data){
  // Converts the Data struct into an JSON array and writes it out to the stream
-	writeText(fd, "[");
-	int i=0;
-	while (data != NULL) {
-		if (i++ > 0){
-			writeText(fd, ",");
-		}
-		writeSingleDataToJson(fd, data);
-		data = data->next;
-	}
-	writeText(fd, "]");
+    writeText(fd, "[");
+    int i=0;
+    while (data != NULL) {
+        if (i++ > 0){
+            writeText(fd, ",");
+        }
+        writeSingleDataToJson(fd, data);
+        data = data->next;
+    }
+    writeText(fd, "]");
 }
 
 void writeSingleDataToJson(SOCKET fd, struct Data* data){
-	char jsonBuffer[SMALL_BUFSIZE];
+    char jsonBuffer[SMALL_BUFSIZE];
 
-	writeText(fd, "{");
+    writeText(fd, "{");
 
-	if (data != NULL){
-		sprintf(jsonBuffer, "\"dl\": %llu,\"ul\": %llu,\"ts\": %d,\"dr\": %d", data->dl, data->ul, (int)data->ts, data->dr);
-		writeText(fd, jsonBuffer);
-	}
-	writeText(fd, "}");
+    if (data != NULL){
+        sprintf(jsonBuffer, "\"dl\": %llu,\"ul\": %llu,\"ts\": %d,\"dr\": %d", data->dl, data->ul, (int)data->ts, data->dr);
+        writeText(fd, jsonBuffer);
+    }
+    writeText(fd, "}");
 }
 void writeTextArrayToJson(SOCKET fd, char* key, char** values){
     if (key != NULL){
-    	writeText(fd, "\"");
-	    writeText(fd, key);
-	    writeText(fd, "\" : ");
-	}
-	writeText(fd, "[");
-	
-	int firstItem = TRUE;
-	while (*values != NULL){
-		if (!firstItem) {
-			writeText(fd, ",");
-		}
-		firstItem = FALSE;
-		
-		writeText(fd, "\"");
-		writeText(fd, *values);
-		writeText(fd, "\"");
-		values++;
-	}
+        writeText(fd, "\"");
+        writeText(fd, key);
+        writeText(fd, "\" : ");
+    }
+    writeText(fd, "[");
+    
+    int firstItem = TRUE;
+    while (*values != NULL){
+        if (!firstItem) {
+            writeText(fd, ",");
+        }
+        firstItem = FALSE;
+        
+        writeText(fd, "\"");
+        writeText(fd, *values);
+        writeText(fd, "\"");
+        values++;
+    }
     
     writeText(fd, "]");
 
@@ -327,41 +327,41 @@ void writeTextValueToJson(SOCKET fd, char* key, char* value){
     char jsonBuffer[SMALL_BUFSIZE];
     
     if (strlen(key) + strlen(value) + 8 > SMALL_BUFSIZE){
-		logMsg(LOG_ERR, "Input values too large for buffer, key='%s' value='%s'", key, value);    	
+        logMsg(LOG_ERR, "Input values too large for buffer, key='%s' value='%s'", key, value);        
     } else {
-		sprintf(jsonBuffer, "\"%s\" : \"%s\"", key, value);
-		writeText(fd, jsonBuffer);
+        sprintf(jsonBuffer, "\"%s\" : \"%s\"", key, value);
+        writeText(fd, jsonBuffer);
     }
 }
 void writeNumValueToJson(SOCKET fd, char* key, BW_INT value){
     char jsonBuffer[SMALL_BUFSIZE];
     
     if (strlen(key) + 40 > SMALL_BUFSIZE) {
-		logMsg(LOG_ERR, "Input values too large for buffer, key='%s' value=%llu", key, value);    	
+        logMsg(LOG_ERR, "Input values too large for buffer, key='%s' value=%llu", key, value);        
     } else {
-		sprintf(jsonBuffer, "\"%s\" : %llu", key, value);
-		writeText(fd, jsonBuffer);
-	}
+        sprintf(jsonBuffer, "\"%s\" : %llu", key, value);
+        writeText(fd, jsonBuffer);
+    }
 }
 
 void writeSyncData(SOCKET fd, struct Data* data){
-	char row[SMALL_BUFSIZE];
-	sprintf(row, "%d,%d,%llu,%llu,%s" HTTP_EOL, (int)data->ts, data->dr, data->dl, data->ul, data->ad);
-	writeText(fd, row);
+    char row[SMALL_BUFSIZE];
+    sprintf(row, "%d,%d,%llu,%llu,%s" HTTP_EOL, (int)data->ts, data->dr, data->dl, data->ul, data->ad);
+    writeText(fd, row);
 }
 
 #ifdef _WIN32
-	HANDLE mutex = NULL;
-	void initMutex(){
-		assert(mutex == NULL);
-		mutex = CreateMutex(NULL, FALSE, "Mutex");
-	}
-	void waitForMutex(){
-		assert(mutex != NULL);
-		WaitForSingleObject(mutex, INFINITE);
-	}
-	void releaseMutex(){
-		assert(mutex != NULL);
-		ReleaseMutex(mutex);
-	}
+    HANDLE mutex = NULL;
+    void initMutex(){
+        assert(mutex == NULL);
+        mutex = CreateMutex(NULL, FALSE, "Mutex");
+    }
+    void waitForMutex(){
+        assert(mutex != NULL);
+        WaitForSingleObject(mutex, INFINITE);
+    }
+    void releaseMutex(){
+        assert(mutex != NULL);
+        ReleaseMutex(mutex);
+    }
 #endif
