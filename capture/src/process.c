@@ -26,6 +26,7 @@ struct Adapter* adapters;
 struct Filter* filters;
 void packet_handler(u_char *param, const struct pcap_pkthdr *header, const u_char *pkt_data);
 static pcap_t* getFilterHandle(char* dev, char* filter, int promiscuousMode);
+static void startThread(struct Total* total);
 
 static void setCustomLogLevel(){
  // If a custom logging level for the capture process has been set in the db then use it
@@ -58,16 +59,16 @@ void setupCapture(){
     char errbuf[PCAP_ERRBUF_SIZE];
 
  // See what network devices are available
- 	#ifdef _WIN32
-	    if (PCAP_FINDALLDEVS_EX(PCAP_SRC_IF_STRING, NULL, &allDevices, errbuf) == -1) {
-    	    logMsg(LOG_ERR, "Error in pcap_findalldevs_ex: %s", errbuf);
-        	exit(1); //TODO
-	    }
+     #ifdef _WIN32
+        if (PCAP_FINDALLDEVS_EX(PCAP_SRC_IF_STRING, NULL, &allDevices, errbuf) == -1) {
+            logMsg(LOG_ERR, "Error in pcap_findalldevs_ex: %s", errbuf);
+            exit(1); //TODO
+        }
     #else
-	    if (PCAP_FINDALLDEVS(&allDevices, errbuf) == -1) {
-    	    logMsg(LOG_ERR, "Error in pcap_findalldevs: %s", errbuf);
-        	exit(1); //TODO
-	    }
+        if (PCAP_FINDALLDEVS(&allDevices, errbuf) == -1) {
+            logMsg(LOG_ERR, "Error in pcap_findalldevs: %s", errbuf);
+            exit(1); //TODO
+        }
     #endif
     
  // Are we capturing in promiscuous mode?
@@ -82,7 +83,7 @@ void setupCapture(){
     pcap_if_t *device = allDevices;
 
     while (device != NULL) {
-    	int isLoopback = (device->flags & PCAP_IF_LOOPBACK);
+        int isLoopback = (device->flags & PCAP_IF_LOOPBACK);
 
         if (device->addresses != NULL && !isLoopback){
             struct Adapter* adapter = allocAdapter(device);
@@ -99,6 +100,7 @@ void setupCapture(){
                 pcap_t* handle = getFilterHandle(adapter->name, filterTxt, promiscuousMode);
                 if (handle != NULL) {
                     total->handle = handle;
+                    startThread(total);
                     appendTotal(&totals, total);
                 } else {
                     free(total);
@@ -114,26 +116,37 @@ void setupCapture(){
     }
 }
 
+static void* runDispatch(void* x){
+    struct Total* total = (struct Total*) x;
+    while(1){
+        PCAP_DISPATCH(total->handle, -1, packet_handler, (u_char *)total);
+    }
+}
+static void startThread(struct Total* total){
+    pthread_t thread;
+    int rc = pthread_create(&thread, NULL, runDispatch, (void *)total);
+}
+
 static pcap_t* getFilterHandle(char* dev, char* filter, int promiscuousMode){ 
     pcap_t *adhandle;
     char errbuf[PCAP_ERRBUF_SIZE];
 
-	#ifdef _WIN32
-	    if ((adhandle = PCAP_OPEN(dev, SNAP_LEN, promiscuousMode, 1000, NULL, errbuf)) == NULL) {
-    	    logMsg(LOG_ERR, "Unable to open the device %s", dev);
-        	return NULL;
-	    }
-	#else
-	    if ((adhandle = PCAP_OPEN_LIVE(dev, SNAP_LEN, promiscuousMode, 1000, errbuf)) == NULL) {
-    	    logMsg(LOG_ERR, "Unable to open the device %s", dev);
-        	return NULL;
-	    }
-	#endif
+    #ifdef _WIN32
+        if ((adhandle = PCAP_OPEN(dev, SNAP_LEN, promiscuousMode, 1000, NULL, errbuf)) == NULL) {
+            logMsg(LOG_ERR, "Unable to open the device %s", dev);
+            return NULL;
+        }
+    #else
+        if ((adhandle = PCAP_OPEN_LIVE(dev, SNAP_LEN, promiscuousMode, 1000, errbuf)) == NULL) {
+            logMsg(LOG_ERR, "Unable to open the device %s", dev);
+            return NULL;
+        }
+    #endif
 
-    if (PCAP_SETNONBLOCK(adhandle, 1, errbuf) < 0) {
-        logMsg(LOG_ERR, "Unable to set non-blocking mode on device %s: %s", dev, errbuf);
-        return NULL;
-    }
+    //if (PCAP_SETNONBLOCK(adhandle, 1, errbuf) < 0) {
+    //    logMsg(LOG_ERR, "Unable to set non-blocking mode on device %s: %s", dev, errbuf);
+    //    return NULL;
+    //}
     
     struct bpf_program fcode;
     if (PCAP_COMPILE(adhandle, &fcode, filter, 1, 0) < 0) {
@@ -165,36 +178,49 @@ int processCapture(){
 
  // Update the Totals for each Adapter
     struct Adapter* adapter = adapters;
-    while(adapter != NULL) {
-        struct Total* total = adapter->total;
-        while(total != NULL){
-            PCAP_DISPATCH(total->handle, -1, packet_handler, (u_char *)total);
-            total = total->next;    
-        }
-		
-        adapter = adapter->next;
-    } 
+    struct Data* allData = NULL;
     
-    int status;
- // Accumulate a grand total for each Filter, across all the Adapters
     struct Filter* filter = filters;
     while(filter != NULL){
-        int total = getTotalForFilter(adapters, filter->id);
-        if (total > 0){
-            struct Data data = makeData();
-            data.ts = ts;
-            data.vl = total;
-            data.fl = filter->id;
-            
-            status = updateDb(POLL_INTERVAL, &data);
-            if (status == FAIL) {
-                return FAIL;
-            }
-            logData(&data);
-        }
+        struct Data* data = allocData();
+        data->ts = ts;
+        data->fl = filter->id;
+        appendData(&allData, data);
         
         filter = filter->next;
     }
+    
+    while(adapter != NULL) {
+        struct Total* total = adapter->total;
+        while(total != NULL){
+            struct Data* data = allData;
+            while(data != NULL){
+                if (data->fl == total->filter->id){
+                    break;
+                }
+                data=data->next;
+            }
+            if (data==NULL){
+                return 1;
+            }
+            
+            pthread_mutex_lock(&(total->mutex));
+            data->vl += total->count;
+            total->count = 0;
+            pthread_mutex_unlock(&(total->mutex));
+            
+            total = total->next;    
+        }
+        
+        adapter = adapter->next;
+    } 
+    
+    int status = updateDb(POLL_INTERVAL, allData);
+    if (status == FAIL) {
+        return FAIL;
+    }
+    logData(allData);
+    freeData(allData);
     
  // Is it time to compress the database yet?
     if (ts > tsCompress) {
@@ -204,7 +230,6 @@ int processCapture(){
         }
         tsCompress = GET_NEXT_COMPRESS_TIME();
     }
-
     return SUCCESS;
 }
 
@@ -250,6 +275,8 @@ void packet_handler(u_char *param, const struct pcap_pkthdr *header, const u_cha
         total->count += *(LONGLONG*)(pkt_data + 8);
     #else
         struct Total* total = (struct Total*)param;
+        pthread_mutex_lock(&(total->mutex));
         total->count += header->len;
+        pthread_mutex_unlock(&(total->mutex));
     #endif
 }

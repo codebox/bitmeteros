@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include <time.h>
 #include <pcap.h>
+#include <pthread.h>
 
 #ifdef _WIN32
 #define EOL "\r\n"
@@ -163,6 +164,7 @@ struct Total {
     int count;
     struct Filter* filter;
     pcap_t *handle;
+    pthread_mutex_t mutex;
     struct Total* next;
 };
 
