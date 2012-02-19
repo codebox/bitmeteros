@@ -100,7 +100,9 @@ void setupCapture(){
                 pcap_t* handle = getFilterHandle(adapter->name, filterTxt, promiscuousMode);
                 if (handle != NULL) {
                     total->handle = handle;
-                    startThread(total);
+                    #ifndef STATS_MODE
+                        startThread(total);
+                    #endif
                     appendTotal(&totals, total);
                 } else {
                     free(total);
@@ -116,16 +118,18 @@ void setupCapture(){
     }
 }
 
-static void* runDispatch(void* x){
-    struct Total* total = (struct Total*) x;
-    while(1){
-        PCAP_DISPATCH(total->handle, -1, packet_handler, (u_char *)total);
+#ifndef STATS_MODE
+    static void* runDispatch(void* x){
+        struct Total* total = (struct Total*) x;
+        while(1){
+            PCAP_DISPATCH(total->handle, -1, packet_handler, (u_char *)total);
+        }
     }
-}
-static void startThread(struct Total* total){
-    pthread_t thread;
-    int rc = pthread_create(&thread, NULL, runDispatch, (void *)total);
-}
+    static void startThread(struct Total* total){
+        pthread_t thread;
+        int rc = pthread_create(&thread, NULL, runDispatch, (void *)total);
+    }
+#endif
 
 static pcap_t* getFilterHandle(char* dev, char* filter, int promiscuousMode){ 
     pcap_t *adhandle;
@@ -143,10 +147,12 @@ static pcap_t* getFilterHandle(char* dev, char* filter, int promiscuousMode){
         }
     #endif
 
-    //if (PCAP_SETNONBLOCK(adhandle, 1, errbuf) < 0) {
-    //    logMsg(LOG_ERR, "Unable to set non-blocking mode on device %s: %s", dev, errbuf);
-    //    return NULL;
-    //}
+    #ifdef STATS_MODE
+        if (PCAP_SETNONBLOCK(adhandle, 1, errbuf) < 0) {
+            logMsg(LOG_ERR, "Unable to set non-blocking mode on device %s: %s", dev, errbuf);
+            return NULL;
+        }
+    #endif
     
     struct bpf_program fcode;
     if (PCAP_COMPILE(adhandle, &fcode, filter, 1, 0) < 0) {
@@ -176,51 +182,87 @@ int processCapture(){
  // Called continuously by the main processing loop of the application
     int ts = getTime();
 
- // Update the Totals for each Adapter
-    struct Adapter* adapter = adapters;
-    struct Data* allData = NULL;
-    
-    struct Filter* filter = filters;
-    while(filter != NULL){
-        struct Data* data = allocData();
-        data->ts = ts;
-        data->fl = filter->id;
-        appendData(&allData, data);
+    #ifdef STATS_MODE
+        // Update the Totals for each Adapter
+        struct Adapter* adapter = adapters;
+        while(adapter != NULL) {
+            struct Total* total = adapter->total;
+            while(total != NULL){
+                PCAP_DISPATCH(total->handle, -1, packet_handler, (u_char *)total);
+                total = total->next;    
+            }
+            
+            adapter = adapter->next;
+        } 
         
-        filter = filter->next;
-    }
-    
-    while(adapter != NULL) {
-        struct Total* total = adapter->total;
-        while(total != NULL){
-            struct Data* data = allData;
-            while(data != NULL){
-                if (data->fl == total->filter->id){
-                    break;
+        int status;
+        // Accumulate a grand total for each Filter, across all the Adapters
+        struct Filter* filter = filters;
+        while(filter != NULL){
+            int total = getTotalForFilter(adapters, filter->id);
+            if (total > 0){
+                struct Data data = makeData();
+                data.ts = ts;
+                data.vl = total;
+                data.fl = filter->id;
+                
+                status = updateDb(POLL_INTERVAL, &data);
+                if (status == FAIL) {
+                    return FAIL;
                 }
-                data=data->next;
-            }
-            if (data==NULL){
-                return 1;
+                logData(&data);
             }
             
-            pthread_mutex_lock(&(total->mutex));
-            data->vl += total->count;
-            total->count = 0;
-            pthread_mutex_unlock(&(total->mutex));
+            filter = filter->next;
+        }
+    
+    #else
+     // Update the Totals for each Adapter
+        struct Adapter* adapter = adapters;
+        struct Data* allData = NULL;
+        
+        struct Filter* filter = filters;
+        while(filter != NULL){
+            struct Data* data = allocData();
+            data->ts = ts;
+            data->fl = filter->id;
+            appendData(&allData, data);
             
-            total = total->next;    
+            filter = filter->next;
         }
         
-        adapter = adapter->next;
-    } 
-    
-    int status = updateDb(POLL_INTERVAL, allData);
-    if (status == FAIL) {
-        return FAIL;
-    }
-    logData(allData);
-    freeData(allData);
+        while (adapter != NULL) {
+            struct Total* total = adapter->total;
+            while(total != NULL){
+                struct Data* data = allData;
+                while(data != NULL){
+                    if (data->fl == total->filter->id){
+                        break;
+                    }
+                    data=data->next;
+                }
+                if (data==NULL){
+                    return 1;
+                }
+                
+                pthread_mutex_lock(&(total->mutex));
+                data->vl += total->count;
+                total->count = 0;
+                pthread_mutex_unlock(&(total->mutex));
+                
+                total = total->next;    
+            }
+            
+            adapter = adapter->next;
+        } 
+        
+        int status = updateDb(POLL_INTERVAL, allData);
+        if (status == FAIL) {
+            return FAIL;
+        }
+        logData(allData);
+        freeData(allData);
+    #endif
     
  // Is it time to compress the database yet?
     if (ts > tsCompress) {

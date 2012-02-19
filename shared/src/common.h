@@ -164,7 +164,9 @@ struct Total {
     int count;
     struct Filter* filter;
     pcap_t *handle;
-    pthread_mutex_t mutex;
+    #ifndef STATS_MODE
+        pthread_mutex_t mutex;
+    #endif
     struct Total* next;
 };
 
