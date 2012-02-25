@@ -25,7 +25,7 @@ static pcap_if_t *allDevices;
 struct Adapter* adapters;
 struct Filter* filters;
 #ifndef STATS_MODE
-    struct LockableCounter* counters;
+    struct LockableCounter* counters = NULL;
 #endif
 void packet_handler(u_char *param, const struct pcap_pkthdr *header, const u_char *pkt_data);
 static pcap_t* getFilterHandle(char* dev, char* filter, int promiscuousMode);
@@ -41,7 +41,6 @@ static void setCustomLogLevel(){
 
 void setupCapture(){
     adapters = NULL;
-    counters = NULL;
     
  // Called once when the application starts - setup up the various db related things...
     OPEN_DB();

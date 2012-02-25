@@ -402,4 +402,14 @@ void testGetPortConfigTooBig(void** state);
 void testGetPortConfigOk(void** state);
 void testReadDbConfig(void** state);
 
+#ifndef STATS_MODE
+// counter.c
+void testAllocCounterValue(void** state);
+void testAllocCounter(void** state);
+void testAddValueToCounter(void **state);
+void testResetValueForCounter(void** state);
+void testAppendValue(void** state);
+void testAppendCounter(void** state);
+#endif
+
 #endif

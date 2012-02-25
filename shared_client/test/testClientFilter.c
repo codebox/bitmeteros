@@ -98,10 +98,18 @@ void testRemoveFilter(void** state){
     status = removeFilter("notthere", "x");
     assert_int_equal(FAIL, status);
     assert_int_equal(1, getRowCount(SQL_GET_FILTERS));
-                                   
+
+    addDbRow(1001, 3600, 11, 1); 
+    addDbRow(1002, 3600, 12, 2); 
+    addDbRow(1003, 3600, 13, 3); 
+    
     status = removeFilter("f1", NULL); 
     assert_int_equal(SUCCESS, status);
     assert_int_equal(0, getRowCount(SQL_GET_FILTERS));
+
+    struct Data row2 = {1002, 3600, 12, 2, NULL};
+    struct Data row1 = {1003, 3600, 13, 3, &row2};
+    checkTableContents(&row1);
     
     addFilterRow(1, "filter 1", "f1", "x1", NULL);
     addFilterRow(2, "filter 2", "f2", "x2", "host");
@@ -110,6 +118,9 @@ void testRemoveFilter(void** state){
     status = removeFilter("f2", "host"); 
     assert_int_equal(SUCCESS, status);
     assert_int_equal(1, getRowCount(SQL_GET_FILTERS));  
+    
+    struct Data row3 = {1003, 3600, 13, 3, NULL};
+    checkTableContents(&row3);
     
     status = removeFilter("f2", "host"); 
     assert_int_equal(FAIL, status);

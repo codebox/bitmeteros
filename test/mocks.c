@@ -13,7 +13,9 @@
 #include <setjmp.h>
 #include <cmockery.h> 
 #include <bmclient.h> 
-
+#ifndef STATS_MODE
+    #include <pthreads.h>
+#endif
 void mockDoHelp(int dummy){
     check_expected(dummy);
 }
@@ -281,3 +283,11 @@ void mockCheckDataValues(int filterId, int value){
 void mockWriteSyncData(SOCKET fd, struct Data* data){
     mockCheckDataValues(data->fl, data->vl);
 }
+#ifndef STATS_MODE
+void mockPthread_mutex_init(pthread_mutex_t* mutex, void* ignore){
+    //check_expected(mutex);
+}
+void mockPthread_mutex_destroy(pthread_mutex_t* mutex){
+    //check_expected(mutex);
+}
+#endif

@@ -20,6 +20,14 @@
         pthread_mutex_t mutex;
         struct LockableCounter* next;
     };
+    struct LockableCounterValue* allocValue();
+    struct LockableCounter* allocCounter();
+    void addValueToCounter(struct LockableCounter* counter, time_t ts, int v);
+    void freeValue(struct LockableCounterValue* value);
+    void resetValueForCounter(struct LockableCounter* counter);
+    void appendValue(struct LockableCounterValue** earlierValue, struct LockableCounterValue* newValue);
+    void freeCounter(struct LockableCounter* counter);
+    void appendCounter(struct LockableCounter** earlierCounter, struct LockableCounter* newCounter);
 #endif
 
 struct Data* getData();
@@ -65,6 +73,8 @@ char* getFilterTxt(char* filterTxt, struct Adapter* adapter);
     #endif
     #define PCAP_DISPATCH mockPcap_dispatch
     #define PCAP_FREEALLDEVS mockPcap_freealldevs
+    #define PTHREAD_MUTEX_INIT mockPthread_mutex_init
+    #define PTHREAD_MUTEX_DESTROY mockPthread_mutex_destroy
 #else
     #define COMPRESS_DB compressDb
     #define GET_NEXT_COMPRESS_TIME getNextCompressTime
@@ -87,4 +97,6 @@ char* getFilterTxt(char* filterTxt, struct Adapter* adapter);
     #endif
     #define PCAP_DISPATCH pcap_dispatch
     #define PCAP_FREEALLDEVS pcap_freealldevs
+    #define PTHREAD_MUTEX_INIT pthread_mutex_init
+    #define PTHREAD_MUTEX_DESTROY pthread_mutex_destroy
 #endif

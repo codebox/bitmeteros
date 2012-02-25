@@ -233,6 +233,14 @@ int main(int argc, char* argv[]) {
         unit_test(testAppendNameValuePair),
         unit_test(testMakeHtmlFromData),
         unit_test(testWriteHeader),
+#ifndef STATS_MODE
+        unit_test(testAllocCounterValue),
+        unit_test(testAllocCounter),
+        unit_test(testAddValueToCounter),
+        unit_test(testResetValueForCounter),
+        unit_test(testAppendValue),
+        unit_test(testAppendCounter),
+#endif        
         unit_test_setup_teardown(testGetPortNoConfig, setupTestDb, tearDownTestDb),
         unit_test_setup_teardown(testGetPortConfigTooSmall, setupTestDb, tearDownTestDb),
         unit_test_setup_teardown(testGetPortConfigTooBig, setupTestDb, tearDownTestDb),

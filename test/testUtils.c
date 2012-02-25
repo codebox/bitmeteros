@@ -181,7 +181,8 @@ void checkTableContents(struct Data* expectedData){
         assert_int_equal(expectedData->fl, sqlite3_column_int(stmt, 3));
         expectedData = expectedData->next;
     }
-
+    assert_true(expectedData == NULL);
+    
     finishedStmt(stmt);
 }
 

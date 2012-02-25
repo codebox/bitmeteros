@@ -1,7 +1,9 @@
 #include "capture.h"
 #include "pcap.h"
 
-static struct LockableCounterValue* allocValue(){
+void appendCounter(struct LockableCounter** earlierCounter, struct LockableCounter* newCounter);
+
+struct LockableCounterValue* allocValue(){
     struct LockableCounterValue* value = malloc(sizeof(struct LockableCounterValue));
     
     value->count = 0;
@@ -18,7 +20,7 @@ struct LockableCounter* allocCounter(){
     counter->handle = NULL;
 
     pthread_mutex_t mutex;
-    pthread_mutex_init(&mutex, NULL);
+    PTHREAD_MUTEX_INIT(&mutex, NULL);
     counter->mutex = mutex;
     
     counter->next = NULL;
@@ -30,7 +32,7 @@ void addValueToCounter(struct LockableCounter* counter, time_t ts, int v){
     struct LockableCounterValue* value = counter->values;
     
     while (value != NULL) {
-        if (value->ts = ts){
+        if (value->ts == ts){
             break;
         }
         value = value->next;
@@ -39,7 +41,7 @@ void addValueToCounter(struct LockableCounter* counter, time_t ts, int v){
     if (value == NULL) {
         value = allocValue();
         value->ts = ts;
-        appendCounter(&(counter->values), value);
+        appendValue(&(counter->values), value);
     }
     
     value->count += v;
@@ -77,7 +79,8 @@ void freeCounter(struct LockableCounter* counter){
     while (counter != NULL) {
         struct LockableCounter* next = counter->next;
         
-        pthread_mutex_destroy(&(counter->mutex));
+        freeValue(counter->values);
+        PTHREAD_MUTEX_DESTROY(&(counter->mutex));
         free(counter);
         
         counter = next;

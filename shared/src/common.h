@@ -5,7 +5,6 @@
 #include <stddef.h>
 #include <time.h>
 #include <pcap.h>
-#include <pthread.h>
 
 #ifdef _WIN32
 #define EOL "\r\n"
