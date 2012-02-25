@@ -134,7 +134,7 @@ void setupCapture(){
     }
     static void startThread(struct LockableCounter* counter){
         pthread_t thread;
-        int rc = pthread_create(&thread, NULL, runDispatch, (void *)counter);
+        int rc = PTHREAD_CREATE(&thread, NULL, runDispatch, (void *)counter);
         if (rc != 0){
             logMsg(LOG_ERR, "Unable to create a new thread, errcode=%d", rc);
         }
@@ -254,7 +254,7 @@ int processCapture(){
             int count;
             int fl;
             
-            pthread_mutex_lock(&(counter->mutex));
+            PTHREAD_MUTEX_LOCK(&(counter->mutex));
             
             struct LockableCounterValue* value = counter->values;
             while (value != NULL) {
@@ -264,7 +264,7 @@ int processCapture(){
             }
             resetValueForCounter(counter);
             
-            pthread_mutex_unlock(&(counter->mutex));
+            PTHREAD_MUTEX_UNLOCK(&(counter->mutex));
             
             counter = counter->next;
         } 
@@ -331,14 +331,14 @@ void packet_handler(u_char *param, const struct pcap_pkthdr *header, const u_cha
     #else
         struct LockableCounter* counter = (struct LockableCounter*)param;
     
-        pthread_mutex_lock(&(counter->mutex));
+        PTHREAD_MUTEX_LOCK(&(counter->mutex));
         
      // Critical section
         time_t now = getTime();
         int val = header->len;
         addValueToCounter(counter, now, val);
         
-        pthread_mutex_unlock(&(counter->mutex));
+        PTHREAD_MUTEX_UNLOCK(&(counter->mutex));
     #endif
 }
 

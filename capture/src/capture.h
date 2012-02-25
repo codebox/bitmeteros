@@ -75,6 +75,9 @@ char* getFilterTxt(char* filterTxt, struct Adapter* adapter);
     #define PCAP_FREEALLDEVS mockPcap_freealldevs
     #define PTHREAD_MUTEX_INIT mockPthread_mutex_init
     #define PTHREAD_MUTEX_DESTROY mockPthread_mutex_destroy
+    #define PTHREAD_MUTEX_LOCK mockPthread_mutex_lock
+    #define PTHREAD_MUTEX_UNLOCK mockPthread_mutex_unlock
+    #define PTHREAD_CREATE mockPthread_create
 #else
     #define COMPRESS_DB compressDb
     #define GET_NEXT_COMPRESS_TIME getNextCompressTime
@@ -99,4 +102,7 @@ char* getFilterTxt(char* filterTxt, struct Adapter* adapter);
     #define PCAP_FREEALLDEVS pcap_freealldevs
     #define PTHREAD_MUTEX_INIT pthread_mutex_init
     #define PTHREAD_MUTEX_DESTROY pthread_mutex_destroy
+    #define PTHREAD_MUTEX_LOCK pthread_mutex_lock
+    #define PTHREAD_MUTEX_UNLOCK pthread_mutex_unlock
+    #define PTHREAD_CREATE pthread_create
 #endif

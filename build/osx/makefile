@@ -47,7 +47,7 @@ OBJS_BMWS=bmws.o handleConfig.o handleExport.o handleFile.o handleMonitor.o hand
 OBJS_CAP=sql.o time.o process.o common.o db.o log.o platform.o data.o adapter.o filter.o total.o nameValuePair.o clientFilter.o counter.o
 OBJS_CLIENT=bmclient.o options.o monitor.o summary.o query.o dump.o help.o helpText.o time.o common.o db.o log.o platform.o clientDump.o clientMonitor.o clientSummary.o clientQuery.o clientUtil.o data.o filter.o nameValuePair.o clientFilter.o
 
-OBJS_TEST=cmockery.o alltests.o filter.o testFilter.o adapter.o testAdapter.o nameValuePair.o total.o db.o log.o testUtils.o data.o common.o platform.o time.o alert.o testAlert.o testCommon.o clientDump.o testClientDump.o bmclient.o testBmclient.o dump.o testDump.o clientUtil.o testData.o clientAlert.o testClientAlert.o clientMonitor.o testClientMonitor.o clientQuery.o testClientQuery.o clientSummary.o testClientSummary.o clientSync.o testClientSync.o testClientUtil.o bmdbConfig.o testConfig.o testDb.o handleConfig.o handleExport.o testHandleConfig.o testTime.o process.o testProcess.o sql.o monitor.o summary.o query.o help.o options.o http.o handleMonitor.o httpRequest.o handleSummary.o handleQuery.o handleSync.o handleAlert.o handleRss.o handleFile.o helpText.o testSql.o testClientOptions.o testSyncOptions.o syncOptions.o upgrade.o testUpgrade.o testHandleSummary.o testHandleFile.o testHttpRequest.o testHandleQuery.o testHandleMonitor.o testHandleAlert.o testHandleRss.o testNameValuePair.o testTotal.o testHandleSync.o testClientFilter.o clientFilter.o testSync.o sync.o mocks.o testHandleExport.o testHttp.o bmwsCommon.o testBmwsCommon.o counter.o
+OBJS_TEST=cmockery.o alltests.o filter.o testFilter.o adapter.o testAdapter.o nameValuePair.o total.o db.o log.o testUtils.o data.o common.o platform.o time.o alert.o testAlert.o testCommon.o clientDump.o testClientDump.o bmclient.o testBmclient.o dump.o testDump.o clientUtil.o testData.o clientAlert.o testClientAlert.o clientMonitor.o testClientMonitor.o clientQuery.o testClientQuery.o clientSummary.o testClientSummary.o clientSync.o testClientSync.o testClientUtil.o bmdbConfig.o testConfig.o testDb.o handleConfig.o handleExport.o testHandleConfig.o testTime.o process.o testProcess.o sql.o monitor.o summary.o query.o help.o options.o http.o handleMonitor.o httpRequest.o handleSummary.o handleQuery.o handleSync.o handleAlert.o handleRss.o handleFile.o helpText.o testSql.o testClientOptions.o testSyncOptions.o syncOptions.o upgrade.o testUpgrade.o testHandleSummary.o testHandleFile.o testHttpRequest.o testHandleQuery.o testHandleMonitor.o testHandleAlert.o testHandleRss.o testNameValuePair.o testTotal.o testHandleSync.o testClientFilter.o clientFilter.o testSync.o sync.o mocks.o testHandleExport.o testHttp.o bmwsCommon.o testBmwsCommon.o counter.o testCounter.o
 
 #### compile everything
 all: bmsync bmdb bmws bmcapture bmclient 
@@ -101,6 +101,9 @@ testProcess.o: $(CAPTURE_TEST)/testProcess.c $(SHARED_SRC)/common.h $(CAPTURE_SR
 
 testSql.o: $(CAPTURE_TEST)/testSql.c $(SHARED_SRC)/common.h $(CAPTURE_SRC)/capture.h $(TEST)/test.h $(TEST)/cmockery.h 
 	$(CC) -c $(CAPTURE_TEST)/testSql.c -o testSql.o $(INCLUDE_DIRS)
+	
+testCounter.o: $(CAPTURE_TEST)/testCounter.c $(SHARED_SRC)/common.h $(CAPTURE_SRC)/capture.h $(TEST)/test.h $(TEST)/cmockery.h 
+	$(CC) -c $(CAPTURE_TEST)/testCounter.c -o testCounter.o $(INCLUDE_DIRS)
 	
 testCommon.o: $(SHARED_TEST)/testCommon.c $(SHARED_SRC)/common.h $(TEST)/test.h $(TEST)/cmockery.h 
 	$(CC) -c $(SHARED_TEST)/testCommon.c -o testCommon.o $(INCLUDE_DIRS)

@@ -4,7 +4,7 @@
 #include <stdlib.h> 
 #include <stdarg.h>
 #ifndef _WIN32
-	#include <netinet/in.h>
+    #include <netinet/in.h>
 #endif
 #define HAVE_REMOTE 1
 #include "pcap.h"
@@ -14,7 +14,8 @@
 #include <cmockery.h> 
 #include <bmclient.h> 
 #ifndef STATS_MODE
-    #include <pthreads.h>
+    #include <pthread.h>
+    #include "capture.h"
 #endif
 void mockDoHelp(int dummy){
     check_expected(dummy);
@@ -121,7 +122,7 @@ int mockPcap_findalldevs_ex(char *source, struct pcap_rmtauth *auth, pcap_if_t *
 }
 
 int mockPcap_findalldevs(pcap_if_t **alldevs, char *errbuf){
-	return mockPcap_findalldevs_ex(NULL, NULL, alldevs, errbuf);
+    return mockPcap_findalldevs_ex(NULL, NULL, alldevs, errbuf);
 }
 
 pcap_t* mockPcap_open(const char *source, int snaplen, int flags, int read_timeout, struct pcap_rmtauth *auth, char *errbuf){
@@ -284,10 +285,20 @@ void mockWriteSyncData(SOCKET fd, struct Data* data){
     mockCheckDataValues(data->fl, data->vl);
 }
 #ifndef STATS_MODE
-void mockPthread_mutex_init(pthread_mutex_t* mutex, void* ignore){
-    //check_expected(mutex);
-}
-void mockPthread_mutex_destroy(pthread_mutex_t* mutex){
-    //check_expected(mutex);
-}
+    void mockPthread_mutex_init(pthread_mutex_t* mutex, void* ignore){
+        //check_expected(mutex);
+    }
+    void mockPthread_mutex_destroy(pthread_mutex_t* mutex){
+        //check_expected(mutex);
+    }
+    void mockPthread_mutex_lock(pthread_mutex_t* mutex){
+        //check_expected(mutex);
+    }
+    void mockPthread_mutex_unlock(pthread_mutex_t* mutex){
+        //check_expected(mutex);
+    }
+    void mockPthread_create(pthread_mutex_t* mutex){
+        //check_expected(mutex);
+    }
+
 #endif
