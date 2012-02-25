@@ -1,5 +1,4 @@
 #include "common.h"
-#include <pthread.h>
 
 struct Total* allocTotal(struct Filter* filter){
     struct Total* total = malloc(sizeof(struct Total));
@@ -9,12 +8,6 @@ struct Total* allocTotal(struct Filter* filter){
     total->filter = NULL;
     total->handle = NULL;
 
-    #ifndef STATS_MODE
-        pthread_mutex_t mutex;
-        pthread_mutex_init(&mutex, NULL);
-        total->mutex = mutex;
-    #endif
-    
     appendFilter(&(total->filter), filter);
 
     return total;
@@ -27,9 +20,7 @@ void freeTotals(struct Total* total){
         if (total->handle != NULL){
             PCAP_CLOSE(total->handle);
         }
-        #ifndef STATS_MODE
-            pthread_mutex_destroy(&(total->mutex));
-        #endif
+
         free(total);
         
         total = next;

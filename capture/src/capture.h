@@ -7,6 +7,20 @@
 #include "common.h"
 #include "pcap.h"
 
+#ifndef STATS_MODE
+    struct LockableCounterValue{
+        int count;
+        time_t ts;
+        struct LockableCounterValue* next;
+    };
+    struct LockableCounter{
+        struct LockableCounterValue* values;
+        int fl;
+        pcap_t* handle;
+        pthread_mutex_t mutex;
+        struct LockableCounter* next;
+    };
+#endif
 
 struct Data* getData();
 
@@ -32,15 +46,15 @@ char* getFilterTxt(char* filterTxt, struct Adapter* adapter);
 #ifdef UNIT_TESTING
     #define COMPRESS_DB mockCompressDb
     #define GET_NEXT_COMPRESS_TIME getNextCompressTime
-	#ifdef _WIN32
-    	#define PCAP_FINDALLDEVS_EX mockPcap_findalldevs_ex
+    #ifdef _WIN32
+        #define PCAP_FINDALLDEVS_EX mockPcap_findalldevs_ex
     #else
-    	#define PCAP_FINDALLDEVS mockPcap_findalldevs
+        #define PCAP_FINDALLDEVS mockPcap_findalldevs
     #endif
     #ifdef _WIN32
-    	#define PCAP_OPEN mockPcap_open
+        #define PCAP_OPEN mockPcap_open
     #else
-	    #define PCAP_OPEN_LIVE mockPcap_open_live
+        #define PCAP_OPEN_LIVE mockPcap_open_live
     #endif
     #define PCAP_SETNONBLOCK mockPcap_setnonblock
     #define PCAP_COMPILE mockPcap_compile
@@ -55,15 +69,15 @@ char* getFilterTxt(char* filterTxt, struct Adapter* adapter);
     #define COMPRESS_DB compressDb
     #define GET_NEXT_COMPRESS_TIME getNextCompressTime
     #ifdef _WIN32
-    	#define PCAP_FINDALLDEVS_EX pcap_findalldevs_ex
+        #define PCAP_FINDALLDEVS_EX pcap_findalldevs_ex
     #else
-    	#define PCAP_FINDALLDEVS pcap_findalldevs
+        #define PCAP_FINDALLDEVS pcap_findalldevs
     #endif
     #ifdef _WIN32
-	    #define PCAP_OPEN pcap_open
-	#else
-		#define PCAP_OPEN_LIVE pcap_open_live
-	#endif
+        #define PCAP_OPEN pcap_open
+    #else
+        #define PCAP_OPEN_LIVE pcap_open_live
+    #endif
     #define PCAP_SETNONBLOCK pcap_setnonblock
     #define PCAP_COMPILE pcap_compile
     #define PCAP_SETFILTER pcap_setfilter

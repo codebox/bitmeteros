@@ -174,10 +174,10 @@ int mockPcap_dispatch(pcap_t *h, int i, pcap_handler fn, u_char *u){
     int VAL = 12;
     struct pcap_pkthdr header;
     header.len = VAL;
-    struct Total* t = allocTotal(NULL);
-    (*fn)(t,&header,0);
-    assert_int_equal(VAL, t->count);
-    freeTotals(t);
+     struct LockableCounter* counter = allocCounter();
+    (*fn)(counter,0,0);
+    assert_int_equal(VAL, counter->values->count);
+    freeCounter(counter);
 #endif
     return 0;
 }

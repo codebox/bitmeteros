@@ -52,7 +52,6 @@ void setupDb(){
 
 int updateDb(int dr, struct Data* diffList){
     int status = SUCCESS;
-
  // Insert all the Data structs into the d/b, stopping if there are any failures
     while (diffList != NULL) {
         status = insertDataPartial(dr, diffList);

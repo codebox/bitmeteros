@@ -24,9 +24,12 @@ static int dbWriteInterval;
 static pcap_if_t *allDevices;
 struct Adapter* adapters;
 struct Filter* filters;
+#ifndef STATS_MODE
+    struct LockableCounter* counters;
+#endif
 void packet_handler(u_char *param, const struct pcap_pkthdr *header, const u_char *pkt_data);
 static pcap_t* getFilterHandle(char* dev, char* filter, int promiscuousMode);
-static void startThread(struct Total* total);
+static void startThread(struct LockableCounter* counter);
 
 static void setCustomLogLevel(){
  // If a custom logging level for the capture process has been set in the db then use it
@@ -38,6 +41,7 @@ static void setCustomLogLevel(){
 
 void setupCapture(){
     adapters = NULL;
+    counters = NULL;
     
  // Called once when the application starts - setup up the various db related things...
     OPEN_DB();
@@ -101,7 +105,11 @@ void setupCapture(){
                 if (handle != NULL) {
                     total->handle = handle;
                     #ifndef STATS_MODE
-                        startThread(total);
+                        struct LockableCounter* counter = allocCounter();
+                        appendCounter(&counters, counter);
+                        counter->handle = handle;
+                        counter->fl = filter->id;
+                        startThread((void*)counter);
                     #endif
                     appendTotal(&totals, total);
                 } else {
@@ -119,15 +127,18 @@ void setupCapture(){
 }
 
 #ifndef STATS_MODE
-    static void* runDispatch(void* x){
-        struct Total* total = (struct Total*) x;
+    static void* runDispatch(void* p){
+        struct LockableCounter* counter = (struct LockableCounter*) p;
         while(1){
-            PCAP_DISPATCH(total->handle, -1, packet_handler, (u_char *)total);
+            PCAP_DISPATCH(counter->handle, -1, packet_handler, (u_char *)counter);
         }
     }
-    static void startThread(struct Total* total){
+    static void startThread(struct LockableCounter* counter){
         pthread_t thread;
-        int rc = pthread_create(&thread, NULL, runDispatch, (void *)total);
+        int rc = pthread_create(&thread, NULL, runDispatch, (void *)counter);
+        if (rc != 0){
+            logMsg(LOG_ERR, "Unable to create a new thread, errcode=%d", rc);
+        }
     }
 #endif
 
@@ -178,12 +189,30 @@ static pcap_t* getFilterHandle(char* dev, char* filter, int promiscuousMode){
     return adhandle;
 }
 
+struct Data* getDataWithTsAndFl(struct Data** data, time_t ts, int fl){
+    struct Data* thisData = *data;
+    while(thisData != NULL){
+        if (thisData->ts == ts && thisData->fl == fl){
+            break;
+        }
+        thisData = thisData->next;
+    }
+    
+    if (thisData == NULL){
+        thisData = allocData();
+        thisData->ts = ts;
+        thisData->fl = fl;
+        appendData(data, thisData);
+    }
+    return thisData;
+}
+
 int processCapture(){
  // Called continuously by the main processing loop of the application
     int ts = getTime();
 
     #ifdef STATS_MODE
-        // Update the Totals for each Adapter
+     // Update the Totals for each Adapter
         struct Adapter* adapter = adapters;
         while(adapter != NULL) {
             struct Total* total = adapter->total;
@@ -196,7 +225,7 @@ int processCapture(){
         } 
         
         int status;
-        // Accumulate a grand total for each Filter, across all the Adapters
+     // Accumulate a grand total for each Filter, across all the Adapters
         struct Filter* filter = filters;
         while(filter != NULL){
             int total = getTotalForFilter(adapters, filter->id);
@@ -218,50 +247,35 @@ int processCapture(){
     
     #else
      // Update the Totals for each Adapter
-        struct Adapter* adapter = adapters;
-        struct Data* allData = NULL;
+        struct LockableCounter* counter = counters;
+        struct Data* dataToInsert = NULL;
         
-        struct Filter* filter = filters;
-        while(filter != NULL){
-            struct Data* data = allocData();
-            data->ts = ts;
-            data->fl = filter->id;
-            appendData(&allData, data);
+        while (counter != NULL) {
+            time_t ts;
+            int count;
+            int fl;
             
-            filter = filter->next;
-        }
-        
-        while (adapter != NULL) {
-            struct Total* total = adapter->total;
-            while(total != NULL){
-                struct Data* data = allData;
-                while(data != NULL){
-                    if (data->fl == total->filter->id){
-                        break;
-                    }
-                    data=data->next;
-                }
-                if (data==NULL){
-                    return 1;
-                }
-                
-                pthread_mutex_lock(&(total->mutex));
-                data->vl += total->count;
-                total->count = 0;
-                pthread_mutex_unlock(&(total->mutex));
-                
-                total = total->next;    
+            pthread_mutex_lock(&(counter->mutex));
+            
+            struct LockableCounterValue* value = counter->values;
+            while (value != NULL) {
+                struct Data* data = getDataWithTsAndFl(&dataToInsert, value->ts, counter->fl);    
+                data->vl += value->count;
+                value = value->next;
             }
+            resetValueForCounter(counter);
             
-            adapter = adapter->next;
+            pthread_mutex_unlock(&(counter->mutex));
+            
+            counter = counter->next;
         } 
-        
-        int status = updateDb(POLL_INTERVAL, allData);
+    
+        int status = updateDb(POLL_INTERVAL, dataToInsert);
         if (status == FAIL) {
             return FAIL;
         }
-        logData(allData);
-        freeData(allData);
+        logData(dataToInsert);
+        freeData(dataToInsert);
     #endif
     
  // Is it time to compress the database yet?
@@ -316,9 +330,20 @@ void packet_handler(u_char *param, const struct pcap_pkthdr *header, const u_cha
         struct Total* total = (struct Total*)param;
         total->count += *(LONGLONG*)(pkt_data + 8);
     #else
-        struct Total* total = (struct Total*)param;
-        pthread_mutex_lock(&(total->mutex));
-        total->count += header->len;
-        pthread_mutex_unlock(&(total->mutex));
+        struct LockableCounter* counter = (struct LockableCounter*)param;
+    
+        pthread_mutex_lock(&(counter->mutex));
+        
+     // Critical section
+        time_t now = getTime();
+        int val = header->len;
+        addValueToCounter(counter, now, val);
+        
+        pthread_mutex_unlock(&(counter->mutex));
     #endif
 }
+
+
+
+
+

@@ -81,10 +81,12 @@ static void testProcess(void** state, int promiscFlag){
     	expect_value(mockPcap_open_live, flags, promiscFlag);
     #endif
     
-    expect_value(mockPcap_setnonblock, h, pcapOpenHandle1);
-    expect_value(mockPcap_setnonblock, h, pcapOpenHandle2);
-    expect_value(mockPcap_setnonblock, h, pcapOpenHandle3);
-    expect_value(mockPcap_setnonblock, h, pcapOpenHandle4);
+	#ifdef STATS_MODE
+		expect_value(mockPcap_setnonblock, h, pcapOpenHandle1);
+		expect_value(mockPcap_setnonblock, h, pcapOpenHandle2);
+		expect_value(mockPcap_setnonblock, h, pcapOpenHandle3);
+		expect_value(mockPcap_setnonblock, h, pcapOpenHandle4);
+	#endif
     
     expect_value(mockPcap_compile, h, pcapOpenHandle1);
     expect_value(mockPcap_compile, h, pcapOpenHandle2);
@@ -101,12 +103,12 @@ static void testProcess(void** state, int promiscFlag){
     expect_value(mockPcap_setfilter, h, pcapOpenHandle3);
     expect_value(mockPcap_setfilter, h, pcapOpenHandle4);
 
-#ifdef STATS_MODE
-    expect_value(mockPcap_setmode, h, pcapOpenHandle1);
-    expect_value(mockPcap_setmode, h, pcapOpenHandle2);
-    expect_value(mockPcap_setmode, h, pcapOpenHandle3);
-    expect_value(mockPcap_setmode, h, pcapOpenHandle4);
-#endif
+	#ifdef STATS_MODE 
+		expect_value(mockPcap_setmode, h, pcapOpenHandle1);
+		expect_value(mockPcap_setmode, h, pcapOpenHandle2);
+		expect_value(mockPcap_setmode, h, pcapOpenHandle3);
+		expect_value(mockPcap_setmode, h, pcapOpenHandle4);
+	#endif
 
     expect_value(mockPcap_close, h, pcapOpenHandle1);
     expect_value(mockPcap_close, h, pcapOpenHandle2);
