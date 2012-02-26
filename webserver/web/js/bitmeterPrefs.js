@@ -28,7 +28,9 @@ $(function(){
         };
                         
     $('#colourPickerDiv').farbtastic('#colourPickerTxt');
-    $('#prefsTabs').tabs().addClass('ui-tabs-vertical ui-helper-clearfix'); 
+    $('#prefsTabs').tabs({
+        cookie: { expires: 30 }
+    }).addClass('ui-tabs-vertical ui-helper-clearfix'); 
     $("#prefsTabs li").removeClass('ui-corner-top').addClass('ui-corner-left'); 
     
     function showColourPicker(valueDesc, initValue, onClose){
@@ -364,6 +366,53 @@ $(function(){
         $("#prefsTabs li").removeClass('ui-corner-top').addClass('ui-corner-left');
     });
 
+
+    if (BITMETER.model.getAudioSupport()){
+        $("#prefsAudioNoSupport").hide();
+        $("#prefsAudioSettings").show();
+    } else {
+        $("#prefsAudioNoSupport").show();
+        $("#prefsAudioSettings").hide();
+    }
+
+    $("#prefsAudioSaveLocal").button();
+    $("#prefsAudioSaveLocal").click(function(){
+        setAudioPrefsOnModel();
+        $('#prefsSaveAudioStatus').html('Audio preferences saved.');
+        window.setTimeout(function(){
+                $('#prefsSaveAudioStatus').html('');
+            }, 3000);
+    });
+    function setAudioPrefsOnModel(){
+        var enabled = $("#prefsAudioEnableChk").attr('checked');
+        
+        if (enabled){
+            var amount = Number($("#prefsAudioAmount").val());
+            if (!amount) {
+                BITMETER.errorDialog.show("Please enter a non-zero amount");
+                $("#prefsAudioAmount").focus();
+            }
+            BITMETER.model.setAudioDlUl($("#prefsAudioDlUlSelect").val());
+            BITMETER.model.setAudioAboveBelow($("#prefsAudioAboveBelowSelect").val());
+            BITMETER.model.setAudioLimit(amount);
+        }
+        BITMETER.model.setAudioOn(enabled);
+    }
+    
+    $('#prefsAudioAmount').keypress(BITMETER.makeKeyPressHandler(0,8,'0-9'));
+    
+    $("#prefsAudioEnableChk").attr('checked', BITMETER.model.getAudioOn());
+    $("#prefsAudioDlUlSelect").val(BITMETER.model.getAudioDlUl());
+    $("#prefsAudioAboveBelowSelect").val(BITMETER.model.getAudioAboveBelow());
+    $("#prefsAudioAmount").val(BITMETER.model.getAudioLimit());
+    
+    function onPrefsAudioEnableClick(){
+        var enabled = $("#prefsAudioEnableChk").attr('checked');
+        $("#prefsAudioDlUlSelect, #prefsAudioAboveBelowSelect, #prefsAudioAmount").attr('disabled', enabled ? '' : 'disabled');
+    }
+    $("#prefsAudioEnableChk").click(onPrefsAudioEnableClick);
+    onPrefsAudioEnableClick();
+    
  // Show the Help dialog box when the help link is clicked
     prefsDialog = $('#prefsHelp').dialog(BITMETER.consts.dialogOpts);
     $('#prefsHelpLink').click(function(){

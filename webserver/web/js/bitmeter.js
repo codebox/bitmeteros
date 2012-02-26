@@ -605,3 +605,17 @@ BITMETER.setAdminOnlyHandlers = function(){
         $('button.adminOnly').button('option', 'disabled', true);
     }
 };
+BITMETER.playAudio = (function(){
+    if (BITMETER.model.getAudioSupport()){
+        var wavCache = {};
+        return function(id){
+            if (!wavCache[id]) {
+                wavCache[id] = {'play':$.noop};
+                wavCache[id] = new Audio("audio/" + id + ".wav");
+            }
+            wavCache[id].play();
+        };
+    } else {
+        return $.noop;
+    }
+})();

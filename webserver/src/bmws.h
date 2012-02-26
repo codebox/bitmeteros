@@ -50,6 +50,7 @@
 #define MIME_CSS  "text/css"
 #define MIME_BIN  "application/octet-stream"
 #define MIME_XML  "application/xhtml+xml"
+#define MIME_WAV  "audio/vnd.wave"
 
 #define SYNC_CONTENT_TYPE   "application/vnd.codebox.bitmeter-sync"
 #define HEADER_CONTENT_TYPE "Content-Type"

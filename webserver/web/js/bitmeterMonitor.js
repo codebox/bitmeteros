@@ -76,6 +76,32 @@ BITMETER.updateMonitor = function(){
         if (BITMETER.model.getMonitorSpeedInTitle()){
             window.document.title = 'DL: ' + BITMETER.formatAmount(dlCurr) + '/s UL: ' + BITMETER.formatAmount(ulCurr) + '/s'; 
         }
+        if (BITMETER.model.getAudioOn()) {
+            var amount;
+            
+            if (BITMETER.model.getAudioDlUl() === 'dl') {
+                amount = dlCurr / BITMETER.getBytesPerK();
+            } else if (BITMETER.model.getAudioDlUl() === 'ul') {
+                amount = ulCurr / BITMETER.getBytesPerK();
+            } else {
+                BITMETER.assert(false, "Unexpected BITMETER.model.getAudioDlUl value of " + BITMETER.model.getAudioDlUl());
+            }
+            
+            var playTone;
+            if (BITMETER.model.getAudioAboveBelow() === 'above') {
+                playTone = (amount > BITMETER.model.getAudioLimit());
+                
+            } else if (BITMETER.model.getAudioAboveBelow() === 'below') {
+                playTone = (amount < BITMETER.model.getAudioLimit());
+                
+            } else {
+                BITMETER.assert(false, "Unexpected BITMETER.model.getAudioAboveBelow value of " + BITMETER.model.getAudioAboveBelow());                
+            }
+            
+            if (playTone){
+                BITMETER.playAudio('tone');   
+            }
+        }        
     }
 
  // Sends the AJAX request to get the Monitor data

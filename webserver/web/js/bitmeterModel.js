@@ -31,7 +31,11 @@ BITMETER.model = (function(){
         'showFilterWarning' : 'true',
         'monitorRefresh' : config.monitorInterval,
         'historyRefresh' : config.historyInterval,
-        'summaryRefresh' : config.summaryInterval
+        'summaryRefresh' : config.summaryInterval,
+        'audioOn' : 'false',
+        'audioDlUl' : 'dl',
+        'audioAboveBelow' : 'above',
+        'audioLimit' : 10
     };
     
     function get(key){
@@ -218,6 +222,46 @@ BITMETER.model = (function(){
     };
     model.setSummaryRefresh = function(summaryRefresh){
         set('summaryRefresh', summaryRefresh, true);
+    };
+
+    var wavAudioSupported = (function(){
+        var a = document.createElement('audio');
+        return !!(a.canPlayType && a.canPlayType('audio/wav; codecs="1"').replace(/no/, ''));
+    })();
+    model.getAudioSupport = function(){
+        return wavAudioSupported;
+    }
+
+ // Determines whether sounds are played
+    model.getAudioOn = function(){
+        return get('audioOn') === 'true';
+    };
+    model.setAudioOn = function(audioOn){
+        set('audioOn', '' + audioOn, true);
+    };
+    
+ // Indicates whether Download or Upload amounts cause sounds to be played
+    model.getAudioDlUl = function(){
+        return get('audioDlUl');
+    };
+    model.setAudioDlUl = function(audioDlUl){
+        set('audioDlUl', audioDlUl, true);
+    };
+ 
+ // Indicates whether high or low transfer rates cause a sound to be played 
+    model.getAudioAboveBelow = function(){
+        return get('audioAboveBelow');
+    };
+    model.setAudioAboveBelow = function(audioAboveBelow){
+        set('audioAboveBelow', audioAboveBelow, true);
+    };
+
+ // The transfer speed, in kB/s, that causes a sound to be played
+    model.getAudioLimit = function(){
+        return Number(get('audioLimit'));
+    };
+    model.setAudioLimit = function(audioLimit){
+        set('audioLimit', audioLimit, true);
     };
 
     return model;

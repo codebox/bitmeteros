@@ -58,6 +58,7 @@ struct MimeType MIME_TYPES[] = {
     {"ico",  MIME_ICO,  TRUE},
     {"js",   MIME_JS,   FALSE},
     {"css",  MIME_CSS,  FALSE},
+    {"wav",  MIME_WAV,  TRUE},
     {NULL,   NULL,      FALSE}
 };
 struct MimeType DEFAULT_MIME_TYPE = {"bin", MIME_BIN, TRUE};
