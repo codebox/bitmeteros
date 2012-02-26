@@ -105,7 +105,7 @@ static int doInsert(int ts, int dr, int fl, BW_INT vl){
         logMsg(LOG_ERR, "doInsert() failed to insert values %d,%d,%d,%llu into db rc=%d error=%s", ts, dr, fl, vl, rc, getDbError());
         status = FAIL;
     } else {
-        logMsg(LOG_INFO, "doInsert() ok: %d,%d,%d,%llu", ts, dr, fl, vl);//TODO
+        logMsg(LOG_DEBUG, "doInsert() ok: %d,%d,%d,%llu", ts, dr, fl, vl);//TODO
         status = SUCCESS;
     }
     finishedStmt(stmt);

@@ -17,10 +17,9 @@ int main(int argc, char **argv){
     #endif
     
  // Initialise logging and database
-    setLogLevel(LOG_ERR);
+    setLogLevel(LOG_WARN);
     setAppName("CAPTURE");
     setLogToFile(TRUE);
-    
     setupCapture();
 
  // We stop when either of these happen

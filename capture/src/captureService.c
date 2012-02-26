@@ -35,9 +35,9 @@ void ServiceMain(int argc, char** argv) {
     ServiceStatus.dwCheckPoint              = 0; 
     ServiceStatus.dwWaitHint                = 0; 
  
-    setLogLevel(LOG_ERR);
-    setAppName("CAPTURE");
-    setLogToFile(TRUE);
+     setLogLevel(LOG_WARN);
+     setAppName("CAPTURE");
+     setLogToFile(TRUE);
     setupCapture();
     
     hStatus = RegisterServiceCtrlHandler(SERVICE_NAME, (LPHANDLER_FUNCTION)ControlHandler); 

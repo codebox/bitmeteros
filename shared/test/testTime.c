@@ -33,26 +33,23 @@ void testTimeGm(void** state){
 
 void testGetCurrentYearForTs(void** state){
  // Check that the 'getCurrentYearForTs' function correctly calculates the start of the current year for various timestamps
-    assert_int_equal(makeTsUtc("1970-01-01 00:00:00"), getCurrentYearForTs(makeTsUtc("1970-05-26 10:01:00")));
-    assert_int_equal(makeTsUtc("2009-01-01 00:00:00"), getCurrentYearForTs(makeTsUtc("2009-01-01 00:00:00")));
-    assert_int_equal(makeTsUtc("2009-01-01 00:00:00"), getCurrentYearForTs(makeTsUtc("2009-03-24 19:12:01")));
-    assert_int_equal(makeTsUtc("2009-01-01 00:00:00"), getCurrentYearForTs(makeTsUtc("2009-12-31 23:59:59")));
+    assert_int_equal(makeTsUtc("2009-01-01 00:00:00"), getCurrentLocalYearForTs(makeTsUtc("2009-01-01 00:00:00")));
+    assert_int_equal(makeTsUtc("2009-01-01 00:00:00"), getCurrentLocalYearForTs(makeTsUtc("2009-03-24 19:12:01")));
+    assert_int_equal(makeTsUtc("2009-01-01 00:00:00"), getCurrentLocalYearForTs(makeTsUtc("2009-12-31 23:59:59")));
 }
 
 void testGetCurrentMonthForTs(void** state){
  // Check that the 'getCurrentMonthForTs' function correctly calculates the start of the current month for various timestamps
-    assert_int_equal(makeTsUtc("1970-05-01 00:00:00"), getCurrentMonthForTs(makeTsUtc("1970-05-26 10:01:00")));
-    assert_int_equal(makeTsUtc("2009-01-01 00:00:00"), getCurrentMonthForTs(makeTsUtc("2009-01-01 00:00:00")));
-    assert_int_equal(makeTsUtc("2009-03-01 00:00:00"), getCurrentMonthForTs(makeTsUtc("2009-03-24 19:12:01")));
-    assert_int_equal(makeTsUtc("2009-12-01 00:00:00"), getCurrentMonthForTs(makeTsUtc("2009-12-31 23:59:59")));
+    assert_int_equal(makeTsUtc("2009-01-01 00:00:00"), getCurrentLocalMonthForTs(makeTsUtc("2009-01-01 00:00:00")));
+    assert_int_equal(makeTsUtc("2009-03-01 00:00:00"), getCurrentLocalMonthForTs(makeTsUtc("2009-03-24 19:12:01")));
+    assert_int_equal(makeTsUtc("2009-12-01 00:00:00"), getCurrentLocalMonthForTs(makeTsUtc("2009-12-31 23:59:59")));
 }
 
 void testGetCurrentDayForTs(void** state){
  // Check that the 'getCurrentDayForTs' function correctly calculates the start of the current day for various timestamps
-    assert_int_equal(makeTsUtc("1970-05-26 00:00:00"), getCurrentDayForTs(makeTsUtc("1970-05-26 10:01:00")));
-    assert_int_equal(makeTsUtc("2009-01-01 00:00:00"), getCurrentDayForTs(makeTsUtc("2009-01-01 00:00:00")));
-    assert_int_equal(makeTsUtc("2009-03-24 00:00:00"), getCurrentDayForTs(makeTsUtc("2009-03-24 19:12:01")));
-    assert_int_equal(makeTsUtc("2009-12-31 00:00:00"), getCurrentDayForTs(makeTsUtc("2009-12-31 23:59:59")));
+    assert_int_equal(makeTsUtc("2009-01-01 00:00:00"), getCurrentLocalDayForTs(makeTsUtc("2009-01-01 00:00:00")));
+    assert_int_equal(makeTsUtc("2009-03-24 00:00:00"), getCurrentLocalDayForTs(makeTsUtc("2009-03-24 19:12:01")));
+    assert_int_equal(makeTsUtc("2009-12-31 00:00:00"), getCurrentLocalDayForTs(makeTsUtc("2009-12-31 23:59:59")));
 }
 
 void testGetNextYearForTs(void** state){
@@ -97,10 +94,10 @@ void testGetNextMinForTs(void** state){
 
 void testAddToDate(void** state){
  // Check that the 'addToDate' function correctly adds various different values to a timestamp
-    assert_int_equal(makeTsUtc("1970-05-26 11:01:00"), addToDate(makeTsUtc("1970-05-26 10:01:00"), 'h', 1));
-    assert_int_equal(makeTsUtc("1970-05-28 10:01:00"), addToDate(makeTsUtc("1970-05-26 10:01:00"), 'd', 2));
-    assert_int_equal(makeTsUtc("1970-08-26 10:01:00"), addToDate(makeTsUtc("1970-05-26 10:01:00"), 'm', 3));
-    assert_int_equal(makeTsUtc("1974-05-26 10:01:00"), addToDate(makeTsUtc("1970-05-26 10:01:00"), 'y', 4));
+    assert_int_equal(makeTsUtc("1980-05-26 11:01:00"), addToDate(makeTsUtc("1980-05-26 10:01:00"), 'h', 1));
+    assert_int_equal(makeTsUtc("1980-05-28 10:01:00"), addToDate(makeTsUtc("1980-05-26 10:01:00"), 'd', 2));
+    assert_int_equal(makeTsUtc("1980-08-26 10:01:00"), addToDate(makeTsUtc("1980-05-26 10:01:00"), 'm', 3));
+    assert_int_equal(makeTsUtc("1984-05-26 10:01:00"), addToDate(makeTsUtc("1980-05-26 10:01:00"), 'y', 4));
 }
 
 void testNormaliseTm(void** state){

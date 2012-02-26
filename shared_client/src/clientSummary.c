@@ -19,9 +19,9 @@ struct Summary getSummaryValues(){
     struct Summary summary;
     int now = getTime();
 
-    int tsForStartOfToday = getCurrentDayForTs(now);
-    int tsForStartOfMonth = getCurrentMonthForTs(now);
-    int tsForStartOfYear  = getCurrentYearForTs(now);
+    int tsForStartOfToday = getCurrentLocalDayForTs(now);
+    int tsForStartOfMonth = getCurrentLocalMonthForTs(now);
+    int tsForStartOfYear  = getCurrentLocalYearForTs(now);
 
     getHosts(&(summary.hostNames), &(summary.hostCount));
 

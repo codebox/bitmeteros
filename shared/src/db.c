@@ -20,7 +20,7 @@ Contains common database-handling routines.
 
 static sqlite3* db;
 static int dbOpen = FALSE;
-static int inTransaction = FALSE;
+static int transactionDepth = 0;
 
 void prepareSql(sqlite3_stmt **stmt, const char *sql){
  // Initialise a prepared statement, using the specified SQL string - exit if there is a problem
@@ -284,46 +284,44 @@ int runUpdate(sqlite3_stmt* stmt){
 void beginTrans(int immediate){
  // Start a db transaction
     assert(dbOpen);
-    assert(!inTransaction); // We dont use nested tranactions
-
-    char *errMsg;
-    char *sql = (immediate == TRUE) ? "begin immediate" : "begin";
-    int rc = sqlite3_exec(db, sql, NULL, NULL, &errMsg);
-    if (rc != SQLITE_OK){
-        logMsg(LOG_ERR, "Unable to begin new transaction. rc=%d msg=%s", rc, errMsg);
-        sqlite3_free(errMsg);
-    }
-    inTransaction = TRUE;
+    
+    if (transactionDepth++ == 0) {
+		char *errMsg;
+		char *sql = (immediate == TRUE) ? "begin immediate" : "begin";
+		int rc = sqlite3_exec(db, sql, NULL, NULL, &errMsg);
+		if (rc != SQLITE_OK){
+			logMsg(LOG_ERR, "Unable to begin new transaction. rc=%d msg=%s", rc, errMsg);
+			sqlite3_free(errMsg);
+		}
+	}
 }
 
 void commitTrans(){
  // Commit the current transaction
     assert(dbOpen);
-    assert(inTransaction);
-
-    char *errMsg;
-    int rc = sqlite3_exec(db, "commit", NULL, NULL, &errMsg);
-    if (rc != SQLITE_OK){
-        logMsg(LOG_ERR, "Unable to commit transaction. rc=%d msg=%s", rc, errMsg);
-        sqlite3_free(errMsg);
-    }
-
-    inTransaction = FALSE;
+    
+	if (transactionDepth-- == 1) {
+		char *errMsg;
+		int rc = sqlite3_exec(db, "commit", NULL, NULL, &errMsg);
+		if (rc != SQLITE_OK){
+			logMsg(LOG_ERR, "Unable to commit transaction. rc=%d msg=%s", rc, errMsg);
+			sqlite3_free(errMsg);
+		}
+	}
 }
 
 void rollbackTrans(){
  // Rollback the current transaction
     assert(dbOpen);
-    assert(inTransaction);
 
-    char *errMsg;
-    int rc = sqlite3_exec(db, "rollback", NULL, NULL, &errMsg);
-    if (rc != SQLITE_OK){
-        logMsg(LOG_ERR, "Unable to rollback transaction. rc=%d msg=%s", rc, errMsg);
-        sqlite3_free(errMsg);
-    }
-
-    inTransaction = FALSE;
+	if (transactionDepth-- == 1) {
+		char *errMsg;
+		int rc = sqlite3_exec(db, "rollback", NULL, NULL, &errMsg);
+		if (rc != SQLITE_OK){
+			logMsg(LOG_ERR, "Unable to rollback transaction. rc=%d msg=%s", rc, errMsg);
+			sqlite3_free(errMsg);
+		}
+	}
 }
 
 int getConfigInt(const char* key, int quiet){

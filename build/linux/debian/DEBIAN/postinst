@@ -1,0 +1,34 @@
+#!/bin/sh
+
+DB_FILE=/var/lib/bitmeter/bitmeter.db
+if [ -f $DB_FILE ]; then
+    rm $DB_FILE.new
+    bmdb upgrade 7 
+else
+    mv $DB_FILE.new $DB_FILE   
+fi
+
+update-rc.d bitmeter    defaults
+update-rc.d bitmeterweb defaults
+
+if which invoke-rc.d >/dev/null 2>&1; then
+    invoke-rc.d bitmeter start
+    invoke-rc.d bitmeterweb start
+else
+    /etc/init.d/bitmeter start
+    /etc/init.d/bitmeterweb start
+fi
+
+HELP_URL="http://codebox.org.uk/bitmeteros/installed?version=0.7.5&platform=linux"
+if [ "$DEBIAN_FRONTEND" = "gnome" ]; then
+    browser=$(which gnome-www-browser || which x-www-browser || which firefox || which www-browser)
+    if [ "$browser" = "" ]; then
+        echo For help visit $HELP_URL
+    else
+        nohup $browser $HELP_URL &
+    fi
+    
+else 
+    echo For help visit $HELP_URL
+fi
+

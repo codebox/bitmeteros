@@ -27,7 +27,7 @@ static void web(void* fdVoid){
     } else if (rc == 0){
         logMsg(LOG_ERR, "recv() returned 0");
     } else if(rc >= BUFSIZE){
-        logMsg(LOG_ERR, "recv() return value indicates request too large for buffer size of %d", BUFSIZE);
+        logMsg(LOG_ERR, "recv() returned %d which is larger than buffer size of %d", rc, BUFSIZE);
     } else {
         int allowAdmin = isLocalConnection(fd) || config.allowRemoteAdmin;
         processRequest(fd, buffer, allowAdmin); 
@@ -39,7 +39,7 @@ static void web(void* fdVoid){
 }
 
 void setupWeb(){
-    setLogLevel(LOG_ERR);
+    setLogLevel(LOG_WARN);
     setAppName("WEB");
     setLogToFile(TRUE);
     initMutex();

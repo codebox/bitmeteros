@@ -89,6 +89,9 @@ Section "Main"
   ${EndIf}
  
   ; Install BitMeter executables
+  
+  ; Set output path to the installation directory.
+  SetOutPath $INSTDIR
   SetOverwrite on
   File ".\BitMeterCaptureService.exe"
   File ".\BitMeterCapture.exe"

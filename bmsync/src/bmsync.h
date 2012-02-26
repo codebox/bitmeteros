@@ -54,5 +54,5 @@ void appendRemoteFilter(struct RemoteFilter** remoteFilters, struct RemoteFilter
 void removeDataForDeletedFiltersFromThisHost(char* host, struct RemoteFilter* remoteFilter);
 int readLine(SOCKET fd, char* line);
 int httpHeadersOk(SOCKET fd);
-int parseData(SOCKET fd, char* alias, int* rowCount);
+int parseData(SOCKET fd, char* alias, time_t prevMaxTsForHost, int* rowCount);
 int sendRequest(SOCKET fd, time_t ts, char* host, int port);

@@ -1,0 +1,8 @@
+#!/bin/sh
+
+if [ "$1" = purge ]; then
+    update-rc.d bitmeter remove
+    update-rc.d bitmeterweb remove
+    rm /var/lib/bitmeter/bitmeter.db
+    rm -f /var/log/bitmeter/error.log
+fi

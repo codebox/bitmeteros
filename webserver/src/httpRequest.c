@@ -58,14 +58,14 @@ struct Request* parseRequest(char* requestTxt){
  // Allocates a new Request struct and populates it with the contents of the request
     char httpMethod[BUFSIZE];
     char httpResource[BUFSIZE];
+    char httpHeader[BUFSIZE];
 
     if (isLogDebug()){
         logMsg(LOG_DEBUG, "Request: %s", requestTxt);
     }
-    
- // Extract the HTTP method and resource
-    sscanf(requestTxt, "%s %s %*s", httpMethod, httpResource);
 
+ // Extract the HTTP method and resource
+    sscanf(requestTxt, "%s %s HTTP%*4c %2056c", httpMethod, httpResource, httpHeader);
     struct Request* request = malloc(sizeof(struct Request));
 
     char* path;
@@ -92,11 +92,11 @@ struct Request* parseRequest(char* requestTxt){
      // Split the path into 'name=value' parts
         while (1) {
             paramPair = strtok(NULL, "&");
- 
+
             if (paramPair == NULL){
              // Reached the end of the parameter list
-                break;                                      
-                
+                break;
+
             } else {
                 paramEquals = strchr(paramPair, '=');
                 if (paramEquals == NULL){
@@ -121,7 +121,7 @@ struct Request* parseRequest(char* requestTxt){
                 char* unescapedValue = unescapeValue(paramValue);
                 struct NameValuePair* param = makeNameValuePair(paramName, unescapedValue);
                 appendNameValuePair(&(request->params), param);
-                
+
              // These are all malloced above, and copied by makeNameValuePair(), so free them here
                 free(unescapedValue);
                 free(paramName);
@@ -130,10 +130,28 @@ struct Request* parseRequest(char* requestTxt){
         }
     }
 
+    char* headerName;
+    char* headerValue;
+    char* headers = strtok(requestTxt,HTTP_EOL);
+    // Extract the headers one at a time, and store them
+    while(1){
+        headerName = strtok(NULL, ": ");
+        headerValue = strtok(NULL, HTTP_EOL);
+
+        if( headerName == NULL || headerValue == NULL ){
+            break;
+        } else {
+            // Strip any leading whitespace
+            while( *headerName == ' ' || *headerName == '\n' || *headerName == '\r' ) headerName++;
+            while( *headerValue == ' ' ) headerValue++;
+            struct NameValuePair* header = makeNameValuePair(headerName, headerValue);
+            appendNameValuePair(&(request->headers), header);
+        }
+    }
+
     if (isLogInfo()){
         logRequest(request);
     }
-    
     return request;
 }
 
@@ -142,7 +160,12 @@ static void logRequest(struct Request* request){
     struct NameValuePair* param = request->params;
     while (param != NULL){
         logMsg(LOG_INFO, "        %s=%s", param->name, param->value);
-        param = param->next;    
+        param = param->next;
+    }
+    param = request->headers;
+    while (param != NULL){
+        logMsg(LOG_INFO, "        %s=%s", param->name, param->value);
+        param = param->next;
     }
 }
 

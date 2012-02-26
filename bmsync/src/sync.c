@@ -223,7 +223,7 @@ int httpHeadersOk(SOCKET fd){
     return SUCCESS;
 }
 
-int parseData(SOCKET fd, char* alias, int* rowCount){
+int parseData(SOCKET fd, char* alias, time_t prevMaxTsForHost, int* rowCount){
  // Handle the response that is returned from the host
     int result = httpHeadersOk(fd);
     if (result == FAIL){
@@ -234,22 +234,37 @@ int parseData(SOCKET fd, char* alias, int* rowCount){
     struct RemoteFilter* remoteFilters = NULL;
     char line[MAX_LINE_LEN + 1];
     
-    //TODO check correct version of bm
- // Next read the filters
-    while(readLine(fd, line)) {
-        if (startsWith(line, FILTER_ROW_PREFIX)){
-            struct Filter* filterFromRow = parseFilterRow(line, alias);
-            int localFilterId = getLocalFilter(filterFromRow);
-            
-            struct RemoteFilter* remoteFilter = allocRemoteFilter(localFilterId, filterFromRow->id);
-            appendRemoteFilter(&remoteFilters, remoteFilter);
-            freeFilters(filterFromRow);
-            
-        } else {
-            break;  
-        }
-    }
-
+ // We want one transaction per host, insertion of all the data for a single host must be atomic
+	beginTrans(TRUE);
+	
+ /* There is a small chance that something added rows for the host we are currently syncing with
+	since we last checked the database (which was before the sync request was sent). Check the db again
+	within the same transaction that we will use to insert the new values, and bail out if things have
+	changed. */
+    time_t currMaxTsForHost = getMaxTsForHost(alias);
+    
+	if (currMaxTsForHost != prevMaxTsForHost) {
+        statusMsg("Data for host %s has changed in local database during sync - aborting", alias);
+        result = FAIL;
+		
+    } else {
+		//TODO check correct version of bm
+	 // Next read the filters
+		while(readLine(fd, line)) {
+			if (startsWith(line, FILTER_ROW_PREFIX)){
+				struct Filter* filterFromRow = parseFilterRow(line, alias);
+				int localFilterId = getLocalFilter(filterFromRow);
+				
+				struct RemoteFilter* remoteFilter = allocRemoteFilter(localFilterId, filterFromRow->id);
+				appendRemoteFilter(&remoteFilters, remoteFilter);
+				freeFilters(filterFromRow);
+				
+			} else {
+				break;  
+			}
+		}
+	}
+		
     removeDataForDeletedFiltersFromThisHost(alias, remoteFilters);
 
  // Read the data one row at a time
@@ -284,6 +299,12 @@ int parseData(SOCKET fd, char* alias, int* rowCount){
         resultCount++;
     } while(readLine(fd, line));
     
+	if (result == SUCCESS){
+	    commitTrans();   
+	} else {
+	    rollbackTrans();
+	}
+	
     if (data != NULL){
         freeData(data); 
     }

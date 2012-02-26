@@ -91,6 +91,7 @@ void writeNumValueToJson(SOCKET fd, char* key, BW_INT value);
 void writeSyncData(SOCKET fd, struct Data* data);
 void writeFilterData(SOCKET fd, struct Filter* filter);
 void writeHeadersOk(SOCKET fd, char* contentType, int endHeaders);
+void writeHeadersSeeOther(SOCKET fd, struct Request* req, int endHeaders);
 void writeHeadersNotFound(SOCKET fd, char* file);
 void writeHeadersForbidden(SOCKET fd, char* request);
 void writeHeadersNotAllowed(SOCKET fd, char* httpMethod);

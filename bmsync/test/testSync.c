@@ -256,7 +256,7 @@ void testParseDataOk(void** state){
     setupRecvReturns(NULL);
     
     int rc;
-    int result = parseData(1, "host", &rc);
+    int result = parseData(1, "host", 0, &rc);
     
     assert_int_equal(SUCCESS, result);
     

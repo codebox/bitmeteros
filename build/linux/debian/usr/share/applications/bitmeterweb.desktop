@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=BitMeter OS Web Interface
+GenericName=Bandwidth Monitor
+Comment=Monitor your network speed using a web browser
+Exec=/var/lib/bitmeter/runweb.sh
+Type=Application
+Icon=/var/www/bitmeter/favicon.ico
+Categories=Network;

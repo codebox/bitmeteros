@@ -283,12 +283,15 @@ char *trim(char *str);
 char* replace(char* src, char* target, char* replace);
 // ----
 time_t getTime();
-time_t getCurrentYearForTs(time_t ts);
-time_t getCurrentMonthForTs(time_t ts);
-time_t getCurrentDayForTs(time_t ts);
+time_t getCurrentLocalYearForTs(time_t ts);
+time_t getCurrentLocalMonthForTs(time_t ts);
+time_t getCurrentLocalDayForTs(time_t ts);
 time_t getNextYearForTs(time_t ts);
+time_t getNextLocalYearForTs(time_t ts);
 time_t getNextMonthForTs(time_t ts);
+time_t getNextLocalMonthForTs(time_t ts);
 time_t getNextDayForTs(time_t ts);
+time_t getNextLocalDayForTs(time_t ts);
 time_t getNextHourForTs(time_t ts);
 time_t getNextMinForTs(time_t ts);
 time_t addToDate(time_t ts, char unit, int num);

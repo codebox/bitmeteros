@@ -26,6 +26,54 @@ Contains the entry-point for the bmsync command-line utility.
 static struct SyncPrefs prefs = {0, 0, NULL, 0, DEFAULT_PORT, NULL, NULL};
 static SOCKET doConnect(char* host, char* alias, int port);
 
+static int syncWithHost(char* host, char* alias, int port){
+    resetStatusMsg();
+    
+    time_t maxTsForHost = getMaxTsForHost(alias);
+    
+    // Attempt to connect to the host/port specified
+    SOCKET sockFd = doConnect(host, alias, port);
+    int status = (sockFd == 0) ? FAIL : SUCCESS;
+    
+    if (status == SUCCESS) {
+        statusMsg(MSG_CONNECTED);
+        
+        // We're in - send a request for the data
+         status = sendRequest(sockFd, maxTsForHost, host, port);
+         if (status == SUCCESS){
+            // Parse the response
+            int rowCount;
+            status = parseData(sockFd, alias, maxTsForHost, &rowCount);
+            
+            if (status == SUCCESS){
+                // It all worked ok
+                statusMsg("%d new row%s", rowCount, (rowCount == 1 ? "" : "s"));
+                
+            } else {
+                // Something was wrong with the response
+                 PRINT(COLOUR_RED, "Unable to parse sync response row");
+            }
+            
+        } else {
+            // Unable to send the request to the remote host
+             PRINT(COLOUR_RED, "Unable to send sync request to %s:%d", host, port);
+        }
+        
+#ifdef _WIN32
+        closesocket(sockFd);
+#else
+        close(sockFd);
+#endif
+        
+    } else {
+        // Unable to connect
+         PRINT(COLOUR_RED, "Failed to connect to %s:%d", host, port);
+    }
+    printf("\n");    
+    
+    return status;
+}
+
 int main(int argc, char **argv){
     openDb();
     showCopyright();
@@ -72,53 +120,13 @@ int main(int argc, char **argv){
         #endif
 
         for (i=0; i<prefs.hostCount; i++) {
-            resetStatusMsg();
-            host  = prefs.hosts[i];
-            alias = (prefs.alias == NULL) ? host : prefs.alias;
-
-         // We want one transaction per host, insertion of all the data for a single host must be atomic
-            beginTrans(TRUE);
-
-            time_t ts = getMaxTsForHost(alias);
-
-         // Attempt to connect to the host/port specified
-            sockFd = doConnect(host, alias, port);
-
-            if (sockFd != FAIL){
-                statusMsg(MSG_CONNECTED);
-
-             // We're in - send a request for the data
-                int sendResult = sendRequest(sockFd, ts, host, port);
-
-                if (sendResult == SUCCESS){
-                 // Parse the response
-                    int rowCount;
-                    int parseResult = parseData(sockFd, alias, &rowCount);
-
-                    if (parseResult == SUCCESS){
-                     // It all worked ok, commit the transaction
-                        commitTrans();
-                        statusMsg("%d new row%s", rowCount, (rowCount == 1 ? "" : "s"));
-
-                    } else {
-                     // Something was wrong with the response, end the transaction
-                        PRINT(COLOUR_RED, "Unable to parse sync response row");
-                        rollbackTrans();
-                    }
-
-                } else {
-                 // Unable to send the request to the remote host, end the transaction
-                    PRINT(COLOUR_RED, "Unable to send sync request to %s:%d", host, port);
-                    rollbackTrans();
-                }
-                close(sockFd);
-
-            } else {
-             // Unable to connect, end the transaction
-                PRINT(COLOUR_RED, "Failed to connect to %s:%d", host, port);
-                rollbackTrans();
+            char* host  = prefs.hosts[i];
+            char* alias = (prefs.alias == NULL) ? host : prefs.alias;
+            
+            int statusForThisHost = syncWithHost(host, alias, port);
+            if (statusForThisHost != SUCCESS){
+                status = FAIL; // Carry on even if one host fails
             }
-            printf("\n");
         }
     }
     closeDb();
@@ -127,7 +135,7 @@ int main(int argc, char **argv){
         WSACleanup();
     #endif
 
-    return 0;
+    return (status == FAIL) ? 1 : 0;
 }
 
 static SOCKET doConnect(char* host, char* alias, int port){

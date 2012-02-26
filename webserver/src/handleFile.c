@@ -180,13 +180,16 @@ void doSubs(SOCKET fd, FILE* fp, struct NameValuePair* substPairs){
 void processFileRequest(SOCKET fd, struct Request* req, struct NameValuePair* substPairs){
     setupEnv();
 
+    int redirect = 0;
     char* path = req->path;
  // Default page is index.html, send this if no other file is specified
     if (strcmp("/", path) == 0){
+        redirect = 1;
         //free(req->path);
         path = strdup("/index.html");
         
     } else if ((strcmp("/m", path) == 0) || (strcmp("/m/", path) == 0)){
+        redirect = 1;
         //free(req->path);
         path = strdup("/m/index.xml");
 
@@ -212,13 +215,24 @@ void processFileRequest(SOCKET fd, struct Request* req, struct NameValuePair* su
         }
 
     } else {
-     // We got the file, write out the headers and then send the content
-        writeHeadersOk(fd, mimeType->contentType, TRUE);
+        // We got the file, write out the headers and then send the content
+        if ( redirect ){
+            // Was the initial request only for "/" ?
+            struct NameValuePair* param = req->headers;
+            while (param != NULL){
+                if (strcmp(param->name, "Host") == 0 ) {
+                    writeHeadersSeeOther(fd, req, TRUE);
+                }
+                param = param->next;
+            }
+        } else {
+            writeHeadersOk(fd, mimeType->contentType, TRUE);
+        }
         if (substPairs == NULL){
             int rc;
             char buffer[BUFSIZE];
             while ( (rc = FREAD(buffer, 1, BUFSIZE, fp)) > 0 ) {
-                WRITE_DATA(fd, buffer, rc);
+                   WRITE_DATA(fd, buffer, rc);
             }
         } else {
             doSubs(fd, fp, substPairs);

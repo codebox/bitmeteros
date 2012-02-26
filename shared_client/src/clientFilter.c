@@ -119,7 +119,7 @@ int addFilter(struct Filter* filter){
 int removeFilter(char* name, char* host){
     beginTrans(TRUE);
     
-    sqlite3_stmt *selectStmt;
+ 	sqlite3_stmt *selectStmt;
     if (host==NULL){
         selectStmt = getStmt(SQL_SELECT_FILTER_BY_NAME);    
         sqlite3_bind_text(selectStmt, 1, name, -1, SQLITE_TRANSIENT);
@@ -174,3 +174,4 @@ int removeFilter(char* name, char* host){
 
     return status;      
 }
+

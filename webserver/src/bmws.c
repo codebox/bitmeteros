@@ -30,7 +30,7 @@ static void web(SOCKET fd){
         logMsg(LOG_ERR, "read() returned 0");
         exit(1);
     } else if(rc > BUFSIZE){
-        logMsg(LOG_ERR, "read() return value indicates request too large for buffer size of %d", BUFSIZE);
+        logMsg(LOG_ERR, "read() returned %d which is larger than buffer size of %d", rc, BUFSIZE);
         exit(1);
     }
     
@@ -47,7 +47,7 @@ int main(){
     socklen_t length;
     static struct sockaddr_in clientAddress;
 
-    setLogLevel(LOG_ERR);
+    setLogLevel(LOG_WARN);
     setAppName("WEB");
     setLogToFile(TRUE);
 
