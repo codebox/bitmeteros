@@ -375,7 +375,7 @@ $(function(){
         var swValues = sw.getValues(), swTime = sw.getTime();
         $.each(swValues, function(k,v){
             var average = (swTime ? v.total/swTime : 0);
-            $('#swTotal' + k).text(BITMETER.formatAmount(v.current));
+            $('#swTotal' + k).text(BITMETER.formatAmount(v.total));
             $('#swAverage' + k).text(BITMETER.formatAmount(average));
         });
     });
