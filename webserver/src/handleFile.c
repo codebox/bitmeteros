@@ -182,6 +182,7 @@ void processFileRequest(SOCKET fd, struct Request* req, struct NameValuePair* su
 
     int redirect = 0;
     char* path = req->path;
+	
  // Default page is index.html, send this if no other file is specified
     if (strcmp("/", path) == 0){
         redirect = 1;
@@ -207,7 +208,6 @@ void processFileRequest(SOCKET fd, struct Request* req, struct NameValuePair* su
 
     if (fp == NULL){
      // We couldn't get the file, find out why not and return an appropriate HTTP error
-        struct HttpResponse response;
         if (errno == ENOENT){
             writeHeadersNotFound(fd, path);
         } else {
@@ -221,7 +221,7 @@ void processFileRequest(SOCKET fd, struct Request* req, struct NameValuePair* su
             struct NameValuePair* param = req->headers;
             while (param != NULL){
                 if (strcmp(param->name, "Host") == 0 ) {
-                    writeHeadersSeeOther(fd, req, TRUE);
+                    writeHeadersSeeOther(fd, req, path, TRUE);
                 }
                 param = param->next;
             }
