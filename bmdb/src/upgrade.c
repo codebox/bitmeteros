@@ -474,12 +474,17 @@ static int upgrade8(){
         return FAIL;
     }
 
- // A couple of indexes for the data table, which can get large
+ // Indexes for the data table, which can get large
     status = executeSql("CREATE INDEX idxDataFl ON data(fl)", NULL);
     if (status == FAIL){
         return FAIL;
     }
     
+    status = executeSql("CREATE INDEX idxDataFlTs on data (fl,ts)", NULL);
+    if (status == FAIL){
+        return FAIL;
+    }
+
     status = executeSql("CREATE INDEX idxDataTsDr ON data(ts,dr)", NULL);
     if (status == FAIL){
         return FAIL;
