@@ -1,0 +1,14 @@
+.DS_Store
+*.o
+build/osx/bmcapture
+build/osx/bmdb
+build/osx/bmclient
+build/osx/bmws
+build/osx/bmsync
+build/osx/test/
+build/osx/bitmeteros/build/
+*.mode1v3
+*.pbxuser
+bmclient/src/helpText.c
+bmdb/src/helpText.c
+bmsync/src/helpText.c
