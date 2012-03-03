@@ -573,7 +573,8 @@ $(function(){
     datePickerFormat = $('#createAlertStartFixedDate').datepicker("option", "dateFormat");
     $('#createAlertStartDetailsFormat').html("(" + datePickerFormat + ")");
     
-    //$.getJSON("http://updates.codebox.org.uk/version/bitmeteros/version2.js?callback=?", BITMETER.showVersion);
+    $('#donateButton').button();
+    $.getJSON("http://updates.codebox.org.uk/version/bitmeteros/version2.js?callback=?", BITMETER.showVersion);
 });
 
 BITMETER.showVersion = function(data){

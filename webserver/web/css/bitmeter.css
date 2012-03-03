@@ -694,3 +694,9 @@ div.createAlertStartRepeatingTxt{
     float: left;
     line-height: 3em;
 }
+#donateButton{
+    padding: 0.5em;
+    border: 2px solid;
+    font-size: 1.2em;
+    cursor: pointer;
+}
