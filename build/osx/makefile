@@ -27,9 +27,9 @@ SYNC_TEST=$(PATH_TO_ROOT)/bmsync/test
 TEST=$(PATH_TO_ROOT)/test
 
 # Target files for Help
-CLIENT_HELP=$(CLIENT_SRC)\helpText.c
-BMDB_HELP=$(BMDB_SRC)\helpText.c
-SYNC_HELP=$(SYNC_SRC)\helpText.c
+CLIENT_HELP=$(CLIENT_SRC)/helpText.c
+BMDB_HELP=$(BMDB_SRC)/helpText.c
+SYNC_HELP=$(SYNC_SRC)/helpText.c
 
 # Names of EXEs
 EXE_BMCLIENT=bmclient
