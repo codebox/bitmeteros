@@ -88,7 +88,7 @@ void writeHeadersOk(SOCKET fd, char* contentType, int endHeaders){
 }
 
 void writeHeadersSeeOther(SOCKET fd, struct Request* req, int endHeaders){
-    char *newPath;
+    char newPath[BUFSIZE + 32];
     struct NameValuePair* param = req->headers;
     while (param != NULL){
         if (strcmp(param->name, "Host") == 0) {
