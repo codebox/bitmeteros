@@ -3,7 +3,7 @@
 DB_FILE=/var/lib/bitmeter/bitmeter.db
 if [ -f $DB_FILE ]; then
     rm $DB_FILE.new
-    bmdb upgrade 7 
+    bmdb upgrade 8 
 else
     mv $DB_FILE.new $DB_FILE   
 fi
