@@ -3,7 +3,7 @@ Version: 0.8.0
 Priority: optional
 Section: net
 Architecture: amd64
-Depends: libsqlite3-0 (>= 3.4.2)
+Depends: libsqlite3-0 (>= 3.4.2), libpcap0.8
 Conflicts: bitmeter
 Replaces: bitmeter
 Installed-Size: 49912
