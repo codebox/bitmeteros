@@ -1,6 +1,6 @@
 #!/bin/sh
 
-export VERSION=0.7.5
+export VERSION=0.8.0
 
 ./makeHelpTextC.sh
 ./makeManPage.sh
@@ -29,7 +29,6 @@ mv ./bmsync    ./debian/usr/bin/
 
 mkdir -p ./debian/var/www/bitmeter/css/images/
 mkdir -p ./debian/var/www/bitmeter/js/
-mkdir -p ./debian/var/www/bitmeter/m/js/
 mkdir -p ./debian/var/www/bitmeter/m/css/
 cp $WEB_DIR/index.html       ./debian/var/www/bitmeter/
 cp $WEB_DIR/rss.xml          ./debian/var/www/bitmeter/
@@ -39,7 +38,6 @@ cp $WEB_DIR/css/images/*.png ./debian/var/www/bitmeter/css/images/
 cp $WEB_DIR/css/images/*.gif ./debian/var/www/bitmeter/css/images/
 cp $WEB_DIR/js/*.js          ./debian/var/www/bitmeter/js/
 cp $WEB_DIR/m/*.xml          ./debian/var/www/bitmeter/m/
-cp $WEB_DIR/m/js/*.js        ./debian/var/www/bitmeter/m/js/
 cp $WEB_DIR/m/css/*.css      ./debian/var/www/bitmeter/m/css/
 
 cp $DB_FILE ./debian/var/lib/bitmeter/bitmeter.db.new

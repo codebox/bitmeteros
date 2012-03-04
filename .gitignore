@@ -12,3 +12,12 @@ build/osx/bitmeteros/build/
 bmclient/src/helpText.c
 bmdb/src/helpText.c
 bmsync/src/helpText.c
+*.deb
+build/linux/debian/DEBIAN/control
+build/linux/debian/usr/bin/
+build/linux/debian/usr/share/man/
+build/linux/debian/var/lib/bitmeter/bitmeter.db.new
+build/linux/debian/var/www/
+build/linux/test/
+build/linux/work/
+
