@@ -26,7 +26,7 @@
 #define DB_VERSION     8
 #define COMPANY        "Codebox Software"
 #define APP_NAME       "BitMeter OS"
-#define COPYRIGHT_YEAR "2011"
+#define COPYRIGHT_YEAR "2012"
 
 #ifdef _WIN32
 #define RES_COPYRIGHT "Copyright (c) " COPYRIGHT_YEAR " Rob Dawson, Licenced under the GNU General Public License"
