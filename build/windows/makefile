@@ -14,8 +14,9 @@ SHARED_CLIENT_SRC=$(PATH_TO_ROOT)\shared_client\src
 WEB_SRC=$(PATH_TO_ROOT)\webserver\src
 BMDB_SRC=$(PATH_TO_ROOT)\bmdb\src
 SYNC_SRC=$(PATH_TO_ROOT)\bmsync\src
+BUILD=$(PATH_TO_ROOT)\build\windows
 BUILD_TEST_DIR=test
-BUILD_TEST=$(PATH_TO_ROOT)\build\windows\${BUILD_TEST_DIR}
+BUILD_TEST=$(BUILD)\${BUILD_TEST_DIR}
 
 CLIENT_TEST=$(PATH_TO_ROOT)\bmclient\test
 CAPTURE_TEST=$(PATH_TO_ROOT)\capture\test
@@ -56,7 +57,7 @@ EXE_WEB_SRV=BitMeterWebService.exe
 EXE_TEST=unittests.exe
 
 INCLUDE_DIRS=-I$(SHARED_SRC) -I$(SHARED_CLIENT_SRC) -I$(CLIENT_SRC) -I$(CAPTURE_SRC) -I$(WEB_SRC) -I$(BMDB_SRC) -I$(SYNC_SRC) -I$(SUP_SRC) -I$(TEST)
-LIBS=.\sqlite3.dll -lws2_32 -lmswsock -ladvapi32 -lshlwapi -liphlpapi C:\rob\code\winpcap\Lib\Packet.lib C:\WINDOWS\system32\wpcap.dll
+LIBS=$(BUILD)\sqlite3.dll -lws2_32 -lmswsock -ladvapi32 -lshlwapi -liphlpapi $(BUILD)\wpcap.dll
 OBJS_BMSYNC=bmsync.o syncHelp.o syncHelpText.o syncOptions.o sql.o common.o data.o db.o log.o platform.o time.o filter.o nameValuePair.o clientFilter.o sync.o bmsync.res
 OBJS_BMDB=bmdb.o bmdbConfig.o upgrade.o bmdbVersion.o bmdbHelpText.o log.o db.o common.o platform.o data.o admin.o filter.o adapter.o filters.o total.o time.o nameValuePair.o clientFilter.o bmdb.res
 OBJS_BMWS=bmwsWin32.o handleConfig.o handleExport.o handleFile.o handleMonitor.o handleQuery.o handleSync.o handleAlert.o handleSummary.o handleRss.o http.o httpRequest.o data.o common.o log.o platform.o dbMultiThreaded.o alert.o clientMonitor.o clientSummary.o clientSync.o clientQuery.o clientDump.o clientAlert.o clientUtil.o time.o filter.o nameValuePair.o clientFilter.o bmwsCommon.o
@@ -64,8 +65,6 @@ OBJS_CAP=sql.o time.o process.o common.o db.o log.o platform.o data.o adapter.o 
 OBJS_CLIENT=bmclient.o options.o monitor.o summary.o query.o dump.o help.o helpText.o time.o timeSupport.o common.o db.o log.o platform.o clientDump.o clientMonitor.o clientSummary.o clientQuery.o clientUtil.o data.o filter.o nameValuePair.o clientFilter.o bmclient.res
 
 OBJS_TEST=cmockery.o alltests.o filter.o testFilter.o adapter.o testAdapter.o nameValuePair.o total.o db.o log.o testUtils.o data.o timeSupport.o common.o platform.o time.o alert.o testAlert.o testCommon.o clientDump.o testClientDump.o bmclient.o testBmClient.o dump.o testDump.o clientUtil.o testData.o clientAlert.o testClientAlert.o clientMonitor.o testClientMonitor.o clientQuery.o testClientQuery.o clientSummary.o testClientSummary.o clientSync.o testClientSync.o testClientUtil.o bmdbConfig.o testConfig.o testDb.o handleConfig.o handleExport.o testHandleConfig.o testTime.o process.o testProcess.o sql.o monitor.o summary.o query.o help.o options.o http.o handleMonitor.o httpRequest.o handleSummary.o handleQuery.o handleSync.o handleAlert.o handleRss.o handleFile.o bmwsWin32.o helpText.o testSql.o testClientOptions.o testSyncOptions.o syncOptions.o upgrade.o testUpgrade.o testHandleSummary.o testHandleFile.o testHttpRequest.o testHandleQuery.o testHandleMonitor.o testHandleAlert.o testHandleRss.o testNameValuePair.o testTotal.o testHandleSync.o testClientFilter.o clientFilter.o testSync.o sync.o mocks.o testHandleExport.o testHttp.o bmwsCommon.o testBmwsCommon.o
-
-CC=gcc -DHAVE_DECL_OPTRESET 
 
 #### Install or reinstall
 install: 
