@@ -2,6 +2,7 @@
 #include "pcap.h"
 #ifndef _WIN32
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #endif
 
 static char* makeAdapterIpList(pcap_if_t *device);
