@@ -41,7 +41,7 @@ BITMETER.updateMonitor = function(){
     function updateFigures(jsonData){
         var ts, filterStats = {}, titleTxtArr = [];
         BITMETER.forEachFilter(function(o){
-                filterStats[o.id] = {filterName : o.name, total : 0, curr: 0, bestTs : 5};
+                filterStats[o.id] = {filterName : o.name, total : 0, curr: 0};
             }, true);
         
      // Loop through all the data currently displayed on the graph and accumulate totals and best-fit current values
@@ -50,14 +50,8 @@ BITMETER.updateMonitor = function(){
             
             stats.total += o.vl;
             
-         /* Use the most recent values to display in the 'Current' fields to the right of the graph, but ignore
-            any values which have timestamps in the future (this can happen if we have synchronised with another
-            host which has a clock set slightly ahead of the local clock). We cant assume there will be a value
-            with exactly ts===0, so count anything within the last 5 seconds, picking the newest values that meet 
-            all these criteria. */
-            if (o.ts < stats.bestTs && o.ts >= 0){
-                stats.bestTs = o.ts;
-                stats.curr   = o.vl;
+            if (o.ts === 1){
+                stats.curr = o.vl;
             }
         });
         
