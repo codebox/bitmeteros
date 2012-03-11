@@ -1,6 +1,6 @@
 #!/bin/sh
 
-export VERSION=0.7.5
+export VERSION=0.8.0
 
 ./makeHelpTextC.sh
 ./makeManPage.sh
@@ -64,9 +64,6 @@ sudo chgrp -R admin "$WEB_DIR"
 MOB_DIR="$WEB_DIR/m"
 mkdir -p "$MOB_DIR"
 cp "$WEB_SRC"/m/*.xml "$MOB_DIR"
-MOB_JS_DIR="$WEB_DIR/m/js"
-mkdir -p "$MOB_JS_DIR"
-cp "$WEB_SRC"/m/js/*.js "$MOB_JS_DIR"
 MOB_CSS_DIR="$WEB_DIR/m/css"
 mkdir -p "$MOB_CSS_DIR"
 cp "$WEB_SRC"/m/css/*.css "$MOB_CSS_DIR"

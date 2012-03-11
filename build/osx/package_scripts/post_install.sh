@@ -5,7 +5,7 @@ DB_FILE=$DB_DIR/bitmeter.db
 
 if [ -f "$DB_FILE" ]; then
     rm "$DB_FILE.new"
-    /usr/local/bin/bmdb upgrade 7
+    /usr/local/bin/bmdb upgrade 8
 else
     mv "$DB_FILE.new" "$DB_FILE"
 fi
