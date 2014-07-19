@@ -42,13 +42,13 @@
 #define EOL "\n"
 #endif
 
-#define VERSION "0.7.5"
+#define VERSION "0.7.6"
 #define DB_VERSION 7
 
 #ifdef _WIN32
-#define COPYRIGHT "BitMeter OS v" VERSION " Copyright (c) 2011 Rob Dawson" EOL "Licenced under the GNU General Public License" EOL EOL
+#define COPYRIGHT "BitMeter OS v" VERSION " Copyright (c) 2014 Rob Dawson" EOL "Licenced under the GNU General Public License" EOL EOL
 #else
-#define COPYRIGHT "BitMeter OS v" VERSION " Copyright © 2011 Rob Dawson" EOL "Licenced under the GNU General Public License" EOL EOL
+#define COPYRIGHT "BitMeter OS v" VERSION " Copyright © 2014 Rob Dawson" EOL "Licenced under the GNU General Public License" EOL EOL
 #endif
 
 #define DB_NAME      "bitmeter.db"

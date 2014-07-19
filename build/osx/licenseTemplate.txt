@@ -2,7 +2,7 @@ BitMeterOS #VERSION#
 
 http://codebox.org.uk/bitmeterOS
 
-Copyright (c) 2011 Rob Dawson
+Copyright (c) 2014 Rob Dawson
 
 Licensed under the GNU General Public License
 http://www.gnu.org/licenses/gpl.txt

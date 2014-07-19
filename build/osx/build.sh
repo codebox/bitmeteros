@@ -1,6 +1,6 @@
 #!/bin/sh
 
-export VERSION=0.7.5
+export VERSION=0.7.6
 
 ./makeHelpTextC.sh
 ./makeManPage.sh

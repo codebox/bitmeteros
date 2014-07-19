@@ -19,7 +19,7 @@ else
 	/etc/init.d/bitmeterweb start
 fi
 
-HELP_URL="http://codebox.org.uk/bitmeteros/installed?version=0.7.5&platform=linux"
+HELP_URL="http://codebox.org.uk/bitmeteros/installed?version=0.7.6&platform=linux"
 if [ "$DEBIAN_FRONTEND" = "gnome" ]; then
 	browser=$(which gnome-www-browser || which x-www-browser || which firefox || which www-browser)
 	if [ "$browser" = "" ]; then

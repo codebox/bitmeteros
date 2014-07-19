@@ -163,7 +163,7 @@ Section "Main"
   !insertmacro SERVICE "create"    "BitMeterWebService" "path=$INSTDIR\BitMeterWebService.exe;autostart=1;interact=0;depend=;display=BitMeter Web Service;description=BitMeter Web Interface Service;"
   !insertmacro SERVICE "start"     "BitMeterWebService" ""
 
-  ExecShell "open" "http://codebox.org.uk/bitmeteros/installed?version=0.7.5&platform=windows"
+  ExecShell "open" "http://codebox.org.uk/bitmeteros/installed?version=0.7.6&platform=windows"
 SectionEnd
 
 
