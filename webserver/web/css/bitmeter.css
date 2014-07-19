@@ -678,3 +678,11 @@ div.createAlertStartRepeatingTxt{
 .prefUpdateStatus{
 	line-height: 2em;	
 }
+#donateBtn{
+	text-decoration: none;
+	font-size: 1.2em;
+	padding: 4px 6px;
+	border: 1px solid;
+	border-radius: 4px;
+	background-color: #FFEDDD;
+}
