@@ -1,5 +1,5 @@
 /*global $,BITMETER,window,config*/
-/*jslint onevar: true, undef: true, nomen: true, eqeqeq: true, bitwise: true, regexp: true, newcap: true, immed: true, strict: false */
+/*jslint nomen: true, bitwise: true, regexp: true, newcap: true, sloppy: true, white: true, unparam: true, plusplus: true, ass: true */
 
 $.ajaxSetup({
     cache: false,
@@ -121,7 +121,10 @@ BITMETER.infoFloat = (function(){
     };
 
     float.getBox = function(){
-        return guiBox ? guiBox : (guiBox = $('#floater'));
+        if (!guiBox){
+            guiBox = $('#floater');
+        }
+        return guiBox;
     };
 
     return float;
@@ -137,14 +140,17 @@ BITMETER.consts.dialogOpts = {
 
 // Helpful when developing
 BITMETER.assert = (function(){
-    var DO_ASSERT = true;
-    return function(expr, msg){
-        if (DO_ASSERT && !expr) {
-            msg = msg || 'Assertion Error';
-            window.alert(msg);
-            throw msg;
-        }
-    };
+    var DO_ASSERT = false;
+    if (DO_ASSERT) {
+        return function(expr, msg){
+            if (!expr) {
+                msg = msg || 'Assertion Error';
+                window.alert(msg);
+                throw msg;
+            }
+        };
+    }
+    return $.noop;
 }());
 
 BITMETER.getTime = function(){
@@ -184,25 +190,24 @@ BITMETER.makeKeyPressHandler = function(){
 BITMETER.zeroPad = function(val){
     if (val === 0) {
         return '00';
-    } else if (val < 10) {
-        return '0' + val;
-    } else {
-        return '' + val;
     }
+    if (val < 10) {
+        return '0' + val;
+    }
+    return String(val);
 };
 
 BITMETER.arraysEqual = function(arr1, arr2) {
-    if (arr1.length !== arr2.length) {
+    var i, l=arr1.length;
+    if (l !== arr2.length) {
         return false;
-    } else {
-        var i, l=arr1.length;
-        for (i=0; i<l; i++) {
-            if (arr1[i] !== arr2[i]) {
-                return false;
-            }
-        }
-        return true;
     }
+    for (i=0; i<l; i++) {
+        if (arr1[i] !== arr2[i]) {
+            return false;
+        }
+    }
+    return true;
 };
 
 BITMETER.addAdaptersToRequest = function(req){
@@ -302,8 +307,9 @@ BITMETER.parseAmountValue = (function(){
          // Just numbers, so this is a byte value
             num = Number(tmpTxt);
             return isNaN(num) ? null : num;
+        } 
 
-        } else if (WITH_UNITS_REGEX.test(tmpTxt)) {
+        if (WITH_UNITS_REGEX.test(tmpTxt)) {
             numPart = Number(tmpTxt.substring(0, tmpTxt.length-2));
             if (isNaN(numPart)){
                 return null;
@@ -322,10 +328,9 @@ BITMETER.parseAmountValue = (function(){
                 BITMETER.assert(false, 'In parseAmountValue(), value was ' + txt);
             }
             return numPart * factor;
-
-        } else {
-            return null;
         }
+
+        return null;
     };
 }());
 BITMETER.getBytesPerK = function (){
@@ -348,57 +353,56 @@ BITMETER.formatInterval = function(intervalInSec, compactness){
 
     if (compactness === BITMETER.formatInterval.TINY) {
         return BITMETER.zeroPad(hour) + ':' + BITMETER.zeroPad(min) + ':' + BITMETER.zeroPad(Math.round(sec));
-        
-    } else if (compactness === BITMETER.formatInterval.SHORT) {
-        if (intervalInSec === 0) {
-            return '0 sec';
-            
-        } else if (intervalInSec < 1) {
-            return '<1 sec';
-            
-        } else {
-            result = '';
-            if (day > 0) {
-                result += day + 'd ';
-            }
-            if (hour > 0) {
-                result += hour + 'h ';
-            }
-            if (min > 0) {
-                result += min + 'm ';
-            }
-            if (sec > 0) {
-                result += Math.round(sec) + 's';
-            }
-            return result;
-        }
-        
-    } else if (compactness === BITMETER.formatInterval.LONG){
-        if (intervalInSec === 0) {
-            return '0 sec';
-            
-        } else if (intervalInSec < 1) {
-            return '<1 sec';
-            
-        } else {
-            if (day > 0) {
-                result += (day + ' day' + (day===1 ? '' : 's') + ' ');
-            }
-            if (hour > 0) {
-                result += (hour + ' hour' + (hour===1 ? '' : 's') + ' ');
-            }
-            if (min > 0) {
-                result += (min + ' minute' + (min===1 ? '' : 's') + ' ');
-            }
-            if (sec > 0) {
-                roundedSec = Math.round(sec);
-                result += (roundedSec + ' second' + (roundedSec===1 ? '' : 's'));
-            }
-            return result;
-        }
-    } else {
-        BITMETER.assert(false, 'Bad compactness value: ' + compactness);
     }
+
+    if (compactness === BITMETER.formatInterval.SHORT) {
+        if (intervalInSec === 0) {
+            return '0 sec';    
+        }
+        if (intervalInSec < 1) {
+            return '<1 sec';
+        }
+
+        result = '';
+        if (day > 0) {
+            result += day + 'd ';
+        }
+        if (hour > 0) {
+            result += hour + 'h ';
+        }
+        if (min > 0) {
+            result += min + 'm ';
+        }
+        if (sec > 0) {
+            result += Math.round(sec) + 's';
+        }
+        return result;
+    }
+
+    if (compactness === BITMETER.formatInterval.LONG){
+        if (intervalInSec === 0) {
+            return '0 sec';
+        }
+        if (intervalInSec < 1) {
+            return '<1 sec';
+        }
+
+        if (day > 0) {
+            result += (day + ' day' + (day===1 ? '' : 's') + ' ');
+        }
+        if (hour > 0) {
+            result += (hour + ' hour' + (hour===1 ? '' : 's') + ' ');
+        }
+        if (min > 0) {
+            result += (min + ' minute' + (min===1 ? '' : 's') + ' ');
+        }
+        if (sec > 0) {
+            roundedSec = Math.round(sec);
+            result += (roundedSec + ' second' + (roundedSec===1 ? '' : 's'));
+        }
+        return result;
+    }
+    BITMETER.assert(false, 'Bad compactness value: ' + compactness);
 };
 
 BITMETER.formatInterval.TINY  = 0;
@@ -448,9 +452,8 @@ BITMETER.applyScale = (function(){
             graph.setupGrid();
             graph.draw();
             return true;
-        } else {
-            return false;
         }
+        return false;
     };
 }());
 
@@ -502,6 +505,7 @@ BITMETER.makeYAxisIntervalFn = function(targetTickCount){
 };
 
 $(function(){
+    var datePickerFormat, serverNameSuffix;
  // Set up the event handlers for the tabs across the top of the screen
     $("#tabs").tabs({
             show: function(event, ui) {
@@ -538,7 +542,7 @@ $(function(){
 
  // If the host serving this page has a name then display it in the appropriate places
     if (config.serverName) {
-        var serverNameSuffix = ' - ' + config.serverName;
+        serverNameSuffix = ' - ' + config.serverName;
         $('h1').append(serverNameSuffix);
         window.document.title += serverNameSuffix;
     }
@@ -554,7 +558,7 @@ $(function(){
     $("noscript").hide(); // Needed for IE8
     $("#errorDialog, #dialogModalBackground").hide();
     
-    var datePickerFormat = $('#createAlertStartFixedDate').datepicker("option", "dateFormat");
+    datePickerFormat = $('#createAlertStartFixedDate').datepicker("option", "dateFormat");
     $('#createAlertStartDetailsFormat').html("(" + datePickerFormat + ")");
     
     $.ajax({
@@ -576,9 +580,8 @@ BITMETER.showVersion = function(data){
             diff = makeVersionPartsNum(newVersionParts) - makeVersionPartsNum(currentVersionParts);
             return diff > 0;
 
-        } else {
-            return false;
         }
+        return false;
     }
     if (isNewVersion(config.version, data.number)){
         $('#newVersion h2').append(data.number);
