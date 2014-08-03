@@ -38,7 +38,8 @@ OBJS_CLIENT=bmclient.o options.o monitor.o summary.o query.o dump.o help.o helpT
 
 OBJS_TEST=CuTest.o alltests.o testUtils.o db.o log.o data.o common.o options.o clientUtil.o testClientOptions.o testConfig.o bmdbConfig.o testUpgrade.o upgrade.o testSyncOptions.o syncOptions.o testProcess.o process.o sql.o time.o testSql.o testCommon.o testTime.o testDb.o testData.o testClientSummary.o clientSummary.o testClientMonitor.o clientMonitor.o testClientDump.o clientDump.o clientAlert.o testClientQuery.o clientQuery.o testClientSync.o clientSync.o testClientUtil.o testHttpRequest.o httpRequest.o testHandleConfig.o handleConfig.o httpTesting.o handleMonitor.o handleSummary.o handleQuery.o handleSync.o handleAlert.o handleExport.o handleFile.o handleRss.o testHandleMonitor.o testHandleQuery.o testHandleSummary.o testHandleFile.o testHandleSync.o testHandleAlert.o alert.o testAlert.o testClientAlert.o testHandleRss.o
 
-CC=gcc -Wall -arch i386 -arch ppc -arch ppc64
+CC=gcc -Wall -arch i386 -arch x86_64 -mmacosx-version-min=10.5
+#CC=gcc -Wall -arch i386 -arch ppc -arch ppc64
 #CC=gcc -DTESTING -Wall -arch i386 -arch ppc -arch ppc64
 
 #### Install or reinstall
