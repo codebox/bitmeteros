@@ -139,7 +139,7 @@ Section "Main"
   File ".\sqlite3.dll"
 
   ; Create a desktop shortcut to the web interface
-  !insertmacro CreateInternetShortcut "$DESKTOP\BitMeter OS" "http://localhost:2605" "$APPDATA\BitMeterOS\web\favicon.ico" "0"
+  !insertmacro CreateInternetShortcut "$DESKTOP\BitMeter OS" "http://localhost:2605/index.html" "$APPDATA\BitMeterOS\web\favicon.ico" "0"
 
   ; Create a Start Menu shortcut to the web interface
   CreateDirectory "$SMPROGRAMS\BitMeter OS"
@@ -185,10 +185,7 @@ Section "Uninstall"
     Abort
   ${EndIf}
   
-  !undef UN
-  !define UN "un."
-
-
+ 
   !insertmacro SERVICE "running" "BitMeterCaptureService" ""
   Pop $R0
   ${If} $R0 == "true"
