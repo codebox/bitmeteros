@@ -31,7 +31,8 @@ BITMETER.model = (function(){
         'showFilterWarning' : 'true',
         'monitorRefresh' : config.monitorInterval,
         'historyRefresh' : config.historyInterval,
-        'summaryRefresh' : config.summaryInterval
+        'summaryRefresh' : config.summaryInterval,
+        'alertsRefresh'  : 30000
     };
     
     function get(key){
@@ -218,6 +219,10 @@ BITMETER.model = (function(){
     };
     model.setSummaryRefresh = function(summaryRefresh){
         set('summaryRefresh', summaryRefresh, true);
+    };
+
+    model.getAlertRefresh = function(){
+        return Number(get('alertsRefresh'));
     };
 
     return model;

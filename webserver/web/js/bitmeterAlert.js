@@ -115,50 +115,54 @@ BITMETER.tabShowAlerts = function(){
         BITMETER.showAlertEditor();
     }
 
-    $.get('alert?action=list', function(alertsArray){
-        if (alertsArray && alertsArray.length){
-            $('#noAlerts').hide();
-            $('#alertsDisplay').show();
+    function updateAlerts(){
+        $.get('alert?action=list', function(alertsArray){
+            if (alertsArray && alertsArray.length){
+                $('#noAlerts').hide();
+                $('#alertsDisplay').show();
 
-            var tbody = $('#alertsTable tbody');
-            tbody.html('');
+                var tbody = $('#alertsTable tbody');
+                tbody.html('');
 
-            $.each(alertsArray, function(i,o){
-                var tr           = $('<tr id="alertRow' + o.id + '"><td class="alertName">' + o.name + '</td></tr>'),
-                    tdProgress   = $('<td></td>'),
-                    progress     = $('<div class="alertProgress" id="progress' + o.id + '"></div>'),
-                    tdStatus     = $('<td class="alertStatus" id="status' + o.id + '"></td>'),
-                    tdStatusIcon = $('<td class="alertStatusIcon" id="statusIcon' + o.id + '"></td>'),                    tdLink     = $('<td class="alertLink"></td>'),
-                    editLink     = $('<a class="adminOnly">Edit</a>'),
-                    tdDelete     = $('<td class="alertLink adminOnly"></td>'),
-                    deleteLink   = $('<a class="adminOnly deleteAlertLink">Delete</a>');
+                $.each(alertsArray, function(i,o){
+                    var tr           = $('<tr id="alertRow' + o.id + '"><td class="alertName">' + o.name + '</td></tr>'),
+                        tdProgress   = $('<td></td>'),
+                        progress     = $('<div class="alertProgress" id="progress' + o.id + '"></div>'),
+                        tdStatus     = $('<td class="alertStatus" id="status' + o.id + '"></td>'),
+                        tdStatusIcon = $('<td class="alertStatusIcon" id="statusIcon' + o.id + '"></td>'),                    tdLink     = $('<td class="alertLink"></td>'),
+                        editLink     = $('<a class="adminOnly">Edit</a>'),
+                        tdDelete     = $('<td class="alertLink adminOnly"></td>'),
+                        deleteLink   = $('<a class="adminOnly deleteAlertLink">Delete</a>');
 
-                progress.progressbar();
-                tdProgress.append(progress);
-                tr.append(tdProgress);
+                    progress.progressbar();
+                    tdProgress.append(progress);
+                    tr.append(tdProgress);
 
-                tdStatus.html('');
-                tr.append(tdStatus);
+                    tdStatus.html('');
+                    tr.append(tdStatus);
 
-                tr.append(tdStatusIcon);
+                    tr.append(tdStatusIcon);
 
-                editLink.click(function(){editAlert(o);});
-                tdLink.append(editLink);
-                tr.append(tdLink);
+                    editLink.click(function(){editAlert(o);});
+                    tdLink.append(editLink);
+                    tr.append(tdLink);
 
-                deleteLink.bind('click', function(){deleteAlert(o);});
-                tdDelete.append(deleteLink);
-                tr.append(tdDelete);
+                    deleteLink.bind('click', function(){deleteAlert(o);});
+                    tdDelete.append(deleteLink);
+                    tr.append(tdDelete);
 
-                tbody.append(tr);
-            });
-            BITMETER.updateAlertProgressBars();
+                    tbody.append(tr);
+                });
+                BITMETER.updateAlertProgressBars();
 
-        } else {
-            $('#alertsDisplay').hide();
-            $('#noAlerts').show();
-        }
-    });
+            } else {
+                $('#alertsDisplay').hide();
+                $('#noAlerts').show();
+            }
+        });
+    }
+    updateAlerts();
+    BITMETER.refreshTimer.set(updateAlerts, BITMETER.model.getAlertRefresh());
 };
 
 BITMETER.updateAlertProgressBars = function(){
