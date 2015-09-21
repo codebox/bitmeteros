@@ -116,7 +116,7 @@ void writeHeadersSeeOther(SOCKET fd, struct Request* req, int endHeaders){
     struct NameValuePair* param = req->headers;
     while (param != NULL){
         if (strcmp(param->name, "Host") == 0) {
-            char* newPath[19 + strlen(param->value)];
+            char newPath[19 + strlen(param->value)];
             sprintf(newPath,"http://%s/index.html", param->value);
             writeHeaders(fd, HTTP_SEE_OTHER, newPath, endHeaders);
             break;
@@ -140,7 +140,7 @@ static void writeHeaders(SOCKET fd, struct HttpResponse response, char* contentT
     }
 
     writeCommonHeaders(fd);
-    
+
     if (endHeaders){
         writeEndOfHeaders(fd);
     }
@@ -178,13 +178,13 @@ void processRequest(SOCKET fd, char* buffer, int allowAdmin){
 
         } else if (strcmp(req->path, "/m/monitor") == 0) {
             op = MobileMonitor;
-            
+
         } else if (strcmp(req->path, "/m/summary") == 0) {
             op = MobileSummary;
-            
+
         } else if (strcmp(req->path, "/m/about") == 0) {
             op = MobileAbout;
-            
+
         } else {
             op = File;
         }
@@ -221,16 +221,16 @@ void processRequest(SOCKET fd, char* buffer, int allowAdmin){
 
         } else if (op == Alert){
             processAlertRequest(fd, req, allowAdmin);
-            
+
         } else if (op == RSS){
             processRssRequest(fd, req);
 
         } else if (op == MobileMonitor){
             processMobileMonitorRequest(fd, req);
-            
+
         } else if (op == MobileSummary){
             processMobileSummaryRequest(fd, req);
-            
+
         } else if (op == MobileAbout){
             struct NameValuePair pair = {"version", VERSION, NULL};
             processFileRequest(fd, req, &pair);
@@ -307,28 +307,28 @@ void writeTextArrayToJson(SOCKET fd, char* key, char** values){
         writeText(fd, "\" : ");
     }
     writeText(fd, "[");
-    
+
     int firstItem = TRUE;
     while (*values != NULL){
         if (!firstItem) {
             writeText(fd, ",");
         }
         firstItem = FALSE;
-        
+
         writeText(fd, "\"");
         writeText(fd, *values);
         writeText(fd, "\"");
         values++;
     }
-    
+
     writeText(fd, "]");
 
 }
 void writeTextValueToJson(SOCKET fd, char* key, char* value){
     char jsonBuffer[SMALL_BUFSIZE];
-    
+
     if (strlen(key) + strlen(value) + 8 > SMALL_BUFSIZE){
-        logMsg(LOG_ERR, "Input values too large for buffer, key='%s' value='%s'", key, value);        
+        logMsg(LOG_ERR, "Input values too large for buffer, key='%s' value='%s'", key, value);
     } else {
         sprintf(jsonBuffer, "\"%s\" : \"%s\"", key, value);
         writeText(fd, jsonBuffer);
@@ -336,9 +336,9 @@ void writeTextValueToJson(SOCKET fd, char* key, char* value){
 }
 void writeNumValueToJson(SOCKET fd, char* key, BW_INT value){
     char jsonBuffer[SMALL_BUFSIZE];
-    
+
     if (strlen(key) + 40 > SMALL_BUFSIZE) {
-        logMsg(LOG_ERR, "Input values too large for buffer, key='%s' value=%llu", key, value);        
+        logMsg(LOG_ERR, "Input values too large for buffer, key='%s' value=%llu", key, value);
     } else {
         sprintf(jsonBuffer, "\"%s\" : %llu", key, value);
         writeText(fd, jsonBuffer);
