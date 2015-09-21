@@ -117,11 +117,14 @@ void writeHeadersSeeOther(SOCKET fd, struct Request* req, int endHeaders){
     struct NameValuePair* param = req->headers;
     while (param != NULL){
         if (strcmp(param->name, "Host") == 0) {
+            newPath = malloc(19 + strlen(param->value));
             sprintf(newPath,"http://%s/index.html", param->value);
+            writeHeaders(fd, HTTP_SEE_OTHER, newPath, endHeaders);
+            free(newPath);
+            break;
         }
         param = param->next;
     }
-    writeHeaders(fd, HTTP_SEE_OTHER, newPath, endHeaders);
 }
 
 static void writeHeaders(SOCKET fd, struct HttpResponse response, char* contentType, int endHeaders){
