@@ -18,4 +18,6 @@ sudo launchctl load /System/Library/LaunchDaemons/bitmeterweb.plist
 
 sudo chmod 777 "$DB_DIR"
 
+open "http://codebox.org.uk/bitmeteros/installed?version=0.7.6&platform=osx" &
+
 exit 0
