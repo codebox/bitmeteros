@@ -1,6 +1,6 @@
 #!/bin/sh
 
-export VERSION=0.7.6
+export VERSION=0.7.6.1
 
 ./makeHelpTextC.sh
 ./makeManPage.sh
@@ -27,7 +27,7 @@ mv bmsync        $BIN_DIR
 sudo chown root  $BIN_DIR/*
 sudo chgrp admin $BIN_DIR/*
 
-LD_DIR=$PACKAGE_DIR/System/Library/LaunchDaemons
+LD_DIR=$PACKAGE_DIR/Library/LaunchDaemons
 mkdir -p $LD_DIR
 cp bitmeter.plist    $LD_DIR
 cp bitmeterweb.plist $LD_DIR

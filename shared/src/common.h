@@ -42,7 +42,7 @@
 #define EOL "\n"
 #endif
 
-#define VERSION "0.7.6"
+#define VERSION "0.7.6.1"
 #define DB_VERSION 7
 
 #ifdef _WIN32
