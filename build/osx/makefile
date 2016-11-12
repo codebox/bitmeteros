@@ -6,6 +6,7 @@ SHARED_CLIENT_SRC=../../shared_client/src
 WEB_SRC=../../webserver/src
 BMDB_SRC=../../bmdb/src
 SYNC_SRC=../../bmsync/src
+SQLITE_SRC=./sqlite3
 
 CLIENT_TEST=../../bmclient/test
 CAPTURE_TEST=../../capture/test
@@ -29,12 +30,12 @@ BMDB_HELP=$(BMDB_SRC)/helpText.c
 SYNC_HELP=$(SYNC_SRC)/helpText.c
 
 INCLUDE_DIRS=-I$(SHARED_SRC) -I$(SHARED_CLIENT_SRC) -I$(CLIENT_SRC) -I$(CAPTURE_SRC) -I$(WEB_SRC) -I$(BMDB_SRC) -I$(SYNC_SRC) -I$(TEST) -I/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk/usr/include/malloc
-LIBS=-lsqlite3 -lm
-OBJS_BMSYNC=bmsync.o syncHelp.o syncHelpText.o syncOptions.o sql.o common.o data.o db.o log.o platform.o time.o
-OBJS_BMDB=bmdb.o bmdbConfig.o upgrade.o bmdbVersion.o bmdbHelpText.o log.o db.o common.o platform.o data.o admin.o
-OBJS_BMWS=bmws.o handleConfig.o handleFile.o handleMonitor.o handleQuery.o handleSync.o handleAlert.o handleSummary.o handleExport.o handleRss.o http.o httpRequest.o data.o common.o log.o platform.o db.o alert.o clientMonitor.o clientSummary.o clientSync.o clientQuery.o clientDump.o clientAlert.o clientUtil.o time.o 
-OBJS_CAP=captureDaemon.o net.o sql.o time.o process.o common.o db.o log.o platform.o data.o
-OBJS_CLIENT=bmclient.o options.o monitor.o summary.o query.o dump.o help.o helpText.o time.o common.o db.o log.o platform.o clientDump.o clientMonitor.o clientSummary.o clientQuery.o clientUtil.o data.o
+LIBS=-lm
+OBJS_BMSYNC=bmsync.o syncHelp.o syncHelpText.o syncOptions.o sql.o common.o data.o db.o log.o platform.o time.o sqlite3.o
+OBJS_BMDB=bmdb.o bmdbConfig.o upgrade.o bmdbVersion.o bmdbHelpText.o log.o db.o common.o platform.o data.o admin.o sqlite3.o
+OBJS_BMWS=bmws.o handleConfig.o handleFile.o handleMonitor.o handleQuery.o handleSync.o handleAlert.o handleSummary.o handleExport.o handleRss.o http.o httpRequest.o data.o common.o log.o platform.o db.o alert.o clientMonitor.o clientSummary.o clientSync.o clientQuery.o clientDump.o clientAlert.o clientUtil.o time.o sqlite3.o
+OBJS_CAP=captureDaemon.o net.o sql.o time.o process.o common.o db.o log.o platform.o data.o sqlite3.o
+OBJS_CLIENT=bmclient.o options.o monitor.o summary.o query.o dump.o help.o helpText.o time.o common.o db.o log.o platform.o clientDump.o clientMonitor.o clientSummary.o clientQuery.o clientUtil.o data.o sqlite3.o
 
 OBJS_TEST=CuTest.o alltests.o testUtils.o db.o log.o data.o common.o options.o clientUtil.o testClientOptions.o testConfig.o bmdbConfig.o testUpgrade.o upgrade.o testSyncOptions.o syncOptions.o testProcess.o process.o sql.o time.o testSql.o testCommon.o testTime.o testDb.o testData.o testClientSummary.o clientSummary.o testClientMonitor.o clientMonitor.o testClientDump.o clientDump.o clientAlert.o testClientQuery.o clientQuery.o testClientSync.o clientSync.o testClientUtil.o testHttpRequest.o httpRequest.o testHandleConfig.o handleConfig.o httpTesting.o handleMonitor.o handleSummary.o handleQuery.o handleSync.o handleAlert.o handleExport.o handleFile.o handleRss.o testHandleMonitor.o testHandleQuery.o testHandleSummary.o testHandleFile.o testHandleSync.o testHandleAlert.o alert.o testAlert.o testClientAlert.o testHandleRss.o
 
@@ -247,6 +248,9 @@ http.o: $(WEB_SRC)/http.c $(WEB_SRC)/bmws.h $(SHARED_SRC)/common.h
 
 httpRequest.o: $(WEB_SRC)/httpRequest.c $(WEB_SRC)/bmws.h $(SHARED_SRC)/common.h
 	$(CC) -c $(WEB_SRC)/httpRequest.c -o httpRequest.o $(INCLUDE_DIRS)
+
+sqlite3.o: $(SQLITE_SRC)/sqlite3.c $(SQLITE_SRC)/sqlite3.h
+	$(CC) -c $(SQLITE_SRC)/sqlite3.c -o sqlite3.o $(INCLUDE_DIRS)
 
 #### bmcapture standalone
 bmcapture: $(OBJS_CAP)
