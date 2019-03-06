@@ -5,7 +5,7 @@
 BitMeter OS is a free, open-source bandwidth monitor that works on Windows, Linux and Mac OSX. 
 BitMeter OS keeps track of how much you use your internet/network connection, and allows you to view this information either via a web browser, or by using the [command line tools](http://codebox.org.uk/pages/bitmeteros/bmclient/man).
 
-The Web Interface displays various graphs and charts that show how your internet/network connection has been used over time, why not try out the [online demo](http://codebox.org.uk/pages/bitmeteros/demo) right now?
+The Web Interface displays various graphs and charts that show how your internet/network connection has been used over time.
 
 The Monitor pane displays a graph that updates once each second, showing you what's happening with your connection right now:
 
