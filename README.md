@@ -9,24 +9,24 @@ The Web Interface displays various graphs and charts that show how your internet
 
 The Monitor pane displays a graph that updates once each second, showing you what's happening with your connection right now:
 
-![BitMeter OS Monitor Pane](http://codebox.org.uk/graphics/bmos_monitor.png)
+![BitMeter OS Monitor Pane](http://codebox.org.uk/assets/images/bitmeteros/bmos_monitor.png)
 
 The Query pane gives you detailed information about your bandwidth usage on any date/s that you specify, and lets you export the results to a spreadsheet
 
-![BitMeter OS Query Pane](http://codebox.org.uk/graphics/bmos_query.png)
+![BitMeter OS Query Pane](http://codebox.org.uk/assets/images/bitmeteros/bmos_query.png)
 
 The History pane illustrates how your connection usage has changed over the last few hours, days, and months
 
-![BitMeter OS History Pane](http://codebox.org.uk/graphics/bmos_history.png)
+![BitMeter OS History Pane](http://codebox.org.uk/assets/images/bitmeteros/bmos_history.png)
 
 BitMeter OS also lets you define Alerts to notify you when your internet usage exceeds some limit that you specify.
 
-![BitMeter OS Alert Pane](http://codebox.org.uk/graphics/bmos_alert.png)
+![BitMeter OS Alert Pane](http://codebox.org.uk/assets/images/bitmeteros/bmos_alert.png)
 
 The Calculator utility lets you work out how long it will take to upload or download a file, or how much data you can transfer in a certain length of time
 
-![BitMeter OS Calculator](http://codebox.org.uk/graphics/bmos_calc.png)
+![BitMeter OS Calculator](http://codebox.org.uk/assets/images/bitmeteros/bmos_calc.png)
 
 The Preferences pane allows you to customise many aspects of the interface to suit your needs, including the built-in RSS feed
 
-![BitMeter OS Preferences](http://codebox.org.uk/graphics/bmos_prefs.png)
+![BitMeter OS Preferences](http://codebox.org.uk/assets/images/bitmeteros/bmos_prefs.png)
